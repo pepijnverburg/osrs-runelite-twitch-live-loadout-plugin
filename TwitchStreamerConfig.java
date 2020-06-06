@@ -32,18 +32,132 @@ import net.runelite.client.config.ConfigItem;
 public interface TwitchStreamerConfig extends Config
 {
 
-	int MAX_BANK_ITEMS = 200;
+	public final int MAX_BANK_ITEMS = 200;
+	public final String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 
 	@ConfigItem(
-		keyName = "jwt",
-		name = "Twitch Extension Token",
-		description = "Enter your Twitch Extension Token here. It can be found in the Twitch Extension when logged in as a streamer.",
-		secret = true,
-		position = 0
+			keyName = "twitchToken",
+			name = "Twitch Extension Token",
+			description = "Your token can be found in the Twitch Extension overlay 'Settings' tab when logged in as broadcaster.",
+			secret = true,
+			position = 0
 	)
-
-	default String jwt()
+	default String twitchToken()
 	{
 		return "";
 	}
+
+	@ConfigItem(
+			keyName = "playerInfoEnabled",
+			name = "Sync display name",
+			description = "Synchronize basic player info such as display name.",
+			position = 2
+	)
+	default boolean playerInfoEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "inventoryEnabled",
+		name = "Sync inventory items",
+		description = "Synchronize all inventory items.",
+		position = 4
+	)
+	default boolean inventoryEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "equipmentEnabled",
+			name = "Sync equipment items",
+			description = "Synchronize all equipment items.",
+			position = 6
+	)
+	default boolean equipmentEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "bankEnabled",
+			name = "Sync bank items",
+			description = "Synchronize bank value and top "+ MAX_BANK_ITEMS +" items based on GE value.",
+			position = 8
+	)
+	default boolean bankEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "skillsEnabled",
+			name = "Sync skill levels",
+			description = "Synchronize skill experience, level boosts and combat level.",
+			position = 10
+	)
+	default boolean skillsEnabled()
+	{
+		return true;
+	}
+
+//	@ConfigItem(
+//		keyName = "combatEnabled",
+//		name = "Sync combat statistics",
+//		description = "Synchronize statistics about PvM and PvP, such as DPS, freezes, etc.",
+//		position = 12
+//	)
+//	default boolean combatEnabled()
+//	{
+//		return true;
+//	}
+//
+//	@ConfigItem(
+//			keyName = "goalsEnabled",
+//			name = "Sync item goals",
+//			description = "Synchronize the configured item wanted items, progress is determined from inventory, gear or bank items.",
+//			position = 14
+//	)
+//	default boolean goalsEnabled()
+//	{
+//		return true;
+//	}
+
+	@ConfigItem(
+			keyName = "weightEnabled",
+			name = "Sync weight of carried items",
+			description = "Synchronize the weight of the equipment and inventory items, including weight reduction.",
+			position = 16
+	)
+	default boolean weightEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "syncDisabled",
+			name = "Disable and clear syncing",
+			description = "Temporarily disable all syncing, hide extension and clear data.",
+			position = 96
+	)
+	default boolean syncDisabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "extensionClientId",
+		name = "Twitch Extension ID",
+		description = "This is the ID of the Twitch Extension you want to sync the data to. Also known as 'CLient ID'.",
+		secret = true,
+		position = 100,
+		hidden = true
+	)
+	default String extensionClientId()
+	{
+		// the default osrs_tools extension
+		return DEFAULT_EXTENSION_CLIENT_ID;
+	}
+
 }
