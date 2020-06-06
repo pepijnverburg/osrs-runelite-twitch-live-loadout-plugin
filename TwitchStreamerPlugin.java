@@ -26,9 +26,11 @@ package net.runelite.client.plugins.twitchstreamer;
 
 import com.google.inject.Provides;
 import net.runelite.api.*;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.task.Schedule;
@@ -38,6 +40,9 @@ import net.runelite.api.events.StatChanged;
 
 import javax.inject.Inject;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @PluginDescriptor(
 	name = "Twitch Streamer",
@@ -57,6 +62,9 @@ public class TwitchStreamerPlugin extends Plugin
 
 	@Inject
 	private Client client;
+
+	@Inject
+	ItemManager itemManager;
 
 	/**
 	 * Twitch Configuration Service state that can be mapped to a JSON.
@@ -137,25 +145,67 @@ public class TwitchStreamerPlugin extends Plugin
 		configurationServiceState.setPlayerName(playerName);
 	}
 
-	/**
-	 * Polling mechanism to update the equipment/gear and weight data
-	 */
-	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
-	public void syncEquipment()
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
 	{
+		ItemContainer container = event.getItemContainer();
+		final boolean isInventory = isItemContainer(container, InventoryID.INVENTORY);
+		final boolean isEquipment = isItemContainer(container, InventoryID.EQUIPMENT);
+		final boolean isBank = isItemContainer(container, InventoryID.BANK);
+		final Item[] items = container.getItems();
 
-		// Guard: equipment is not available when not loaded
-		if (!playerIsLoaded())
+		if (isInventory)
 		{
-			return;
+			configurationServiceState.setInventoryItems(items);
+		}
+		else if (isEquipment)
+		{
+			configurationServiceState.setEquipmentItems(items);
+		}
+		else if (isBank)
+		{
+			Item[] highestPricedItems = getHighestPricedItems(items, twitchStreamerConfig.MAX_BANK_ITEMS);
+			configurationServiceState.setBankItems(highestPricedItems);
 		}
 
-		final PlayerComposition playerComposition = client.getLocalPlayer().getPlayerComposition();
-		final int[] equipmentIds = playerComposition.getEquipmentIds();
-		final int weight = client.getWeight();
+		// update the weight for specific containers
+		if (isInventory || isEquipment)
+		{
+			final int weight = client.getWeight();
+			configurationServiceState.setWeight(weight);
+		}
+	}
 
-		configurationServiceState.setEquipmentIds(equipmentIds);
-		configurationServiceState.setWeight(weight);
+	public Item[] getHighestPricedItems(Item[] items, int maxAmount)
+	{
+		final List<PricedItem> pricedItems = new ArrayList();
+
+		for (Item item : items) {
+			final int itemId = item.getId();
+			final int itemQuantity = item.getQuantity();
+			final long itemPrice = ((long) itemManager.getItemPrice(itemId)) * itemQuantity;
+			final PricedItem pricedItem = new PricedItem(item, itemPrice);
+			System.out.println("--------");
+			System.out.println(itemId);
+			System.out.println(itemManager.getItemPrice(itemId));
+			pricedItems.add(pricedItem);
+		}
+
+		Collections.sort(pricedItems);
+
+		final List<PricedItem> highestPricedItems = pricedItems.subList(0, maxAmount);
+		final Item[] selectedItems = new Item[highestPricedItems.size()];
+
+		for (int pricedItemIndex = 0; pricedItemIndex < highestPricedItems.size(); pricedItemIndex++) {
+			selectedItems[pricedItemIndex] = highestPricedItems.get(pricedItemIndex).getItem();
+		}
+
+		return selectedItems;
+	}
+
+	public boolean isItemContainer(ItemContainer container, InventoryID containerId)
+	{
+		return container == client.getItemContainer(containerId);
 	}
 
 	/**
@@ -166,20 +216,10 @@ public class TwitchStreamerPlugin extends Plugin
 	public void onStatChanged(StatChanged event)
 	{
 		final int[] skillExperiences = client.getSkillExperiences();
-		final int combatLevel = client.getLocalPlayer().getCombatLevel();
+		final int[] boostedSkillLevels = client.getBoostedSkillLevels();
 
 		configurationServiceState.setSkillExperiences(skillExperiences);
-		configurationServiceState.setCombatLevel(combatLevel);
-	}
-
-	/**
-	 * Polling mechanism to update the bank data
-	 */
-	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
-	public void syncBank()
-	{
-		// TODO: figure out how to optimize this to fit the 5KB limit by Twitch...
-		// final ItemContainer container = client.getItemContainer(InventoryID.BANK);
+		configurationServiceState.setBoostedSkillLevels(boostedSkillLevels);
 	}
 
 	/**
@@ -203,14 +243,6 @@ public class TwitchStreamerPlugin extends Plugin
 
 		// Guard: check if player is loaded.
 		if (!playerLoaded) {
-			return false;
-		}
-
-		final Object equipmentIds = playerComposition.getEquipmentIds();
-		final boolean equipmentLoaded = (equipmentIds != null);
-
-		// Guard: check if equipment is loaded.
-		if (!equipmentLoaded) {
 			return false;
 		}
 

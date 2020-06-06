@@ -71,7 +71,7 @@ public class ConfigurationServiceApi {
 		String dataString = data.toString();
 		Request request = new Request.Builder()
 			.header("Client-ID", "cuhr4y87yiqd92qebs1mlrj3z5xfp6")
-			.header("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTA0MzMzNDQsIm9wYXF1ZV91c2VyX2lkIjoiVTUzNDI2Njk0NCIsInJvbGUiOiJicm9hZGNhc3RlciIsInB1YnN1Yl9wZXJtcyI6eyJsaXN0ZW4iOlsiYnJvYWRjYXN0IiwiZ2xvYmFsIl0sInNlbmQiOlsiYnJvYWRjYXN0Il19LCJjaGFubmVsX2lkIjoiNTM0MjY2OTQ0IiwidXNlcl9pZCI6IjUzNDI2Njk0NCIsImlhdCI6MTU5MDM0Njk0NH0.zXQQ42VZ1dFvno84Sq8QiUPRYRrhoS3zxqGw90-KN20")
+			.header("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTE1Mjg0MzgsIm9wYXF1ZV91c2VyX2lkIjoiVTUzNDI2Njk0NCIsInJvbGUiOiJicm9hZGNhc3RlciIsInB1YnN1Yl9wZXJtcyI6eyJsaXN0ZW4iOlsiYnJvYWRjYXN0IiwiZ2xvYmFsIl0sInNlbmQiOlsiYnJvYWRjYXN0Il19LCJjaGFubmVsX2lkIjoiNTM0MjY2OTQ0IiwidXNlcl9pZCI6IjUzNDI2Njk0NCIsImlhdCI6MTU5MTQ0MjAzOH0.lM_el-OiLuYjm_Fdo4Y3yS2XGpR-59UN6TEBL819-AM")
 			.put(RequestBody.create(JSON, dataString))
 			.url("https://api.twitch.tv/v5/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6/configurations/")
 			.build();

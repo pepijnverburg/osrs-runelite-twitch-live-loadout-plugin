@@ -32,6 +32,8 @@ import net.runelite.client.config.ConfigItem;
 public interface TwitchStreamerConfig extends Config
 {
 
+	int MAX_BANK_ITEMS = 200;
+
 	@ConfigItem(
 		keyName = "jwt",
 		name = "Twitch Extension Token",

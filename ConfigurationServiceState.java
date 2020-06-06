@@ -3,11 +3,9 @@ package net.runelite.client.plugins.twitchstreamer;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.runelite.api.Client;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.Skill;
-import net.runelite.api.kit.KitType;
+import net.runelite.api.*;
+
+import java.util.HashMap;
 
 /**
  * In-memory state of all the data that is synced
@@ -31,14 +29,33 @@ import net.runelite.api.kit.KitType;
  * Configuration Service documentation:
  * https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment
  */
+
 public class ConfigurationServiceState {
 
 	/**
-	 * Constants.
+	 * State key entries
 	 */
-	private final int KIT_AMOUNT = KitType.values().length;
-	private final int SKILL_AMOUNT = Skill.values().length;
-	private final int EQUIPMENT_ITEM_ID_OFFSET = 512;
+	private enum StateKey {
+		PLAYER_NAME("playerName"),
+		INVENTORY_ITEMS("inventory"),
+		EQUIPMENT_ITEMS("equipment"),
+		BANK_ITEMS("bank"),
+		SKILL_EXPERIENCES("skillExperiences"),
+		BOOSTED_SKILL_LEVELS("boostedSkillLevels"),
+		COMBAT_LEVEL("combatLevel"),
+		WEIGHT("weight");
+
+		private final String key;
+
+		StateKey(String key) {
+			this.key = key;
+		}
+
+		public String getKey()
+		{
+			return key;
+		}
+	}
 
 	/**
 	 * The injected client API.
@@ -46,64 +63,21 @@ public class ConfigurationServiceState {
 	private Client client;
 
 	/**
-	 * Image encoder to send sprite information to Twitch as well.
+	 * The current state that is queued to be sent out.
 	 */
-	private SpriteEncoder imageEncoder;
+	private JsonObject currentState = new JsonObject();
 
 	/**
-	 * Display name of the player.
+	 * The previous state sent out.
 	 */
-	private String playerName = "";
+	private JsonObject previousState = new JsonObject();
 
 	/**
-	 * Currently equipped gear using the same ordinal indexes.
+	 * Cache to optimize the various item containers that are synced.
+	 * This helps to avoid item syncing done via polling to not require
+	 * JSON parsing every time the polling cycle ends.
 	 */
-	private int[] equipmentIds = new int[KIT_AMOUNT];
-
-	/**
-	 * The real item IDS for the equipment.
-	 */
-	private int[] equipmentItemIds = new int[KIT_AMOUNT];
-
-	/**
-	 * Currently equipped gear item icons as Base64 image buffers.
-	 * This allows the Twitch extensions to be up to date at any time
-	 * with the latest items. No other external assets required.
-	 */
-	private String[] equipmentSprites = new String[KIT_AMOUNT];
-
-	/**
-	 * Currently equipped gear names
-	 */
-	private String[] equipmentNames = new String[KIT_AMOUNT];
-
-	/**
-	 * The weight based on the equipment.
-	 */
-	private int weight = -1;
-
-	/**
-	 * The gained experience per skill using the same ordinal indexes.
-	 */
-	private int[] skillExperiences = new int[SKILL_AMOUNT];
-
-	/**
-	 * Combat level.
-	 */
-	private int combatLevel = -1;
-
-	/**
-	 * All the items stored in the bank
-	 * NOTE: not sure how to sync this yet as this will
-	 * cause the state to exceed the maximum of 5KB.
-	 */
-	private ItemContainer bankContainer;
-
-	/**
-	 * The last state that was synced to Twitch.
-	 * We use this to check for changes.
-	 */
-	private JsonObject lastState = null;
+	private HashMap<String, Item[]> itemsCache = new HashMap();
 
 	/**
 	 * Flag to identify whether the state has changed after
@@ -112,198 +86,114 @@ public class ConfigurationServiceState {
 	 */
 	private boolean changed = false;
 
-	/**
-	 * Constructor
-	 */
 	public ConfigurationServiceState(Client client)
 	{
 		this.client = client;
-		this.imageEncoder = new SpriteEncoder(client);
 	}
 
-	/**
-	 * Map all the states to one JSON object that can be send
-	 * to the Twitch API in string form.
-	 * @return
-	 */
 	public JsonObject getState()
 	{
-		JsonObject state = new JsonObject();
-		JsonArray equipmentItemIdsJson = convertToJson(getEquipmentItemIds());
-		JsonArray equipmentNamesJson = convertToJson(getEquipmentNames());
-		JsonArray equipmentSpritesJson = convertToJson(getEquipmentSprites());
-		JsonArray skillExperiencesJson = convertToJson(getSkillExperiences());
-
-		state.addProperty("playerName", getPlayerName());
-		state.add("equipmentItemIds", equipmentItemIdsJson);
-		state.add("equipmentNames", equipmentNamesJson);
-		state.add("equipmentSprites", equipmentSpritesJson);
-		state.addProperty("weight", getWeight());
-		state.add("skillExperiences", skillExperiencesJson);
-		state.addProperty("combatLevel", getCombatLevel());
-
-		return state;
-	}
-
-	public JsonArray convertToJson(Object array)
-	{
-		return new GsonBuilder().create().toJsonTree(array).getAsJsonArray();
+		return currentState;
 	}
 
 	public void setPlayerName(String playerName)
 	{
+		currentState.addProperty(StateKey.PLAYER_NAME.getKey(), playerName);
+		checkForChange();
+	}
 
-		// guard: check for change
-		if (playerName != null && playerName.equals(this.playerName))
+	public void setInventoryItems(Item[] items)
+	{
+		setItems(StateKey.INVENTORY_ITEMS.getKey(), items);
+	}
+
+	public void setEquipmentItems(Item[] items)
+	{
+		setItems(StateKey.EQUIPMENT_ITEMS.getKey(), items);
+	}
+
+	public void setBankItems(Item[] items)
+	{
+		setItems(StateKey.BANK_ITEMS.getKey(), items);
+	}
+
+	private void setItems(String stateKey, Item[] items)
+	{
+		Item[] cachedItems = itemsCache.get(stateKey);
+
+		// optimization to not convert all items to JSON
+		if (itemArraysEqual(items, cachedItems))
 		{
 			return;
 		}
 
-		this.playerName = playerName;
-		triggerChange();
-	}
-
-	public String getPlayerName()
-	{
-		return playerName;
-	}
-
-	public void setEquipmentIds(int[] equipmentIds)
-	{
-
-		// guard: check for change
-		if (java.util.Arrays.equals(equipmentIds, this.equipmentIds))
-		{
-			return;
-		}
-
-		// Update the sprites when something is changed.
-		// Note that this should be done before the state is mutated.
-		updateEquipmentProperties(equipmentIds);
-
-		this.equipmentIds = equipmentIds;
-		triggerChange();
-	}
-
-	public int[] updateEquipmentProperties(int[] equipmentIds)
-	{
-		for (int equipmentIndex = 0; equipmentIndex < KIT_AMOUNT; equipmentIndex++)
-		{
-			int equipmentId = equipmentIds[equipmentIndex];
-			int itemId = this.getItemIdByEquipmentId(equipmentId);
-			int currentItemId = this.equipmentItemIds[equipmentIndex];
-			String itemName = null;
-			String itemSprite = null;
-
-			// Guard: check for change in this particular slot
-			if (itemId == currentItemId)
-			{
-				continue;
-			}
-
-			ItemComposition item = client.getItemDefinition(itemId);
-
-			// make sure the item is valid
-			if (item != null)
-			{
-				itemName = item.getName();
-				itemSprite = imageEncoder.getEncodedSpriteByItemId(itemId);
-			}
-
-			this.equipmentItemIds[equipmentIndex] = itemId;
-			this.equipmentNames[equipmentIndex] = itemName;
-			this.equipmentSprites[equipmentIndex] = itemSprite;
-		}
-
-		return this.equipmentItemIds;
-	}
-
-	public int[] getEquipmentIds()
-	{
-		return equipmentIds;
-	}
-
-	public int[] getEquipmentItemIds()
-	{
-		return equipmentItemIds;
-	}
-
-	public String[] getEquipmentNames()
-	{
-		return equipmentNames;
-	}
-
-	public String[] getEquipmentSprites()
-	{
-		return equipmentSprites;
+		itemsCache.put(stateKey, items);
+		currentState.add(stateKey, convertToJson(items));
+		checkForChange();
 	}
 
 	public void setWeight(int weight)
 	{
-
-		// guard: check for change
-		if (weight == this.weight) {
-			return;
-		}
-
-		this.weight = weight;
-		triggerChange();
-	}
-
-	public int getWeight()
-	{
-		return weight;
+		currentState.addProperty(StateKey.WEIGHT.getKey(), weight);
+		checkForChange();
 	}
 
 	public void setSkillExperiences(int[] skillExperiences)
 	{
+		currentState.add(StateKey.SKILL_EXPERIENCES.getKey(), convertToJson(skillExperiences));
+		checkForChange();
+	}
 
-		// guard: check for change
-		if (java.util.Arrays.equals(skillExperiences, this.skillExperiences)) {
-			return;
+	public void setBoostedSkillLevels(int[] boostedSkillLevels)
+	{
+		currentState.add(StateKey.BOOSTED_SKILL_LEVELS.getKey(), convertToJson(boostedSkillLevels));
+		checkForChange();
+	}
+
+	public boolean itemArraysEqual(Item[] currentItems, Item[] newItems)
+	{
+		if ((currentItems == null && newItems != null) ||
+			(currentItems != null && newItems == null) ||
+			(currentItems.length != newItems.length))
+		{
+			return false;
 		}
 
-		this.skillExperiences = skillExperiences;
-		triggerChange();
-	}
+		for (int itemIndex = 0; itemIndex < currentItems.length; itemIndex++) {
+			Item currentItem = currentItems[itemIndex];
+			Item newItem = newItems[itemIndex];
 
-	public int[] getSkillExperiences()
-	{
-		return skillExperiences;
-	}
-
-	public void setCombatLevel(int combatLevel)
-	{
-
-		// guard: check for change
-		if (combatLevel == this.combatLevel) {
-			return;
+			if (currentItem.getId() != newItem.getId() || currentItem.getQuantity() != newItem.getQuantity()) {
+				return false;
+			}
 		}
 
-		this.combatLevel = combatLevel;
-		triggerChange();
+		return true;
 	}
 
-	public int getCombatLevel()
+	public JsonArray convertToJson(Item[] items)
 	{
-		return combatLevel;
-	}
+		JsonArray itemsJson = new JsonArray();
 
-	/**
-	 * Get the item ID by its equipment ID.
-	 * @param equipmentId
-	 * @return
-	 */
-	public int getItemIdByEquipmentId(int equipmentId)
-	{
-		final int itemId = equipmentId - EQUIPMENT_ITEM_ID_OFFSET;
-
-		// guard: check if an item is equipped
-		if (itemId < 0) {
-			return -1;
+		if (items == null) {
+			return itemsJson;
 		}
 
-		return itemId;
+		for (Item item : items) {
+			JsonArray itemJson = new JsonArray();
+			itemJson.add(item.getId());
+			itemJson.add(item.getQuantity());
+
+			itemsJson.add(itemJson);
+		}
+
+		return itemsJson;
+	}
+
+	public JsonArray convertToJson(int[] array)
+	{
+		JsonArray json = new GsonBuilder().create().toJsonTree(array).getAsJsonArray();
+		return json;
 	}
 
 	/**
@@ -319,9 +209,15 @@ public class ConfigurationServiceState {
 	 * This will flag the current state to be required to be updated
 	 * using the Twitch API.
 	 */
-	public void triggerChange()
+	private boolean checkForChange()
 	{
+		if (currentState.equals(previousState))
+		{
+			return false;
+		}
+
 		changed = true;
+		return true;
 	}
 
 	/**
@@ -329,6 +225,11 @@ public class ConfigurationServiceState {
 	 */
 	public void acknowledgeChange()
 	{
+		if (!isChanged()) {
+			return;
+		}
+
+		previousState = currentState.deepCopy();
 		changed = false;
 	}
 }
