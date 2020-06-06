@@ -4,8 +4,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.runelite.api.*;
+import net.runelite.client.game.ItemManager;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * In-memory state of all the data that is synced
@@ -29,7 +33,6 @@ import java.util.HashMap;
  * Configuration Service documentation:
  * https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment
  */
-
 public class ConfigurationServiceState {
 
 	/**
@@ -38,8 +41,11 @@ public class ConfigurationServiceState {
 	private enum StateKey {
 		PLAYER_NAME("playerName"),
 		INVENTORY_ITEMS("inventory"),
+		INVENTORY_PRICE("inventoryPrice"),
 		EQUIPMENT_ITEMS("equipment"),
+		EQUIPMENT_PRICE("equipmentPrice"),
 		BANK_ITEMS("bank"),
+		BANK_PRICE("bankPrice"),
 		SKILL_EXPERIENCES("skillExperiences"),
 		BOOSTED_SKILL_LEVELS("boostedSkillLevels"),
 		COMBAT_LEVEL("combatLevel"),
@@ -57,10 +63,8 @@ public class ConfigurationServiceState {
 		}
 	}
 
-	/**
-	 * The injected client API.
-	 */
-	private Client client;
+	private TwitchStreamerConfig config;
+	private ItemManager itemManager;
 
 	/**
 	 * The current state that is queued to be sent out.
@@ -86,9 +90,10 @@ public class ConfigurationServiceState {
 	 */
 	private boolean changed = false;
 
-	public ConfigurationServiceState(Client client)
+	public ConfigurationServiceState(TwitchStreamerConfig config, ItemManager itemManager)
 	{
-		this.client = client;
+		this.config = config;
+		this.itemManager = itemManager;
 	}
 
 	public JsonObject getState()
@@ -104,35 +109,20 @@ public class ConfigurationServiceState {
 
 	public void setInventoryItems(Item[] items)
 	{
-		setItems(StateKey.INVENTORY_ITEMS.getKey(), items);
+		setItems(StateKey.INVENTORY_ITEMS.getKey(), StateKey.INVENTORY_PRICE.getKey(), items);
 	}
 
 	public void setEquipmentItems(Item[] items)
 	{
-		setItems(StateKey.EQUIPMENT_ITEMS.getKey(), items);
+		setItems(StateKey.EQUIPMENT_ITEMS.getKey(), StateKey.EQUIPMENT_PRICE.getKey(), items);
 	}
 
 	public void setBankItems(Item[] items)
 	{
-		setItems(StateKey.BANK_ITEMS.getKey(), items);
+		setItems(StateKey.BANK_ITEMS.getKey(), StateKey.BANK_PRICE.getKey(), items);
 	}
 
-	private void setItems(String stateKey, Item[] items)
-	{
-		Item[] cachedItems = itemsCache.get(stateKey);
-
-		// optimization to not convert all items to JSON
-		if (itemArraysEqual(items, cachedItems))
-		{
-			return;
-		}
-
-		itemsCache.put(stateKey, items);
-		currentState.add(stateKey, convertToJson(items));
-		checkForChange();
-	}
-
-	public void setWeight(int weight)
+	public void setWeight(Integer weight)
 	{
 		currentState.addProperty(StateKey.WEIGHT.getKey(), weight);
 		checkForChange();
@@ -150,7 +140,83 @@ public class ConfigurationServiceState {
 		checkForChange();
 	}
 
-	public boolean itemArraysEqual(Item[] currentItems, Item[] newItems)
+	public void clear()
+	{
+		currentState = new JsonObject();
+		checkForChange();
+	}
+
+	public JsonObject getFilteredState()
+	{
+		JsonObject filteredState = getState().deepCopy();
+
+		if (config.syncDisabled())
+		{
+			filteredState = new JsonObject();
+		}
+
+		if (!config.playerInfoEnabled())
+		{
+			filteredState.add(StateKey.PLAYER_NAME.getKey(), null);
+		}
+
+		if (!config.inventoryEnabled())
+		{
+			filteredState.add(StateKey.INVENTORY_ITEMS.getKey(), null);
+			filteredState.add(StateKey.INVENTORY_PRICE.getKey(), null);
+		}
+
+		if (!config.equipmentEnabled())
+		{
+			filteredState.add(StateKey.EQUIPMENT_ITEMS.getKey(), null);
+			filteredState.add(StateKey.EQUIPMENT_PRICE.getKey(), null);
+		}
+
+		if (!config.bankEnabled())
+		{
+			filteredState.add(StateKey.BANK_ITEMS.getKey(), null);
+			filteredState.add(StateKey.BANK_PRICE.getKey(), null);
+		}
+
+		if (!config.skillsEnabled())
+		{
+			filteredState.add(StateKey.SKILL_EXPERIENCES.getKey(), null);
+			filteredState.add(StateKey.BOOSTED_SKILL_LEVELS.getKey(), null);
+		}
+
+		if (!config.weightEnabled())
+		{
+			filteredState.add(StateKey.WEIGHT.getKey(), null);
+		}
+
+		return filteredState;
+	}
+
+	private void setItems(String itemsKey, String priceKey, Item[] items)
+	{
+		Item[] cachedItems = itemsCache.get(itemsKey);
+
+		// optimization to not convert all items to JSON
+		if (itemArraysEqual(items, cachedItems))
+		{
+			return;
+		}
+
+		// calculate before bank item limit slicing
+		final long totalPrice = getTotalPrice(items);
+
+		if (itemsKey == StateKey.BANK_ITEMS.getKey())
+		{
+			items = getHighestPricedItems(items, config.MAX_BANK_ITEMS);
+		}
+
+		itemsCache.put(itemsKey, items);
+		currentState.add(itemsKey, convertToJson(items));
+		currentState.addProperty(priceKey, totalPrice);
+		checkForChange();
+	}
+
+	private boolean itemArraysEqual(Item[] currentItems, Item[] newItems)
 	{
 		if ((currentItems == null && newItems != null) ||
 			(currentItems != null && newItems == null) ||
@@ -171,7 +237,52 @@ public class ConfigurationServiceState {
 		return true;
 	}
 
-	public JsonArray convertToJson(Item[] items)
+	public List<PricedItem> getPricedItems(Item[] items)
+	{
+		final List<PricedItem> pricedItems = new ArrayList();
+		for (Item item : items)
+		{
+			final int itemId = item.getId();
+			final int itemQuantity = item.getQuantity();
+			final long itemPrice = ((long) itemManager.getItemPrice(itemId)) * itemQuantity;
+			final PricedItem pricedItem = new PricedItem(item, itemPrice);
+
+			pricedItems.add(pricedItem);
+		}
+
+		return pricedItems;
+	}
+
+	public long getTotalPrice(Item[] items)
+	{
+		long totalPrice = 0;
+		final List<PricedItem> pricedItems = getPricedItems(items);
+
+		for (PricedItem pricedItem : pricedItems)
+		{
+			totalPrice += pricedItem.getPrice();
+		}
+
+		return totalPrice;
+	}
+
+	public Item[] getHighestPricedItems(Item[] items, int maxAmount)
+	{
+		final List<PricedItem> pricedItems = getPricedItems(items);
+		Collections.sort(pricedItems);
+
+		final List<PricedItem> highestPricedItems = pricedItems.subList(0, maxAmount);
+		final Item[] selectedItems = new Item[highestPricedItems.size()];
+
+		for (int pricedItemIndex = 0; pricedItemIndex < highestPricedItems.size(); pricedItemIndex++) {
+			final Item selectedItem = highestPricedItems.get(pricedItemIndex).getItem();
+			selectedItems[pricedItemIndex] = selectedItem;
+		}
+
+		return selectedItems;
+	}
+
+	private JsonArray convertToJson(Item[] items)
 	{
 		JsonArray itemsJson = new JsonArray();
 
@@ -190,25 +301,17 @@ public class ConfigurationServiceState {
 		return itemsJson;
 	}
 
-	public JsonArray convertToJson(int[] array)
+	private JsonArray convertToJson(int[] array)
 	{
 		JsonArray json = new GsonBuilder().create().toJsonTree(array).getAsJsonArray();
 		return json;
 	}
 
-	/**
-	 * Check whether a change was seen after the last acknowledgement.
-	 * @return
-	 */
 	public boolean isChanged()
 	{
 		return changed;
 	}
 
-	/**
-	 * This will flag the current state to be required to be updated
-	 * using the Twitch API.
-	 */
 	private boolean checkForChange()
 	{
 		if (currentState.equals(previousState))
@@ -220,9 +323,11 @@ public class ConfigurationServiceState {
 		return true;
 	}
 
-	/**
-	 * Flag the latest change to be passed along to the Twitch API correctly.
-	 */
+	public void forceChange()
+	{
+		changed = true;
+	}
+
 	public void acknowledgeChange()
 	{
 		if (!isChanged()) {

@@ -58,23 +58,23 @@ import java.util.List;
 public class TwitchStreamerPlugin extends Plugin
 {
 	@Inject
-	private TwitchStreamerConfig twitchStreamerConfig;
+	private TwitchStreamerConfig config;
 
 	@Inject
 	private Client client;
 
 	@Inject
-	ItemManager itemManager;
+	private ItemManager itemManager;
 
 	/**
 	 * Twitch Configuration Service state that can be mapped to a JSON.
 	 */
-	private ConfigurationServiceState configurationServiceState;
+	private ConfigurationServiceState state;
 
 	/**
 	 * Twitch Configuration Service API end-point helpers.
 	 */
-	private ConfigurationServiceApi configurationServiceApi;
+	private ConfigurationServiceApi api;
 
 	/**
 	 * Initialize this plugin
@@ -85,8 +85,8 @@ public class TwitchStreamerPlugin extends Plugin
 	{
 		super.startUp();
 
-		configurationServiceState = new ConfigurationServiceState(client);
-		configurationServiceApi = new ConfigurationServiceApi();
+		state = new ConfigurationServiceState(config, itemManager);
+		api = new ConfigurationServiceApi(config);
 	}
 
 	/**
@@ -108,15 +108,15 @@ public class TwitchStreamerPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncState()
 	{
-		final boolean updateRequired = configurationServiceState.isChanged();
+		final boolean updateRequired = state.isChanged();
 
 		// Guard: check if something has changed to avoid unnecessary updates.
 		if (!updateRequired) {
 			return;
 		}
 
-		final JsonObject state = configurationServiceState.getState();
-		boolean setResult = configurationServiceApi.setBroadcasterState(state);
+		final JsonObject filteredState = state.getFilteredState();
+		boolean setResult = api.setBroadcasterState(filteredState);
 
 		// Guard: check if the update was successful.
 		// If not this will automatically trigger a new attempt later.
@@ -124,7 +124,7 @@ public class TwitchStreamerPlugin extends Plugin
 			return;
 		}
 
-		configurationServiceState.acknowledgeChange();
+		this.state.acknowledgeChange();
 	}
 
 	/**
@@ -142,7 +142,7 @@ public class TwitchStreamerPlugin extends Plugin
 
 		final String playerName = client.getLocalPlayer().getName();
 
-		configurationServiceState.setPlayerName(playerName);
+		state.setPlayerName(playerName);
 	}
 
 	@Subscribe
@@ -156,51 +156,23 @@ public class TwitchStreamerPlugin extends Plugin
 
 		if (isInventory)
 		{
-			configurationServiceState.setInventoryItems(items);
+			state.setInventoryItems(items);
 		}
 		else if (isEquipment)
 		{
-			configurationServiceState.setEquipmentItems(items);
+			state.setEquipmentItems(items);
 		}
 		else if (isBank)
 		{
-			Item[] highestPricedItems = getHighestPricedItems(items, twitchStreamerConfig.MAX_BANK_ITEMS);
-			configurationServiceState.setBankItems(highestPricedItems);
+			state.setBankItems(items);
 		}
 
 		// update the weight for specific containers
 		if (isInventory || isEquipment)
 		{
 			final int weight = client.getWeight();
-			configurationServiceState.setWeight(weight);
+			state.setWeight(weight);
 		}
-	}
-
-	public Item[] getHighestPricedItems(Item[] items, int maxAmount)
-	{
-		final List<PricedItem> pricedItems = new ArrayList();
-
-		for (Item item : items) {
-			final int itemId = item.getId();
-			final int itemQuantity = item.getQuantity();
-			final long itemPrice = ((long) itemManager.getItemPrice(itemId)) * itemQuantity;
-			final PricedItem pricedItem = new PricedItem(item, itemPrice);
-			System.out.println("--------");
-			System.out.println(itemId);
-			System.out.println(itemManager.getItemPrice(itemId));
-			pricedItems.add(pricedItem);
-		}
-
-		Collections.sort(pricedItems);
-
-		final List<PricedItem> highestPricedItems = pricedItems.subList(0, maxAmount);
-		final Item[] selectedItems = new Item[highestPricedItems.size()];
-
-		for (int pricedItemIndex = 0; pricedItemIndex < highestPricedItems.size(); pricedItemIndex++) {
-			selectedItems[pricedItemIndex] = highestPricedItems.get(pricedItemIndex).getItem();
-		}
-
-		return selectedItems;
 	}
 
 	public boolean isItemContainer(ItemContainer container, InventoryID containerId)
@@ -208,18 +180,14 @@ public class TwitchStreamerPlugin extends Plugin
 		return container == client.getItemContainer(containerId);
 	}
 
-	/**
-	 * Skill and level information is synced through stat events.
-	 * @param event
-	 */
 	@Subscribe
 	public void onStatChanged(StatChanged event)
 	{
 		final int[] skillExperiences = client.getSkillExperiences();
 		final int[] boostedSkillLevels = client.getBoostedSkillLevels();
 
-		configurationServiceState.setSkillExperiences(skillExperiences);
-		configurationServiceState.setBoostedSkillLevels(boostedSkillLevels);
+		state.setSkillExperiences(skillExperiences);
+		state.setBoostedSkillLevels(boostedSkillLevels);
 	}
 
 	/**
@@ -254,6 +222,6 @@ public class TwitchStreamerPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged)
 	{
-		// A configuration change should be directly reflected?
+		state.forceChange();
 	}
 }
