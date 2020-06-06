@@ -19,8 +19,14 @@ public class PricedItem implements Comparable
 		long comparedPrice = comparedPricedItem.price;
 		boolean isMoreExpensive = this.price > comparedPrice;
 
+		// check for equal
+		if (this.price == comparedPrice)
+		{
+			return 0;
+		}
+
 		// descending order, from high to low price
-		return isMoreExpensive ? -1 : 0;
+		return isMoreExpensive ? -1 : 1;
 	}
 
 	public Item getItem() {
