@@ -136,6 +136,17 @@ public interface TwitchStreamerConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "overlayTopPosition",
+			name = "Overlay top position",
+			description = "The position of the overlay in % of the viewport height. Zero will enable extension default.",
+			position = 18
+	)
+	default int overlayTopPosition()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
 			keyName = "syncDisabled",
 			name = "Disable and clear syncing",
 			description = "Temporarily disable all syncing, hide extension and clear data.",

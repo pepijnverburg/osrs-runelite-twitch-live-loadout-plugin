@@ -49,7 +49,8 @@ public class ConfigurationServiceState {
 		SKILL_EXPERIENCES("skillExperiences"),
 		BOOSTED_SKILL_LEVELS("boostedSkillLevels"),
 		COMBAT_LEVEL("combatLevel"),
-		WEIGHT("weight");
+		WEIGHT("weight"),
+		TOP_POSITION("topPosition");
 
 		private final String key;
 
@@ -149,6 +150,9 @@ public class ConfigurationServiceState {
 	public JsonObject getFilteredState()
 	{
 		JsonObject filteredState = getState().deepCopy();
+
+		// Add positional states
+		filteredState.addProperty(StateKey.TOP_POSITION.getKey(), config.overlayTopPosition());
 
 		if (config.syncDisabled())
 		{
