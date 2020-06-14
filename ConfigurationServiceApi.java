@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.twitchstreamer;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import okhttp3.OkHttpClient;
@@ -18,13 +19,23 @@ import java.util.zip.GZIPOutputStream;
 public class ConfigurationServiceApi {
 
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
-	private final static String VERSION = "1.0";
+	private final static String VERSION = "0.0.1";
+	private enum PubSubTarget {
+		BROADCAST("broadcast"),
+		GLOBAL("global");
+
+		private final String target;
+
+		PubSubTarget(String target) {
+			this.target = target;
+		}
+	}
 
 	OkHttpClient httpClient = new OkHttpClient();
 
 	private TwitchStreamerConfig config;
 
-	private String lastCompressedState;
+	private String lastConfigurationServiceState;
 
 	public ConfigurationServiceApi(TwitchStreamerConfig config)
 	{
@@ -33,23 +44,29 @@ public class ConfigurationServiceApi {
 
 	public boolean setBroadcasterState(JsonObject state)
 	{
-		return setConfigurationService(BROADCASTER_SEGMENT, VERSION, state);
+		boolean serviceUpdateResult = setConfigurationService(state);
+		boolean pubSubResult = sendPubSubState(state);
+		boolean validResults = serviceUpdateResult && pubSubResult;
+
+		return validResults;
 	}
 
 	/**
 	 * Set a Configuration Service value using Gzip compression. This can
 	 * save up to 50% in size when working with the 5KB limit of Twitch.
-	 * @param segment
-	 * @param version
+	 *
+	 * Documentation: https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment
 	 * @param state
 	 * @return
 	 */
-	public boolean setConfigurationService(String segment, String version, JsonObject state)
+	private boolean setConfigurationService(JsonObject state)
 	{
+		String segment = BROADCASTER_SEGMENT;
+		String version = VERSION;
 		JsonObject data = new JsonObject();
 		String compressedState = compressState(state);
 
-		if (compressedState.equals(lastCompressedState))
+		if (compressedState.equals(lastConfigurationServiceState))
 		{
 			return false;
 		}
@@ -74,27 +91,94 @@ public class ConfigurationServiceApi {
 		System.out.println(compressedState);
 
 		try {
-			Response response = performPutRequest(data);
-			int responseCode = response.code();
-
-			if (responseCode > 299) {
-				throw new Exception("Could not set the Twitch Configuration State.");
-			}
-
-			// TMP: debug
-			System.out.println("Successfully sent state: "+ responseCode);
-
-			response.close();
+			Response response = performConfigurationServiceRequest(data);
+			verifyStateUpdateResponse(response);
 		} catch (Exception exception) {
-
-			// TMP: debug
-			System.out.println("Could not send state:");
-			System.out.println(exception);
 			return false;
 		}
 
-		lastCompressedState = compressedState;
+		lastConfigurationServiceState = compressedState;
 		return true;
+	}
+
+	private Response performConfigurationServiceRequest(JsonObject data) throws IOException {
+		String dataString = data.toString();
+		String clientId = config.extensionClientId();
+		String token = config.twitchToken();
+		String url = "https://api.twitch.tv/v5/extensions/"+ clientId +"/configurations/";
+		Request request = new Request.Builder()
+			.header("Client-ID", clientId)
+			.header("Authorization", "Bearer "+ token)
+			.put(RequestBody.create(JSON, dataString))
+			.url(url)
+			.build();
+
+		Response response = httpClient.newCall(request).execute();
+		return response;
+	}
+
+	private boolean sendPubSubState(JsonObject state)
+	{
+		JsonObject data = new JsonObject();
+		JsonArray targets = new JsonArray();
+		targets.add(PubSubTarget.BROADCAST.target);
+		String compressedState = compressState(state);
+
+		data.addProperty("content_type", "application/json");
+		data.addProperty("message", compressedState);
+		data.add("targets", targets);
+
+		try {
+			Response response = performPubSubRequest(data);
+			verifyStateUpdateResponse(response);
+		} catch (Exception exception) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
+	 * @param data
+	 * @return Response
+	 * @throws Exception
+	 */
+	private Response performPubSubRequest(JsonObject data) throws Exception
+	{
+		String clientId = config.extensionClientId();
+		String token = config.twitchToken();
+		String channelId = getChannelId();
+		String url = "https://api.twitch.tv/extensions/message/"+ channelId;
+		String dataString = data.toString();
+
+		Request request = new Request.Builder()
+			.header("Client-ID", clientId)
+			.header("Authorization", "Bearer "+ token)
+			.post(RequestBody.create(JSON, dataString))
+			.url(url)
+			.build();
+
+		Response response = httpClient.newCall(request).execute();
+		return response;
+	}
+
+	private void verifyStateUpdateResponse(Response response) throws Exception
+	{
+		int responseCode = response.code();
+		response.close();
+
+		if (responseCode > 299) {
+
+			// TMP: debug
+			System.out.println("Could not update state, http code was:");
+			System.out.println(responseCode);
+
+			throw new Exception("Could not set the Twitch Configuration State.");
+		}
+
+		// TMP: debug
+		System.out.println("Successfully sent state: "+ responseCode);
 	}
 
 	private String getChannelId() throws Exception
@@ -123,22 +207,6 @@ public class ConfigurationServiceApi {
 			throw new Exception(String.format("The token was expected to have 3 parts, but got %s.", parts.length));
 		}
 		return parts;
-	}
-
-	private Response performPutRequest(JsonObject data) throws IOException {
-		String dataString = data.toString();
-		String clientId = config.extensionClientId();
-		String token = config.twitchToken();
-		String url = "https://api.twitch.tv/v5/extensions/"+ clientId +"/configurations/";
-		Request request = new Request.Builder()
-			.header("Client-ID", clientId)
-			.header("Authorization", "Bearer "+ token)
-			.put(RequestBody.create(JSON, dataString))
-			.url(url)
-			.build();
-
-		Response response = httpClient.newCall(request).execute();
-		return response;
 	}
 
 	/**
