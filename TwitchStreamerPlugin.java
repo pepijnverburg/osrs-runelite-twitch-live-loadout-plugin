@@ -124,6 +124,16 @@ public class TwitchStreamerPlugin extends Plugin
 			return;
 		}
 
+		final String filteredStateString = filteredState.toString();
+		final String newFilteredStateString = state.getFilteredState().toString();
+
+		// Guard: check if the state has changed in the mean time,
+		// because the request takes some time, in this case we will
+		// not acknowledge the change
+		if (!filteredStateString.equals(newFilteredStateString)) {
+			return;
+		}
+
 		this.state.acknowledgeChange();
 	}
 
@@ -148,10 +158,10 @@ public class TwitchStreamerPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		ItemContainer container = event.getItemContainer();
-		final boolean isInventory = isItemContainer(container, InventoryID.INVENTORY);
-		final boolean isEquipment = isItemContainer(container, InventoryID.EQUIPMENT);
-		final boolean isBank = isItemContainer(container, InventoryID.BANK);
+		final ItemContainer container = event.getItemContainer();
+		final boolean isInventory = isItemContainer(event, InventoryID.INVENTORY);
+		final boolean isEquipment = isItemContainer(event, InventoryID.EQUIPMENT);
+		final boolean isBank = isItemContainer(event, InventoryID.BANK);
 		final Item[] items = container.getItems();
 
 		if (isInventory)
@@ -175,9 +185,10 @@ public class TwitchStreamerPlugin extends Plugin
 		}
 	}
 
-	public boolean isItemContainer(ItemContainer container, InventoryID containerId)
+	public boolean isItemContainer(ItemContainerChanged event, InventoryID containerId)
 	{
-		return container == client.getItemContainer(containerId);
+		final int eventContainerId = event.getContainerId();
+		return eventContainerId == containerId.getId();
 	}
 
 	@Subscribe
