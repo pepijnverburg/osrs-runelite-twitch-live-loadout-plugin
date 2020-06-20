@@ -24,6 +24,7 @@
  */
 package net.runelite.client.plugins.twitchstreamer;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Provides;
 import net.runelite.api.*;
 import net.runelite.api.events.ItemContainerChanged;
@@ -65,6 +66,18 @@ public class TwitchStreamerPlugin extends Plugin
 
 	@Inject
 	private ItemManager itemManager;
+
+	private static final List<Varbits> BANK_TAB_VARBITS = ImmutableList.of(
+			Varbits.BANK_TAB_ONE_COUNT,
+			Varbits.BANK_TAB_TWO_COUNT,
+			Varbits.BANK_TAB_THREE_COUNT,
+			Varbits.BANK_TAB_FOUR_COUNT,
+			Varbits.BANK_TAB_FIVE_COUNT,
+			Varbits.BANK_TAB_SIX_COUNT,
+			Varbits.BANK_TAB_SEVEN_COUNT,
+			Varbits.BANK_TAB_EIGHT_COUNT,
+			Varbits.BANK_TAB_NINE_COUNT
+	);
 
 	/**
 	 * Twitch Configuration Service state that can be mapped to a JSON.
@@ -116,13 +129,11 @@ public class TwitchStreamerPlugin extends Plugin
 		}
 
 		final JsonObject filteredState = state.getFilteredState();
-		boolean setResult = api.setBroadcasterState(filteredState);
 
-		// Guard: check if the update was successful.
-		// If not this will automatically trigger a new attempt later.
-		if (!setResult) {
-			return;
-		}
+		// We will not verify whether the set was successful
+		// because it is possible that the request is being delayed
+		// due to the custom streamer delay
+		api.scheduleBroadcasterState(filteredState);
 
 		final String filteredStateString = filteredState.toString();
 		final String newFilteredStateString = state.getFilteredState().toString();
@@ -174,7 +185,7 @@ public class TwitchStreamerPlugin extends Plugin
 		}
 		else if (isBank)
 		{
-			state.setBankItems(items);
+			state.setBankItems(items, getBankTabAmounts());
 		}
 
 		// update the weight for specific containers
@@ -183,6 +194,20 @@ public class TwitchStreamerPlugin extends Plugin
 			final int weight = client.getWeight();
 			state.setWeight(weight);
 		}
+	}
+
+	public int[] getBankTabAmounts()
+	{
+		final int tabAmount = BANK_TAB_VARBITS.size();
+		final int[] amounts = new int[tabAmount];
+
+		for (int tabIndex = 0; tabIndex < tabAmount; tabIndex++)
+		{
+			final int itemAmount = client.getVar(BANK_TAB_VARBITS.get(tabIndex));
+			amounts[tabIndex] = itemAmount;
+		}
+
+		return amounts;
 	}
 
 	public boolean isItemContainer(ItemContainerChanged event, InventoryID containerId)
@@ -233,6 +258,16 @@ public class TwitchStreamerPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged)
 	{
+		String key = configChanged.getKey();
+
+		// Always clear the scheduled state updates
+		// when either the value is increased of decreased
+		// it can mess up the state updates badly
+		if (key.equals("syncDelay"))
+		{
+			api.clearScheduledBroadcasterStates();
+		}
+
 		state.forceChange();
 	}
 }

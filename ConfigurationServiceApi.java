@@ -14,6 +14,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 public class ConfigurationServiceApi {
@@ -31,10 +33,10 @@ public class ConfigurationServiceApi {
 		}
 	}
 
-	OkHttpClient httpClient = new OkHttpClient();
+	private final OkHttpClient httpClient = new OkHttpClient();
+	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
-	private TwitchStreamerConfig config;
-
+	private final TwitchStreamerConfig config;
 	private String lastConfigurationServiceState;
 
 	public ConfigurationServiceApi(TwitchStreamerConfig config)
@@ -42,23 +44,29 @@ public class ConfigurationServiceApi {
 		this.config = config;
 	}
 
-	public boolean setBroadcasterState(JsonObject state)
+	public void scheduleBroadcasterState(final JsonObject state)
 	{
-		boolean serviceUpdateResult = setConfigurationService(state);
-		boolean pubSubResult = sendPubSubState(state);
-		boolean validResults = serviceUpdateResult && pubSubResult;
+		int minDelay = 0;
+		int delay = config.syncDelay();
 
-		return validResults;
+		if (delay < minDelay) {
+			delay = minDelay;
+		}
+
+		scheduledExecutor.schedule(new Runnable() {
+			public void run() {
+				boolean serviceUpdateResult = setConfigurationService(state);
+				boolean pubSubResult = sendPubSubState(state);
+				boolean validResults = serviceUpdateResult && pubSubResult;
+			}
+		}, delay, TimeUnit.SECONDS);
 	}
 
-	/**
-	 * Set a Configuration Service value using Gzip compression. This can
-	 * save up to 50% in size when working with the 5KB limit of Twitch.
-	 *
-	 * Documentation: https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment
-	 * @param state
-	 * @return
-	 */
+	public void clearScheduledBroadcasterStates()
+	{
+		scheduledExecutor.getQueue().clear();
+	}
+
 	private boolean setConfigurationService(JsonObject state)
 	{
 		String segment = BROADCASTER_SEGMENT;
@@ -106,6 +114,8 @@ public class ConfigurationServiceApi {
 		String clientId = config.extensionClientId();
 		String token = config.twitchToken();
 		String url = "https://api.twitch.tv/v5/extensions/"+ clientId +"/configurations/";
+
+		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment
 		Request request = new Request.Builder()
 			.header("Client-ID", clientId)
 			.header("Authorization", "Bearer "+ token)
@@ -138,12 +148,6 @@ public class ConfigurationServiceApi {
 		return true;
 	}
 
-	/**
-	 * Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
-	 * @param data
-	 * @return Response
-	 * @throws Exception
-	 */
 	private Response performPubSubRequest(JsonObject data) throws Exception
 	{
 		String clientId = config.extensionClientId();
@@ -152,6 +156,7 @@ public class ConfigurationServiceApi {
 		String url = "https://api.twitch.tv/extensions/message/"+ channelId;
 		String dataString = data.toString();
 
+		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
 		Request request = new Request.Builder()
 			.header("Client-ID", clientId)
 			.header("Authorization", "Bearer "+ token)
@@ -197,23 +202,19 @@ public class ConfigurationServiceApi {
 		return payload;
 	}
 
-	static String[] splitToken(String token) throws Exception {
+	private String[] splitToken(String token) throws Exception {
 		String[] parts = token.split("\\.");
+
 		if (parts.length == 2 && token.endsWith(".")) {
-			//Tokens with alg='none' have empty String as Signature.
 			parts = new String[]{parts[0], parts[1], ""};
 		}
+
 		if (parts.length != 3) {
 			throw new Exception(String.format("The token was expected to have 3 parts, but got %s.", parts.length));
 		}
 		return parts;
 	}
 
-	/**
-	 * Compress a JSON state object using GZIP.
-	 * @param state
-	 * @return
-	 */
 	public String compressState(JsonObject state)
 	{
 		try {
@@ -221,7 +222,7 @@ public class ConfigurationServiceApi {
 			byte[] compressedState = compress(jsonString);
 			String compressedStateString = new String(Base64.getEncoder().encode(compressedState), StandardCharsets.UTF_8);
 
-			// TODO: check if without base64 is also possible, like this
+			// TODO: check if without base64 is also possible
 			//String compressedStateString = new String(compressedState, StandardCharsets.UTF_8);
 
 			return compressedStateString;
@@ -232,18 +233,13 @@ public class ConfigurationServiceApi {
 		return null;
 	}
 
-	/**
-	 * Compress a string using Gzip.
-	 * Source: https://stackoverflow.com/questions/16351668/compression-and-decompression-of-string-data-in-java
-	 * @param str
-	 * @return
-	 * @throws IOException
-	 */
 	public static byte[] compress(final String str) throws IOException
 	{
 		if ((str == null) || (str.length() == 0)) {
 			return null;
 		}
+
+		// Source: https://stackoverflow.com/questions/16351668/compression-and-decompression-of-string-data-in-java
 		ByteArrayOutputStream obj = new ByteArrayOutputStream();
 		GZIPOutputStream gzip = new GZIPOutputStream(obj);
 		gzip.write(str.getBytes("UTF-8"));

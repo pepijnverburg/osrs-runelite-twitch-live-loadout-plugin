@@ -139,9 +139,20 @@ public interface TwitchStreamerConfig extends Config
 			keyName = "overlayTopPosition",
 			name = "Overlay top position",
 			description = "The position of the overlay in % of the viewport height. Zero will enable extension default.",
-			position = 18
+			position = 92
 	)
 	default int overlayTopPosition()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+			keyName = "syncDelay",
+			name = "Sync delay",
+			description = "The amount of seconds to delay the sending of data to match your stream delay.",
+			position = 94
+	)
+	default int syncDelay()
 	{
 		return 0;
 	}
