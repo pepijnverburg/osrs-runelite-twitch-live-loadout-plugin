@@ -46,6 +46,7 @@ public class ConfigurationServiceState {
 		EQUIPMENT_PRICE("equipmentPrice"),
 		BANK_ITEMS("bank"),
 		BANK_PRICE("bankPrice"),
+		BANK_TAB_AMOUNTS("bankTabAmounts"),
 		SKILL_EXPERIENCES("skillExperiences"),
 		BOOSTED_SKILL_LEVELS("boostedSkillLevels"),
 		COMBAT_LEVEL("combatLevel"),
@@ -118,9 +119,29 @@ public class ConfigurationServiceState {
 		setItems(StateKey.EQUIPMENT_ITEMS.getKey(), StateKey.EQUIPMENT_PRICE.getKey(), items);
 	}
 
-	public void setBankItems(Item[] items)
+	public void setBankItems(Item[] items, int[] tabAmounts)
 	{
-		setItems(StateKey.BANK_ITEMS.getKey(), StateKey.BANK_PRICE.getKey(), items);
+		final List<PricedItem> highestPricedItems = getHighestPricedItems(items, tabAmounts, config.MAX_BANK_ITEMS);
+		final Item[] selectedItems = new Item[highestPricedItems.size()];
+		final int[] selectedTabAmounts = new int[tabAmounts.length];
+
+		// deduce the tab amounts based on the new selected items
+		// and convert the list to a plain Item array
+		for (int pricedItemIndex = 0; pricedItemIndex < highestPricedItems.size(); pricedItemIndex++)
+		{
+			PricedItem pricedItem = highestPricedItems.get(pricedItemIndex);
+			final Item selectedItem = pricedItem.getItem();
+			final int tabId = pricedItem.getTabId();
+
+			selectedItems[pricedItemIndex] = selectedItem;
+
+			if (tabId >= 0) {
+				selectedTabAmounts[tabId] += 1;
+			}
+		}
+
+		currentState.add(StateKey.BANK_TAB_AMOUNTS.getKey(), convertToJson((selectedTabAmounts)));
+		setItems(StateKey.BANK_ITEMS.getKey(), StateKey.BANK_PRICE.getKey(), selectedItems);
 	}
 
 	public void setWeight(Integer weight)
@@ -180,6 +201,7 @@ public class ConfigurationServiceState {
 		{
 			filteredState.add(StateKey.BANK_ITEMS.getKey(), null);
 			filteredState.add(StateKey.BANK_PRICE.getKey(), null);
+			filteredState.add(StateKey.BANK_TAB_AMOUNTS.getKey(), null);
 		}
 
 		if (!config.skillsEnabled())
@@ -208,11 +230,6 @@ public class ConfigurationServiceState {
 
 		// calculate before bank item limit slicing
 		final long totalPrice = getTotalPrice(items);
-
-		if (itemsKey == StateKey.BANK_ITEMS.getKey())
-		{
-			items = getHighestPricedItems(items, config.MAX_BANK_ITEMS);
-		}
 
 		itemsCache.put(itemsKey, items);
 		currentState.add(itemsKey, convertToJson(items));
@@ -243,18 +260,44 @@ public class ConfigurationServiceState {
 
 	public List<PricedItem> getPricedItems(Item[] items)
 	{
+		return getPricedItems(items, new int[0]);
+	}
+
+	public List<PricedItem> getPricedItems(Item[] items, int[] tabAmounts)
+	{
 		final List<PricedItem> pricedItems = new ArrayList();
-		for (Item item : items)
+
+		for (int slotId = 0; slotId < items.length; slotId++)
 		{
+			final Item item = items[slotId];
 			final int itemId = item.getId();
 			final int itemQuantity = item.getQuantity();
 			final long itemPrice = ((long) itemManager.getItemPrice(itemId)) * itemQuantity;
-			final PricedItem pricedItem = new PricedItem(item, itemPrice);
+			final int tabId = getItemTabId(slotId, tabAmounts);
+			final PricedItem pricedItem = new PricedItem(item, itemPrice, slotId, tabId);
 
 			pricedItems.add(pricedItem);
 		}
 
 		return pricedItems;
+	}
+
+	public int getItemTabId(int slotId, int[] tabAmounts)
+	{
+		int totalAmount = 0;
+		int remainingTabId = -1;
+
+		for (int tabId = 0; tabId < tabAmounts.length; tabId++)
+		{
+			final int tabAmount = tabAmounts[tabId];
+			totalAmount += tabAmount;
+
+			if (slotId < totalAmount) {
+				return tabId;
+			}
+		}
+
+		return remainingTabId;
 	}
 
 	public long getTotalPrice(Item[] items)
@@ -270,20 +313,15 @@ public class ConfigurationServiceState {
 		return totalPrice;
 	}
 
-	public Item[] getHighestPricedItems(Item[] items, int maxAmount)
+	public List<PricedItem> getHighestPricedItems(Item[] items, int[] tabAmounts, int maxAmount)
 	{
-		final List<PricedItem> pricedItems = getPricedItems(items);
-		Collections.sort(pricedItems);
+		final List<PricedItem> pricedItems = getPricedItems(items, tabAmounts);
+		Collections.sort(pricedItems, new PriceSorter());
 
 		final List<PricedItem> highestPricedItems = pricedItems.subList(0, maxAmount);
-		final Item[] selectedItems = new Item[highestPricedItems.size()];
+		Collections.sort(highestPricedItems, new SlotIdSorter());
 
-		for (int pricedItemIndex = 0; pricedItemIndex < highestPricedItems.size(); pricedItemIndex++) {
-			final Item selectedItem = highestPricedItems.get(pricedItemIndex).getItem();
-			selectedItems[pricedItemIndex] = selectedItem;
-		}
-
-		return selectedItems;
+		return highestPricedItems;
 	}
 
 	private JsonArray convertToJson(Item[] items)

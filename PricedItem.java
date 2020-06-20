@@ -2,31 +2,19 @@ package net.runelite.client.plugins.twitchstreamer;
 
 import net.runelite.api.Item;
 
-public class PricedItem implements Comparable
+public class PricedItem
 {
 	private final Item item;
 	private final long price;
+	private final int slotId;
+	private final int tabId;
 
-	PricedItem(Item item, long price)
+	PricedItem(Item item, long price, int slotId, int tabId)
 	{
 		this.item = item;
 		this.price = price;
-	}
-
-	@Override
-	public int compareTo(Object comparedObject) {
-		PricedItem comparedPricedItem = ((PricedItem) comparedObject);
-		long comparedPrice = comparedPricedItem.price;
-		boolean isMoreExpensive = this.price > comparedPrice;
-
-		// check for equal
-		if (this.price == comparedPrice)
-		{
-			return 0;
-		}
-
-		// descending order, from high to low price
-		return isMoreExpensive ? -1 : 1;
+		this.slotId = slotId;
+		this.tabId = tabId;
 	}
 
 	public Item getItem() {
@@ -35,5 +23,15 @@ public class PricedItem implements Comparable
 
 	public long getPrice() {
 		return price;
+	}
+
+	public int getSlotId()
+	{
+		return slotId;
+	}
+
+	public int getTabId()
+	{
+		return tabId;
 	}
 }
