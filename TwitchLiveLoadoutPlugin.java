@@ -22,44 +22,40 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.plugins.twitchstreamer;
+package net.runelite.client.plugins.twitchliveloadout;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Provides;
 import net.runelite.api.*;
-import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.attackstyles.AttackStylesPlugin;
 import net.runelite.client.task.Schedule;
 import com.google.gson.*;
 
-import net.runelite.api.events.StatChanged;
-
 import javax.inject.Inject;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-@PluginDescriptor(
-	name = "Twitch Streamer",
-	description = "Send Real-time Equipment, Skills, Inventory, Bank and more to Twitch Extensions for additional viewer engagement.",
-	enabledByDefault = false
-)
 
 /**
  * Manages polling and event listening mechanisms to synchronize the state
  * to the Twitch Configuration Service. All client data is fetched in this class
  * ad passed to a couple of other classes.
  */
-public class TwitchStreamerPlugin extends Plugin
+@PluginDescriptor(
+		name = "Twitch Live Loadout",
+		description = "Send Real-time Equipment, Skills, Fight Stats, Inventory, Bank and more to Twitch Extensions for additional viewer engagement.",
+		enabledByDefault = false
+)
+@PluginDependency(AttackStylesPlugin.class)
+public class TwitchLiveLoadoutPlugin extends Plugin
 {
 	@Inject
-	private TwitchStreamerConfig config;
+	private TwitchLiveLoadoutConfig config;
 
 	@Inject
 	private Client client;
@@ -67,27 +63,30 @@ public class TwitchStreamerPlugin extends Plugin
 	@Inject
 	private ItemManager itemManager;
 
-	private static final List<Varbits> BANK_TAB_VARBITS = ImmutableList.of(
-			Varbits.BANK_TAB_ONE_COUNT,
-			Varbits.BANK_TAB_TWO_COUNT,
-			Varbits.BANK_TAB_THREE_COUNT,
-			Varbits.BANK_TAB_FOUR_COUNT,
-			Varbits.BANK_TAB_FIVE_COUNT,
-			Varbits.BANK_TAB_SIX_COUNT,
-			Varbits.BANK_TAB_SEVEN_COUNT,
-			Varbits.BANK_TAB_EIGHT_COUNT,
-			Varbits.BANK_TAB_NINE_COUNT
-	);
-
 	/**
 	 * Twitch Configuration Service state that can be mapped to a JSON.
 	 */
-	private ConfigurationServiceState state;
+	private TwitchState twitchState;
 
 	/**
 	 * Twitch Configuration Service API end-point helpers.
 	 */
-	private ConfigurationServiceApi api;
+	private TwitchApi twitchApi;
+
+	/**
+	 * Dedicated manager for all fight information.
+	 */
+	private FightStateManager fightStateManager;
+
+	/**
+	 * Dedicated manager for all item information.
+	 */
+	private ItemStateManager itemStateManager;
+
+	/**
+	 * Dedicated manager for all skill / stat information.
+	 */
+	private SkillStateManager skillStateManager;
 
 	/**
 	 * Initialize this plugin
@@ -98,8 +97,12 @@ public class TwitchStreamerPlugin extends Plugin
 	{
 		super.startUp();
 
-		state = new ConfigurationServiceState(config, itemManager);
-		api = new ConfigurationServiceApi(config);
+		twitchState = new TwitchState(config, itemManager);
+		twitchApi = new TwitchApi(config);
+
+		fightStateManager = new FightStateManager(twitchState, client);
+		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
+		skillStateManager = new SkillStateManager(twitchState, client);
 	}
 
 	/**
@@ -108,9 +111,9 @@ public class TwitchStreamerPlugin extends Plugin
 	 * @return
 	 */
 	@Provides
-	TwitchStreamerConfig provideConfig(ConfigManager configManager)
+	TwitchLiveLoadoutConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(TwitchStreamerConfig.class);
+		return configManager.getConfig(TwitchLiveLoadoutConfig.class);
 	}
 
 	/**
@@ -121,22 +124,22 @@ public class TwitchStreamerPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncState()
 	{
-		final boolean updateRequired = state.isChanged();
+		final boolean updateRequired = twitchState.isChanged();
 
 		// Guard: check if something has changed to avoid unnecessary updates.
 		if (!updateRequired) {
 			return;
 		}
 
-		final JsonObject filteredState = state.getFilteredState();
+		final JsonObject filteredState = twitchState.getFilteredState();
 
 		// We will not verify whether the set was successful
 		// because it is possible that the request is being delayed
 		// due to the custom streamer delay
-		api.scheduleBroadcasterState(filteredState);
+		twitchApi.scheduleBroadcasterState(filteredState);
 
 		final String filteredStateString = filteredState.toString();
-		final String newFilteredStateString = state.getFilteredState().toString();
+		final String newFilteredStateString = twitchState.getFilteredState().toString();
 
 		// Guard: check if the state has changed in the mean time,
 		// because the request takes some time, in this case we will
@@ -145,114 +148,62 @@ public class TwitchStreamerPlugin extends Plugin
 			return;
 		}
 
-		this.state.acknowledgeChange();
+		twitchState.acknowledgeChange();
 	}
 
 	/**
-	 * Polling mechanism to update the player info
+	 * Polling mechanism to update the fight statistics as many
+	 * events are continuously updating various properties (e.g. game ticks).
+	 * This would overload the update life cycle too much so a
+	 * small penalty in the form of the (polling) delay is worthwhile.
 	 */
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
-	public void syncPlayerInfo()
+	public void syncFightStatisticsState()
 	{
+		JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
+		twitchState.setFightStatistics(fightStatistics);
+	}
 
-		// Guard: player info is not available when not loaded
-		if (!playerIsLoaded())
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (event.getGameState() != GameState.LOGGED_IN)
 		{
 			return;
 		}
 
 		final String playerName = client.getLocalPlayer().getName();
-
-		state.setPlayerName(playerName);
+		twitchState.setPlayerName(playerName);
 	}
 
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		final ItemContainer container = event.getItemContainer();
-		final boolean isInventory = isItemContainer(event, InventoryID.INVENTORY);
-		final boolean isEquipment = isItemContainer(event, InventoryID.EQUIPMENT);
-		final boolean isBank = isItemContainer(event, InventoryID.BANK);
-		final Item[] items = container.getItems();
-
-		if (isInventory)
-		{
-			state.setInventoryItems(items);
-		}
-		else if (isEquipment)
-		{
-			state.setEquipmentItems(items);
-		}
-		else if (isBank)
-		{
-			state.setBankItems(items, getBankTabAmounts());
-		}
-
-		// update the weight for specific containers
-		if (isInventory || isEquipment)
-		{
-			final int weight = client.getWeight();
-			state.setWeight(weight);
-		}
-	}
-
-	public int[] getBankTabAmounts()
-	{
-		final int tabAmount = BANK_TAB_VARBITS.size();
-		final int[] amounts = new int[tabAmount];
-
-		for (int tabIndex = 0; tabIndex < tabAmount; tabIndex++)
-		{
-			final int itemAmount = client.getVar(BANK_TAB_VARBITS.get(tabIndex));
-			amounts[tabIndex] = itemAmount;
-		}
-
-		return amounts;
-	}
-
-	public boolean isItemContainer(ItemContainerChanged event, InventoryID containerId)
-	{
-		final int eventContainerId = event.getContainerId();
-		return eventContainerId == containerId.getId();
+		itemStateManager.onItemContainerChanged(event);
 	}
 
 	@Subscribe
 	public void onStatChanged(StatChanged event)
 	{
-		final int[] skillExperiences = client.getSkillExperiences();
-		final int[] boostedSkillLevels = client.getBoostedSkillLevels();
-
-		state.setSkillExperiences(skillExperiences);
-		state.setBoostedSkillLevels(boostedSkillLevels);
+		skillStateManager.onStatChanged(event);
 	}
 
-	/**
-	 * Check whether the player is currently logged in and loaded.
-	 * This is used for several state polling mechanisms.
-	 * @return true when logged in
-	 */
-	public boolean playerIsLoaded()
+	@Subscribe
+	public void onGraphicChanged(GraphicChanged event)
 	{
-		final boolean isLoggedIn = client.getGameState() == GameState.LOGGED_IN;
+		fightStateManager.onGraphicChanged(event);
+	}
 
-		// Guard: check if logged in.
-		if (!isLoggedIn) {
-			return false;
-		}
+	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied event)
+	{
+		fightStateManager.onHitsplatApplied(event);
+	}
 
-		final Player player = client.getLocalPlayer();
-		final PlayerComposition playerComposition = player.getPlayerComposition();
-		final String playerName = player.getName();
-		final boolean playerLoaded = (playerComposition != null && playerName != null);
-
-		// Guard: check if player is loaded.
-		if (!playerLoaded) {
-			return false;
-		}
-
-		// TODO: more checks?
-
-		return true;
+	@Subscribe
+	public void onGameTick(GameTick tick)
+	{
+		fightStateManager.onGameTick(tick);
 	}
 
 	@Subscribe
@@ -265,9 +216,14 @@ public class TwitchStreamerPlugin extends Plugin
 		// it can mess up the state updates badly
 		if (key.equals("syncDelay"))
 		{
-			api.clearScheduledBroadcasterStates();
+			twitchApi.clearScheduledBroadcasterStates();
 		}
 
-		state.forceChange();
+		if (key.equals("overlayTopPosition"))
+		{
+			twitchState.setOverlayTopPosition(config.overlayTopPosition());
+		}
+
+		twitchState.forceChange();
 	}
 }

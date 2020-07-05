@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.twitchstreamer;
+package net.runelite.client.plugins.twitchliveloadout;
 
 import net.runelite.api.Item;
 

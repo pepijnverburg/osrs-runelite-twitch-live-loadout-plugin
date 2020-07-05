@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.twitchstreamer;
+package net.runelite.client.plugins.twitchliveloadout;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -18,7 +18,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
-public class ConfigurationServiceApi {
+public class TwitchApi {
 
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
 	private final static String VERSION = "0.0.1";
@@ -36,10 +36,10 @@ public class ConfigurationServiceApi {
 	private final OkHttpClient httpClient = new OkHttpClient();
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
-	private final TwitchStreamerConfig config;
+	private final TwitchLiveLoadoutConfig config;
 	private String lastConfigurationServiceState;
 
-	public ConfigurationServiceApi(TwitchStreamerConfig config)
+	public TwitchApi(TwitchLiveLoadoutConfig config)
 	{
 		this.config = config;
 	}
@@ -176,14 +176,14 @@ public class ConfigurationServiceApi {
 		if (responseCode > 299) {
 
 			// TMP: debug
-			System.out.println("Could not update state, http code was:");
-			System.out.println(responseCode);
+//			System.out.println("Could not update state, http code was:");
+//			System.out.println(responseCode);
 
 			throw new Exception("Could not set the Twitch Configuration State.");
 		}
 
 		// TMP: debug
-		System.out.println("Successfully sent state: "+ responseCode);
+//		System.out.println("Successfully sent state: "+ responseCode);
 	}
 
 	private String getChannelId() throws Exception

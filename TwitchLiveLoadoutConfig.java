@@ -22,14 +22,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.plugins.twitchstreamer;
+package net.runelite.client.plugins.twitchliveloadout;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup("twitchstreamer")
-public interface TwitchStreamerConfig extends Config
+public interface TwitchLiveLoadoutConfig extends Config
 {
 
 	public final int MAX_BANK_ITEMS = 200;
@@ -102,27 +102,27 @@ public interface TwitchStreamerConfig extends Config
 		return true;
 	}
 
-//	@ConfigItem(
-//		keyName = "combatEnabled",
-//		name = "Sync combat statistics",
-//		description = "Synchronize statistics about PvM and PvP, such as DPS, freezes, etc.",
-//		position = 12
-//	)
-//	default boolean combatEnabled()
-//	{
-//		return true;
-//	}
-//
-//	@ConfigItem(
-//			keyName = "goalsEnabled",
-//			name = "Sync item goals",
-//			description = "Synchronize the configured item wanted items, progress is determined from inventory, gear or bank items.",
-//			position = 14
-//	)
-//	default boolean goalsEnabled()
-//	{
-//		return true;
-//	}
+	@ConfigItem(
+		keyName = "fightStatisticsEnabled",
+		name = "Sync fight statistics",
+		description = "Synchronize statistics about PvM and PvP, such as DPS per attack type, freezes, splashes, etc.",
+		position = 12
+	)
+	default boolean fightStatisticsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "itemGoalsEnabled",
+			name = "Sync item goals",
+			description = "Synchronize the configured item wanted items, progress is automatic from inventory, gear and bank items.",
+			position = 14
+	)
+	default boolean itemGoalsEnabled()
+	{
+		return true;
+	}
 
 	@ConfigItem(
 			keyName = "weightEnabled",

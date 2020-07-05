@@ -1,8 +1,8 @@
-package net.runelite.client.plugins.twitchstreamer;
+package net.runelite.client.plugins.twitchliveloadout;
 
 import java.util.Comparator;
 
-public class PriceSorter implements Comparator<PricedItem>
+public class ItemPriceSorter implements Comparator<PricedItem>
 {
 	public int compare(PricedItem p1, PricedItem p2)
 	{
