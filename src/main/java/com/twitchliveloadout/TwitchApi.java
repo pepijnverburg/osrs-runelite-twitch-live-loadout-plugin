@@ -4,6 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
+import net.runelite.api.MessageNode;
+import net.runelite.client.chat.ChatColorType;
+import net.runelite.client.chat.ChatMessageBuilder;
+import net.runelite.client.chat.ChatMessageManager;
+import net.runelite.client.chat.QueuedMessage;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -39,11 +45,13 @@ public class TwitchApi {
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	private final TwitchLiveLoadoutConfig config;
+	private final ChatMessageManager chatMessageManager;
 	private String lastConfigurationServiceState;
 
-	public TwitchApi(TwitchLiveLoadoutConfig config)
+	public TwitchApi(TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
 		this.config = config;
+		this.chatMessageManager = chatMessageManager;
 	}
 
 	public void scheduleBroadcasterState(final JsonObject state)
@@ -175,12 +183,37 @@ public class TwitchApi {
 	private void verifyStateUpdateResponse(Response response) throws Exception
 	{
 		int responseCode = response.code();
+		String responseCodeMessage = "An unknown error occurred. Please report this to the RuneLite plugin maintainer.";
+
+		switch (responseCode)
+		{
+			case 403: // forbidden
+			case 401: // unauthorized
+				responseCodeMessage = "Twitch Extension Token is expired. Get a new token via the extension.";
+				break;
+			case 404: // not found
+				responseCodeMessage = "Something has changed with Twitch. Please report this to the RuneLite plugin maintainer.";
+				break;
+		}
+
 		response.close();
 
 		if (responseCode > 299)
 		{
 			log.error("Could not update state, http code was: {}", responseCode);
-			throw new Exception("Could not set the Twitch Configuration State.");
+
+			final ChatMessageBuilder message = new ChatMessageBuilder()
+				.append(ChatColorType.HIGHLIGHT)
+				.append("Could not synchronize loadout to Twitch (code: "+ responseCode +").")
+				.append(responseCodeMessage)
+				.append(ChatColorType.NORMAL);
+
+			chatMessageManager.queue(QueuedMessage.builder()
+				.type(ChatMessageType.ITEM_EXAMINE)
+				.runeLiteFormattedMessage(message.build())
+				.build());
+
+			throw new Exception("Could not set the Twitch Configuration State due to invalid response code: "+ responseCode);
 		}
 
 		log.debug("Successfully sent state: {}", responseCode);
