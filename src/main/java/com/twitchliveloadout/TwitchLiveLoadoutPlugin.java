@@ -133,7 +133,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 		final JsonObject filteredState = twitchState.getFilteredState();
 
-		// We will not verify whether the set was successful
+		// We will not verify whether the set was successful here
 		// because it is possible that the request is being delayed
 		// due to the custom streamer delay
 		twitchApi.scheduleBroadcasterState(filteredState);
@@ -191,19 +191,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGraphicChanged(GraphicChanged event)
 	{
-		fightStateManager.onGraphicChanged(event);
+		// fightStateManager.onGraphicChanged(event);
 	}
 
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		fightStateManager.onHitsplatApplied(event);
+		// fightStateManager.onHitsplatApplied(event);
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		fightStateManager.onGameTick(tick);
+		// fightStateManager.onGameTick(tick);
 	}
 
 	@Subscribe
