@@ -47,9 +47,9 @@ import java.time.temporal.ChronoUnit;
  * ad passed to a couple of other classes.
  */
 @PluginDescriptor(
-		name = "Twitch Live Loadout",
-		description = "Send Real-time Equipment, Skills, Combat Statistics, Inventory, Bank and more to Twitch Extensions for additional viewer engagement.",
-		enabledByDefault = false
+	name = "Twitch Live Loadout",
+	description = "Send Real-time Equipment, Skills, Combat Statistics, Inventory, Bank and more to Twitch Extensions for additional viewer engagement.",
+	enabledByDefault = false
 )
 @PluginDependency(AttackStylesPlugin.class)
 public class TwitchLiveLoadoutPlugin extends Plugin
@@ -127,7 +127,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		final boolean updateRequired = twitchState.isChanged();
 
 		// Guard: check if something has changed to avoid unnecessary updates.
-		if (!updateRequired) {
+		if (!updateRequired)
+		{
 			return;
 		}
 
@@ -144,7 +145,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// Guard: check if the state has changed in the mean time,
 		// because the request takes some time, in this case we will
 		// not acknowledge the change
-		if (!filteredStateString.equals(newFilteredStateString)) {
+		if (!filteredStateString.equals(newFilteredStateString))
+		{
 			return;
 		}
 

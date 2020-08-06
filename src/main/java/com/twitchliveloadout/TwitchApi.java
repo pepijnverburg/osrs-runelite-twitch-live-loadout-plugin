@@ -3,6 +3,7 @@ package net.runelite.client.plugins.twitchliveloadout;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -17,11 +18,12 @@ import java.util.Base64;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
-
+@Slf4j
 public class TwitchApi {
 
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
 	private final static String VERSION = "0.0.1";
+	private final static String USER_AGENT = "RuneLite";
 	private enum PubSubTarget {
 		BROADCAST("broadcast"),
 		GLOBAL("global");
@@ -49,12 +51,15 @@ public class TwitchApi {
 		int minDelay = 0;
 		int delay = config.syncDelay();
 
-		if (delay < minDelay) {
+		if (delay < minDelay)
+		{
 			delay = minDelay;
 		}
 
-		scheduledExecutor.schedule(new Runnable() {
-			public void run() {
+		scheduledExecutor.schedule(new Runnable()
+		{
+			public void run()
+			{
 				boolean serviceUpdateResult = setConfigurationService(state);
 				boolean pubSubResult = sendPubSubState(state);
 				boolean validResults = serviceUpdateResult && pubSubResult;
@@ -85,18 +90,15 @@ public class TwitchApi {
 			data.addProperty("version", version);
 			data.addProperty("content", compressedState);
 		} catch (Exception exception) {
-
-			// TMP: debug
-			System.out.println("Could construct payload");
-			System.out.println(exception);
+			log.debug("An error occurred when constructing the payload:");
+			log.debug(exception.toString());
 			return false;
 		}
 
-		// TMP: debug
-		System.out.println("Sending out "+ segment +" state (v"+ version +"):");
-		System.out.println(state.toString());
-		System.out.println("Compressed state:");
-		System.out.println(compressedState);
+		log.debug("Sending out {} state (v{}):", segment, version);
+		log.debug(state.toString());
+		log.debug("Compressed state:");
+		log.debug(compressedState);
 
 		try {
 			Response response = performConfigurationServiceRequest(data);
@@ -119,6 +121,7 @@ public class TwitchApi {
 		Request request = new Request.Builder()
 			.header("Client-ID", clientId)
 			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
 			.put(RequestBody.create(JSON, dataString))
 			.url(url)
 			.build();
@@ -160,6 +163,7 @@ public class TwitchApi {
 		Request request = new Request.Builder()
 			.header("Client-ID", clientId)
 			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
 			.post(RequestBody.create(JSON, dataString))
 			.url(url)
 			.build();
@@ -173,17 +177,13 @@ public class TwitchApi {
 		int responseCode = response.code();
 		response.close();
 
-		if (responseCode > 299) {
-
-			// TMP: debug
-//			System.out.println("Could not update state, http code was:");
-//			System.out.println(responseCode);
-
+		if (responseCode > 299)
+		{
+			log.error("Could not update state, http code was: {}", responseCode);
 			throw new Exception("Could not set the Twitch Configuration State.");
 		}
 
-		// TMP: debug
-//		System.out.println("Successfully sent state: "+ responseCode);
+		log.debug("Successfully sent state: {}", responseCode);
 	}
 
 	private String getChannelId() throws Exception
@@ -205,13 +205,16 @@ public class TwitchApi {
 	private String[] splitToken(String token) throws Exception {
 		String[] parts = token.split("\\.");
 
-		if (parts.length == 2 && token.endsWith(".")) {
+		if (parts.length == 2 && token.endsWith("."))
+		{
 			parts = new String[]{parts[0], parts[1], ""};
 		}
 
-		if (parts.length != 3) {
+		if (parts.length != 3)
+		{
 			throw new Exception(String.format("The token was expected to have 3 parts, but got %s.", parts.length));
 		}
+
 		return parts;
 	}
 
@@ -221,9 +224,6 @@ public class TwitchApi {
 			String jsonString = state.toString();
 			byte[] compressedState = compress(jsonString);
 			String compressedStateString = new String(Base64.getEncoder().encode(compressedState), StandardCharsets.UTF_8);
-
-			// TODO: check if without base64 is also possible
-			//String compressedStateString = new String(compressedState, StandardCharsets.UTF_8);
 
 			return compressedStateString;
 		} catch (Exception exception) {
@@ -235,7 +235,8 @@ public class TwitchApi {
 
 	public static byte[] compress(final String str) throws IOException
 	{
-		if ((str == null) || (str.length() == 0)) {
+		if ((str == null) || (str.length() == 0))
+		{
 			return null;
 		}
 

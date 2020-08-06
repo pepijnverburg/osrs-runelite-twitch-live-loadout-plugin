@@ -46,7 +46,8 @@ public class Fight {
 	{
 		for (FightStatistic statistic : statistics.values())
 		{
-			if (statistic.hasHadActivity()) {
+			if (statistic.hasHadActivity())
+			{
 				return true;
 			}
 		}

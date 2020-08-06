@@ -42,7 +42,8 @@ public class FightStatistic {
 	{
 		final long now = Instant.now().getEpochSecond();
 
-		if (firstUpdate == 0) {
+		if (firstUpdate == 0)
+		{
 			firstUpdate = now;
 		}
 
@@ -84,7 +85,8 @@ public class FightStatistic {
 		long seconds = getEpochSeconds();
 		int totalDamage = getTotalDamage();
 
-		if (seconds <= 0) {
+		if (seconds <= 0)
+		{
 			return 0;
 		}
 
