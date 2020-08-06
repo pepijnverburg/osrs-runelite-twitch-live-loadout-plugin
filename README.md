@@ -18,24 +18,32 @@ Several use-cases on what the impact on viewer engagement is:
 - [OSRS Live Loadout Twitch Extension]()
 
 ## Features
+Currently the information below is synchronized to Twitch.
 
-### Live Loadout
-Currently the following information is synchronized to Twitch:
-- `Combat statistics`: DPS per attack type for both PvP & PvM, freeze counters and 
-- `Inventory items`: live view of the inventory and total price.
-- `Equipment items`: live view of worn gear and total price.
-- `Bank items`: Top 200 most valuable bank items and price of all bank items.
-- `Bank tabs`: info what items are in what tab.
-- `Skill experiences`: all experience amounts per skill.
-- `Skill levels`: current skills levels based on boosts.
-- `Player weight`: weight of worn and carried items including weight reducing items.
-- `Display name`: the name of the player in the chat bar.
+#### Combat
+- [x] `DPS`: damage per second for each attack type (*magic*, *ranged*, *melee*, *poison*) per target for both *PvM* & *PvP*.
+- [x] `Freezes`: freeze counter including misses. 
+
+#### Items
+- [x] `Inventory items`: live view of the inventory and total price.
+- [x] `Equipment items`: live view of worn gear and total price.
+- [x] `Bank items`: Top 200 most valuable bank items and price of all bank items.
+- [x] `Bank tabs`: info what items are in what tab.
+
+#### Skills
+- [x] `Skill experiences`: all experience amounts per skill.
+- [x] `Skill levels`: current skills levels based on boosts.
+
+#### General
+- [x] `Player weight`: weight of worn and carried items including weight reducing items.
+- [x] `Display name`: the name of the player in the chat bar.
 
 ### Customization
 It is also possible to configure what information is being sent through the following options:
 - `Twitch extension token`: the login token specifically for the Twitch Extension you want to send the data to. This authenticates RuneLite to change data in the extension. This token should be retrieved when configuring the extension in the online Twitch interface.
 - `Sync delay`: delay the synchronization with x amount of seconds to match the broadcaster video & audio delay. Also use this to tweak when the video is delayed due to general networking.
 - `Sync display name`: toggle to show basic player info.
+- `Sync combat statistics`: toggle to sync combat statistics.
 - `Sync inventory`: toggle to sync inventory items.
 - `Sync bank`: toggle to sync bank items.
 - `Sync skills`: toggle to sync (boosted) skills.
@@ -59,8 +67,9 @@ The [OSRS Live Loadout plugin]() is directly compatible. You should add this ext
 
 ### Data Flow
 
-#### Third-parties
-**All information is only send directly to Twitch** to make sure no other third-parties receive any data. This is using the [Twitch Configuration Service](https://dev.twitch.tv/docs/tutorials/extension-101-tutorial-series/config-service) to store a persistent state of the above data. This persistent state is used to show the extension with the latest data when a new viewer opens the stream. When a change happens an update message is sent to the [Twitch PubSub Service](https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message). This message is used to update the extension for the current viewers.
+#### Twitch as the only third-party
+**All data is send directly to Twitch** to make sure no other third-parties receive any information. This is using the [Twitch Configuration Service](https://dev.twitch.tv/docs/tutorials/extension-101-tutorial-series/config-service) to store a persistent state of the above data. This persistent state is used to load the extension with the latest data when a new viewer opens the stream. When a change happens due to in-game activity an update message is sent to the [Twitch PubSub Service](https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message). This message is used to update the extension for the current viewers. General documentation about Twitch Extensions can be found [here](https://dev.twitch.tv/docs/extensions/reference/
+).
 
 #### Twitch Extension Token
 It is worth noting that the token retrieved from Twitch to authenticate this plugin can **only access features related to the extension**. Twitch did a good job in preventing extensions and their tokens to have access outside of the extension.
@@ -74,17 +83,17 @@ To simplify the state management one large state object is being send to Twitch.
 ### State update frequency
 The state updates are dependant on the maximum amount allowed by Twitch. Rate limit documentation can be found [here](https://dev.twitch.tv/docs/api/guide/#rate-limits). Currently the maximum update frequency is is once per two seconds. This means the updates are never truly 'real-time'.
 
-### Dealing with updates
-The plugin is implemented with the OSRS weekly updates in mind. There are no dependencies on specific content meaning that all updates are directly reflected in the plugin as well. This allows for lower maintenance of this plugin and less down-time.
+### Oldschool weekly updates
+The plugin is implemented with the OSRS weekly updates in mind. There are no dependencies on specific content meaning that all updates are directly reflected in the plugin as well. This allows for lower maintenance of this plugin and less down-time or faulty behaviour.
 
 ## Future
 Future features that might be added based on feedback are:
-- Let viewers 'vote' on wearing/dropping certain items by clicking on the items in question.
-- List of current goal items with automatic progress based on items in bank/inventory/equipment.
-- More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).
-- Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
-- If the full bank is important, complex state management is considered where the bank is incrementally sent to Twitch in payloads of 5KB in size.
-- Check whether different locations on the world influence the delay between video an updates so significantly that we would need to have a time reference to know when to update for each viewer independently.
+- [ ] Let viewers 'vote' on wearing/dropping certain items by clicking on the items in question.
+- [ ] List of current goal items with automatic progress based on items in bank/inventory/equipment.
+- [ ] More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).
+- [ ] Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
+- [ ] If the full bank is important, complex state management is considered where the bank is incrementally sent to Twitch in payloads of 5KB in size.
+- [ ] Check whether different locations on the world influence the delay between video an updates so significantly that we would need to have a time reference to know when to update for each viewer independently.
 
 ## Feedback
 If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.
