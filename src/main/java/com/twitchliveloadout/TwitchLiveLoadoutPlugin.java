@@ -31,6 +31,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -62,6 +63,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	@Inject
 	private ItemManager itemManager;
+
+	@Inject
+	private ChatMessageManager chatMessageManager;
 
 	/**
 	 * Twitch Configuration Service state that can be mapped to a JSON.
@@ -98,7 +102,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		super.startUp();
 
 		twitchState = new TwitchState(config, itemManager);
-		twitchApi = new TwitchApi(config);
+		twitchApi = new TwitchApi(config, chatMessageManager);
 
 		fightStateManager = new FightStateManager(twitchState, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
@@ -163,6 +167,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncFightStatisticsState()
 	{
 		JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
+		System.out.println(fightStatistics.toString());
 		twitchState.setFightStatistics(fightStatistics);
 	}
 
@@ -193,19 +198,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGraphicChanged(GraphicChanged event)
 	{
-		// fightStateManager.onGraphicChanged(event);
+		fightStateManager.onGraphicChanged(event);
 	}
 
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		// fightStateManager.onHitsplatApplied(event);
+		 fightStateManager.onHitsplatApplied(event);
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		// fightStateManager.onGameTick(tick);
+		 fightStateManager.onGameTick(tick);
 	}
 
 	@Subscribe

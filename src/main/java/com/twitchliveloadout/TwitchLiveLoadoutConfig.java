@@ -104,7 +104,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 		keyName = "fightStatisticsEnabled",
-		name = "Sync fight statistics",
+		name = "Sync combat statistics",
 		description = "Synchronize statistics about PvM and PvP, such as DPS per attack type, freezes, splashes, etc.",
 		position = 12
 	)
@@ -138,7 +138,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "overlayTopPosition",
 			name = "Overlay top position",
-			description = "The position of the overlay in % of the viewport height. Zero will enable extension default.",
+			description = "The position of the overlay in % of the viewport height. Zero fallbacks to default.",
 			position = 92
 	)
 	default int overlayTopPosition()
@@ -174,11 +174,10 @@ public interface TwitchLiveLoadoutConfig extends Config
 		description = "This is the ID of the Twitch Extension you want to sync the data to. Also known as 'CLient ID'.",
 		secret = true,
 		position = 100,
-		hidden = true
+		hidden = false
 	)
 	default String extensionClientId()
 	{
-		// the default osrs_tools extension
 		return DEFAULT_EXTENSION_CLIENT_ID;
 	}
 
