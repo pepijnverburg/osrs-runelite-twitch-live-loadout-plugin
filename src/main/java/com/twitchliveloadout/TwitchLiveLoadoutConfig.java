@@ -38,7 +38,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "twitchToken",
 			name = "Twitch Extension Token",
-			description = "Your token can be found in the Twitch Extension overlay 'Settings' tab when logged in as broadcaster.",
+			description = "Your token can be found when configuring the Twitch Extension.",
 			secret = true,
 			position = 0
 	)
