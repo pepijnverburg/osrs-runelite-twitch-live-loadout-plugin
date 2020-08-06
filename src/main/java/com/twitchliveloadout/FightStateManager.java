@@ -59,16 +59,11 @@ public class FightStateManager
 		{
 			return;
 		}
-
-//		System.out.println("------Graphic event:----");
-//		System.out.println(eventActor.getName());
-//		System.out.println(graphicId);
 	}
 
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
 		Actor eventActor = event.getActor();
-		String eventActorName = eventActor.getName();
 		Hitsplat hitsplat = event.getHitsplat();
 		Player player = client.getLocalPlayer();
 		HeadIcon headIcon = player.getOverheadIcon();
@@ -86,17 +81,17 @@ public class FightStateManager
 
 		if (hitsplatType == Hitsplat.HitsplatType.POISON || hitsplatType == Hitsplat.HitsplatType.VENOM)
 		{
-			registerFightHitsplat(eventActorName, FightStatisticEntry.POISON, hitsplat);
+			registerFightHitsplat(eventActor, FightStatisticEntry.POISON, hitsplat);
 			return;
 		}
 
 		FightStatisticEntry mainDamageName = FightStatisticEntry.MELEE;
 
-		registerFightHitsplat(eventActorName, mainDamageName, hitsplat);
+		registerFightHitsplat(eventActor, mainDamageName, hitsplat);
 
 		if (headIcon == HeadIcon.SMITE)
 		{
-			registerFightHitsplat(eventActorName, FightStatisticEntry.SMITE, hitsplat);
+			registerFightHitsplat(eventActor, FightStatisticEntry.SMITE, hitsplat);
 		}
 	}
 
@@ -109,21 +104,20 @@ public class FightStateManager
 			return;
 		}
 
-		String interactingActorName = interactingActor.getName();
-		registerFightGameTick(interactingActorName);
+		registerFightGameTick(interactingActor);
 	}
 
-	public void registerFightGameTick(String actorName)
+	public void registerFightGameTick(Actor actor)
 	{
-		Fight fight = getFight(actorName);
+		Fight fight = getFight(actor);
 		fight.addGameTick();
 	}
 
-	public void registerFightHitsplat(String actorName, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
+	public void registerFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
 	{
 		int damage = hitsplat.getAmount();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
-		Fight fight = getFight(actorName);
+		Fight fight = getFight(actor);
 		FightStatistic statistic = fight.getStatistic(statisticEntry);
 
 		// check for block or hit
@@ -138,19 +132,15 @@ public class FightStateManager
 				statistic.registerMiss(damage);
 				break;
 		}
-
-		System.out.println(actorName + " --------------");
-		System.out.println("Statistic updated: "+ statisticEntry.name());
-		System.out.println("Damage delta: "+ damage);
-		System.out.println("New damage: "+ statistic.getTotalDamage());
-		System.out.println("Hitsplat type: "+ hitsplatType);
 	}
 
-	public Fight getFight(String actorName)
+	public Fight getFight(Actor actor)
 	{
+		String actorName = actor.getName();
+
 		if (!fights.containsKey(actorName))
 		{
-			fights.put(actorName, new Fight());
+			fights.put(actorName, new Fight(actor));
 		}
 
 		return fights.get(actorName);
