@@ -5,6 +5,9 @@ import net.runelite.api.NPC;
 
 import java.util.HashMap;
 
+import static net.runelite.client.plugins.twitchliveloadout.FightStateManager.ACTOR_NPC_TYPE;
+import static net.runelite.client.plugins.twitchliveloadout.FightStateManager.ACTOR_PLAYER_TYPE;
+
 public class Fight {
 	private final Actor actor;
 	private int gameTickCounter = 0;
@@ -53,6 +56,31 @@ public class Fight {
 		}
 
 		return false;
+	}
+
+	public Actor getActor()
+	{
+		return actor;
+	}
+
+	public String getActorType()
+	{
+		if (actor instanceof NPC)
+		{
+			return ACTOR_NPC_TYPE;
+		}
+
+		return ACTOR_PLAYER_TYPE;
+	}
+
+	public int getActorId()
+	{
+		if (actor instanceof NPC)
+		{
+			return ((NPC) actor).getId();
+		}
+
+		return -1;
 	}
 
 	public boolean isValid()

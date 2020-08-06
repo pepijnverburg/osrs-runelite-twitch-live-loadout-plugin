@@ -1,21 +1,22 @@
 package net.runelite.client.plugins.twitchliveloadout;
 
 public enum FightStatisticEntry {
-	RANGED("ranged"),
-	MELEE("melee"),
-	MAGIC("magic"),
+	GENERAL("general"),
+//	MELEE("melee"),
+//	MAGIC("magic"),
+//	RANGED("ranged"),
 
 	FREEZE("freeze"),
 	SPECIAL_ATTACK("specialAttack"),
 	POISON("poison)"),
-	VENGEANCE("vengeance"),
-	HEAL("heal"),
+//	VENGEANCE("vengeance"),
+//	HEAL("heal"),
 
-	PRAYER("prayer"),
-	SMITE("smite"),
-	RANGED_PRAYER("rangedPrayer"),
-	MELEE_PRAYER("meleePrayer"),
-	MAGIC_PRAYER("magicPrayer");
+//	PRAYER("prayer"),
+//	RANGED_PRAYER("rangedPrayer"),
+//	MELEE_PRAYER("meleePrayer"),
+//	MAGIC_PRAYER("magicPrayer"),
+	SMITE("smite");
 
 	private final String key;
 

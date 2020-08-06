@@ -15,7 +15,13 @@ public class FightStateManager
 	private final TwitchState twitchState;
 	private final Client client;
 
-	private final String GAME_TICK_COUNTERS_PROPERTY = "gtc";
+	private static final String GAME_TICK_COUNTERS_PROPERTY = "ticks";
+	private static final String ACTOR_NAME_PROPERTY = "actor-name";
+	private static final String ACTOR_TYPE_PROPERTY = "actor-type";
+	private static final String ACTOR_ID_PROPERTY = "actor-id";
+
+	public static final String ACTOR_NPC_TYPE = "npc";
+	public static final String ACTOR_PLAYER_TYPE = "player";
 
 	private enum FightStatisticProperty
 	{
@@ -69,26 +75,32 @@ public class FightStateManager
 		HeadIcon headIcon = player.getOverheadIcon();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
 
-		if (!hitsplat.isMine())
-		{
-			return;
-		}
-
+		// Guard: check if the damage is on the player themselves.
 		if (isLocalPlayer(eventActor))
 		{
 			return;
 		}
 
-		if (hitsplatType == Hitsplat.HitsplatType.POISON || hitsplatType == Hitsplat.HitsplatType.VENOM)
+		// Poison damage can come from different sources,
+		// but will be attributed to the DPS.
+		if (hasFight(eventActor)) {
+			if (hitsplatType == Hitsplat.HitsplatType.POISON || hitsplatType == Hitsplat.HitsplatType.VENOM) {
+				registerFightHitsplat(eventActor, FightStatisticEntry.POISON, hitsplat);
+				return;
+			}
+		}
+
+		// Guard: check if the hitsplat is the players damage.
+		if (!hitsplat.isMine())
 		{
-			registerFightHitsplat(eventActor, FightStatisticEntry.POISON, hitsplat);
 			return;
 		}
 
-		FightStatisticEntry mainDamageName = FightStatisticEntry.MELEE;
-
+		// TODO: later recognize what damage type was done (magic, ranged or melee).
+		FightStatisticEntry mainDamageName = FightStatisticEntry.GENERAL;
 		registerFightHitsplat(eventActor, mainDamageName, hitsplat);
 
+		// Register damage done while having smite up
 		if (headIcon == HeadIcon.SMITE)
 		{
 			registerFightHitsplat(eventActor, FightStatisticEntry.SMITE, hitsplat);
@@ -123,15 +135,20 @@ public class FightStateManager
 		// check for block or hit
 		switch (hitsplatType)
 		{
-			case DAMAGE_ME:
-			case POISON:
-			case VENOM:
-				statistic.registerHit(damage);
-				break;
 			case BLOCK_ME:
 				statistic.registerMiss(damage);
 				break;
+			default:
+				statistic.registerHit(damage);
+				break;
 		}
+	}
+
+	public boolean hasFight(Actor actor)
+	{
+		String actorName = actor.getName();
+
+		return fights.containsKey(actorName);
 	}
 
 	public Fight getFight(Actor actor)
@@ -150,6 +167,8 @@ public class FightStateManager
 	{
 		JsonObject state = new JsonObject();
 		state.add(GAME_TICK_COUNTERS_PROPERTY, new JsonArray());
+		state.add(ACTOR_NAME_PROPERTY, new JsonArray());
+		state.add(ACTOR_ID_PROPERTY, new JsonArray());
 
 		for (FightStatisticEntry statisticKey : FightStatisticEntry.values())
 		{
@@ -166,6 +185,9 @@ public class FightStateManager
 		for (Fight fight : fights.values())
 		{
 			state.getAsJsonArray(GAME_TICK_COUNTERS_PROPERTY).add(fight.getGameTickCounter());
+			state.getAsJsonArray(ACTOR_NAME_PROPERTY).add(fight.getActor().getName());
+			state.getAsJsonArray(ACTOR_TYPE_PROPERTY).add(fight.getActorType());
+			state.getAsJsonArray(ACTOR_ID_PROPERTY).add(fight.getActorId());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
