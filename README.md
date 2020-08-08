@@ -18,7 +18,7 @@ Get better engagement for...
 - [OSRS Live Loadout Twitch Extension]()
 
 ## Features
-Currently the information below is synchronized to Twitch.
+Below you can find an overview which features are implemented and which ones are still in progress.
 
 #### Combat
 - [x] `DPS`: damage per second for multiple fights for both *PvM* & *PvP*.
