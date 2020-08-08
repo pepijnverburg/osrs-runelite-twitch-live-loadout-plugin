@@ -91,8 +91,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "bankItemAmount",
 			name = "Max bank items",
-			description = "Maximum amount of items synced with fixed upper-bound of "+ ItemStateManager.MAX_BANK_ITEMS +".",
-			position = 8
+			description = "Maximum amount of items synced with fixed upper limit of "+ ItemStateManager.MAX_BANK_ITEMS +".",
+			position = 9
 	)
 	default int bankItemAmount()
 	{
@@ -111,6 +111,17 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "virtualLevelsEnabled",
+			name = "Virtual levels",
+			description = "Use maximum level of 120 instead of 99.",
+			position = 11
+	)
+	default boolean virtualLevelsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "fightStatisticsEnabled",
 		name = "Sync combat statistics",
 		description = "Synchronize statistics about PvM and PvP, such as DPS per attack type, freezes, splashes, etc.",
@@ -123,8 +134,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "fightStatisticsMaxFightAmount",
-			name = "Max tracked fights",
-			description = "Maximum amount of tracked fights with fixed upper-bound of "+ FightStateManager.MAX_FIGHT_AMOUNT +".",
+			name = "Max combat fights",
+			description = "Maximum amount of tracked fights with fixed upper limit of "+ FightStateManager.MAX_FIGHT_AMOUNT +".",
 			position = 13
 	)
 	default int fightStatisticsMaxFightAmount()
@@ -157,7 +168,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "overlayTopPosition",
 			name = "Overlay top position",
-			description = "The position of the overlay in % of the viewport height. Zero fallbacks to default.",
+			description = "The position of the viewer Twitch Extension overlay in % of the viewport height. Zero fallbacks to default.",
 			position = 92
 	)
 	default int overlayTopPosition()
@@ -177,14 +188,14 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "syncDisabled",
-			name = "Disable and clear syncing",
-			description = "Temporarily disable all syncing, hide extension and clear data.",
+			keyName = "syncEnabled",
+			name = "Sync enabled",
+			description = "Toggle off to disable all syncing, hide extension to viewers and clear data.",
 			position = 96
 	)
-	default boolean syncDisabled()
+	default boolean syncEnabled()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(

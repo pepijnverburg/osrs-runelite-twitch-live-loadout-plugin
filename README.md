@@ -2,15 +2,15 @@
 
 *"What is that helm you are wearing?!"*
 
-The aim of this plugin is to let Twitch viewers be more immersed by providing them with interactive and real-time information about `Equipment`, `Skills`, `Inventory`, `Bank` and more.
+Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Combat`, `Skills`, `Inventory`, `Bank` and more!
+
+Get better engagement for...
+- **New players** who are not familiar with all the items, which can be overwhelming. This gives them a low-threshold way of getting the information.
+- **Existing casual players** who are missing information about the latest game updates. Answering the same questions about new items can be repetitive.
+- **Existing frequent players** who would like to give advice on the loadout. Most items are directly visible on the player model, but some harder to see (e.g. rings / bracelets). Vieweers can also take some time to inspect the loadout without being dependant on what menu tab the streamer has open.
+- **Streamers** who would like to relate to statistics about combat or items after for example a fight or drop.
 
 [Twitch Extensions](https://www.twitch.tv/p/extensions/) are used to allow this additional viewer engagement.
-
-Several use-cases on what the impact on viewer engagement is:
-- **New players** that don't know about the multitude of items being used. Asking about everything is not something someone would do and this provides them with a low-threshold way of still getting the information.
-- **Existing casual players** that are not up to date of the latest items that were recently released. Answering the same questions about these items over and over can be repetitive for existing viewers.
-- **Existing frequent players** that would like to give advice on the current loadout by knowing exactly what you are taking with you. Most of the items are directly visible on the player, but some harder to see (e.g. rings / bracelets). This also allows viewers to take some time to inspect the loadout without being dependant on what menu tab the streamer has open.
-- In general **provide statistics about combat** that might be interesting for different types of viewers and something streamers can relate to after a fight.
 
 ## Requirements
 - [Runelite Client](https://runelite.net/) with Plugin Hub enabled
@@ -23,16 +23,19 @@ Currently the information below is synchronized to Twitch.
 #### Combat
 - [x] `DPS`: damage per second for multiple fights for both *PvM* & *PvP*.
 - [x] `Smite damage`: damage per fight smite has done including potential prayer drain.
+- [ ] `Freezes`: freeze counter including misses. 
+- [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
 #### Items
 - [x] `Inventory items`: live view of the inventory and total price.
 - [x] `Equipment items`: live view of worn gear and total price.
 - [x] `Bank items`: Top 200 most valuable bank items and price of all bank items.
 - [x] `Bank tabs`: info what items are in what tab.
+- [x] `Wiki lookup`: all items can be looked up by opening the official Wiki.
 
 #### Goals
-- [x] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
-- [x] `Boss kill counts`: for each item goal a KC can be attached that is visible on hover.  
+- [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
+- [ ] `Boss kill counts`: for each item goal a KC can be attached that is visible on hover.  
 
 #### Skills
 - [x] `Skill experiences`: all experience amounts per skill.
@@ -42,18 +45,21 @@ Currently the information below is synchronized to Twitch.
 - [x] `Player weight`: weight of worn and carried items including weight reducing items.
 - [x] `Display name`: the name of the player in the chat bar.
 
-### Customization
+### Configuration
 It is also possible to configure what information is being sent through the following options:
 - `Twitch extension token`: the login token specifically for the Twitch Extension you want to send the data to. This authenticates RuneLite to change data in the extension. This token should be retrieved when configuring the extension in the online Twitch interface.
 - `Sync delay`: delay the synchronization with x amount of seconds to match the broadcaster video & audio delay. Also use this to tweak when the video is delayed due to general networking.
 - `Sync display name`: toggle to show basic player info.
 - `Sync combat statistics`: toggle to sync combat statistics.
+- `Max combat fights`: the maximum amount of fights tracked with an upper limit set by the plugin.
 - `Sync inventory`: toggle to sync inventory items.
 - `Sync bank`: toggle to sync bank items.
+- `Max bank items`: the maximum amount of bank items with an upper limit set by the plugin.
 - `Sync skills`: toggle to sync (boosted) skills.
+- `Virtual levels enabled`: when enabled the maximum level shown based on experience is 120 instead of 99. 
 - `Sync weight`: toggle to sync weight.
 - `Overlay top position`: tweak where a Twitch Extension overlay would be positioned to match your screen layout.
-- `Sync disabled`: toggle to disable all syncing.
+- `Sync enabled`: toggle off to disable all syncing and clear current data.
 - `Extension Client ID`: the unique identifier of the Twitch Extension where the data should be sent to. This is pre-filled with an extension known to work well with this plugin.
 
 ## Getting Started
@@ -97,9 +103,7 @@ Future features that might be added based on feedback are:
 - [ ] More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).
 - [ ] Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
 - [ ] If the full bank is important, complex state management is considered where the bank is incrementally sent to Twitch in payloads of 5KB in size.
-- [ ] Check whether different locations on the world influence the delay between video an updates so significantly that we would need to have a time reference to know when to update for each viewer independently.
-- [ ] `Freezes`: freeze counter including misses. 
-- [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
+- [ ] Check whether different locations of viewers on the world influence the delay between video an updates so significantly that we would need to have a time reference to know when to update for each viewer independently.
 
 ## Feedback
 If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.

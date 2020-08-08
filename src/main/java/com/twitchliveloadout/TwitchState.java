@@ -101,6 +101,12 @@ public class TwitchState {
 		checkForChange();
 	}
 
+	public void setVirtualLevelsEnabled(boolean virtualLevelsEnabled)
+	{
+		currentState.addProperty(TwitchStateEntry.VIRTUAL_LEVELS_ENABLED.getKey(), virtualLevelsEnabled);
+		checkForChange();
+	}
+
 	public void setFightStatistics(JsonObject fightStatistics)
 	{
 		currentState.add(TwitchStateEntry.FIGHT_STATISTICS.getKey(), fightStatistics);
@@ -140,7 +146,7 @@ public class TwitchState {
 	{
 		JsonObject filteredState = getState().deepCopy();
 
-		if (config.syncDisabled())
+		if (!config.syncEnabled())
 		{
 			filteredState = new JsonObject();
 		}

@@ -167,7 +167,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncFightStatisticsState()
 	{
 		JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
-		System.out.println(fightStatistics.toString());
+
+		// TMP: debugging
+//		System.out.println(fightStatistics.toString());
+
 		twitchState.setFightStatistics(fightStatistics);
 	}
 
@@ -229,6 +232,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		if (key.equals("overlayTopPosition"))
 		{
 			twitchState.setOverlayTopPosition(config.overlayTopPosition());
+		}
+
+		if (key.equals("virtualLevelsEnabled"))
+		{
+			twitchState.setVirtualLevelsEnabled(config.virtualLevelsEnabled());
 		}
 
 		twitchState.forceChange();

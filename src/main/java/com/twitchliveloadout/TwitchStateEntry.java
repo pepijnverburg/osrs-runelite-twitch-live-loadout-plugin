@@ -12,6 +12,7 @@ public enum TwitchStateEntry {
 	FIGHT_STATISTICS("fightStatistics"),
 	SKILL_EXPERIENCES("skillExperiences"),
 	BOOSTED_SKILL_LEVELS("boostedSkillLevels"),
+	VIRTUAL_LEVELS_ENABLED("virtualLevelsEnabled"),
 	WEIGHT("weight"),
 	ITEM_GOALS("itemGoals"),
 	TOP_POSITION("topPosition");
