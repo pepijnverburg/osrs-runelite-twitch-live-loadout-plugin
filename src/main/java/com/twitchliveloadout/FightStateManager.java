@@ -18,9 +18,10 @@ public class FightStateManager
 
 	public static final int MAX_FIGHT_AMOUNT = 10;
 	private static final String GAME_TICK_COUNTERS_PROPERTY = "ticks";
-	private static final String ACTOR_NAME_PROPERTY = "actor-name";
-	private static final String ACTOR_TYPE_PROPERTY = "actor-type";
-	private static final String ACTOR_ID_PROPERTY = "actor-id";
+	private static final String ACTOR_NAME_PROPERTY = "actorNames";
+	private static final String ACTOR_TYPE_PROPERTY = "actorTypes";
+	private static final String ACTOR_ID_PROPERTY = "actorIds";
+	private static final String STATISTICS_PROPERTY = "statistics";
 
 	public enum ActorType {
 		NPC("npc"),
@@ -221,10 +222,17 @@ public class FightStateManager
 	public JsonObject getFightStatisticsState()
 	{
 		JsonObject state = new JsonObject();
-		state.add(GAME_TICK_COUNTERS_PROPERTY, new JsonArray());
-		state.add(ACTOR_NAME_PROPERTY, new JsonArray());
-		state.add(ACTOR_TYPE_PROPERTY, new JsonArray());
-		state.add(ACTOR_ID_PROPERTY, new JsonArray());
+		JsonObject statistics = new JsonObject();
+		JsonArray tickCounters = new JsonArray();
+		JsonArray actorNames = new JsonArray();
+		JsonArray actorTypes = new JsonArray();
+		JsonArray actorIds = new JsonArray();
+
+		state.add(GAME_TICK_COUNTERS_PROPERTY, tickCounters);
+		state.add(ACTOR_NAME_PROPERTY, actorNames);
+		state.add(ACTOR_TYPE_PROPERTY, actorTypes);
+		state.add(ACTOR_ID_PROPERTY, actorIds);
+		state.add(STATISTICS_PROPERTY, statistics);
 
 		for (FightStatisticEntry statisticKey : FightStatisticEntry.values())
 		{
@@ -235,20 +243,20 @@ public class FightStateManager
 				fightStatistic.add(property.getKey(), new JsonArray());
 			}
 
-			state.add(statisticKey.getKey(), fightStatistic);
+			statistics.add(statisticKey.getKey(), fightStatistic);
 		}
 
 		for (Fight fight : fights.values())
 		{
-			state.getAsJsonArray(GAME_TICK_COUNTERS_PROPERTY).add(fight.getGameTickCounter());
-			state.getAsJsonArray(ACTOR_NAME_PROPERTY).add(fight.getActorName());
-			state.getAsJsonArray(ACTOR_TYPE_PROPERTY).add(fight.getActorType().getKey());
-			state.getAsJsonArray(ACTOR_ID_PROPERTY).add(fight.getActorId());
+			tickCounters.add(fight.getGameTickCounter());
+			actorNames.add(fight.getActorName());
+			actorTypes.add(fight.getActorType().getKey());
+			actorIds.add(fight.getActorId());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
 				FightStatistic statistic = fight.getStatistic(statisticEntry);
-				JsonObject statisticState = state.getAsJsonObject(statisticEntry.getKey());
+				JsonObject statisticState = statistics.getAsJsonObject(statisticEntry.getKey());
 
 				statisticState.getAsJsonArray(FightStatisticProperty.HIT_DAMAGES.getKey()).add(statistic.getHitDamage());
 				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS.getKey()).add(statistic.getHitCounter());
