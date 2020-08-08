@@ -12,9 +12,11 @@ import java.util.HashMap;
 public class FightStateManager
 {
 	private HashMap<String, Fight> fights = new HashMap();
+	private final TwitchLiveLoadoutConfig config;
 	private final TwitchState twitchState;
 	private final Client client;
 
+	public static final int MAX_FIGHT_AMOUNT = 10;
 	private static final String GAME_TICK_COUNTERS_PROPERTY = "ticks";
 	private static final String ACTOR_NAME_PROPERTY = "actor-name";
 	private static final String ACTOR_TYPE_PROPERTY = "actor-type";
@@ -44,8 +46,9 @@ public class FightStateManager
 		}
 	}
 
-	public FightStateManager(TwitchState twitchState, Client client)
+	public FightStateManager(TwitchLiveLoadoutConfig config, TwitchState twitchState, Client client)
 	{
+		this.config = config;
 		this.twitchState = twitchState;
 		this.client = client;
 	}
@@ -97,7 +100,7 @@ public class FightStateManager
 		}
 
 		// TODO: later recognize what damage type was done (magic, ranged or melee).
-		FightStatisticEntry mainDamageName = FightStatisticEntry.GENERAL;
+		FightStatisticEntry mainDamageName = FightStatisticEntry.SHARED;
 		registerFightHitsplat(eventActor, mainDamageName, hitsplat);
 
 		// Register damage done while having smite up
@@ -121,7 +124,7 @@ public class FightStateManager
 
 	public void registerFightGameTick(Actor actor)
 	{
-		Fight fight = getFight(actor);
+		Fight fight = ensureFight(actor);
 		fight.addGameTick();
 	}
 
@@ -129,7 +132,7 @@ public class FightStateManager
 	{
 		int damage = hitsplat.getAmount();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
-		Fight fight = getFight(actor);
+		Fight fight = ensureFight(actor);
 		FightStatistic statistic = fight.getStatistic(statisticEntry);
 
 		// check for block or hit
@@ -151,16 +154,56 @@ public class FightStateManager
 		return fights.containsKey(actorName);
 	}
 
-	public Fight getFight(Actor actor)
+	public Fight ensureFight(Actor actor)
 	{
 		String actorName = actor.getName();
 
 		if (!fights.containsKey(actorName))
 		{
-			fights.put(actorName, new Fight(actor));
+			createFight(actor);
 		}
 
 		return fights.get(actorName);
+	}
+
+	public void createFight(Actor actor)
+	{
+		String actorName = actor.getName();
+
+		// check if an old fight should be removed
+		if (fights.size() >= getMaxFightAmount())
+		{
+			rotateFight();
+		}
+
+		fights.put(actorName, new Fight(actor));
+	}
+
+	public Fight rotateFight()
+	{
+		long oldestLastUpdate = -1;
+		Fight oldestFight = null;
+
+		for (Fight fight : fights.values())
+		{
+			long lastUpdate = fight.getLastUpdate();
+
+			if (oldestLastUpdate < 0 || oldestLastUpdate > lastUpdate)
+			{
+				oldestLastUpdate = lastUpdate;
+				oldestFight = fight;
+			}
+		}
+
+		if (oldestFight == null)
+		{
+			return null;
+		}
+
+		String actorName = oldestFight.getActor().getName();
+		fights.remove(actorName);
+
+		return oldestFight;
 	}
 
 	public JsonObject getFightStatisticsState()
@@ -226,5 +269,16 @@ public class FightStateManager
 		Player localPlayer = client.getLocalPlayer();
 
 		return player == localPlayer;
+	}
+
+	public int getMaxFightAmount() {
+		int maxFights = config.fightStatisticsMaxFightAmount();
+
+		if (maxFights > MAX_FIGHT_AMOUNT)
+		{
+			maxFights = MAX_FIGHT_AMOUNT;
+		}
+
+		return maxFights;
 	}
 }
