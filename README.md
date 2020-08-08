@@ -21,14 +21,18 @@ Several use-cases on what the impact on viewer engagement is:
 Currently the information below is synchronized to Twitch.
 
 #### Combat
-- [x] `DPS`: damage per second for each attack type (*magic*, *ranged*, *melee*, *poison*) per target for both *PvM* & *PvP*.
-- [x] `Freezes`: freeze counter including misses. 
+- [x] `DPS`: damage per second for multiple fights for both *PvM* & *PvP*.
+- [x] `Smite damage`: damage per fight smite has done including potential prayer drain.
 
 #### Items
 - [x] `Inventory items`: live view of the inventory and total price.
 - [x] `Equipment items`: live view of worn gear and total price.
 - [x] `Bank items`: Top 200 most valuable bank items and price of all bank items.
 - [x] `Bank tabs`: info what items are in what tab.
+
+#### Goals
+- [x] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
+- [x] `Boss kill counts`: for each item goal a KC can be attached that is visible on hover.  
 
 #### Skills
 - [x] `Skill experiences`: all experience amounts per skill.
@@ -94,6 +98,8 @@ Future features that might be added based on feedback are:
 - [ ] Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
 - [ ] If the full bank is important, complex state management is considered where the bank is incrementally sent to Twitch in payloads of 5KB in size.
 - [ ] Check whether different locations on the world influence the delay between video an updates so significantly that we would need to have a time reference to know when to update for each viewer independently.
+- [ ] `Freezes`: freeze counter including misses. 
+- [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
 ## Feedback
 If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.
