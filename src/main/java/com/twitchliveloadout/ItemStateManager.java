@@ -10,6 +10,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class ItemStateManager {
+
+	public final static int MAX_BANK_ITEMS = 200;
+
 	private final TwitchState twitchState;
 	private final Client client;
 	private final ItemManager itemManager;
@@ -95,7 +98,7 @@ public class ItemStateManager {
 	public void setSlicedBankItems(Item[] items, long totalPrice)
 	{
 		final int[] tabAmounts = getBankTabAmounts();
-		final List<PricedItem> highestPricedItems = getHighestPricedItems(items, tabAmounts, config.MAX_BANK_ITEMS);
+		final List<PricedItem> highestPricedItems = getHighestPricedItems(items, tabAmounts, getMaxBankItemAmount());
 		final Item[] selectedItems = new Item[highestPricedItems.size()];
 		final int[] selectedTabAmounts = new int[tabAmounts.length];
 
@@ -181,5 +184,22 @@ public class ItemStateManager {
 		Collections.sort(highestPricedItems, new ItemSlotIdSorter());
 
 		return highestPricedItems;
+	}
+
+	public int getMaxBankItemAmount()
+	{
+		int maxAmount = config.bankItemAmount();
+
+		if (maxAmount > MAX_BANK_ITEMS)
+		{
+			maxAmount = MAX_BANK_ITEMS;
+		}
+
+		if (maxAmount < 0)
+		{
+			maxAmount = 0;
+		}
+
+		return maxAmount;
 	}
 }
