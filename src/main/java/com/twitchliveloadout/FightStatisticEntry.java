@@ -1,7 +1,7 @@
 package net.runelite.client.plugins.twitchliveloadout;
 
 public enum FightStatisticEntry {
-	GENERAL("general"),
+	SHARED("shared"),
 //	MELEE("melee"),
 //	MAGIC("magic"),
 //	RANGED("ranged"),
