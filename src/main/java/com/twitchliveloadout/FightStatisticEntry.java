@@ -6,8 +6,8 @@ public enum FightStatisticEntry {
 //	MAGIC("magic"),
 //	RANGED("ranged"),
 
-	FREEZE("freeze"),
-	SPECIAL_ATTACK("specialAttack"),
+//	FREEZE("freeze"),
+//	SPECIAL_ATTACK("specialAttack"),
 	POISON("poison)"),
 //	VENGEANCE("vengeance"),
 //	HEAL("heal"),
