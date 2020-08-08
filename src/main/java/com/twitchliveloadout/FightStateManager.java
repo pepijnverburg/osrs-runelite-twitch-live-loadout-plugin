@@ -22,8 +22,21 @@ public class FightStateManager
 	private static final String ACTOR_TYPE_PROPERTY = "actor-type";
 	private static final String ACTOR_ID_PROPERTY = "actor-id";
 
-	public static final String ACTOR_NPC_TYPE = "npc";
-	public static final String ACTOR_PLAYER_TYPE = "player";
+	public enum ActorType {
+		NPC("npc"),
+		PLAYER("player");
+
+		private final String key;
+
+		ActorType(String key) {
+			this.key = key;
+		}
+
+		public String getKey()
+		{
+			return key;
+		}
+	}
 
 	private enum FightStatisticProperty
 	{
@@ -170,16 +183,15 @@ public class FightStateManager
 	{
 		String actorName = actor.getName();
 
-		// check if an old fight should be removed
-		if (fights.size() >= getMaxFightAmount())
+		while (fights.size() > 0 && fights.size() >= getMaxFightAmount())
 		{
-			rotateFight();
+			rotateOldestFight();
 		}
 
 		fights.put(actorName, new Fight(actor));
 	}
 
-	public Fight rotateFight()
+	public Fight rotateOldestFight()
 	{
 		long oldestLastUpdate = -1;
 		Fight oldestFight = null;
@@ -200,7 +212,7 @@ public class FightStateManager
 			return null;
 		}
 
-		String actorName = oldestFight.getActor().getName();
+		String actorName = oldestFight.getActorName();
 		fights.remove(actorName);
 
 		return oldestFight;
@@ -211,6 +223,7 @@ public class FightStateManager
 		JsonObject state = new JsonObject();
 		state.add(GAME_TICK_COUNTERS_PROPERTY, new JsonArray());
 		state.add(ACTOR_NAME_PROPERTY, new JsonArray());
+		state.add(ACTOR_TYPE_PROPERTY, new JsonArray());
 		state.add(ACTOR_ID_PROPERTY, new JsonArray());
 
 		for (FightStatisticEntry statisticKey : FightStatisticEntry.values())
@@ -228,8 +241,8 @@ public class FightStateManager
 		for (Fight fight : fights.values())
 		{
 			state.getAsJsonArray(GAME_TICK_COUNTERS_PROPERTY).add(fight.getGameTickCounter());
-			state.getAsJsonArray(ACTOR_NAME_PROPERTY).add(fight.getActor().getName());
-			state.getAsJsonArray(ACTOR_TYPE_PROPERTY).add(fight.getActorType());
+			state.getAsJsonArray(ACTOR_NAME_PROPERTY).add(fight.getActorName());
+			state.getAsJsonArray(ACTOR_TYPE_PROPERTY).add(fight.getActorType().getKey());
 			state.getAsJsonArray(ACTOR_ID_PROPERTY).add(fight.getActorId());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
@@ -272,13 +285,18 @@ public class FightStateManager
 	}
 
 	public int getMaxFightAmount() {
-		int maxFights = config.fightStatisticsMaxFightAmount();
+		int maxAmount = config.fightStatisticsMaxFightAmount();
 
-		if (maxFights > MAX_FIGHT_AMOUNT)
+		if (maxAmount > MAX_FIGHT_AMOUNT)
 		{
-			maxFights = MAX_FIGHT_AMOUNT;
+			maxAmount = MAX_FIGHT_AMOUNT;
 		}
 
-		return maxFights;
+		if (maxAmount < 0)
+		{
+			maxAmount = 0;
+		}
+
+		return maxAmount;
 	}
 }
