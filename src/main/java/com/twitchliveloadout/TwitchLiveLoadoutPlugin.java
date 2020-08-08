@@ -104,7 +104,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		twitchState = new TwitchState(config, itemManager);
 		twitchApi = new TwitchApi(config, chatMessageManager);
 
-		fightStateManager = new FightStateManager(twitchState, client);
+		fightStateManager = new FightStateManager(config, twitchState, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
 	}

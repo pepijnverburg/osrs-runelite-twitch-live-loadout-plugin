@@ -32,9 +32,6 @@ import net.runelite.client.config.ConfigItem;
 public interface TwitchLiveLoadoutConfig extends Config
 {
 
-	public final int MAX_BANK_ITEMS = 200;
-	public final String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
-
 	@ConfigItem(
 			keyName = "twitchToken",
 			name = "Twitch Extension Token",
@@ -83,12 +80,23 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "bankEnabled",
 			name = "Sync bank items",
-			description = "Synchronize bank value and top "+ MAX_BANK_ITEMS +" items based on GE value.",
+			description = "Synchronize bank value and top items based on GE value and configured maximum amount.",
 			position = 8
 	)
 	default boolean bankEnabled()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+			keyName = "bankItemAmount",
+			name = "Max bank items",
+			description = "Maximum amount of items synced with fixed upper-bound of "+ ItemStateManager.MAX_BANK_ITEMS +".",
+			position = 8
+	)
+	default int bankItemAmount()
+	{
+		return ItemStateManager.MAX_BANK_ITEMS;
 	}
 
 	@ConfigItem(
@@ -111,6 +119,17 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default boolean fightStatisticsEnabled()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+			keyName = "fightStatisticsMaxFightAmount",
+			name = "Max tracked fights",
+			description = "Maximum amount of tracked fights with fixed upper-bound of "+ FightStateManager.MAX_FIGHT_AMOUNT +".",
+			position = 13
+	)
+	default int fightStatisticsMaxFightAmount()
+	{
+		return FightStateManager.MAX_FIGHT_AMOUNT;
 	}
 
 	@ConfigItem(
@@ -178,7 +197,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default String extensionClientId()
 	{
-		return DEFAULT_EXTENSION_CLIENT_ID;
+		return TwitchApi.DEFAULT_EXTENSION_CLIENT_ID;
 	}
 
 }

@@ -27,6 +27,7 @@ import java.util.zip.GZIPOutputStream;
 @Slf4j
 public class TwitchApi {
 
+	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
 	private final static String VERSION = "0.0.1";
 	private final static String USER_AGENT = "RuneLite";
@@ -204,7 +205,7 @@ public class TwitchApi {
 
 			final ChatMessageBuilder message = new ChatMessageBuilder()
 				.append(ChatColorType.HIGHLIGHT)
-				.append("Could not synchronize loadout to Twitch (code: "+ responseCode +").")
+				.append("Could not synchronize loadout to Twitch (code: "+ responseCode +"). ")
 				.append(responseCodeMessage)
 				.append(ChatColorType.NORMAL);
 
