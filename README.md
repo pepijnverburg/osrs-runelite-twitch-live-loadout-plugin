@@ -21,8 +21,13 @@ Get better engagement for...
 Below you can find an overview which features are implemented and which ones are still in progress.
 
 #### Combat
-- [x] `DPS`: damage per second for multiple fights for both *PvM* & *PvP*.
-- [x] `Smite damage`: damage per fight smite has done including potential prayer drain.
+- [x] `Fight tracking`: general combat stats for multiple fights for both *PvM* & *PvP*.
+- [x] `Kill tracking`: how many kills and separate stats for *all kills* and the *last kill*.
+- [x] `DPS in general`: damage per seconds for all damage done to enemies.
+- [x] `Poison damage`: poison and venom damage.
+- [x] `Smite damage`: damage per fight smite has done including (hypothetical) prayer drain.
+- [x] `Spell splashes`: count the splashes done on the enemies.
+- [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
 - [ ] `Freezes`: freeze counter including misses. 
 - [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
@@ -35,7 +40,7 @@ Below you can find an overview which features are implemented and which ones are
 
 #### Goals
 - [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
-- [ ] `Boss kill counts`: for each item goal a KC can be attached that is visible on hover.  
+- [ ] `Item goals with KC`: for each item goal a boss killcount can be attached that is visible on hover.  
 
 #### Skills
 - [x] `Skill experiences`: all experience amounts per skill.
