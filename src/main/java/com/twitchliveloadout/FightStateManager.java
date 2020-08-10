@@ -16,6 +16,7 @@ public class FightStateManager
 	private final TwitchState twitchState;
 	private final Client client;
 
+	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
 	public static final int MAX_FIGHT_AMOUNT = 10;
 	private static final String ACTOR_NAME_PROPERTY = "actorNames";
 	private static final String ACTOR_TYPE_PROPERTY = "actorTypes";
@@ -23,6 +24,7 @@ public class FightStateManager
 	private static final String ACTOR_COMBAT_LEVEL_PROPERTY = "actorCombatLevels";
 	private static final String GAME_TICK_COUNTERS_PROPERTY = "ticks";
 	private static final String GAME_TICK_TOTAL_COUNTERS_PROPERTY = "ticksTotal";
+	private static final String LAST_UPDATE_PROPERTY = "lastUpdates";
 	private static final String SESSION_COUNTERS_PROPERTY = "sessionCounters";
 	private static final String STATISTICS_PROPERTY = "statistics";
 
@@ -30,7 +32,8 @@ public class FightStateManager
 
 	public enum ActorType {
 		NPC("npc"),
-		PLAYER("player");
+		PLAYER("player"),
+		LOCAL_PLAYER("localPlayer");
 
 		private final String key;
 
@@ -270,6 +273,8 @@ public class FightStateManager
 	public void createFight(Actor actor)
 	{
 		String actorName = actor.getName();
+		String localPlayerName = client.getLocalPlayer().getName();
+		boolean isLocalPlayer = (actor instanceof Player) && localPlayerName.equals(actorName);
 
 		while (fights.size() > 0 && fights.size() >= getMaxFightAmount())
 		{
@@ -278,7 +283,7 @@ public class FightStateManager
 
 		log.debug("Creating new fight for actor {}", actorName);
 
-		fights.put(actorName, new Fight(actor));
+		fights.put(actorName, new Fight(actor, isLocalPlayer));
 	}
 
 	public Fight rotateOldestFight()
@@ -310,6 +315,8 @@ public class FightStateManager
 
 	public JsonObject getFightStatisticsState()
 	{
+		String playerActorName = client.getLocalPlayer().getName();
+
 		JsonObject state = new JsonObject();
 		JsonObject statistics = new JsonObject();
 		JsonArray actorNames = new JsonArray();
@@ -319,6 +326,7 @@ public class FightStateManager
 		JsonArray tickCounters = new JsonArray();
 		JsonArray tickTotalCounters = new JsonArray();
 		JsonArray sessionCounters = new JsonArray();
+		JsonArray lastUpdates = new JsonArray();
 
 		state.add(ACTOR_NAME_PROPERTY, actorNames);
 		state.add(ACTOR_TYPE_PROPERTY, actorTypes);
@@ -347,8 +355,16 @@ public class FightStateManager
 		{
 			FightSession totalSession = fight.calculateTotalSession();
 			FightSession lastSession = fight.getLastSession();
+			String actorName = fight.getActorName();
 
-			actorNames.add(fight.getActorName());
+			// Hide display name so the front-end can
+			// this as the local player and hide the data
+			if (fight.getActorType() == ActorType.LOCAL_PLAYER)
+			{
+				actorName = HIDDEN_PLAYER_ACTOR_NAME;
+			}
+
+			actorNames.add(actorName);
 			actorTypes.add(fight.getActorType().getKey());
 			actorIds.add(fight.getActorId());
 			actorCombatLevels.add(fight.getActorCombatLevel());

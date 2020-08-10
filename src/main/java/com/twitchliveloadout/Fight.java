@@ -19,7 +19,7 @@ public class Fight {
 
 	private HashMap<Actor, FightSession> sessions = new HashMap();
 
-	public Fight(Actor actor)
+	public Fight(Actor actor, boolean isLocalPlayer)
 	{
 		this.lastActor = actor;
 		this.actorName = actor.getName();
@@ -29,7 +29,14 @@ public class Fight {
 		{
 			actorId = ((NPC) actor).getId();
 			actorType = FightStateManager.ActorType.NPC;
-		} else {
+		}
+		else if (isLocalPlayer)
+		{
+			actorId = -1;
+			actorType = FightStateManager.ActorType.LOCAL_PLAYER;
+		}
+		else
+		{
 			actorId = -1;
 			actorType = FightStateManager.ActorType.PLAYER;
 		}
