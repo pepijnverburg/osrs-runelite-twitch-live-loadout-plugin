@@ -2,13 +2,13 @@ package net.runelite.client.plugins.twitchliveloadout;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.GraphicChanged;
-import net.runelite.api.events.HitsplatApplied;
+import net.runelite.api.events.*;
 
 import java.util.HashMap;
 
+@Slf4j
 public class FightStateManager
 {
 	private HashMap<String, Fight> fights = new HashMap();
@@ -17,11 +17,16 @@ public class FightStateManager
 	private final Client client;
 
 	public static final int MAX_FIGHT_AMOUNT = 10;
-	private static final String GAME_TICK_COUNTERS_PROPERTY = "ticks";
 	private static final String ACTOR_NAME_PROPERTY = "actorNames";
 	private static final String ACTOR_TYPE_PROPERTY = "actorTypes";
 	private static final String ACTOR_ID_PROPERTY = "actorIds";
+	private static final String ACTOR_COMBAT_LEVEL_PROPERTY = "actorCombatLevels";
+	private static final String GAME_TICK_COUNTERS_PROPERTY = "ticks";
+	private static final String GAME_TICK_TOTAL_COUNTERS_PROPERTY = "ticksTotal";
+	private static final String SESSION_COUNTERS_PROPERTY = "sessionCounters";
 	private static final String STATISTICS_PROPERTY = "statistics";
+
+	private static final int SPLASH_GRAPHIC_ID = 85;
 
 	public enum ActorType {
 		NPC("npc"),
@@ -41,11 +46,17 @@ public class FightStateManager
 
 	private enum FightStatisticProperty
 	{
+		HIT_COUNTERS_TOTAL("hct"),
+		MISS_COUNTERS_TOTAL("mct"),
+		HIT_DAMAGES_TOTAL("hdt"),
+		MISS_DAMAGES_TOTAL("mdt"),
+		DURATION_SECONDS_TOTAL("dst"),
+
 		HIT_COUNTERS("hc"),
 		MISS_COUNTERS("mc"),
 		HIT_DAMAGES("hd"),
 		MISS_DAMAGES("md"),
-		EPOCH_SECONDS("es");
+		DURATION_SECONDS("ds");
 
 		private final String key;
 
@@ -82,6 +93,13 @@ public class FightStateManager
 		{
 			return;
 		}
+
+		if (graphicId == SPLASH_GRAPHIC_ID)
+		{
+			Fight fight = ensureFight(eventActor);
+			FightStatistic statistic = fight.getStatistic(FightStatisticEntry.SPLASH);
+			statistic.registerMiss(0);
+		}
 	}
 
 	public void onHitsplatApplied(HitsplatApplied event)
@@ -91,12 +109,7 @@ public class FightStateManager
 		Player player = client.getLocalPlayer();
 		HeadIcon headIcon = player.getOverheadIcon();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
-
-		// Guard: check if the damage is on the player themselves.
-		if (isLocalPlayer(eventActor))
-		{
-			return;
-		}
+		boolean isOnSelf = isLocalPlayer(eventActor);
 
 		// Poison damage can come from different sources,
 		// but will be attributed to the DPS.
@@ -108,6 +121,8 @@ public class FightStateManager
 		}
 
 		// Guard: check if the hitsplat is the players damage.
+		// NOTE: we will not guard against hitsplats that are on the player themselves,
+		// because we would also like to track this!
 		if (!hitsplat.isMine())
 		{
 			return;
@@ -117,11 +132,56 @@ public class FightStateManager
 		FightStatisticEntry mainDamageName = FightStatisticEntry.SHARED;
 		registerFightHitsplat(eventActor, mainDamageName, hitsplat);
 
-		// Register damage done while having smite up
-		if (headIcon == HeadIcon.SMITE)
+		// Register damage done while having smite up and dealing damage to other entity
+		if (!isOnSelf && headIcon == HeadIcon.SMITE)
 		{
 			registerFightHitsplat(eventActor, FightStatisticEntry.SMITE, hitsplat);
 		}
+	}
+
+	public void onNpcDespawned(NpcDespawned npcDespawned)
+	{
+		final NPC npc = npcDespawned.getNpc();
+		final Actor eventActor = npcDespawned.getActor();
+
+		if (!npc.isDead())
+		{
+			return;
+		}
+
+		onActorDespawned(eventActor);
+	}
+
+	public void onPlayerDespawned(PlayerDespawned playerDespawned)
+	{
+		final Player player = playerDespawned.getPlayer();
+		final Actor eventActor = playerDespawned.getActor();
+
+		if (player.getHealthRatio() != 0)
+		{
+			return;
+		}
+
+		onActorDespawned(eventActor);
+	}
+
+	private void onActorDespawned(Actor eventActor)
+	{
+
+		if (!hasFight(eventActor))
+		{
+			return;
+		}
+
+		Fight fight = ensureFight(eventActor);
+		Actor lastActor = fight.getLastActor();
+
+		if (eventActor != lastActor)
+		{
+			return;
+		}
+
+		fight.resetSession();
 	}
 
 	public void onGameTick(GameTick tick)
@@ -138,6 +198,14 @@ public class FightStateManager
 
 	public void registerFightGameTick(Actor actor)
 	{
+
+		// Guard: only handle game tick when a fight is initiated (which means one hitsplat was dealt).
+		// This is to prevent non-attackable NPC's to also count interacting game ticks.
+		if (!hasFight(actor))
+		{
+			return;
+		}
+
 		Fight fight = ensureFight(actor);
 		fight.addGameTick();
 	}
@@ -147,7 +215,14 @@ public class FightStateManager
 		int damage = hitsplat.getAmount();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
 		Fight fight = ensureFight(actor);
+		Actor lastActor = fight.getLastActor();
 		FightStatistic statistic = fight.getStatistic(statisticEntry);
+
+		if (lastActor != actor)
+		{
+			fight.setLastActor(actor);
+			fight.resetSession();
+		}
 
 		// check for block or hit
 		switch (hitsplatType)
@@ -189,6 +264,8 @@ public class FightStateManager
 			rotateOldestFight();
 		}
 
+		log.debug("Creating new fight for actor {}", actorName);
+
 		fights.put(actorName, new Fight(actor));
 	}
 
@@ -223,15 +300,21 @@ public class FightStateManager
 	{
 		JsonObject state = new JsonObject();
 		JsonObject statistics = new JsonObject();
-		JsonArray tickCounters = new JsonArray();
 		JsonArray actorNames = new JsonArray();
 		JsonArray actorTypes = new JsonArray();
 		JsonArray actorIds = new JsonArray();
+		JsonArray actorCombatLevels = new JsonArray();
+		JsonArray tickCounters = new JsonArray();
+		JsonArray tickTotalCounters = new JsonArray();
+		JsonArray sessionCounters = new JsonArray();
 
-		state.add(GAME_TICK_COUNTERS_PROPERTY, tickCounters);
 		state.add(ACTOR_NAME_PROPERTY, actorNames);
 		state.add(ACTOR_TYPE_PROPERTY, actorTypes);
 		state.add(ACTOR_ID_PROPERTY, actorIds);
+		state.add(ACTOR_COMBAT_LEVEL_PROPERTY, actorCombatLevels);
+		state.add(GAME_TICK_COUNTERS_PROPERTY, tickCounters);
+		state.add(GAME_TICK_TOTAL_COUNTERS_PROPERTY, tickTotalCounters);
+		state.add(SESSION_COUNTERS_PROPERTY, sessionCounters);
 		state.add(STATISTICS_PROPERTY, statistics);
 
 		for (FightStatisticEntry statisticKey : FightStatisticEntry.values())
@@ -248,10 +331,13 @@ public class FightStateManager
 
 		for (Fight fight : fights.values())
 		{
-			tickCounters.add(fight.getGameTickCounter());
 			actorNames.add(fight.getActorName());
 			actorTypes.add(fight.getActorType().getKey());
 			actorIds.add(fight.getActorId());
+			actorCombatLevels.add(fight.getActorCombatLevel());
+			tickCounters.add(fight.getGameTickCounter());
+			tickTotalCounters.add(fight.getGameTickTotalCounter());
+			sessionCounters.add(fight.getSessionCounter());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
@@ -262,7 +348,13 @@ public class FightStateManager
 				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS.getKey()).add(statistic.getHitCounter());
 				statisticState.getAsJsonArray(FightStatisticProperty.MISS_DAMAGES.getKey()).add(statistic.getMissDamage());
 				statisticState.getAsJsonArray(FightStatisticProperty.MISS_COUNTERS.getKey()).add(statistic.getMissCounter());
-				statisticState.getAsJsonArray(FightStatisticProperty.EPOCH_SECONDS.getKey()).add(statistic.getEpochSeconds());
+				statisticState.getAsJsonArray(FightStatisticProperty.DURATION_SECONDS.getKey()).add(statistic.getDuration());
+
+				statisticState.getAsJsonArray(FightStatisticProperty.HIT_DAMAGES_TOTAL.getKey()).add(statistic.getHitDamageTotal());
+				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS_TOTAL.getKey()).add(statistic.getHitCounterTotal());
+				statisticState.getAsJsonArray(FightStatisticProperty.MISS_DAMAGES_TOTAL.getKey()).add(statistic.getMissDamageTotal());
+				statisticState.getAsJsonArray(FightStatisticProperty.MISS_COUNTERS_TOTAL.getKey()).add(statistic.getMissCounterTotal());
+				statisticState.getAsJsonArray(FightStatisticProperty.DURATION_SECONDS_TOTAL.getKey()).add(statistic.getTotalDuration());
 			}
 		}
 
@@ -272,11 +364,6 @@ public class FightStateManager
 	private boolean isPlayer(Actor actor)
 	{
 		return actor instanceof Player;
-	}
-
-	private boolean isNpc(Actor actor)
-	{
-		return actor instanceof NPC;
 	}
 
 	private boolean isLocalPlayer(Actor actor)

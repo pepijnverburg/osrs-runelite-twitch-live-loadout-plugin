@@ -64,6 +64,7 @@ public class TwitchState {
 
 		// initialize the states that are not directly synced with events
 		setOverlayTopPosition(config.overlayTopPosition());
+		setVirtualLevelsEnabled(config.virtualLevelsEnabled());
 	}
 
 	public JsonObject getState()

@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
+
 @Slf4j
 public class TwitchApi {
 

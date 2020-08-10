@@ -1,20 +1,28 @@
 package net.runelite.client.plugins.twitchliveloadout;
 
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.NPC;
 
 import java.util.HashMap;
 
+@Slf4j
 public class Fight {
+	private Actor lastActor;
 	private final String actorName;
 	private final int actorId;
 	private final FightStateManager.ActorType actorType;
+	private final int actorCombatLevel;
 	private int gameTickCounter = 0;
+	private int gameTickTotalCounter = 0;
+	private int sessionCounter = 0;
 	private HashMap<FightStatisticEntry, FightStatistic> statistics = new HashMap();
 
 	public Fight(Actor actor)
 	{
+		this.lastActor = actor;
 		this.actorName = actor.getName();
+		this.actorCombatLevel = actor.getCombatLevel();
 
 		if (actor instanceof NPC)
 		{
@@ -71,6 +79,11 @@ public class Fight {
 		return actorType;
 	}
 
+	public Actor getLastActor()
+	{
+		return lastActor;
+	}
+
 	public int getActorId()
 	{
 		return actorId;
@@ -81,6 +94,16 @@ public class Fight {
 		return actorName;
 	}
 
+	public int getActorCombatLevel()
+	{
+		return actorCombatLevel;
+	}
+
+	public void setLastActor(Actor actor)
+	{
+		this.lastActor = actor;
+	}
+
 	public boolean isValid()
 	{
 		return true;
@@ -88,6 +111,7 @@ public class Fight {
 
 	public void addGameTick()
 	{
+		gameTickTotalCounter ++;
 		gameTickCounter ++;
 	}
 
@@ -95,8 +119,41 @@ public class Fight {
 		return gameTickCounter;
 	}
 
-	public void reset()
+	public int getGameTickTotalCounter()
+	{
+		return gameTickTotalCounter;
+	}
+
+	public int getSessionCounter()
+	{
+		return sessionCounter;
+	}
+
+	public void resetSession()
 	{
 		gameTickCounter = 0;
+		sessionCounter ++;
+
+		for (FightStatistic statistic : statistics.values())
+		{
+			statistic.resetSession();
+		}
+
+		log.error("Resetting the fight session of actor {}, session counter is now on {}", actorName, sessionCounter);
+	}
+
+	public void reset()
+	{
+		for (FightStatistic statistic : statistics.values())
+		{
+			statistic.reset();
+		}
+
+		resetSession();
+
+		sessionCounter = 0;
+		gameTickTotalCounter = 0;
+
+		log.debug("Resetting all fight data of actor {}", actorName);
 	}
 }

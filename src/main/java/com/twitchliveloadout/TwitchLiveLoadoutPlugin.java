@@ -211,6 +211,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onNpcDespawned(NpcDespawned npcDespawned)
+	{
+		fightStateManager.onNpcDespawned(npcDespawned);
+	}
+
+	@Subscribe
+	public void onPlayerDespawned(PlayerDespawned playerDespawned)
+	{
+		fightStateManager.onPlayerDespawned(playerDespawned);
+	}
+
+	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
 		 fightStateManager.onGameTick(tick);
@@ -229,12 +241,15 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			twitchApi.clearScheduledBroadcasterStates();
 		}
 
+		// Handle keys that should trigger an update of the state as well.
+		// Note that on load these events are not triggered, meaning that
+		// in the constructor of the TwitchState class one should also load
+		// this configuration value!
 		if (key.equals("overlayTopPosition"))
 		{
 			twitchState.setOverlayTopPosition(config.overlayTopPosition());
 		}
-
-		if (key.equals("virtualLevelsEnabled"))
+		else if (key.equals("virtualLevelsEnabled"))
 		{
 			twitchState.setVirtualLevelsEnabled(config.virtualLevelsEnabled());
 		}
