@@ -8,15 +8,16 @@ import java.util.HashMap;
 
 @Slf4j
 public class Fight {
-	private Actor lastActor;
 	private final String actorName;
 	private final int actorId;
 	private final FightStateManager.ActorType actorType;
 	private final int actorCombatLevel;
-	private int gameTickCounter = 0;
-	private int gameTickTotalCounter = 0;
-	private int sessionCounter = 0;
-	private HashMap<FightStatisticEntry, FightStatistic> statistics = new HashMap();
+
+	private Actor lastActor;
+
+	private int finishedSessionCounter = 0;
+
+	private HashMap<Actor, FightSession> sessions = new HashMap();
 
 	public Fight(Actor actor)
 	{
@@ -33,24 +34,52 @@ public class Fight {
 			actorType = FightStateManager.ActorType.PLAYER;
 		}
 
-		for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
-		{
-			statistics.put(statisticEntry, new FightStatistic());
-		}
+		ensureSession(actor);
 	}
 
-	public FightStatistic getStatistic(FightStatisticEntry statisticEntry)
+	public FightStatistic ensureStatistic(Actor actor, FightStatisticEntry statisticEntry)
 	{
-		return statistics.get(statisticEntry);
+
+		if (!sessions.containsKey(actor))
+		{
+			ensureSession(actor);
+		}
+
+		FightSession session = sessions.get(actor);
+
+		return session.getStatistic(statisticEntry);
+	}
+
+	public boolean hasSession(Actor actor)
+	{
+		return sessions.containsKey(actor);
+	}
+
+	public FightSession getSession(Actor actor)
+	{
+		return sessions.get(actor);
+	}
+
+	public FightSession ensureSession(Actor actor)
+	{
+		if (sessions.containsKey(actor))
+		{
+			return sessions.get(actor);
+		}
+
+		FightSession session = new FightSession(actor);
+		sessions.put(actor, session);
+
+		return session;
 	}
 
 	public long getLastUpdate()
 	{
 		long maxLastUpdate = 0;
 
-		for (FightStatistic statistic : statistics.values())
+		for (FightSession session : sessions.values())
 		{
-			long lastUpdate = statistic.getLastUpdate();
+			long lastUpdate = session.getLastUpdate();
 
 			if (lastUpdate > maxLastUpdate)
 			{
@@ -61,17 +90,42 @@ public class Fight {
 		return maxLastUpdate;
 	}
 
-	public boolean hasHadActivity()
+	public FightSession calculateTotalSession()
 	{
-		for (FightStatistic statistic : statistics.values())
+		FightSession totalSession = new FightSession(lastActor);
+
+		for (FightSession session : sessions.values())
 		{
-			if (statistic.hasHadActivity())
+			totalSession.addGameTicks(session.getGameTickCounter());
+
+			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
-				return true;
+				FightStatistic totalStatistic = totalSession.getStatistic(statisticEntry);
+				FightStatistic statistic = session.getStatistic(statisticEntry);
+
+				totalStatistic.addStatistic(statistic);
 			}
 		}
 
-		return false;
+		return totalSession;
+	}
+
+	public FightSession getLastSession()
+	{
+		return ensureSession(lastActor);
+	}
+
+	public void setLastActor(Actor actor)
+	{
+		this.lastActor = actor;
+	}
+
+	public void finishSession(Actor actor)
+	{
+		FightSession session = ensureSession(actor);
+
+		session.finish();
+		finishedSessionCounter ++;
 	}
 
 	public FightStateManager.ActorType getActorType()
@@ -99,61 +153,8 @@ public class Fight {
 		return actorCombatLevel;
 	}
 
-	public void setLastActor(Actor actor)
+	public int getFinishedSessionCounter()
 	{
-		this.lastActor = actor;
-	}
-
-	public boolean isValid()
-	{
-		return true;
-	}
-
-	public void addGameTick()
-	{
-		gameTickTotalCounter ++;
-		gameTickCounter ++;
-	}
-
-	public int getGameTickCounter() {
-		return gameTickCounter;
-	}
-
-	public int getGameTickTotalCounter()
-	{
-		return gameTickTotalCounter;
-	}
-
-	public int getSessionCounter()
-	{
-		return sessionCounter;
-	}
-
-	public void resetSession()
-	{
-		gameTickCounter = 0;
-		sessionCounter ++;
-
-		for (FightStatistic statistic : statistics.values())
-		{
-			statistic.resetSession();
-		}
-
-		log.error("Resetting the fight session of actor {}, session counter is now on {}", actorName, sessionCounter);
-	}
-
-	public void reset()
-	{
-		for (FightStatistic statistic : statistics.values())
-		{
-			statistic.reset();
-		}
-
-		resetSession();
-
-		sessionCounter = 0;
-		gameTickTotalCounter = 0;
-
-		log.debug("Resetting all fight data of actor {}", actorName);
+		return finishedSessionCounter;
 	}
 }

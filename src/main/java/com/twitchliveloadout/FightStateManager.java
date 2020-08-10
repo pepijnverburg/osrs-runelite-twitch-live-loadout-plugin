@@ -97,7 +97,7 @@ public class FightStateManager
 		if (graphicId == SPLASH_GRAPHIC_ID)
 		{
 			Fight fight = ensureFight(eventActor);
-			FightStatistic statistic = fight.getStatistic(FightStatisticEntry.SPLASH);
+			FightStatistic statistic = fight.ensureStatistic(eventActor, FightStatisticEntry.SPLASH);
 			statistic.registerMiss(0);
 		}
 	}
@@ -173,15 +173,14 @@ public class FightStateManager
 			return;
 		}
 
-		Fight fight = ensureFight(eventActor);
-		Actor lastActor = fight.getLastActor();
+		Fight fight = getFight(eventActor);
 
-		if (eventActor != lastActor)
+		if (!fight.hasSession(eventActor))
 		{
 			return;
 		}
 
-		fight.resetSession();
+		fight.finishSession(eventActor);
 	}
 
 	public void onGameTick(GameTick tick)
@@ -206,8 +205,15 @@ public class FightStateManager
 			return;
 		}
 
-		Fight fight = ensureFight(actor);
-		fight.addGameTick();
+		Fight fight = getFight(actor);
+
+		if (!fight.hasSession(actor))
+		{
+			return;
+		}
+
+		FightSession session = fight.getSession(actor);
+		session.addGameTicks(1);
 	}
 
 	public void registerFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
@@ -216,12 +222,11 @@ public class FightStateManager
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
 		Fight fight = ensureFight(actor);
 		Actor lastActor = fight.getLastActor();
-		FightStatistic statistic = fight.getStatistic(statisticEntry);
+		FightStatistic statistic = fight.ensureStatistic(actor, statisticEntry);
 
 		if (lastActor != actor)
 		{
 			fight.setLastActor(actor);
-			fight.resetSession();
 		}
 
 		// check for block or hit
@@ -251,6 +256,13 @@ public class FightStateManager
 		{
 			createFight(actor);
 		}
+
+		return getFight(actor);
+	}
+
+	public Fight getFight(Actor actor)
+	{
+		String actorName = actor.getName();
 
 		return fights.get(actorName);
 	}
@@ -312,9 +324,11 @@ public class FightStateManager
 		state.add(ACTOR_TYPE_PROPERTY, actorTypes);
 		state.add(ACTOR_ID_PROPERTY, actorIds);
 		state.add(ACTOR_COMBAT_LEVEL_PROPERTY, actorCombatLevels);
+
 		state.add(GAME_TICK_COUNTERS_PROPERTY, tickCounters);
 		state.add(GAME_TICK_TOTAL_COUNTERS_PROPERTY, tickTotalCounters);
 		state.add(SESSION_COUNTERS_PROPERTY, sessionCounters);
+
 		state.add(STATISTICS_PROPERTY, statistics);
 
 		for (FightStatisticEntry statisticKey : FightStatisticEntry.values())
@@ -331,30 +345,35 @@ public class FightStateManager
 
 		for (Fight fight : fights.values())
 		{
+			FightSession totalSession = fight.calculateTotalSession();
+			FightSession lastSession = fight.getLastSession();
+
 			actorNames.add(fight.getActorName());
 			actorTypes.add(fight.getActorType().getKey());
 			actorIds.add(fight.getActorId());
 			actorCombatLevels.add(fight.getActorCombatLevel());
-			tickCounters.add(fight.getGameTickCounter());
-			tickTotalCounters.add(fight.getGameTickTotalCounter());
-			sessionCounters.add(fight.getSessionCounter());
+
+			tickCounters.add(lastSession.getGameTickCounter());
+			tickTotalCounters.add(totalSession.getGameTickCounter());
+			sessionCounters.add(fight.getFinishedSessionCounter());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
-				FightStatistic statistic = fight.getStatistic(statisticEntry);
+				FightStatistic totalStatistic = totalSession.getStatistic(statisticEntry);
+				FightStatistic lastStatistic = lastSession.getStatistic(statisticEntry);
 				JsonObject statisticState = statistics.getAsJsonObject(statisticEntry.getKey());
 
-				statisticState.getAsJsonArray(FightStatisticProperty.HIT_DAMAGES.getKey()).add(statistic.getHitDamage());
-				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS.getKey()).add(statistic.getHitCounter());
-				statisticState.getAsJsonArray(FightStatisticProperty.MISS_DAMAGES.getKey()).add(statistic.getMissDamage());
-				statisticState.getAsJsonArray(FightStatisticProperty.MISS_COUNTERS.getKey()).add(statistic.getMissCounter());
-				statisticState.getAsJsonArray(FightStatisticProperty.DURATION_SECONDS.getKey()).add(statistic.getDuration());
+				statisticState.getAsJsonArray(FightStatisticProperty.HIT_DAMAGES.getKey()).add(lastStatistic.getHitDamage());
+				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS.getKey()).add(lastStatistic.getHitCounter());
+				statisticState.getAsJsonArray(FightStatisticProperty.MISS_DAMAGES.getKey()).add(lastStatistic.getMissDamage());
+				statisticState.getAsJsonArray(FightStatisticProperty.MISS_COUNTERS.getKey()).add(lastStatistic.getMissCounter());
+				statisticState.getAsJsonArray(FightStatisticProperty.DURATION_SECONDS.getKey()).add(lastStatistic.getDuration());
 
-				statisticState.getAsJsonArray(FightStatisticProperty.HIT_DAMAGES_TOTAL.getKey()).add(statistic.getHitDamageTotal());
-				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS_TOTAL.getKey()).add(statistic.getHitCounterTotal());
-				statisticState.getAsJsonArray(FightStatisticProperty.MISS_DAMAGES_TOTAL.getKey()).add(statistic.getMissDamageTotal());
-				statisticState.getAsJsonArray(FightStatisticProperty.MISS_COUNTERS_TOTAL.getKey()).add(statistic.getMissCounterTotal());
-				statisticState.getAsJsonArray(FightStatisticProperty.DURATION_SECONDS_TOTAL.getKey()).add(statistic.getTotalDuration());
+				statisticState.getAsJsonArray(FightStatisticProperty.HIT_DAMAGES_TOTAL.getKey()).add(totalStatistic.getHitDamage());
+				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS_TOTAL.getKey()).add(totalStatistic.getHitCounter());
+				statisticState.getAsJsonArray(FightStatisticProperty.MISS_DAMAGES_TOTAL.getKey()).add(totalStatistic.getMissDamage());
+				statisticState.getAsJsonArray(FightStatisticProperty.MISS_COUNTERS_TOTAL.getKey()).add(totalStatistic.getMissCounter());
+				statisticState.getAsJsonArray(FightStatisticProperty.DURATION_SECONDS_TOTAL.getKey()).add(totalStatistic.getDuration());
 			}
 		}
 

@@ -5,20 +5,6 @@ import java.time.Instant;
 public class FightStatistic {
 	private long firstUpdate = 0;
 	private long lastUpdate = 0;
-	private long lastSessionStart = 0;
-
-	/**
-	 * Total counters and damages across sessions.
-	 */
-	private int hitDamageTotal = 0;
-	private int missDamageTotal = 0;
-	private int hitCounterTotal = 0;
-	private int missCounterTotal = 0;
-
-	/**
-	 * Counters and damages for latest session.
-	 * A session can be for example one kill.
-	 */
 	private int hitDamage = 0;
 	private int missDamage = 0;
 	private int hitCounter = 0;
@@ -28,8 +14,6 @@ public class FightStatistic {
 	{
 		hitDamage += damage;
 		hitCounter ++;
-		hitDamageTotal += damage;
-		hitCounterTotal ++;
 		registerUpdate();
 	}
 
@@ -37,8 +21,27 @@ public class FightStatistic {
 	{
 		missDamage += damage;
 		missCounter ++;
-		missDamageTotal += damage;
-		missCounterTotal ++;
+	}
+
+	public void addStatistic(FightStatistic statistic)
+	{
+		long candidateFirstUpdate = statistic.getFirstUpdate();
+		long candidateLastUpdate = statistic.getLastUpdate();
+
+		hitDamage += statistic.getHitDamage();
+		hitCounter += statistic.getHitCounter();
+		missDamage += statistic.getMissDamage();
+		missCounter += statistic.getMissCounter();
+
+		if ((candidateFirstUpdate != 0 && candidateFirstUpdate < firstUpdate) || firstUpdate == 0)
+		{
+			firstUpdate = candidateFirstUpdate;
+		}
+
+		if ((candidateLastUpdate != 0 && candidateLastUpdate > lastUpdate) || lastUpdate == 0)
+		{
+			lastUpdate = candidateLastUpdate;
+		}
 	}
 
 	public void registerUpdate()
@@ -50,40 +53,10 @@ public class FightStatistic {
 			firstUpdate = now;
 		}
 
-		if (lastSessionStart == 0)
-		{
-			lastSessionStart = now;
-		}
-
 		lastUpdate = now;
 	}
 
-	public boolean hasHadActivity()
-	{
-		return getLastUpdate() != 0;
-	}
-
-	public int getHitDamageTotal()
-	{
-		return hitDamageTotal;
-	}
-
-	public int getHitCounterTotal()
-	{
-		return hitCounterTotal;
-	}
-
-	public int getMissCounterTotal()
-	{
-		return missCounterTotal;
-	}
-
-	public int getMissDamageTotal()
-	{
-		return missDamageTotal;
-	}
-
-	public long getTotalDuration()
+	public long getDuration()
 	{
 		return lastUpdate - firstUpdate;
 	}
@@ -118,31 +91,14 @@ public class FightStatistic {
 		return firstUpdate;
 	}
 
-	public long getDuration()
-	{
-		return lastUpdate - lastSessionStart;
-	}
-
-	public void resetSession()
+	public void reset()
 	{
 		hitDamage = 0;
 		missDamage = 0;
 		hitCounter = 0;
 		missCounter = 0;
 
-		lastSessionStart = Instant.now().getEpochSecond();
-		registerUpdate();
-	}
-
-	public void reset()
-	{
-		hitDamageTotal = 0;
-		missDamageTotal = 0;
-		hitCounterTotal = 0;
-		missCounterTotal = 0;
-
 		firstUpdate = 0;
-		resetSession();
-		registerUpdate();
+		lastUpdate = 0;
 	}
 }
