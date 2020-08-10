@@ -28,6 +28,7 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `Smite damage`: damage per fight smite has done including (hypothetical) prayer drain.
 - [x] `Spell splashes`: count the splashes done on the enemies.
 - [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
+- [x] `Incoming hits`: damage, splashes, etc. are also tracked on the logged in player.
 - [ ] `Freezes`: freeze counter including misses. 
 - [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
@@ -109,6 +110,7 @@ Future features that might be added based on feedback are:
 - [ ] Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
 - [ ] If the full bank is important, complex state management is considered where the bank is incrementally sent to Twitch in payloads of 5KB in size.
 - [ ] Check whether different locations of viewers on the world influence the delay between video an updates so significantly that we would need to have a time reference to know when to update for each viewer independently.
+- [ ] Add clan members to the fight stats to display the damage they are taking. They can then also be part of the 'incoming' fights group.
 
 ## Feedback
 If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.
