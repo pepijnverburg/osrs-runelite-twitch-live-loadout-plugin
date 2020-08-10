@@ -62,7 +62,7 @@ It is also possible to configure what information is being sent through the foll
 - `Sync bank`: toggle to sync bank items.
 - `Max bank items`: the maximum amount of bank items with an upper limit set by the plugin.
 - `Sync skills`: toggle to sync (boosted) skills.
-- `Virtual levels enabled`: when enabled the maximum level shown based on experience is 120 instead of 99. 
+- `Virtual levels enabled`: when enabled the maximum level shown based on experience is 126 instead of 99. 
 - `Sync weight`: toggle to sync weight.
 - `Overlay top position`: tweak where a Twitch Extension overlay would be positioned to match your screen layout.
 - `Sync enabled`: toggle off to disable all syncing and clear current data.
