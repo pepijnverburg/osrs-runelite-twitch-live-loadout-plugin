@@ -85,14 +85,21 @@ public class FightStateManager
 	{
 		Actor eventActor = event.getActor();
 		Actor interactingActor = client.getLocalPlayer().getInteracting();
+		Player localPlayer = client.getLocalPlayer();
 		int graphicId = eventActor.getGraphic();
+		boolean isLocalPlayer = false;
+
+		if (eventActor instanceof Player)
+		{
+			isLocalPlayer = localPlayer.getName().equals(((Player) eventActor).getName());
+		}
 
 		if (graphicId < 0)
 		{
 			return;
 		}
 
-		if (eventActor != interactingActor)
+		if (eventActor != interactingActor && !isLocalPlayer)
 		{
 			return;
 		}
@@ -315,8 +322,6 @@ public class FightStateManager
 
 	public JsonObject getFightStatisticsState()
 	{
-		String playerActorName = client.getLocalPlayer().getName();
-
 		JsonObject state = new JsonObject();
 		JsonObject statistics = new JsonObject();
 		JsonArray actorNames = new JsonArray();
@@ -336,6 +341,7 @@ public class FightStateManager
 		state.add(GAME_TICK_COUNTERS_PROPERTY, tickCounters);
 		state.add(GAME_TICK_TOTAL_COUNTERS_PROPERTY, tickTotalCounters);
 		state.add(SESSION_COUNTERS_PROPERTY, sessionCounters);
+		state.add(LAST_UPDATE_PROPERTY, lastUpdates);
 
 		state.add(STATISTICS_PROPERTY, statistics);
 
@@ -372,6 +378,7 @@ public class FightStateManager
 			tickCounters.add(lastSession.getGameTickCounter());
 			tickTotalCounters.add(totalSession.getGameTickCounter());
 			sessionCounters.add(fight.getFinishedSessionCounter());
+			lastUpdates.add(fight.getLastUpdate());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
