@@ -18,15 +18,17 @@ public class FightStateManager
 
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
 	public static final int MAX_FIGHT_AMOUNT = 10;
-	private static final String ACTOR_NAME_PROPERTY = "actorNames";
-	private static final String ACTOR_TYPE_PROPERTY = "actorTypes";
-	private static final String ACTOR_ID_PROPERTY = "actorIds";
-	private static final String ACTOR_COMBAT_LEVEL_PROPERTY = "actorCombatLevels";
-	private static final String GAME_TICK_COUNTERS_PROPERTY = "ticks";
-	private static final String GAME_TICK_TOTAL_COUNTERS_PROPERTY = "ticksTotal";
-	private static final String LAST_UPDATE_PROPERTY = "lastUpdates";
-	private static final String SESSION_COUNTERS_PROPERTY = "sessionCounters";
-	private static final String STATISTICS_PROPERTY = "statistics";
+	private static final String ACTOR_NAME_KEY = "actorNames";
+	private static final String ACTOR_TYPE_KEY = "actorTypes";
+	private static final String ACTOR_ID_KEY = "actorIds";
+	private static final String ACTOR_COMBAT_LEVEL_KEY = "actorCombatLevels";
+	private static final String TOTAL_INTERACTING_TICKS_KEY = "totalInteractingTicks";
+	private static final String LAST_INTERACTING_TICKS_KEY = "lastInteractingTicks";
+	private static final String TOTAL_DURATIONS_KEY = "totalDurations";
+	private static final String LAST_DURATIONS_KEY = "lastDurations";
+	private static final String UPDATED_ATS_KEY = "updatedAts";
+	private static final String SESSION_COUNTERS_KEY = "sessionCounters";
+	private static final String STATISTICS_KEY = "statistics";
 
 	private static final int SPLASH_GRAPHIC_ID = 85;
 
@@ -322,22 +324,28 @@ public class FightStateManager
 		JsonArray actorTypes = new JsonArray();
 		JsonArray actorIds = new JsonArray();
 		JsonArray actorCombatLevels = new JsonArray();
-		JsonArray tickCounters = new JsonArray();
-		JsonArray tickTotalCounters = new JsonArray();
+		JsonArray totalInteractingTicks = new JsonArray();
+		JsonArray lastInteractingTicks = new JsonArray();
+		JsonArray totalDurations = new JsonArray();
+		JsonArray lastDurations = new JsonArray();
 		JsonArray sessionCounters = new JsonArray();
-		JsonArray lastUpdates = new JsonArray();
+		JsonArray updatedAts = new JsonArray();
 
-		state.add(ACTOR_NAME_PROPERTY, actorNames);
-		state.add(ACTOR_TYPE_PROPERTY, actorTypes);
-		state.add(ACTOR_ID_PROPERTY, actorIds);
-		state.add(ACTOR_COMBAT_LEVEL_PROPERTY, actorCombatLevels);
+		state.add(ACTOR_NAME_KEY, actorNames);
+		state.add(ACTOR_TYPE_KEY, actorTypes);
+		state.add(ACTOR_ID_KEY, actorIds);
+		state.add(ACTOR_COMBAT_LEVEL_KEY, actorCombatLevels);
 
-		state.add(GAME_TICK_COUNTERS_PROPERTY, tickCounters);
-		state.add(GAME_TICK_TOTAL_COUNTERS_PROPERTY, tickTotalCounters);
-		state.add(SESSION_COUNTERS_PROPERTY, sessionCounters);
-		state.add(LAST_UPDATE_PROPERTY, lastUpdates);
+		state.add(TOTAL_INTERACTING_TICKS_KEY, totalInteractingTicks);
+		state.add(LAST_INTERACTING_TICKS_KEY, lastInteractingTicks);
 
-		state.add(STATISTICS_PROPERTY, statistics);
+		state.add(TOTAL_DURATIONS_KEY, totalDurations);
+		state.add(LAST_DURATIONS_KEY, lastDurations);
+
+		state.add(SESSION_COUNTERS_KEY, sessionCounters);
+		state.add(UPDATED_ATS_KEY, updatedAts);
+
+		state.add(STATISTICS_KEY, statistics);
 
 		for (FightStatisticEntry statisticKey : FightStatisticEntry.values())
 		{
@@ -369,10 +377,10 @@ public class FightStateManager
 			actorIds.add(fight.getActorId());
 			actorCombatLevels.add(fight.getActorCombatLevel());
 
-			tickCounters.add(lastSession.getGameTickCounter());
-			tickTotalCounters.add(totalSession.getGameTickCounter());
+			totalInteractingTicks.add(totalSession.getGameTickCounter());
+			lastInteractingTicks.add(lastSession.getGameTickCounter());
 			sessionCounters.add(fight.getFinishedSessionCounter());
-			lastUpdates.add(fight.getLastUpdate());
+			updatedAts.add(fight.getLastUpdate());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
