@@ -5,10 +5,10 @@ import java.time.Instant;
 public class FightStatistic {
 	private long firstUpdate = 0;
 	private long lastUpdate = 0;
-	private int hitDamage = 0;
-	private int missDamage = 0;
-	private int hitCounter = 0;
-	private int missCounter = 0;
+	private long hitDamage = 0;
+	private long missDamage = 0;
+	private long hitCounter = 0;
+	private long missCounter = 0;
 
 	public void registerHit(int damage)
 	{
@@ -56,27 +56,27 @@ public class FightStatistic {
 		lastUpdate = now;
 	}
 
-	public long getDuration()
+	public long getDurationSeconds()
 	{
 		return lastUpdate - firstUpdate;
 	}
 
-	public int getHitDamage()
+	public long getHitDamage()
 	{
 		return hitDamage;
 	}
 
-	public int getMissDamage()
+	public long getMissDamage()
 	{
 		return missDamage;
 	}
 
-	public int getHitCounter()
+	public long getHitCounter()
 	{
 		return hitCounter;
 	}
 
-	public int getMissCounter()
+	public long getMissCounter()
 	{
 		return missCounter;
 	}
@@ -89,6 +89,34 @@ public class FightStatistic {
 	public long getFirstUpdate()
 	{
 		return firstUpdate;
+	}
+
+	public long getValueByProperty(FightStateManager.FightStatisticProperty property)
+	{
+		final String key = property.getKey();
+
+		if (key.equals(FightStateManager.FightStatisticProperty.HIT_DAMAGES.getKey()))
+		{
+			return getHitDamage();
+		}
+		else if (key.equals(FightStateManager.FightStatisticProperty.HIT_COUNTERS.getKey()))
+		{
+			return getHitCounter();
+		}
+		else if (key.equals(FightStateManager.FightStatisticProperty.MISS_DAMAGES.getKey()))
+		{
+			return getMissDamage();
+		}
+		else if (key.equals(FightStateManager.FightStatisticProperty.MISS_COUNTERS.getKey()))
+		{
+			return getMissCounter();
+		}
+		else if (key.equals(FightStateManager.FightStatisticProperty.DURATION_SECONDS.getKey()))
+		{
+			return getDurationSeconds();
+		}
+
+		return 0;
 	}
 
 	public void reset()

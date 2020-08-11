@@ -47,14 +47,8 @@ public class FightStateManager
 		}
 	}
 
-	private enum FightStatisticProperty
+	public enum FightStatisticProperty
 	{
-		HIT_COUNTERS_TOTAL("hct"),
-		MISS_COUNTERS_TOTAL("mct"),
-		HIT_DAMAGES_TOTAL("hdt"),
-		MISS_DAMAGES_TOTAL("mdt"),
-		DURATION_SECONDS_TOTAL("dst"),
-
 		HIT_COUNTERS("hc"),
 		MISS_COUNTERS("mc"),
 		HIT_DAMAGES("hd"),
@@ -386,17 +380,16 @@ public class FightStateManager
 				FightStatistic lastStatistic = lastSession.getStatistic(statisticEntry);
 				JsonObject statisticState = statistics.getAsJsonObject(statisticEntry.getKey());
 
-				statisticState.getAsJsonArray(FightStatisticProperty.HIT_DAMAGES.getKey()).add(lastStatistic.getHitDamage());
-				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS.getKey()).add(lastStatistic.getHitCounter());
-				statisticState.getAsJsonArray(FightStatisticProperty.MISS_DAMAGES.getKey()).add(lastStatistic.getMissDamage());
-				statisticState.getAsJsonArray(FightStatisticProperty.MISS_COUNTERS.getKey()).add(lastStatistic.getMissCounter());
-				statisticState.getAsJsonArray(FightStatisticProperty.DURATION_SECONDS.getKey()).add(lastStatistic.getDuration());
+				for (FightStatisticProperty property : FightStatisticProperty.values())
+				{
+					long totalValue = totalStatistic.getValueByProperty(property);
+					long lastValue = lastStatistic.getValueByProperty(property);
+					JsonArray totalAndLastValue = new JsonArray();
 
-				statisticState.getAsJsonArray(FightStatisticProperty.HIT_DAMAGES_TOTAL.getKey()).add(totalStatistic.getHitDamage());
-				statisticState.getAsJsonArray(FightStatisticProperty.HIT_COUNTERS_TOTAL.getKey()).add(totalStatistic.getHitCounter());
-				statisticState.getAsJsonArray(FightStatisticProperty.MISS_DAMAGES_TOTAL.getKey()).add(totalStatistic.getMissDamage());
-				statisticState.getAsJsonArray(FightStatisticProperty.MISS_COUNTERS_TOTAL.getKey()).add(totalStatistic.getMissCounter());
-				statisticState.getAsJsonArray(FightStatisticProperty.DURATION_SECONDS_TOTAL.getKey()).add(totalStatistic.getDuration());
+					totalAndLastValue.add(totalValue);
+					totalAndLastValue.add(lastValue);
+					statisticState.getAsJsonArray(property.getKey()).add(totalAndLastValue);
+				}
 			}
 		}
 
