@@ -21,6 +21,7 @@ public class FightStatistic {
 	{
 		missDamage += damage;
 		missCounter ++;
+		registerUpdate();
 	}
 
 	public void addStatistic(FightStatistic statistic)
