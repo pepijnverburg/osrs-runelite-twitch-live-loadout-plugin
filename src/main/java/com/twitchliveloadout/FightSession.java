@@ -62,7 +62,7 @@ public class FightSession {
 			final FightStatistic statistic = entry.getValue();
 			final long firstUpdate = statistic.getFirstUpdate();
 
-			if (!statisticEntry.isDurationInfluencer())
+			if (!statisticEntry.isDurationInfluencer() || firstUpdate == 0)
 			{
 				continue;
 			}
@@ -86,7 +86,7 @@ public class FightSession {
 			final FightStatistic statistic = entry.getValue();
 			final long lastUpdate = statistic.getLastUpdate();
 
-			if (!statisticEntry.isDurationInfluencer())
+			if (!statisticEntry.isDurationInfluencer() || lastUpdate == 0)
 			{
 				continue;
 			}
