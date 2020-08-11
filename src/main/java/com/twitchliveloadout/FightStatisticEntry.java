@@ -7,7 +7,7 @@ public enum FightStatisticEntry {
 //	RANGED("ranged", true),
 
 //	FREEZE("freeze", true),
-	SPLASH("splash", true),
+	SPELL("spell", true),
 //	SPECIAL_ATTACK("specialAttack", true),
 	POISON("poison", false),
 //	VENGEANCE("vengeance", true),

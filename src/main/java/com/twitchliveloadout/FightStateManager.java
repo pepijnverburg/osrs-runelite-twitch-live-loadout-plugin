@@ -103,7 +103,7 @@ public class FightStateManager
 		if (graphicId == SPLASH_GRAPHIC_ID)
 		{
 			Fight fight = ensureFight(eventActor);
-			FightStatistic statistic = fight.ensureStatistic(eventActor, FightStatisticEntry.SPLASH);
+			FightStatistic statistic = fight.ensureStatistic(eventActor, FightStatisticEntry.SPELL);
 			statistic.registerMiss(0);
 		}
 	}
@@ -365,9 +365,8 @@ public class FightStateManager
 			FightSession lastSession = fight.getLastSession();
 			String actorName = fight.getActorName();
 
-			// Hide display name so the front-end can
-			// this as the local player and hide the data
-			if (fight.getActorType() == ActorType.LOCAL_PLAYER)
+			// Hide display name when this is not allowed to be published due to the config
+			if (fight.getActorType() == ActorType.LOCAL_PLAYER && !config.playerInfoEnabled())
 			{
 				actorName = HIDDEN_PLAYER_ACTOR_NAME;
 			}
