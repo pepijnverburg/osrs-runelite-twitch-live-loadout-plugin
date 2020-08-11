@@ -168,16 +168,17 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
 
-		// TMP: debugging
-//		System.out.println(fightStatistics.toString());
-
 		twitchState.setFightStatistics(fightStatistics);
 	}
 
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged event)
+	/**
+	 * Polling mechanism to sync player info.
+	 * We cannot use the game state update events as the player name is not loaded then.
+	 */
+	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void syncPlayerInfo()
 	{
-		if (event.getGameState() != GameState.LOGGED_IN)
+		if (client.getGameState() != GameState.LOGGED_IN)
 		{
 			return;
 		}
