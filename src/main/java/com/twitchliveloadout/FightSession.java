@@ -3,12 +3,13 @@ package net.runelite.client.plugins.twitchliveloadout;
 import net.runelite.api.Actor;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class FightSession {
 	private final Actor actor;
 
 	private HashMap<FightStatisticEntry, FightStatistic> statistics = new HashMap();
-	private int gameTickCounter = 0;
+	private long gameTickCounter = 0;
 	private boolean finished = false;
 
 	public FightSession(Actor actor)
@@ -26,14 +27,19 @@ public class FightSession {
 		return statistics.get(statisticEntry);
 	}
 
-	public void addGameTicks(int amount)
+	public void addGameTicks(long amount)
 	{
 		gameTickCounter += amount;
 	}
 
-	public int getGameTickCounter()
+	public long getGameTickCounter()
 	{
 		return gameTickCounter;
+	}
+
+	public long getDurationSeconds()
+	{
+		return getLastUpdate() - getFirstUpdate();
 	}
 
 	public void finish()
@@ -46,13 +52,44 @@ public class FightSession {
 		return finished;
 	}
 
+	public long getFirstUpdate()
+	{
+		long minFirstUpdate = 0;
+
+		for (Map.Entry<FightStatisticEntry, FightStatistic> entry : statistics.entrySet())
+		{
+			final FightStatisticEntry statisticEntry = entry.getKey();
+			final FightStatistic statistic = entry.getValue();
+			final long firstUpdate = statistic.getFirstUpdate();
+
+			if (!statisticEntry.isDurationInfluencer())
+			{
+				continue;
+			}
+
+			if (firstUpdate < minFirstUpdate || minFirstUpdate == 0)
+			{
+				minFirstUpdate = firstUpdate;
+			}
+		}
+
+		return minFirstUpdate;
+	}
+
 	public long getLastUpdate()
 	{
 		long maxLastUpdate = 0;
 
-		for (FightStatistic statistic : statistics.values())
+		for (Map.Entry<FightStatisticEntry, FightStatistic> entry : statistics.entrySet())
 		{
-			long lastUpdate = statistic.getLastUpdate();
+			final FightStatisticEntry statisticEntry = entry.getKey();
+			final FightStatistic statistic = entry.getValue();
+			final long lastUpdate = statistic.getLastUpdate();
+
+			if (!statisticEntry.isDurationInfluencer())
+			{
+				continue;
+			}
 
 			if (lastUpdate > maxLastUpdate)
 			{

@@ -379,6 +379,10 @@ public class FightStateManager
 
 			totalInteractingTicks.add(totalSession.getGameTickCounter());
 			lastInteractingTicks.add(lastSession.getGameTickCounter());
+
+			totalDurations.add(totalSession.getDurationSeconds());
+			lastDurations.add(lastSession.getDurationSeconds());
+
 			sessionCounters.add(fight.getFinishedSessionCounter());
 			updatedAts.add(fight.getLastUpdate());
 

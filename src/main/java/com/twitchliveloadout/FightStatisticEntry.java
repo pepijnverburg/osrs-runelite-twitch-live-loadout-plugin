@@ -1,33 +1,40 @@
 package net.runelite.client.plugins.twitchliveloadout;
 
 public enum FightStatisticEntry {
-	SHARED("shared"),
-//	MELEE("melee"),
-//	MAGIC("magic"),
-//	RANGED("ranged"),
+	SHARED("shared", true),
+//	MELEE("melee", true),
+//	MAGIC("magic", true),
+//	RANGED("ranged", true),
 
-//	FREEZE("freeze"),
-	SPLASH("splash"),
-//	SPECIAL_ATTACK("specialAttack"),
-	POISON("poison"),
-//	VENGEANCE("vengeance"),
-//	HEAL("heal"),
+//	FREEZE("freeze", true),
+	SPLASH("splash", true),
+//	SPECIAL_ATTACK("specialAttack", true),
+	POISON("poison", false),
+//	VENGEANCE("vengeance", true),
+//	HEAL("heal", false),
 
-//	PRAYER("prayer"),
-//	RANGED_PRAYER("rangedPrayer"),
-//	MELEE_PRAYER("meleePrayer"),
-//	MAGIC_PRAYER("magicPrayer"),
-	SMITE("smite");
+//	PRAYER("prayer", false),
+//	RANGED_PRAYER("rangedPrayer", false),
+//	MELEE_PRAYER("meleePrayer", false),
+//	MAGIC_PRAYER("magicPrayer", false),
+	SMITE("smite", false);
 
 	private final String key;
+	private final boolean durationInfluencer;
 
-	FightStatisticEntry(String key)
+	FightStatisticEntry(String key, boolean durationInfluencer)
 	{
 		this.key = key;
+		this.durationInfluencer = durationInfluencer;
 	}
 
 	public String getKey()
 	{
 		return key;
+	}
+
+	public boolean isDurationInfluencer()
+	{
+		return durationInfluencer;
 	}
 }
