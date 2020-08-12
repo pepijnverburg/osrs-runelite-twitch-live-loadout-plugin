@@ -124,8 +124,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Polling mechanism to update the state only when it has changed.
 	 * This avoids data being pushed when any of part of the state changed
 	 * and forces us to combine update requests in one.
+	 *
+	 * A maximum of every three seconds seems to not trigger the rate limit of Twitch.
 	 */
-	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 3, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncState()
 	{
 		final boolean updateRequired = twitchState.isChanged();
