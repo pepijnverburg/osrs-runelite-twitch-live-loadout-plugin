@@ -113,7 +113,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "virtualLevelsEnabled",
 			name = "Virtual levels",
-			description = "Use maximum level of 120 instead of 99.",
+			description = "Use maximum level of 126 instead of 99.",
 			position = 11
 	)
 	default boolean virtualLevelsEnabled()
