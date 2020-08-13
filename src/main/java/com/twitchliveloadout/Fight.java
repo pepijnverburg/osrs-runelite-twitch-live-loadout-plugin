@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.NPC;
 
-import java.util.HashMap;
+import java.util.*;
 
 @Slf4j
 public class Fight {
@@ -12,6 +12,7 @@ public class Fight {
 	private final int actorId;
 	private final FightStateManager.ActorType actorType;
 	private final int actorCombatLevel;
+	private final ArrayList<FightQueuedStatistic> queuedStatistics = new ArrayList();
 
 	private Actor lastActor;
 
@@ -42,6 +43,72 @@ public class Fight {
 		}
 
 		ensureSession(actor);
+	}
+
+	public void queueStatistic(Actor actor, FightStatisticEntry entry, FightStatisticProperty property, int expiryTimeMs)
+	{
+		log.error("QUEUED: Adding {} - {} - {} - {}", actor.getName(), entry.getKey(), property.getKey(), expiryTimeMs);
+		FightQueuedStatistic queuedStatistic = new FightQueuedStatistic(actor, entry, property, expiryTimeMs);
+		queuedStatistics.add(queuedStatistic);
+		cleanQueuedStatistics();
+	}
+
+	public void registerQueuedStatistics(int hitsplatAmount)
+	{
+		List list = Collections.synchronizedList(queuedStatistics);
+		log.error("QUEUED: Checking queue, queued size {} - hitsplat {}", list.size(), hitsplatAmount);
+
+		synchronized (list)
+		{
+			Iterator iterator = list.iterator();
+			while (iterator.hasNext())
+			{
+				FightQueuedStatistic queuedStatistic = (FightQueuedStatistic) iterator.next();
+				Actor actor = queuedStatistic.getActor();
+				FightStatisticEntry entry = queuedStatistic.getEntry();
+				FightStatisticProperty property = queuedStatistic.getProperty();
+				FightStatistic statistic = ensureStatistic(actor, entry);
+
+				log.error("QUEUED: Attempt register {} - {}", entry.getKey(), property.getKey());
+
+				// Will prevent registering twice
+				if (!queuedStatistic.isValid())
+				{
+					log.error("QUEUED: Skipping because of invalid.");
+					continue;
+				}
+
+				if (property == FightStatisticProperty.MISS_DAMAGES || property == FightStatisticProperty.MISS_COUNTERS)
+				{
+					log.error("QUEUED: Register miss");
+					statistic.registerMiss(hitsplatAmount);
+				}
+				else if (property == FightStatisticProperty.HIT_DAMAGES || property == FightStatisticProperty.HIT_COUNTERS)
+				{
+					log.error("QUEUED: register hit ");
+					statistic.registerHit(hitsplatAmount);
+				}
+
+				// Flag to clean up later
+				queuedStatistic.register();
+			}
+		}
+	}
+
+	private void cleanQueuedStatistics()
+	{
+		Iterator<FightQueuedStatistic> iterator = queuedStatistics.iterator();
+
+		while (iterator.hasNext()) {
+			FightQueuedStatistic queuedStatistic = iterator.next();
+
+			if (queuedStatistic.isValid()) {
+				continue;
+			}
+
+			log.error("Remove from queue {}", queuedStatistic.getEntry().getKey());
+			iterator.remove();
+		}
 	}
 
 	public FightStatistic ensureStatistic(Actor actor, FightStatisticEntry statisticEntry)

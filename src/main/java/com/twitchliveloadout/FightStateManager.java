@@ -30,7 +30,48 @@ public class FightStateManager
 	private static final String SESSION_COUNTERS_KEY = "sessionCounters";
 	private static final String STATISTICS_KEY = "statistics";
 
-	private static final int SPLASH_GRAPHIC_ID = 85;
+	public enum FightGraphic {
+		ICE_BARRAGE(369, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+		ICE_BLITZ(367, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+		ICE_BURST(363, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+		ICE_RUSH(361, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+
+		BLOOD_BARRAGE(377, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
+		BLOOD_BLITZ(375, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
+		BLOOD_BURST(376, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
+		BLOOD_RUSH(373, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
+
+		ENTANGLE(179, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_DAMAGES),
+		SNARE(180, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_DAMAGES),
+		BIND(181, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_COUNTERS), // no hitsplat
+
+		SPLASH(85, FightStatisticEntry.SPELL, FightStatisticProperty.MISS_COUNTERS); // no hitsplat
+
+		private final int graphicId;
+		private final FightStatisticEntry entry;
+		private final FightStatisticProperty property;
+
+		FightGraphic(int graphicId, FightStatisticEntry entry, FightStatisticProperty property) {
+			this.graphicId = graphicId;
+			this.entry = entry;
+			this.property = property;
+		}
+
+		public FightStatisticEntry getEntry()
+		{
+			return entry;
+		}
+
+		public FightStatisticProperty getProperty()
+		{
+			return property;
+		}
+
+		public int getGraphicId()
+		{
+			return graphicId;
+		}
+	}
 
 	public enum ActorType {
 		NPC("npc"),
@@ -40,27 +81,6 @@ public class FightStateManager
 		private final String key;
 
 		ActorType(String key) {
-			this.key = key;
-		}
-
-		public String getKey()
-		{
-			return key;
-		}
-	}
-
-	public enum FightStatisticProperty
-	{
-		HIT_COUNTERS("hc"),
-		MISS_COUNTERS("mc"),
-		HIT_DAMAGES("hd"),
-		MISS_DAMAGES("md"),
-		DURATION_SECONDS("ds");
-
-		private final String key;
-
-		FightStatisticProperty(String key)
-		{
 			this.key = key;
 		}
 
@@ -100,11 +120,36 @@ public class FightStateManager
 			return;
 		}
 
-		if (graphicId == SPLASH_GRAPHIC_ID)
+		log.error("Graphic ID spawned: {}", graphicId);
+
+		for (FightGraphic graphic : FightGraphic.values())
 		{
+			int fightGraphicId = graphic.getGraphicId();
+			FightStatisticProperty property = graphic.getProperty();
+			FightStatisticEntry entry = graphic.getEntry();
+
+			if (fightGraphicId != graphicId)
+			{
+				continue;
+			}
+
 			Fight fight = ensureFight(eventActor);
-			FightStatistic statistic = fight.ensureStatistic(eventActor, FightStatisticEntry.SPELL);
-			statistic.registerMiss(0);
+
+			if (property == FightStatisticProperty.MISS_COUNTERS || property == FightStatisticProperty.MISS_DAMAGES)
+			{
+				FightStatistic statistic = fight.ensureStatistic(eventActor, entry);
+				statistic.registerMiss(0);
+			}
+			else if (property == FightStatisticProperty.HIT_COUNTERS)
+			{
+				FightStatistic statistic = fight.ensureStatistic(eventActor, entry);
+				statistic.registerHit(0);
+			}
+			else if (property == FightStatisticProperty.HIT_DAMAGES)
+			{
+				// After testing a bit longer than 4 game ticks catches all hitsplats
+				fight.queueStatistic(eventActor, entry, property, 2500);
+			}
 		}
 	}
 
@@ -224,7 +269,7 @@ public class FightStateManager
 
 	public void registerFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
 	{
-		int damage = hitsplat.getAmount();
+		int amount = hitsplat.getAmount();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
 		Fight fight = ensureFight(actor);
 		Actor lastActor = fight.getLastActor();
@@ -235,14 +280,19 @@ public class FightStateManager
 			fight.setLastActor(actor);
 		}
 
+		// Handle this damage as being part of the queued statistics.
+		// Note that the hitsplat type doesn't matter here as the queued statistic
+		// already provide a spec what statistic entry and what property to apply it on.
+		fight.registerQueuedStatistics(amount);
+
 		// check for block or hit
 		switch (hitsplatType)
 		{
 			case BLOCK_ME:
-				statistic.registerMiss(damage);
+				statistic.registerMiss(amount);
 				break;
 			default:
-				statistic.registerHit(damage);
+				statistic.registerHit(amount);
 				break;
 		}
 	}

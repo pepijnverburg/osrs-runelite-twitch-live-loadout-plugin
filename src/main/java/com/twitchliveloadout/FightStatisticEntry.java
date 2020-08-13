@@ -6,12 +6,14 @@ public enum FightStatisticEntry {
 //	MAGIC("magic", true),
 //	RANGED("ranged", true),
 
-//	FREEZE("freeze", true),
+	FREEZE("freeze", true),
+	ENTANGLE("entangle", true),
+	BLOOD_HEAL("bloodHeal", true),
 	SPELL("spell", true),
-//	SPECIAL_ATTACK("specialAttack", true),
 	POISON("poison", false),
 //	VENGEANCE("vengeance", true),
-//	HEAL("heal", false),
+//	FOOD_HEAL("foodHeal", false),
+//	SPECIAL_ATTACK("specialAttack", true),
 
 //	PRAYER("prayer", false),
 //	RANGED_PRAYER("rangedPrayer", false),

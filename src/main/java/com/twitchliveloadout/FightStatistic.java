@@ -92,27 +92,27 @@ public class FightStatistic {
 		return firstUpdate;
 	}
 
-	public long getValueByProperty(FightStateManager.FightStatisticProperty property)
+	public long getValueByProperty(FightStatisticProperty property)
 	{
 		final String key = property.getKey();
 
-		if (key.equals(FightStateManager.FightStatisticProperty.HIT_DAMAGES.getKey()))
+		if (key.equals(FightStatisticProperty.HIT_DAMAGES.getKey()))
 		{
 			return getHitDamage();
 		}
-		else if (key.equals(FightStateManager.FightStatisticProperty.HIT_COUNTERS.getKey()))
+		else if (key.equals(FightStatisticProperty.HIT_COUNTERS.getKey()))
 		{
 			return getHitCounter();
 		}
-		else if (key.equals(FightStateManager.FightStatisticProperty.MISS_DAMAGES.getKey()))
+		else if (key.equals(FightStatisticProperty.MISS_DAMAGES.getKey()))
 		{
 			return getMissDamage();
 		}
-		else if (key.equals(FightStateManager.FightStatisticProperty.MISS_COUNTERS.getKey()))
+		else if (key.equals(FightStatisticProperty.MISS_COUNTERS.getKey()))
 		{
 			return getMissCounter();
 		}
-		else if (key.equals(FightStateManager.FightStatisticProperty.DURATION_SECONDS.getKey()))
+		else if (key.equals(FightStatisticProperty.DURATION_SECONDS.getKey()))
 		{
 			return getDurationSeconds();
 		}

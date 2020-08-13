@@ -49,7 +49,7 @@ import java.time.temporal.ChronoUnit;
  */
 @PluginDescriptor(
 	name = "Twitch Live Loadout",
-	description = "Send Real-time Equipment, Skills, Combat Statistics, Inventory, Bank and more to Twitch Extensions for additional viewer engagement.",
+	description = "Send Real-time Equipment, Skills, Combat Statistics, Inventory, Bank and more to Twitch Extensions for additional viewer engagement as a streamer.",
 	enabledByDefault = false
 )
 @PluginDependency(AttackStylesPlugin.class)
