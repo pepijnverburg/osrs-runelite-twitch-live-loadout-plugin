@@ -111,6 +111,8 @@ Future features that might be added based on feedback are:
 - [ ] If the full bank is important, complex state management is considered where the bank is incrementally sent to Twitch in payloads of 5KB in size.
 - [ ] Check whether different locations of viewers on the world influence the delay between video an updates so significantly that we would need to have a time reference to know when to update for each viewer independently.
 - [ ] Add clan members to the fight stats to display the damage they are taking. They can then also be part of the 'incoming' fights group.
+- [ ] Add live gear of PvP enemies deduced from graphical models.
+- [ ] Sync data from loot tracker. Possible to have directly via API instead of via Twitch data packets?
 
 ## Feedback
 If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.
