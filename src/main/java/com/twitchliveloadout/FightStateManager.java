@@ -283,7 +283,7 @@ public class FightStateManager
 		// Handle this damage as being part of the queued statistics.
 		// Note that the hitsplat type doesn't matter here as the queued statistic
 		// already provide a spec what statistic entry and what property to apply it on.
-		fight.registerQueuedStatistics(amount);
+		fight.registerQueuedStatistics(actor, amount);
 
 		// check for block or hit
 		switch (hitsplatType)

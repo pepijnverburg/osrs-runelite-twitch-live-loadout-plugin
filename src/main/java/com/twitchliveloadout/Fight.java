@@ -53,7 +53,7 @@ public class Fight {
 		cleanQueuedStatistics();
 	}
 
-	public void registerQueuedStatistics(int hitsplatAmount)
+	public void registerQueuedStatistics(Actor actor, int hitsplatAmount)
 	{
 		List list = Collections.synchronizedList(queuedStatistics);
 		log.error("QUEUED: Checking queue, queued size {} - hitsplat {}", list.size(), hitsplatAmount);
@@ -64,12 +64,18 @@ public class Fight {
 			while (iterator.hasNext())
 			{
 				FightQueuedStatistic queuedStatistic = (FightQueuedStatistic) iterator.next();
-				Actor actor = queuedStatistic.getActor();
+				Actor queuedActor = queuedStatistic.getActor();
 				FightStatisticEntry entry = queuedStatistic.getEntry();
 				FightStatisticProperty property = queuedStatistic.getProperty();
-				FightStatistic statistic = ensureStatistic(actor, entry);
 
 				log.error("QUEUED: Attempt register {} - {}", entry.getKey(), property.getKey());
+
+				// Guard: check if this hitsplat is on the right actor
+				if (actor != queuedActor)
+				{
+					log.error("QUEUED: Skipping because of wrong actor.");
+					continue;
+				}
 
 				// Will prevent registering twice
 				if (!queuedStatistic.isValid())
@@ -77,6 +83,8 @@ public class Fight {
 					log.error("QUEUED: Skipping because of invalid.");
 					continue;
 				}
+
+				FightStatistic statistic = ensureStatistic(actor, entry);
 
 				if (property == FightStatisticProperty.MISS_DAMAGES || property == FightStatisticProperty.MISS_COUNTERS)
 				{
