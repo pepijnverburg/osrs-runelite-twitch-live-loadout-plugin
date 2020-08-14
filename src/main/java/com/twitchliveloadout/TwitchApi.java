@@ -112,7 +112,7 @@ public class TwitchApi {
 
 		try {
 			Response response = performConfigurationServiceRequest(data);
-			verifyStateUpdateResponse(response, state, compressedState);
+			verifyStateUpdateResponse("ConfigurationService", response, state, compressedState);
 		} catch (Exception exception) {
 			return false;
 		}
@@ -153,7 +153,7 @@ public class TwitchApi {
 
 		try {
 			Response response = performPubSubRequest(data);
-			verifyStateUpdateResponse(response, state, compressedState);
+			verifyStateUpdateResponse("PubSub", response, state, compressedState);
 		} catch (Exception exception) {
 			return false;
 		}
@@ -182,9 +182,10 @@ public class TwitchApi {
 		return response;
 	}
 
-	private void verifyStateUpdateResponse(Response response, JsonObject state, String compressedState) throws Exception
+	private void verifyStateUpdateResponse(String type, Response response, JsonObject state, String compressedState) throws Exception
 	{
 		int responseCode = response.code();
+		String responseText = response.body().string();
 		int compressesStateSize = compressedState.getBytes("UTF-8").length;
 		String responseCodeMessage = "An unknown error occurred. Please report this to the RuneLite plugin maintainer.";
 
@@ -205,11 +206,12 @@ public class TwitchApi {
 		{
 			log.error("Could not update state, http code was: {}", responseCode);
 			log.error("The state was ({} bytes compressed): ", compressesStateSize);
+			log.error("The response body was {}", responseText);
 			log.error(state.toString());
 
 			final ChatMessageBuilder message = new ChatMessageBuilder()
 				.append(ChatColorType.HIGHLIGHT)
-				.append("Could not synchronize loadout to Twitch (code: "+ responseCode +"). ")
+				.append("Could not synchronize loadout to Twitch "+ type +" (code: "+ responseCode +"). ")
 				.append(responseCodeMessage)
 				.append(ChatColorType.NORMAL);
 
