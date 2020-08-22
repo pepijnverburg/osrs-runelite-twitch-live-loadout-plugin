@@ -1,10 +1,11 @@
 # Twitch Live Loadout
+![OSRS Live Loadout](./docs/banner.png?raw=true "OSRS Live Loadout")
 
 *"What is that helm you are wearing?!"*
 
 Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Combat`, `Skills`, `Inventory`, `Bank` and more!
 
-Get better engagement for...
+Get better engagement with...
 - **New players** who are not familiar with all the items, which can be overwhelming. This gives them a low-threshold way of getting the information.
 - **Existing casual players** who are missing information about the latest game updates. Answering the same questions about new items can be repetitive.
 - **Existing frequent players** who would like to give advice on the loadout. Most items are directly visible on the player model, but some harder to see (e.g. rings / bracelets). Vieweers can also take some time to inspect the loadout without being dependant on what menu tab the streamer has open.
@@ -26,16 +27,18 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `DPS in general`: damage per seconds for all damage done to enemies.
 - [x] `Poison damage`: poison and venom damage.
 - [x] `Smite damage`: damage per fight smite has done including (hypothetical) prayer drain.
-- [x] `Spell splashes`: count the splashes done on the enemies.
-- [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
+- [x] `Spell splashes`: count the splashes done on enemies.
+- [x] `Freezes`: count potential freezes and misses. 
+- [x] `Entangle`: count snare/bind/entangle spells and misses.
+- [x] `Blood heals`: count potential heals through blood spells.
 - [x] `Incoming hits`: damage, splashes, etc. are also tracked on the logged in player.
-- [ ] `Freezes`: freeze counter including misses. 
+- [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
 - [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
 #### Items
 - [x] `Inventory items`: live view of the inventory and total price.
 - [x] `Equipment items`: live view of worn gear and total price.
-- [x] `Bank items`: Top 200 most valuable bank items and price of all bank items.
+- [x] `Bank items`: Top 200 most valuable bank items and price of all bank items (not all due to Twitch Extension limitations).
 - [x] `Bank tabs`: info what items are in what tab.
 - [x] `Wiki lookup`: all items can be looked up by opening the official Wiki.
 
@@ -104,7 +107,6 @@ The plugin is implemented with the OSRS weekly updates in mind. There are no dep
 
 ## Future
 Future features that might be added based on feedback are:
-- [ ] Let viewers 'vote' on wearing/dropping certain items by clicking on the items in question.
 - [ ] List of current goal items with automatic progress based on items in bank/inventory/equipment.
 - [ ] More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).
 - [ ] Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
@@ -113,6 +115,7 @@ Future features that might be added based on feedback are:
 - [ ] Add clan members to the fight stats to display the damage they are taking. They can then also be part of the 'incoming' fights group.
 - [ ] Add live gear of PvP enemies deduced from graphical models.
 - [ ] Sync data from loot tracker. Possible to have directly via API instead of via Twitch data packets?
+- [ ] Let viewers 'vote' on wearing/dropping certain items by clicking on the items in question.
 
 ## Feedback
 If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.
