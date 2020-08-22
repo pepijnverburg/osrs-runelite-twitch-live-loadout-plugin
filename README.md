@@ -19,9 +19,11 @@ Get better engagement with...
 - [OSRS Live Loadout Twitch Extension]()
 
 ## Features
-Below you can find an overview which features are implemented and which ones are still in progress.
+Below you can find an overview which features are implemented and which ones are still in progress. 
 
-#### Combat
+![Icon](./docs/combat.png "Icon") ![Icon](./docs/items.png "Icon") ![Icon](./docs/skills.png "Icon") 
+
+#### 🥊Combat
 - [x] `Fight tracking`: general combat stats for multiple fights for both *PvM* & *PvP*.
 - [x] `Kill tracking`: how many kills and separate stats for *all kills* and the *last kill*.
 - [x] `DPS in general`: damage per seconds for all damage done to enemies.
@@ -35,26 +37,26 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
 - [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
-#### Items
+#### 🎒Items
 - [x] `Inventory items`: live view of the inventory and total price.
 - [x] `Equipment items`: live view of worn gear and total price.
 - [x] `Bank items`: Top 200 most valuable bank items and price of all bank items (not all due to Twitch Extension limitations).
 - [x] `Bank tabs`: info what items are in what tab.
 - [x] `Wiki lookup`: all items can be looked up by opening the official Wiki.
 
-#### Goals
+#### 🎯Goals
 - [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
 - [ ] `Item goals with KC`: for each item goal a boss killcount can be attached that is visible on hover.  
 
-#### Skills
+#### 📊Skills
 - [x] `Skill experiences`: all experience amounts per skill.
 - [x] `Skill levels`: current skills levels based on boosts.
 
-#### General
+#### 📝General
 - [x] `Player weight`: weight of worn and carried items including weight reducing items.
 - [x] `Display name`: the name of the player in the chat bar.
 
-### Configuration
+### ⚙️ Configuration
 It is also possible to configure what information is being sent through the following options:
 - `Twitch extension token`: the login token specifically for the Twitch Extension you want to send the data to. This authenticates RuneLite to change data in the extension. This token should be retrieved when configuring the extension in the online Twitch interface.
 - `Sync delay`: delay the synchronization with x amount of seconds to match the broadcaster video & audio delay. Also use this to tweak when the video is delayed due to general networking.
@@ -71,7 +73,7 @@ It is also possible to configure what information is being sent through the foll
 - `Sync enabled`: toggle off to disable all syncing and clear current data.
 - `Extension Client ID`: the unique identifier of the Twitch Extension where the data should be sent to. This is pre-filled with an extension known to work well with this plugin.
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Runelite Plugin
 You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/).
@@ -82,7 +84,7 @@ This plugin is implemented in such a way any Twitch Extension can use the synchr
 #### 1. OSRS Live Loadout
 The [OSRS Live Loadout plugin]() is directly compatible. You should add this extension to your Twitch account first to get the proper Twitch token to authenticate the Runelite plugin.
 
-## Security & Technical Details
+## 🔒 Security & Technical Details
 
 ### Data Flow
 
@@ -105,7 +107,7 @@ The state updates are dependant on the maximum amount allowed by Twitch. Rate li
 ### Oldschool weekly updates
 The plugin is implemented with the OSRS weekly updates in mind. There are no dependencies on specific content meaning that all updates are directly reflected in the plugin as well. This allows for lower maintenance of this plugin and less down-time or faulty behaviour.
 
-## Future
+## 🔮 Future
 Future features that might be added based on feedback are:
 - [ ] List of current goal items with automatic progress based on items in bank/inventory/equipment.
 - [ ] More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).
@@ -117,5 +119,5 @@ Future features that might be added based on feedback are:
 - [ ] Sync data from loot tracker. Possible to have directly via API instead of via Twitch data packets?
 - [ ] Let viewers 'vote' on wearing/dropping certain items by clicking on the items in question.
 
-## Feedback
+## 💡 Feedback
 If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.
