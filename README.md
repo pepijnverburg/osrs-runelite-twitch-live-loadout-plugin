@@ -1,4 +1,4 @@
-# Twitch Live Loadout
+# OSRS Twitch Live Loadout Plugin
 ![OSRS Live Loadout](./docs/banner.png?raw=true "OSRS Live Loadout")
 
 *"What is that helm you are wearing?!"*
