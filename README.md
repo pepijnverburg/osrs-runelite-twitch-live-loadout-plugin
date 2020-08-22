@@ -23,7 +23,7 @@ Below you can find an overview which features are implemented and which ones are
 
 ![Icon](./docs/combat.png "Icon") ![Icon](./docs/items.png "Icon") ![Icon](./docs/skills.png "Icon") 
 
-#### 🥊Combat
+#### 🥊 Combat
 - [x] `Fight tracking`: general combat stats for multiple fights for both *PvM* & *PvP*.
 - [x] `Kill tracking`: how many kills and separate stats for *all kills* and the *last kill*.
 - [x] `DPS in general`: damage per seconds for all damage done to enemies.
@@ -37,22 +37,22 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
 - [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
-#### 🎒Items
+#### 🎒 Items
 - [x] `Inventory items`: live view of the inventory and total price.
 - [x] `Equipment items`: live view of worn gear and total price.
 - [x] `Bank items`: Top 200 most valuable bank items and price of all bank items (not all due to Twitch Extension limitations).
 - [x] `Bank tabs`: info what items are in what tab.
 - [x] `Wiki lookup`: all items can be looked up by opening the official Wiki.
 
-#### 🎯Goals
+#### 🎯 Goals
 - [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
 - [ ] `Item goals with KC`: for each item goal a boss killcount can be attached that is visible on hover.  
 
-#### 📊Skills
+#### 📊 Skills
 - [x] `Skill experiences`: all experience amounts per skill.
 - [x] `Skill levels`: current skills levels based on boosts.
 
-#### 📝General
+#### 📝 General
 - [x] `Player weight`: weight of worn and carried items including weight reducing items.
 - [x] `Display name`: the name of the player in the chat bar.
 
