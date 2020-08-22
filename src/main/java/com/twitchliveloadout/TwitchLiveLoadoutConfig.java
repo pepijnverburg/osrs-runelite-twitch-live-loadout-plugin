@@ -27,17 +27,36 @@ package net.runelite.client.plugins.twitchliveloadout;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup("twitchstreamer")
 public interface TwitchLiveLoadoutConfig extends Config
 {
+	@ConfigItem(
+			keyName = "syncEnabled",
+			name = "Sync enabled",
+			description = "Toggle off to disable all syncing, hide extension to viewers and clear data.",
+			position = 0
+	)
+	default boolean syncEnabled()
+	{
+		return true;
+	}
+
+	@ConfigSection(
+			name = "Twitch Extension",
+			description = "Authentication and extension configuration.",
+			position = 2
+	)
+	String twitchSection = "twitch";
 
 	@ConfigItem(
 			keyName = "twitchToken",
 			name = "Twitch Extension Token",
 			description = "Your token can be found when configuring the Twitch Extension.",
 			secret = true,
-			position = 0
+			position = 2,
+			section = twitchSection
 	)
 	default String twitchToken()
 	{
@@ -45,131 +64,11 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "playerInfoEnabled",
-			name = "Sync display name",
-			description = "Synchronize basic player info such as display name.",
-			position = 2
-	)
-	default boolean playerInfoEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "inventoryEnabled",
-		name = "Sync inventory items",
-		description = "Synchronize all inventory items.",
-		position = 4
-	)
-	default boolean inventoryEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "equipmentEnabled",
-			name = "Sync equipment items",
-			description = "Synchronize all equipment items.",
-			position = 6
-	)
-	default boolean equipmentEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "bankEnabled",
-			name = "Sync bank items",
-			description = "Synchronize bank value and top items based on GE value and configured maximum amount.",
-			position = 8
-	)
-	default boolean bankEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "bankItemAmount",
-			name = "Max bank items",
-			description = "Maximum amount of items synced with fixed upper limit of "+ ItemStateManager.MAX_BANK_ITEMS +".",
-			position = 9
-	)
-	default int bankItemAmount()
-	{
-		return ItemStateManager.MAX_BANK_ITEMS;
-	}
-
-	@ConfigItem(
-			keyName = "skillsEnabled",
-			name = "Sync skill levels",
-			description = "Synchronize skill experience, level boosts and combat level.",
-			position = 10
-	)
-	default boolean skillsEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "virtualLevelsEnabled",
-			name = "Virtual levels",
-			description = "Use maximum level of 126 instead of 99.",
-			position = 11
-	)
-	default boolean virtualLevelsEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "fightStatisticsEnabled",
-		name = "Sync combat statistics",
-		description = "Synchronize statistics about PvM and PvP, such as DPS per attack type, freezes, splashes, etc.",
-		position = 12
-	)
-	default boolean fightStatisticsEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "fightStatisticsMaxFightAmount",
-			name = "Max combat fights",
-			description = "Maximum amount of tracked fights with fixed upper limit of "+ FightStateManager.MAX_FIGHT_AMOUNT +".",
-			position = 13
-	)
-	default int fightStatisticsMaxFightAmount()
-	{
-		return FightStateManager.MAX_FIGHT_AMOUNT;
-	}
-
-	@ConfigItem(
-			keyName = "itemGoalsEnabled",
-			name = "Sync item goals",
-			description = "Synchronize the configured item wanted items, progress is automatic from inventory, gear and bank items.",
-			position = 14
-	)
-	default boolean itemGoalsEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "weightEnabled",
-			name = "Sync weight of carried items",
-			description = "Synchronize the weight of the equipment and inventory items, including weight reduction.",
-			position = 16
-	)
-	default boolean weightEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
 			keyName = "overlayTopPosition",
 			name = "Overlay top position",
-			description = "The position of the viewer Twitch Extension overlay in % of the viewport height. Zero fallbacks to default.",
-			position = 92
+			description = "The position of the viewer Twitch Extension overlay in % of the viewport height. '0' falls back to default of viewer.",
+			position = 4,
+			section = twitchSection
 	)
 	default int overlayTopPosition()
 	{
@@ -180,7 +79,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "syncDelay",
 			name = "Sync delay",
 			description = "The amount of seconds to delay the sending of data to match your stream delay.",
-			position = 94
+			position = 6,
+			section = twitchSection
 	)
 	default int syncDelay()
 	{
@@ -188,27 +88,176 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "syncEnabled",
-			name = "Sync enabled",
-			description = "Toggle off to disable all syncing, hide extension to viewers and clear data.",
-			position = 96
-	)
-	default boolean syncEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "extensionClientId",
-		name = "Twitch Extension ID",
-		description = "This is the ID of the Twitch Extension you want to sync the data to. Also known as 'CLient ID'.",
-		secret = true,
-		position = 100,
-		hidden = false
+			keyName = "extensionClientId",
+			name = "Twitch Extension ID",
+			description = "This is the ID of the Twitch Extension you want to sync the data to. Defaults to 'OSRS Live Loadout'.",
+			secret = true,
+			position = 8,
+			section = twitchSection
 	)
 	default String extensionClientId()
 	{
 		return TwitchApi.DEFAULT_EXTENSION_CLIENT_ID;
 	}
 
+	@ConfigSection(
+			name = "Items",
+			description = "Syncing of items in inventory, equipment and bank.",
+			position = 4
+	)
+	String itemsSection = "items";
+
+	@ConfigItem(
+			keyName = "inventoryEnabled",
+			name = "Sync inventory items",
+			description = "Synchronize all inventory items.",
+			position = 2,
+			section = itemsSection
+	)
+	default boolean inventoryEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "equipmentEnabled",
+			name = "Sync equipment items",
+			description = "Synchronize all equipment items.",
+			position = 4,
+			section = itemsSection
+	)
+	default boolean equipmentEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "bankEnabled",
+			name = "Sync bank items",
+			description = "Synchronize bank value and top items based on GE value and configured maximum amount.",
+			position = 6,
+			section = itemsSection
+	)
+	default boolean bankEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "bankItemAmount",
+			name = "Max bank items",
+			description = "Maximum amount of items synced with fixed upper limit of "+ ItemStateManager.MAX_BANK_ITEMS +".",
+			position = 10,
+			section = itemsSection
+	)
+	default int bankItemAmount()
+	{
+		return ItemStateManager.MAX_BANK_ITEMS;
+	}
+
+	@ConfigSection(
+			name = "Combat",
+			description = "Syncing of weapon damage, smite drains, poison damage, etc. per enemy.",
+			position = 6
+	)
+	String combatSection = "combat";
+
+	@ConfigItem(
+			keyName = "fightStatisticsEnabled",
+			name = "Sync combat statistics",
+			description = "Synchronize statistics about PvM and PvP, such as DPS per attack type, freezes, splashes, etc.",
+			position = 2,
+			section = combatSection
+	)
+	default boolean fightStatisticsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "fightStatisticsMaxFightAmount",
+			name = "Max combat fights",
+			description = "Maximum amount of tracked fights with fixed upper limit of "+ FightStateManager.MAX_FIGHT_AMOUNT +".",
+			position = 4,
+			section = combatSection
+	)
+	default int fightStatisticsMaxFightAmount()
+	{
+		return FightStateManager.MAX_FIGHT_AMOUNT;
+	}
+
+	@ConfigSection(
+			name = "Skills",
+			description = "Syncing of skill experience, virtual levels, etc.",
+			position = 8
+	)
+	String skillsSection = "skills";
+
+	@ConfigItem(
+			keyName = "skillsEnabled",
+			name = "Sync skill levels",
+			description = "Synchronize skill experience, level boosts and combat level.",
+			position = 2,
+			section = skillsSection
+	)
+	default boolean skillsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "virtualLevelsEnabled",
+			name = "Virtual levels",
+			description = "Use maximum level of 126 instead of 99.",
+			position = 4,
+			section = skillsSection
+	)
+	default boolean virtualLevelsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigSection(
+			name = "General info",
+			description = "Syncing of display name, player weight, etc.",
+			position = 10
+	)
+	String generalInfoSection = "general-info";
+
+	@ConfigItem(
+			keyName = "playerInfoEnabled",
+			name = "Sync display name",
+			description = "Synchronize basic player info such as display name.",
+			position = 2,
+			section = generalInfoSection
+	)
+	default boolean playerInfoEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "weightEnabled",
+			name = "Sync weight of carried items",
+			description = "Synchronize the weight of the equipment and inventory items, including weight reduction.",
+			position = 4,
+			section = generalInfoSection
+	)
+	default boolean weightEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "itemGoalsEnabled",
+			name = "Sync item goals",
+			description = "Synchronize the configured item wanted items, progress is automatic from inventory, gear and bank items.",
+			position = 14,
+			hidden = true,
+			section = itemsSection
+	)
+	default boolean itemGoalsEnabled()
+	{
+		return true;
+	}
 }
