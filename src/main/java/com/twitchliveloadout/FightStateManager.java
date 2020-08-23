@@ -339,6 +339,12 @@ public class FightStateManager
 		fights.put(actorName, new Fight(actor, isLocalPlayer));
 	}
 
+	public void deleteFight(Fight fight)
+	{
+		String actorName = fight.getActorName();
+		fights.remove(actorName);
+	}
+
 	public Fight rotateOldestFight()
 	{
 		long oldestLastUpdate = -1;
@@ -360,8 +366,7 @@ public class FightStateManager
 			return null;
 		}
 
-		String actorName = oldestFight.getActorName();
-		fights.remove(actorName);
+		deleteFight(oldestFight);
 
 		return oldestFight;
 	}
@@ -475,7 +480,8 @@ public class FightStateManager
 		return player == localPlayer;
 	}
 
-	public int getMaxFightAmount() {
+	public int getMaxFightAmount()
+	{
 		int maxAmount = config.fightStatisticsMaxFightAmount();
 
 		if (maxAmount > MAX_FIGHT_AMOUNT)
@@ -489,5 +495,10 @@ public class FightStateManager
 		}
 
 		return maxAmount;
+	}
+
+	public HashMap<String, Fight> getFights()
+	{
+		return fights;
 	}
 }

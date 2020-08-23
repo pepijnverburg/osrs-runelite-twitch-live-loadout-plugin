@@ -36,10 +36,15 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.attackstyles.AttackStylesPlugin;
+import net.runelite.client.plugins.twitchliveloadout.ui.TwitchLiveLoadoutPanel;
 import net.runelite.client.task.Schedule;
 import com.google.gson.*;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
+import java.awt.image.BufferedImage;
 import java.time.temporal.ChronoUnit;
 
 /**
@@ -66,6 +71,17 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	@Inject
 	private ChatMessageManager chatMessageManager;
+
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	/**
+	 * The plugin panel to manage data such as combat fights.
+	 */
+	private static final String PLUGIN_NAME = "Twitch Live Loadout";
+	private static final String ICON_FILE = "panel_icon.png";
+	private TwitchLiveLoadoutPanel pluginPanel;
+	private NavigationButton navigationButton;
 
 	/**
 	 * Twitch Configuration Service state that can be mapped to a JSON.
@@ -101,9 +117,36 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		super.startUp();
 
+		initializeTwitch();
+		initializeManagers();
+		initializePanel();
+	}
+
+	private void initializePanel()
+	{
+		pluginPanel = new TwitchLiveLoadoutPanel(fightStateManager);
+		pluginPanel.rebuild();
+
+		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), ICON_FILE);
+
+		navigationButton = NavigationButton.builder()
+			.tooltip(PLUGIN_NAME)
+			.icon(icon)
+			.priority(5)
+			.panel(pluginPanel)
+			.build();
+
+		clientToolbar.addNavigation(navigationButton);
+	}
+
+	private void initializeTwitch()
+	{
 		twitchState = new TwitchState(config, itemManager);
 		twitchApi = new TwitchApi(config, chatMessageManager);
+	}
 
+	private void initializeManagers()
+	{
 		fightStateManager = new FightStateManager(config, twitchState, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
