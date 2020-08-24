@@ -12,8 +12,8 @@ import java.util.HashMap;
 public class FightStateManager
 {
 	private HashMap<String, Fight> fights = new HashMap();
+	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
-	private final TwitchState twitchState;
 	private final Client client;
 
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
@@ -90,10 +90,10 @@ public class FightStateManager
 		}
 	}
 
-	public FightStateManager(TwitchLiveLoadoutConfig config, TwitchState twitchState, Client client)
+	public FightStateManager(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, Client client)
 	{
+		this.plugin = plugin;
 		this.config = config;
-		this.twitchState = twitchState;
 		this.client = client;
 	}
 
@@ -337,12 +337,14 @@ public class FightStateManager
 		log.debug("Creating new fight for actor {}", actorName);
 
 		fights.put(actorName, new Fight(actor, isLocalPlayer));
+		plugin.updateCombatPanel();
 	}
 
 	public void deleteFight(Fight fight)
 	{
 		String actorName = fight.getActorName();
 		fights.remove(actorName);
+		plugin.updateCombatPanel();
 	}
 
 	public Fight rotateOldestFight()

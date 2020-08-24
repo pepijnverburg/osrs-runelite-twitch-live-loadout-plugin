@@ -26,8 +26,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 @Slf4j
-public class TwitchApi {
-
+public class TwitchApi
+{
+	public final static int MAX_PAYLOAD_SIZE = 5120;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
 	private final static String VERSION = "0.0.1";
@@ -46,12 +47,17 @@ public class TwitchApi {
 	private final OkHttpClient httpClient = new OkHttpClient();
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
+	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
-	private String lastConfigurationServiceState;
+	private String lastCompressedState = "";
+	private String lastConfigurationServiceState = "";
+	private String lastResponseMessage = "";
+	private int lastResponseCode = 200;
 
-	public TwitchApi(TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
+	public TwitchApi(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
+		this.plugin = plugin;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
 	}
@@ -88,6 +94,8 @@ public class TwitchApi {
 		String version = VERSION;
 		JsonObject data = new JsonObject();
 		String compressedState = compressState(state);
+
+		lastCompressedState = compressedState;
 
 		if (compressedState.equals(lastConfigurationServiceState))
 		{
@@ -189,20 +197,30 @@ public class TwitchApi {
 		int compressesStateSize = compressedState.getBytes("UTF-8").length;
 		String responseCodeMessage = "An unknown error occurred. Please report this to the RuneLite plugin maintainer.";
 
+		// handle specific errors
 		switch (responseCode)
 		{
 			case 403: // forbidden
 			case 401: // unauthorized
-				responseCodeMessage = "Twitch Extension Token is expired. Get a new token via the extension.";
+				responseCodeMessage = "Twitch Extension Token is expired. Get a new token via the Twitch extension configuration and copy it to the RuneLite plugin settings.";
 				break;
 			case 404: // not found
 				responseCodeMessage = "Something has changed with Twitch. Please report this to the RuneLite plugin maintainer.";
 				break;
 		}
 
-		response.close();
+		// set default success message
+		if (!isErrorResponseCode(responseCode))
+		{
+			responseCodeMessage = "The latest information is successfully synced to Twitch.";
+		}
 
-		if (responseCode > 299)
+		response.close();
+		lastResponseMessage = responseCodeMessage;
+		lastResponseCode = responseCode;
+		plugin.updateConnectivityPanel();
+
+		if (isErrorResponseCode(responseCode))
 		{
 			log.error("Could not update state, http code was: {}", responseCode);
 			log.error("The state was ({} bytes compressed): ", compressesStateSize);
@@ -234,7 +252,7 @@ public class TwitchApi {
 
 	private JsonObject getDecodedToken() throws Exception
 	{
-		String[] parts = splitToken(config.twitchToken());
+		String[] parts = splitToken(getToken());
 		String payloadBase64String = parts[1];
 		String payloadString = new String(Base64.getDecoder().decode(payloadBase64String), StandardCharsets.UTF_8);;
 		JsonObject payload = new JsonParser().parse(payloadString).getAsJsonObject();
@@ -287,5 +305,30 @@ public class TwitchApi {
 		gzip.flush();
 		gzip.close();
 		return obj.toByteArray();
+	}
+
+	public boolean isErrorResponseCode(int responseCode)
+	{
+		return responseCode > 299 || responseCode < 200;
+	}
+
+	public String getToken()
+	{
+		return config.twitchToken();
+	}
+
+	public String getLastCompressedState()
+	{
+		return lastCompressedState;
+	}
+
+	public String getLastResponseMessage()
+	{
+		return lastResponseMessage;
+	}
+
+	public int getLastResponseCode()
+	{
+		return lastResponseCode;
 	}
 }

@@ -1,97 +1,63 @@
 package net.runelite.client.plugins.twitchliveloadout.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import javax.swing.Box;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import net.runelite.client.plugins.twitchliveloadout.Fight;
 import net.runelite.client.plugins.twitchliveloadout.FightStateManager;
+import net.runelite.client.plugins.twitchliveloadout.TwitchApi;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.ui.components.PluginErrorPanel;
+import net.runelite.client.ui.components.materialtabs.MaterialTab;
+import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
 
 public class TwitchLiveLoadoutPanel extends PluginPanel
 {
-	private final JLabel title = new JLabel();
-	private final PluginErrorPanel noFightsPanel = new PluginErrorPanel();
-	private final JPanel fightsView = new JPanel(new GridBagLayout());
+	private final JPanel mainPanel = new JPanel(new GridBagLayout());
+	private final MaterialTabGroup tabGroup = new MaterialTabGroup(mainPanel);
+	private final MaterialTab connectivityTab;
+	private final MaterialTab combatTab;
 
-	private final FightStateManager fightStateManager;
+	private final ConnectivityPanel connectivityPanel;
+	private final CombatPanel combatPanel;
 
-	public TwitchLiveLoadoutPanel(FightStateManager fightStateManager)
+	public TwitchLiveLoadoutPanel(TwitchApi twitchApi, FightStateManager fightStateManager)
 	{
-		this.fightStateManager = fightStateManager;
+		super(false);
 
 		setLayout(new BorderLayout());
-		setBorder(new EmptyBorder(10, 10, 10, 10));
 
-		JPanel northPanel = new JPanel(new BorderLayout());
-		northPanel.setBorder(new EmptyBorder(1, 0, 10, 0));
+		combatPanel = new CombatPanel(fightStateManager);
+		connectivityPanel = new ConnectivityPanel(twitchApi);
 
-		title.setText("Combat Statistics");
-		title.setForeground(Color.WHITE);
+		connectivityTab = new MaterialTab("Connectivity", tabGroup, connectivityPanel);
+		combatTab = new MaterialTab("Combat", tabGroup, combatPanel);
 
-		northPanel.add(title, BorderLayout.WEST);
+		tabGroup.setBorder(new EmptyBorder(5, 0, 0, 0));
+		tabGroup.addTab(connectivityTab);
+		tabGroup.addTab(combatTab);
+		tabGroup.select(connectivityTab);
 
-		JPanel centerPanel = new JPanel(new BorderLayout());
-		centerPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-		fightsView.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-		GridBagConstraints constraints = new GridBagConstraints();
-		constraints.fill = GridBagConstraints.HORIZONTAL;
-		constraints.weightx = 1;
-		constraints.gridx = 0;
-		constraints.gridy = 0;
-
-		noFightsPanel.setContent("Combat Statistics", "Start combat to show fights.");
-		noFightsPanel.setVisible(false);
-
-		fightsView.add(noFightsPanel, constraints);
-		constraints.gridy++;
-
-		centerPanel.add(fightsView, BorderLayout.CENTER);
-
-		add(northPanel, BorderLayout.NORTH);
-		add(centerPanel, BorderLayout.CENTER);
+		add(tabGroup, BorderLayout.NORTH);
+		add(mainPanel, BorderLayout.CENTER);
 	}
 
 	public void rebuild()
 	{
-		GridBagConstraints constraints = new GridBagConstraints();
-		constraints.fill = GridBagConstraints.HORIZONTAL;
-		constraints.weightx = 1;
-		constraints.gridx = 0;
-		constraints.gridy = 0;
-
-		fightsView.removeAll();
-
-		for (final Fight fight : fightStateManager.getFights().values())
-		{
-			fightsView.add(new FightPanel(fight), constraints);
-			constraints.gridy++;
-
-			fightsView.add(Box.createRigidArea(new Dimension(0, 10)), constraints);
-			constraints.gridy++;
-		}
-
-		boolean empty = constraints.gridy == 0;
-		noFightsPanel.setVisible(empty);
-		title.setVisible(!empty);
-
-		fightsView.add(noFightsPanel, constraints);
-		constraints.gridy++;
-
-		fightsView.add(noFightsPanel, constraints);
-		constraints.gridy++;
-
+		connectivityPanel.rebuild();
+		combatPanel.rebuild();
 		repaint();
 		revalidate();
+	}
+
+	public CombatPanel getCombatPanel()
+	{
+		return combatPanel;
+	}
+
+	public ConnectivityPanel getConnectivityPanel()
+	{
+		return connectivityPanel;
 	}
 }

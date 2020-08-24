@@ -78,7 +78,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * The plugin panel to manage data such as combat fights.
 	 */
-	private static final String PLUGIN_NAME = "Twitch Live Loadout";
 	private static final String ICON_FILE = "panel_icon.png";
 	private TwitchLiveLoadoutPanel pluginPanel;
 	private NavigationButton navigationButton;
@@ -124,15 +123,15 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	private void initializePanel()
 	{
-		pluginPanel = new TwitchLiveLoadoutPanel(fightStateManager);
+		pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager);
 		pluginPanel.rebuild();
 
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), ICON_FILE);
 
 		navigationButton = NavigationButton.builder()
-			.tooltip(PLUGIN_NAME)
+			.tooltip("Twitch Live Loadout Status")
 			.icon(icon)
-			.priority(5)
+			.priority(99)
 			.panel(pluginPanel)
 			.build();
 
@@ -142,12 +141,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializeTwitch()
 	{
 		twitchState = new TwitchState(config, itemManager);
-		twitchApi = new TwitchApi(config, chatMessageManager);
+		twitchApi = new TwitchApi(this, config, chatMessageManager);
 	}
 
 	private void initializeManagers()
 	{
-		fightStateManager = new FightStateManager(config, twitchState, client);
+		fightStateManager = new FightStateManager(this, config, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
 	}
@@ -301,5 +300,30 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		twitchState.forceChange();
+	}
+
+	public boolean hasValidPanels()
+	{
+		return pluginPanel != null;
+	}
+
+	public void updateConnectivityPanel()
+	{
+		if (!hasValidPanels())
+		{
+			return;
+		}
+
+		pluginPanel.getConnectivityPanel().rebuild();
+	}
+
+	public void updateCombatPanel()
+	{
+		if (!hasValidPanels())
+		{
+			return;
+		}
+
+		pluginPanel.getCombatPanel().rebuild();
 	}
 }

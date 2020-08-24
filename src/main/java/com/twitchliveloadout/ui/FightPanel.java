@@ -8,7 +8,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public class FightPanel extends JPanel {
+public class FightPanel extends JPanel
+{
 	private final Fight fight;
 
 	private static final ImageIcon DELETE_ICON;
