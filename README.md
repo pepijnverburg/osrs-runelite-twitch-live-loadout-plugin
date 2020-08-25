@@ -56,6 +56,14 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `Player weight`: weight of worn and carried items including weight reducing items.
 - [x] `Display name`: the name of the player in the chat bar.
 
+## 🔲 Plugin Panel
+
+### Twitch Connectivity
+The plugin also lets you see the current status of the connection with Twitch.
+
+### Combat Fight Management
+It is also possible to reset specific or all fights to let your statistics start from scratch.
+
 ## ⚙️ Configuration
 It is also possible to configure what information is being sent through the following options available in the plugin settings:
 - `Twitch extension token`: the login token specifically for the Twitch Extension you want to send the data to. This authenticates RuneLite to change data in the extension. This token should be retrieved when configuring the extension in the online Twitch interface.
