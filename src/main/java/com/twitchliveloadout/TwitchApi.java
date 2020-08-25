@@ -250,7 +250,7 @@ public class TwitchApi
 		return decodedToken.get("channel_id").getAsString();
 	}
 
-	private JsonObject getDecodedToken() throws Exception
+	public JsonObject getDecodedToken() throws Exception
 	{
 		String[] parts = splitToken(getToken());
 		String payloadBase64String = parts[1];
