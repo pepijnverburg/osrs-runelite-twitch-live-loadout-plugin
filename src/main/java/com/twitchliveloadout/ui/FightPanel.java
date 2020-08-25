@@ -1,25 +1,29 @@
 package net.runelite.client.plugins.twitchliveloadout.ui;
 
 import net.runelite.client.plugins.twitchliveloadout.Fight;
+import net.runelite.client.plugins.twitchliveloadout.FightStateManager;
 import net.runelite.client.plugins.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.ImageUtil;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 public class FightPanel extends JPanel
 {
-	private final Fight fight;
+	private final FightStateManager fightStateManager;
+	private Fight fight;
 
 	private static final ImageIcon DELETE_ICON;
 	private static final ImageIcon DELETE_HOVER_ICON;
-	private final JLabel deleteFight = new JLabel(DELETE_ICON);
 
-	private static final Color DEFAULT_BORDER_COLOR = Color.GREEN;
-	private static final Color DEFAULT_FILL_COLOR = new Color(0, 255, 0, 0);
-
-	private static final int DEFAULT_BORDER_THICKNESS = 3;
+	private final JPanel wrapper = new JPanel(new GridBagLayout());
+	private final JLabel actorNameLabel = new JLabel();
+	private final JLabel deleteLabel = new JLabel();
 
 	static
 	{
@@ -28,8 +32,73 @@ public class FightPanel extends JPanel
 		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
 	}
 
-	public FightPanel(Fight fight)
+	public FightPanel(FightStateManager fightStateManager)
+	{
+		this.fightStateManager = fightStateManager;
+
+		setLayout(new BorderLayout());
+		setBorder(new EmptyBorder(0, 0, 10, 0));
+
+		Styles.styleBigLabel(actorNameLabel, "N/A");
+
+		deleteLabel.setIcon(DELETE_ICON);
+		deleteLabel.setToolTipText("Reset fight statistics");
+		deleteLabel.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent mouseEvent)
+			{
+				int confirm = JOptionPane.showConfirmDialog(FightPanel.this,
+					"Are you sure you want to reset this fight?",
+					"Warning", JOptionPane.OK_CANCEL_OPTION);
+
+				if (confirm == 0)
+				{
+					fightStateManager.deleteFight(fight);
+				}
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent mouseEvent)
+			{
+				deleteLabel.setIcon(DELETE_HOVER_ICON);
+				deleteLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+			}
+
+			@Override
+			public void mouseExited(MouseEvent mouseEvent)
+			{
+				deleteLabel.setIcon(DELETE_ICON);
+				deleteLabel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+			}
+		});
+
+		wrapper.setLayout(new BorderLayout());
+		wrapper.setBorder(new EmptyBorder(10, 10, 10, 10));
+		wrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		wrapper.add(actorNameLabel, BorderLayout.WEST);
+		wrapper.add(deleteLabel, BorderLayout.EAST);
+
+		add(wrapper, BorderLayout.NORTH);
+	}
+
+	public void setFight(Fight fight)
 	{
 		this.fight = fight;
+	}
+
+	public void rebuild()
+	{
+
+		// guard: check if the fight is valid
+		if (fight == null)
+		{
+			return;
+		}
+
+		final String actorName = fight.getActorName();
+		final FightStateManager.ActorType actorType = fight.getActorType();
+
+		actorNameLabel.setText(actorName +" ("+ actorType.getName() +")");
 	}
 }

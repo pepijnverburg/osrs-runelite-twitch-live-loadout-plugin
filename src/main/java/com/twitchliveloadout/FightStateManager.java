@@ -74,19 +74,26 @@ public class FightStateManager
 	}
 
 	public enum ActorType {
-		NPC("npc"),
-		PLAYER("player"),
-		LOCAL_PLAYER("localPlayer");
+		NPC("npc", "npc"),
+		PLAYER("player", "player"),
+		LOCAL_PLAYER("localPlayer", "self");
 
 		private final String key;
+		private final String name;
 
-		ActorType(String key) {
+		ActorType(String key, String name) {
 			this.key = key;
+			this.name = name;
 		}
 
 		public String getKey()
 		{
 			return key;
+		}
+
+		public String getName()
+		{
+			return name;
 		}
 	}
 
@@ -342,6 +349,13 @@ public class FightStateManager
 
 	public void deleteFight(Fight fight)
 	{
+
+		// guard: check if the fight is valid
+		if (fight == null)
+		{
+			return;
+		}
+
 		String actorName = fight.getActorName();
 		fights.remove(actorName);
 		plugin.updateCombatPanel();
@@ -371,6 +385,12 @@ public class FightStateManager
 		deleteFight(oldestFight);
 
 		return oldestFight;
+	}
+
+	public void deleteAllFights()
+	{
+		fights.clear();
+		plugin.updateCombatPanel();
 	}
 
 	public JsonObject getFightStatisticsState()
