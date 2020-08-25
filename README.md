@@ -16,7 +16,7 @@ Get better engagement with...
 ## Requirements
 - [Runelite Client](https://runelite.net/) with Plugin Hub enabled
 - [Twitch Account](https://www.twitch.tv/) as broadcaster
-- [OSRS Live Loadout Twitch Extension]()
+- [OSRS Live Loadout Twitch Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1)
 
 ## 🚀 Getting Started
 
@@ -27,7 +27,7 @@ You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hu
 This plugin is implemented in such a way any Twitch Extension can use the synchronized information. A list below is available to show what Twitch Extensions can be used with this plugin:
 
 #### 1. OSRS Live Loadout
-The [OSRS Live Loadout plugin]() is directly compatible. You should add this extension to your Twitch account first to get the proper Twitch token to authenticate the Runelite plugin.
+The [OSRS Live Loadout plugin](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1) is directly compatible. You should add this extension to your Twitch account first to get the proper Twitch token to authenticate the Runelite plugin.
 
 ## Features
 Below you can find an overview which features are implemented and which ones are still in progress. 
