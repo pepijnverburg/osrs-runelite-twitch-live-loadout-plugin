@@ -3,15 +3,14 @@
 
 *"What is that helm you are wearing?!"*
 
-Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Combat`, `Skills`, `Inventory`, `Bank` and more!
+Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Combat Statistics`, `Skills`, `Inventory`, `Bank` and more! 
 
 Get better engagement with...
-- **New players** who are not familiar with all the items, which can be overwhelming. This gives them a low-threshold way of getting the information.
-- **Existing casual players** who are missing information about the latest game updates. Answering the same questions about new items can be repetitive.
-- **Existing frequent players** who would like to give advice on the loadout. Most items are directly visible on the player model, but some harder to see (e.g. rings / bracelets). Vieweers can also take some time to inspect the loadout without being dependant on what menu tab the streamer has open.
-- **Streamers** who would like to relate to statistics about combat or items after for example a fight or drop.
+- **New players** who are not familiar with most of the content.
+- **Existing casual players** who are not up-to-date about the latest changes. 
+- **Existing frequent players** who would like to give advice on the loadout. 
 
-[Twitch Extensions](https://www.twitch.tv/p/extensions/) are used to allow this additional viewer engagement.
+[Twitch Extensions](https://www.twitch.tv/p/extensions/) are used for this additional viewer engagement.
 
 ## Requirements
 - [Runelite Client](https://runelite.net/) with Plugin Hub enabled
