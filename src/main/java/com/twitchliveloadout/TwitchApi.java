@@ -20,6 +20,7 @@ import static net.runelite.http.api.RuneLiteAPI.JSON;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +32,7 @@ public class TwitchApi
 	public final static int MAX_PAYLOAD_SIZE = 5120;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
+	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 5 * 60 * 1000; // in ms
 	private final static String VERSION = "0.0.1";
 	private final static String USER_AGENT = "RuneLite";
 	private enum PubSubTarget {
@@ -54,6 +56,7 @@ public class TwitchApi
 	private String lastConfigurationServiceState = "";
 	private String lastResponseMessage = "";
 	private int lastResponseCode = 200;
+	private long lastErrorChatMessage = 0;
 
 	public TwitchApi(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
@@ -192,10 +195,12 @@ public class TwitchApi
 
 	private void verifyStateUpdateResponse(String type, Response response, JsonObject state, String compressedState) throws Exception
 	{
-		int responseCode = response.code();
-		String responseText = response.body().string();
-		int compressesStateSize = compressedState.getBytes("UTF-8").length;
+		final int responseCode = response.code();
+		final String responseText = response.body().string();
+		final int compressesStateSize = compressedState.getBytes("UTF-8").length;
+		final long now = Instant.now().getEpochSecond();
 		String responseCodeMessage = "An unknown error occurred. Please report this to the RuneLite plugin maintainer.";
+		long errorChatMessageDeltaTime = now - lastErrorChatMessage;
 
 		// handle specific errors
 		switch (responseCode)
@@ -227,16 +232,19 @@ public class TwitchApi
 			log.error("The response body was {}", responseText);
 			log.error(state.toString());
 
-			final ChatMessageBuilder message = new ChatMessageBuilder()
-				.append(ChatColorType.HIGHLIGHT)
-				.append("Could not synchronize loadout to Twitch "+ type +" (code: "+ responseCode +"). ")
-				.append(responseCodeMessage)
-				.append(ChatColorType.NORMAL);
+			if (errorChatMessageDeltaTime > ERROR_CHAT_MESSAGE_THROTTLE) {
+				final ChatMessageBuilder message = new ChatMessageBuilder()
+					.append(ChatColorType.HIGHLIGHT)
+					.append("Could not synchronize loadout to Twitch " + type + " (code: " + responseCode + "). ")
+					.append(responseCodeMessage)
+					.append(ChatColorType.NORMAL);
 
-			chatMessageManager.queue(QueuedMessage.builder()
-				.type(ChatMessageType.ITEM_EXAMINE)
-				.runeLiteFormattedMessage(message.build())
-				.build());
+				chatMessageManager.queue(QueuedMessage.builder()
+					.type(ChatMessageType.ITEM_EXAMINE)
+					.runeLiteFormattedMessage(message.build())
+					.build());
+				lastErrorChatMessage = now;
+			}
 
 			throw new Exception("Could not set the Twitch Configuration State due to invalid response code: "+ responseCode);
 		}
