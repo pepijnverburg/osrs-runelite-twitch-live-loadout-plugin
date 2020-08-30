@@ -141,7 +141,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializeTwitch()
 	{
 		twitchState = new TwitchState(config, itemManager);
-		twitchApi = new TwitchApi(this, config, chatMessageManager);
+		twitchApi = new TwitchApi(this, client, config, chatMessageManager);
 	}
 
 	private void initializeManagers()

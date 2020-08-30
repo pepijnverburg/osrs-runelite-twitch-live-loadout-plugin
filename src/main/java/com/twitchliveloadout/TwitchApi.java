@@ -5,7 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
-import net.runelite.api.MessageNode;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -50,6 +51,7 @@ public class TwitchApi
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	private final TwitchLiveLoadoutPlugin plugin;
+	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
 	private String lastCompressedState = "";
@@ -58,9 +60,10 @@ public class TwitchApi
 	private int lastResponseCode = 200;
 	private long lastErrorChatMessage = 0;
 
-	public TwitchApi(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
+	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
 		this.plugin = plugin;
+		this.client = client;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
 	}
@@ -93,10 +96,10 @@ public class TwitchApi
 
 	private boolean setConfigurationService(JsonObject state)
 	{
-		String segment = BROADCASTER_SEGMENT;
-		String version = VERSION;
-		JsonObject data = new JsonObject();
-		String compressedState = compressState(state);
+		final String segment = BROADCASTER_SEGMENT;
+		final String version = VERSION;
+		final JsonObject data = new JsonObject();
+		final String compressedState = compressState(state);
 
 		lastCompressedState = compressedState;
 
@@ -106,14 +109,13 @@ public class TwitchApi
 		}
 
 		try {
-			data.addProperty("channel_id", getChannelId());
 			data.addProperty("segment", segment);
 			data.addProperty("version", version);
 			data.addProperty("content", compressedState);
+			data.addProperty("channel_id", getChannelId());
 		} catch (Exception exception) {
-			log.debug("An error occurred when constructing the payload:");
-			log.debug(exception.toString());
-			return false;
+			log.error("An error occurred when constructing the payload for Twitch state update:");
+			log.error(exception.toString());
 		}
 
 		log.debug("Sending out {} state (v{}):", segment, version);
@@ -133,10 +135,10 @@ public class TwitchApi
 	}
 
 	private Response performConfigurationServiceRequest(JsonObject data) throws IOException {
-		String dataString = data.toString();
-		String clientId = config.extensionClientId();
-		String token = config.twitchToken();
-		String url = "https://api.twitch.tv/v5/extensions/"+ clientId +"/configurations/";
+		final String dataString = data.toString();
+		final String clientId = config.extensionClientId();
+		final String token = config.twitchToken();
+		final String url = "https://api.twitch.tv/v5/extensions/"+ clientId +"/configurations/";
 
 		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment
 		Request request = new Request.Builder()
@@ -153,8 +155,8 @@ public class TwitchApi
 
 	private boolean sendPubSubState(JsonObject state)
 	{
-		JsonObject data = new JsonObject();
-		JsonArray targets = new JsonArray();
+		final JsonObject data = new JsonObject();
+		final JsonArray targets = new JsonArray();
 		targets.add(PubSubTarget.BROADCAST.target);
 		String compressedState = compressState(state);
 
@@ -174,11 +176,11 @@ public class TwitchApi
 
 	private Response performPubSubRequest(JsonObject data) throws Exception
 	{
-		String clientId = config.extensionClientId();
-		String token = config.twitchToken();
-		String channelId = getChannelId();
-		String url = "https://api.twitch.tv/extensions/message/"+ channelId;
-		String dataString = data.toString();
+		final String clientId = config.extensionClientId();
+		final String token = config.twitchToken();
+		final String channelId = getChannelId();
+		final String url = "https://api.twitch.tv/extensions/message/"+ channelId;
+		final String dataString = data.toString();
 
 		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
 		Request request = new Request.Builder()
@@ -199,8 +201,10 @@ public class TwitchApi
 		final String responseText = response.body().string();
 		final int compressesStateSize = compressedState.getBytes("UTF-8").length;
 		final long now = Instant.now().getEpochSecond();
+		final long errorChatMessageDeltaTime = now - lastErrorChatMessage;
+		final boolean isLoggedIn = client.getGameState() == GameState.LOGGED_IN;
+		final boolean canSendErrorChatMessage = errorChatMessageDeltaTime > ERROR_CHAT_MESSAGE_THROTTLE;
 		String responseCodeMessage = "An unknown error occurred. Please report this to the RuneLite plugin maintainer.";
-		long errorChatMessageDeltaTime = now - lastErrorChatMessage;
 
 		// handle specific errors
 		switch (responseCode)
@@ -209,6 +213,7 @@ public class TwitchApi
 			case 401: // unauthorized
 				responseCodeMessage = "Twitch Extension Token is expired. Get a new token via the Twitch extension configuration and copy it to the RuneLite plugin settings.";
 				break;
+			case 400: // bad request
 			case 404: // not found
 				responseCodeMessage = "Something has changed with Twitch. Please report this to the RuneLite plugin maintainer.";
 				break;
@@ -232,7 +237,7 @@ public class TwitchApi
 			log.error("The response body was {}", responseText);
 			log.error(state.toString());
 
-			if (errorChatMessageDeltaTime > ERROR_CHAT_MESSAGE_THROTTLE) {
+			if (isLoggedIn && canSendErrorChatMessage) {
 				final ChatMessageBuilder message = new ChatMessageBuilder()
 					.append(ChatColorType.HIGHLIGHT)
 					.append("Could not synchronize loadout to Twitch " + type + " (code: " + responseCode + "). ")
@@ -240,7 +245,7 @@ public class TwitchApi
 					.append(ChatColorType.NORMAL);
 
 				chatMessageManager.queue(QueuedMessage.builder()
-					.type(ChatMessageType.ITEM_EXAMINE)
+					.type(ChatMessageType.CONSOLE)
 					.runeLiteFormattedMessage(message.build())
 					.build());
 				lastErrorChatMessage = now;
@@ -250,6 +255,7 @@ public class TwitchApi
 		}
 
 		log.debug("Successfully sent state: {}", responseCode);
+		lastErrorChatMessage = 0;
 	}
 
 	private String getChannelId() throws Exception
