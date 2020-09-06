@@ -2,6 +2,7 @@ package net.runelite.client.plugins.twitchliveloadout;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
+import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
 
 import java.util.*;
@@ -30,6 +31,11 @@ public class Fight {
 		{
 			actorId = ((NPC) actor).getId();
 			actorType = FightStateManager.ActorType.NPC;
+		}
+		else if (actor instanceof GameObject)
+		{
+			actorId = ((GameObject) actor).getId();
+			actorType = FightStateManager.ActorType.GAME_OBJECT;
 		}
 		else if (isLocalPlayer)
 		{

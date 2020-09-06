@@ -76,6 +76,7 @@ public class FightStateManager
 	public enum ActorType {
 		NPC("npc", "npc"),
 		PLAYER("player", "player"),
+		GAME_OBJECT("gameObject", "gameObject"),
 		LOCAL_PLAYER("localPlayer", "self");
 
 		private final String key;
@@ -127,7 +128,7 @@ public class FightStateManager
 			return;
 		}
 
-		log.error("Graphic ID spawned: {}", graphicId);
+		log.debug("Graphic ID spawned: {}", graphicId);
 
 		for (FightGraphic graphic : FightGraphic.values())
 		{
