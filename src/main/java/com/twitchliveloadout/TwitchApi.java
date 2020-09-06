@@ -245,7 +245,7 @@ public class TwitchApi
 					.append(ChatColorType.NORMAL);
 
 				chatMessageManager.queue(QueuedMessage.builder()
-					.type(ChatMessageType.CONSOLE)
+					.type(ChatMessageType.ITEM_EXAMINE)
 					.runeLiteFormattedMessage(message.build())
 					.build());
 				lastErrorChatMessage = now;
