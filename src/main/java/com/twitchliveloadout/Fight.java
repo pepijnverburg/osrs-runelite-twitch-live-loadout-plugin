@@ -24,8 +24,11 @@ public class Fight {
 	public Fight(Actor actor, boolean isLocalPlayer)
 	{
 		this.lastActor = actor;
-		this.actorName = actor.getName();
 		this.actorCombatLevel = actor.getCombatLevel();
+
+		// Remove any HTML-like tags from the actor name, this is the case
+		// for example with objects getting a <col=00ffff>name</col> tag
+		this.actorName = actor.getName().replaceAll("\\<[^>]*>","");
 
 		if (actor instanceof NPC)
 		{
