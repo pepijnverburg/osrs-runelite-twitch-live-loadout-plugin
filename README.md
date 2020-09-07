@@ -10,7 +10,7 @@ Get better engagement with...
 - **Existing casual players** who are not up-to-date about the latest changes. 
 - **Existing frequent players** who would like to give advice on the loadout. 
 
-[Twitch Extensions](https://www.twitch.tv/p/extensions/) are used for this additional viewer engagement.
+[Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with.
 
 ## Requirements
 - [Runelite Client](https://runelite.net/) with Plugin Hub enabled
@@ -26,12 +26,12 @@ You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hu
 This plugin is implemented in such a way any Twitch Extension can use the synchronized information. A list below is available to show what Twitch Extensions can be used with this plugin:
 
 #### 1. OSRS Live Loadout
-The [OSRS Live Loadout plugin](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1) is directly compatible. You should add this extension to your Twitch account first to get the proper Twitch token to authenticate the Runelite plugin.
+The [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1) is directly compatible. You should add this extension to your Twitch account first to get the proper Twitch token to authenticate the Runelite plugin.
 
 ## Features
-Below you can find an overview which features are implemented and which ones are still in progress. 
+Below you can find an overview which features are implemented and which ones are still in progress. Note that the screenshots shown are from the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1). The use of other Twitch Extensions cause it to look differently.
 
-![Icon](./docs/combat.png "Icon") ![Icon](./docs/items.png "Icon") ![Icon](./docs/skills.png "Icon") 
+![Icon](./docs/icons/combat.png "Icon") ![Icon](./docs/icons/items.png "Icon") ![Icon](./docs/icons/skills.png "Icon") 
 
 ### 🥊 Combat
 - [x] `Fight tracking`: general combat stats for multiple fights for both *PvM* & *PvP*.
@@ -47,12 +47,18 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
 - [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
+![Combat Stats](./docs/screenshots/combat-stats-all-compact.png "Combat Stats")
+![Combat Stats](./docs/screenshots/combat-tracking-spells.png "Combat Stats")
+
 ### 🎒 Items
 - [x] `Inventory items`: live view of the inventory and total price.
 - [x] `Equipment items`: live view of worn gear and total price.
 - [x] `Bank items`: Top 200 most valuable bank items and price of all bank items (not all due to Twitch Extension limitations).
 - [x] `Bank tabs`: info what items are in what tab.
 - [x] `Wiki lookup`: all items can be looked up by opening the official Wiki.
+
+![Bank](./docs/screenshots/bank.png "Bank")
+![Equipment](./docs/screenshots/worn-equipment.png "Equipment")
 
 ### 🎯 Goals
 - [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
@@ -62,19 +68,25 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `Skill experiences`: all experience amounts per skill.
 - [x] `Skill levels`: current skills levels based on boosts.
 
+![Skills](./docs/screenshots/skills.png "Skills")
+
 ### 📝 General
 - [x] `Player weight`: weight of worn and carried items including weight reducing items.
 - [x] `Display name`: the name of the player in the chat bar.
 
-## 🔲 Plugin Panel
+## Settings & Panels
 
-### Twitch Connectivity
+![Plugin Panel](./docs/controls.png "Plugin Panel")
+
+### 🔲 Panels
+
+#### Twitch Connectivity
 The plugin also lets you see the current status of the connection with Twitch.
 
-### Combat Fight Management
+#### Combat Fight Management
 It is also possible to reset specific or all fights to let your statistics start from scratch.
 
-## ⚙️ Configuration
+### ⚙️ Settings
 It is also possible to configure what information is being sent through the following options available in the plugin settings:
 - `Twitch extension token`: the login token specifically for the Twitch Extension you want to send the data to. This authenticates RuneLite to change data in the extension. This token should be retrieved when configuring the extension in the online Twitch interface.
 - `Sync delay`: delay the synchronization with x amount of seconds to match the broadcaster video & audio delay. Also use this to tweak when the video is delayed due to general networking.
