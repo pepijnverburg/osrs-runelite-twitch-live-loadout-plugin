@@ -115,7 +115,7 @@ public class FightStateManager
 
 		if (eventActor instanceof Player)
 		{
-			isLocalPlayer = localPlayer.getName().equals(((Player) eventActor).getName());
+			isLocalPlayer = localPlayer.getName().equals(eventActor.getName());
 		}
 
 		if (graphicId < 0)
@@ -333,9 +333,10 @@ public class FightStateManager
 
 	public void createFight(Actor actor)
 	{
-		String actorName = actor.getName();
 		String localPlayerName = client.getLocalPlayer().getName();
-		boolean isLocalPlayer = (actor instanceof Player) && localPlayerName.equals(actorName);
+		boolean isLocalPlayer = (actor instanceof Player) && localPlayerName.equals(actor.getName());
+		Fight fight = new Fight(actor, isLocalPlayer);
+		String actorName = fight.getActorName();
 
 		while (fights.size() > 0 && fights.size() >= getMaxFightAmount())
 		{
@@ -344,7 +345,7 @@ public class FightStateManager
 
 		log.debug("Creating new fight for actor {}", actorName);
 
-		fights.put(actorName, new Fight(actor, isLocalPlayer));
+		fights.put(actorName, fight);
 		plugin.updateCombatPanel();
 	}
 
