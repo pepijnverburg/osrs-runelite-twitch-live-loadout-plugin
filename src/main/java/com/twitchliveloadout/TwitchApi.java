@@ -31,6 +31,9 @@ import java.util.zip.GZIPOutputStream;
 public class TwitchApi
 {
 	public final static int MAX_PAYLOAD_SIZE = 5120;
+	public final static int MIN_SYNC_DELAY = 0;
+	public final static int BASE_SYNC_DELAY = 2;
+	public final static boolean CHAT_ERRORS_ENABLED = false;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
 	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 5 * 60 * 1000; // in ms
@@ -70,13 +73,15 @@ public class TwitchApi
 
 	public void scheduleBroadcasterState(final JsonObject state)
 	{
-		int minDelay = 0;
 		int delay = config.syncDelay();
 
-		if (delay < minDelay)
+		if (delay < MIN_SYNC_DELAY)
 		{
-			delay = minDelay;
+			delay = MIN_SYNC_DELAY;
 		}
+
+		// add the base delay
+		delay += BASE_SYNC_DELAY;
 
 		scheduledExecutor.schedule(new Runnable()
 		{
@@ -237,7 +242,7 @@ public class TwitchApi
 			log.error("The response body was {}", responseText);
 			log.error(state.toString());
 
-			if (isLoggedIn && canSendErrorChatMessage) {
+			if (CHAT_ERRORS_ENABLED && isLoggedIn && canSendErrorChatMessage) {
 				final ChatMessageBuilder message = new ChatMessageBuilder()
 					.append(ChatColorType.HIGHLIGHT)
 					.append("Could not synchronize loadout to Twitch " + type + " (code: " + responseCode + "). ")
