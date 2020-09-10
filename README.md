@@ -137,6 +137,7 @@ Future features that might be added based on feedback are:
 - [ ] Add live gear of PvP enemies deduced from graphical models.
 - [ ] Sync data from loot tracker. Possible to have directly via API instead of via Twitch data packets?
 - [ ] Let viewers 'vote' on wearing/dropping certain items by clicking on the items in question.
+- [ ] Keep track of the last +/- 5 combat hits and show that in the combat stats tab (e.g. nice for KO hits).
 
 ## 💡 Feedback
 If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.
