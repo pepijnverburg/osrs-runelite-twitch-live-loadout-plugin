@@ -41,10 +41,10 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `DPS in general`: damage per seconds for all damage done to enemies.
 - [x] `Poison damage`: poison and venom damage.
 - [x] `Smite damage`: damage per fight smite has done including (hypothetical) prayer drain.
-- [x] `Spell splashes`: count the splashes done on enemies.
-- [x] `Freezes`: count potential freezes and misses. 
-- [x] `Entangle`: count snare/bind/entangle spells and misses.
-- [x] `Blood heals`: count potential heals through blood spells.
+- [x] `Spell splashes`: count the splashes done on enemies (single combat only).
+- [x] `Freezes`: count potential freezes and misses (single combat only). 
+- [x] `Entangle`: count snare/bind/entangle spells and misses (single combat only).
+- [x] `Blood heals`: count potential heals through blood spells (single combat only).
 - [x] `Incoming hits`: damage, splashes, etc. are also tracked on the logged in player.
 - [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
 - [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
