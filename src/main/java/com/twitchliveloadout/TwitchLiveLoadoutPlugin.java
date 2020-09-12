@@ -222,6 +222,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncPlayerInfo()
 	{
+
 		if (client.getGameState() != GameState.LOGGED_IN)
 		{
 			return;

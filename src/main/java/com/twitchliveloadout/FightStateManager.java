@@ -114,8 +114,6 @@ public class FightStateManager
 		int graphicId = eventActor.getGraphic();
 		boolean isLocalPlayer = false;
 
-		log.error("Graphic ID spawned: {}", graphicId);
-
 		// Only allow tracking of graphic IDs for combat statistics in single combat areas.
 		// This is due to the fact that we cannot classify a certain graphic to the local player.
 		// This would cause for example range hits to be classified as a barrage when someone else
@@ -140,7 +138,7 @@ public class FightStateManager
 			return;
 		}
 
-		log.error("Graphic ID spawned: {}", graphicId);
+		// log.error("Graphic ID changed: {}", graphicId);
 
 		for (FightGraphic graphic : FightGraphic.values())
 		{
