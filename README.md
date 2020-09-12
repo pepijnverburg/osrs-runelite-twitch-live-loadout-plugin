@@ -12,6 +12,8 @@ Get better engagement with...
 
 [Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with.
 
+![Summary](./docs/summary.gif "Summary")
+
 ## Requirements
 - [Runelite Client](https://runelite.net/) with Plugin Hub enabled
 - [Twitch Account](https://www.twitch.tv/) as broadcaster
