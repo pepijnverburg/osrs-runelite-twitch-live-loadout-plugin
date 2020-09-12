@@ -22,6 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -206,6 +208,8 @@ public class TwitchApi
 		final String responseText = response.body().string();
 		final int compressesStateSize = compressedState.getBytes("UTF-8").length;
 		final long now = Instant.now().getEpochSecond();
+		final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+		final String nowFormatted = Instant.ofEpochSecond(now).atZone(ZoneId.systemDefault()).format(dateFormatter);
 		final long errorChatMessageDeltaTime = now - lastErrorChatMessage;
 		final boolean isLoggedIn = client.getGameState() == GameState.LOGGED_IN;
 		final boolean canSendErrorChatMessage = errorChatMessageDeltaTime > ERROR_CHAT_MESSAGE_THROTTLE;
@@ -229,6 +233,9 @@ public class TwitchApi
 		{
 			responseCodeMessage = "The latest information is successfully synced to Twitch.";
 		}
+
+		// append the time
+		responseCodeMessage += " The time was: "+ nowFormatted;
 
 		response.close();
 		lastResponseMessage = responseCodeMessage;
