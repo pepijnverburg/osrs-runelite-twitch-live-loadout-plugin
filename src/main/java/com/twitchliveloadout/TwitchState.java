@@ -35,6 +35,17 @@ public class TwitchState {
 	private final TwitchLiveLoadoutConfig config;
 
 	/**
+	 * Enable this if you want to test the state with all its limits
+	 * where we will fill the combat stats, item quantities, etc. with maxed out integers.
+	 * This will help us gain insights in how many bank items and combat fights we can allow.
+	 */
+	public final static boolean STATE_STRESS_TEST_ENABLED = false;
+	public final static int MAX_ITEM_QUANTITY = 80000;
+	public final static int MAX_FIGHT_STATISTIC_VALUE = 700;
+	public final static int MAX_SKILL_EXPERIENCE = 200000000;
+	public final static int MAX_SKILL_LEVEL = 126;
+
+	/**
 	 * The current state that is queued to be sent out.
 	 */
 	private JsonObject currentState = new JsonObject();
@@ -92,13 +103,13 @@ public class TwitchState {
 
 	public void setSkillExperiences(int[] skillExperiences)
 	{
-		currentState.add(TwitchStateEntry.SKILL_EXPERIENCES.getKey(), convertToJson(skillExperiences));
+		currentState.add(TwitchStateEntry.SKILL_EXPERIENCES.getKey(), convertToJson(skillExperiences, MAX_SKILL_EXPERIENCE));
 		checkForChange();
 	}
 
 	public void setBoostedSkillLevels(int[] boostedSkillLevels)
 	{
-		currentState.add(TwitchStateEntry.BOOSTED_SKILL_LEVELS.getKey(), convertToJson(boostedSkillLevels));
+		currentState.add(TwitchStateEntry.BOOSTED_SKILL_LEVELS.getKey(), convertToJson(boostedSkillLevels, MAX_SKILL_LEVEL));
 		checkForChange();
 	}
 
@@ -126,7 +137,7 @@ public class TwitchState {
 
 	public void setBankItems(Item[] items, long totalPrice, int[] tabAmounts)
 	{
-		currentState.add(TwitchStateEntry.BANK_TAB_AMOUNTS.getKey(), convertToJson((tabAmounts)));
+		currentState.add(TwitchStateEntry.BANK_TAB_AMOUNTS.getKey(), convertToJson(tabAmounts, 0));
 		setItems(TwitchStateEntry.BANK_ITEMS.getKey(), TwitchStateEntry.BANK_PRICE.getKey(), items, totalPrice);
 	}
 
@@ -210,8 +221,16 @@ public class TwitchState {
 
 		for (Item item : items) {
 			JsonArray itemJson = new JsonArray();
-			itemJson.add(item.getId());
-			itemJson.add(item.getQuantity());
+			final int id = item.getId();
+			int quantity = item.getQuantity();
+
+			if (TwitchState.STATE_STRESS_TEST_ENABLED)
+			{
+				quantity = (int) (Math.random() * TwitchState.MAX_ITEM_QUANTITY);
+			}
+
+			itemJson.add(id);
+			itemJson.add(quantity);
 
 			itemsJson.add(itemJson);
 		}
@@ -219,9 +238,22 @@ public class TwitchState {
 		return itemsJson;
 	}
 
-	private JsonArray convertToJson(int[] array)
+	private JsonArray convertToJson(int[] array, int maxValue)
 	{
-		JsonArray json = new GsonBuilder().create().toJsonTree(array).getAsJsonArray();
+		final int length = array.length;
+		final int[] copiedArray = new int[length];
+
+		// Prevent the original array to be mutated with testing mode
+		// as it can be an array that is used for rendering.
+		System.arraycopy(array, 0, copiedArray, 0, length);
+
+		if (STATE_STRESS_TEST_ENABLED && maxValue > 0) {
+			for (int i = 0; i < array.length; i++) {
+				copiedArray[i] = (int) (Math.random() * maxValue);
+			}
+		}
+
+		JsonArray json = new GsonBuilder().create().toJsonTree(copiedArray).getAsJsonArray();
 		return json;
 	}
 
