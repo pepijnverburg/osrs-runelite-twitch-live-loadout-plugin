@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 @Slf4j
@@ -113,6 +114,17 @@ public class FightStateManager
 		int graphicId = eventActor.getGraphic();
 		boolean isLocalPlayer = false;
 
+		log.error("Graphic ID spawned: {}", graphicId);
+
+		// Only allow tracking of graphic IDs for combat statistics in single combat areas.
+		// This is due to the fact that we cannot classify a certain graphic to the local player.
+		// This would cause for example range hits to be classified as a barrage when someone else
+		// triggered the barrage graphic on the same enemy.
+		if (isInMultiCombatArea())
+		{
+			return;
+		}
+
 		if (eventActor instanceof Player)
 		{
 			isLocalPlayer = localPlayer.getName().equals(eventActor.getName());
@@ -128,7 +140,7 @@ public class FightStateManager
 			return;
 		}
 
-		log.debug("Graphic ID spawned: {}", graphicId);
+		log.error("Graphic ID spawned: {}", graphicId);
 
 		for (FightGraphic graphic : FightGraphic.values())
 		{
@@ -397,7 +409,9 @@ public class FightStateManager
 
 	public JsonObject getFightStatisticsState()
 	{
-		JsonObject state = new JsonObject();
+		final ArrayList<Fight> includedFights = new ArrayList();
+
+		final JsonObject state = new JsonObject();
 		JsonObject statistics = new JsonObject();
 		JsonArray actorNames = new JsonArray();
 		JsonArray actorTypes = new JsonArray();
@@ -409,6 +423,25 @@ public class FightStateManager
 		JsonArray lastDurations = new JsonArray();
 		JsonArray sessionCounters = new JsonArray();
 		JsonArray updatedAts = new JsonArray();
+
+		// prepare the default included fights
+		for (Fight fight : fights.values())
+		{
+			includedFights.add(fight);
+		}
+
+		// override the included fights when we want to stress test the state
+		if (TwitchState.STATE_STRESS_TEST_ENABLED && fights.size() > 0)
+		{
+			final int maxFightAmount = getMaxFightAmount();
+			final Fight firstFight = fights.values().iterator().next();
+			includedFights.clear();
+
+			for (int fightIndex = 0; fightIndex < maxFightAmount; fightIndex++)
+			{
+				includedFights.add(firstFight);
+			}
+		}
 
 		state.add(ACTOR_NAME_KEY, actorNames);
 		state.add(ACTOR_TYPE_KEY, actorTypes);
@@ -438,7 +471,7 @@ public class FightStateManager
 			statistics.add(statisticKey.getKey(), fightStatistic);
 		}
 
-		for (Fight fight : fights.values())
+		for (Fight fight : includedFights)
 		{
 			FightSession totalSession = fight.calculateTotalSession();
 			FightSession lastSession = fight.getLastSession();
@@ -476,6 +509,13 @@ public class FightStateManager
 					long lastValue = lastStatistic.getValueByProperty(property);
 					JsonArray totalAndLastValue = new JsonArray();
 
+					// check if we need to test the maximum state
+					if (TwitchState.STATE_STRESS_TEST_ENABLED)
+					{
+						totalValue = (int) (Math.random() * TwitchState.MAX_FIGHT_STATISTIC_VALUE);
+						lastValue = (int) (Math.random() * TwitchState.MAX_FIGHT_STATISTIC_VALUE);
+					}
+
 					totalAndLastValue.add(totalValue);
 					totalAndLastValue.add(lastValue);
 					statisticState.getAsJsonArray(property.getKey()).add(totalAndLastValue);
@@ -502,6 +542,13 @@ public class FightStateManager
 		Player localPlayer = client.getLocalPlayer();
 
 		return player == localPlayer;
+	}
+
+	public boolean isInMultiCombatArea()
+	{
+		int multiCombatVarBit = client.getVar(Varbits.MULTICOMBAT_AREA);
+
+		return multiCombatVarBit == 1;
 	}
 
 	public int getMaxFightAmount()
