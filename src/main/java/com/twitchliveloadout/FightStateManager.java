@@ -109,9 +109,9 @@ public class FightStateManager
 	public void onGraphicChanged(GraphicChanged event)
 	{
 		Actor eventActor = event.getActor();
-		Actor interactingActor = client.getLocalPlayer().getInteracting();
+		String eventActorName = eventActor.getName();
 		Player localPlayer = client.getLocalPlayer();
-		int graphicId = eventActor.getGraphic();
+		final int graphicId = eventActor.getGraphic();
 		boolean isLocalPlayer = false;
 
 		// Only allow tracking of graphic IDs for combat statistics in single combat areas.
@@ -123,15 +123,22 @@ public class FightStateManager
 			return;
 		}
 
-		if (eventActor instanceof Player)
+		if (localPlayer == null || eventActorName == null)
 		{
-			isLocalPlayer = localPlayer.getName().equals(eventActor.getName());
+			return;
 		}
 
 		if (graphicId < 0)
 		{
 			return;
 		}
+
+		if (eventActor instanceof Player)
+		{
+			isLocalPlayer = localPlayer.getName().equals(eventActorName);
+		}
+
+		Actor interactingActor = localPlayer.getInteracting();
 
 		if (eventActor != interactingActor && !isLocalPlayer)
 		{
