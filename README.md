@@ -90,20 +90,21 @@ It is also possible to reset specific or all fights to let your statistics start
 
 ### ⚙️ Settings
 It is also possible to configure what information is being sent through the following options available in the plugin settings:
+- `Sync enabled`: toggle off to disable all syncing and clear current data with all viewers.
 - `Twitch extension token`: the login token specifically for the Twitch Extension you want to send the data to. This authenticates RuneLite to change data in the extension. This token should be retrieved when configuring the extension in the online Twitch interface.
+- `Overlay top position`: tweak where a Twitch Extension overlay would be positioned to match your screen layout.
 - `Sync delay`: delay the synchronization with x amount of seconds to match the broadcaster video & audio delay. Also use this to tweak when the video is delayed due to general networking.
-- `Sync display name`: toggle to show basic player info.
+- `Twitch Extension ID`: the unique identifier of the Twitch Extension where the data should be sent to. This is pre-filled with an extension known to work well with this plugin.
+- `Sync inventory items`: toggle to sync inventory items.
+- `Sync equipment items`: toggle to sync equipment items.
+- `Sync bank items`: toggle to sync bank items.
+- `Max bank items`: the maximum amount of bank items with an upper limit set by the plugin.
 - `Sync combat statistics`: toggle to sync combat statistics.
 - `Max combat fights`: the maximum amount of fights tracked with an upper limit set by the plugin.
-- `Sync inventory`: toggle to sync inventory items.
-- `Sync bank`: toggle to sync bank items.
-- `Max bank items`: the maximum amount of bank items with an upper limit set by the plugin.
-- `Sync skills`: toggle to sync (boosted) skills.
+- `Sync skill levels`: toggle to sync (boosted) skills.
 - `Virtual levels enabled`: when enabled the maximum level shown based on experience is 126 instead of 99. 
-- `Sync weight`: toggle to sync weight.
-- `Overlay top position`: tweak where a Twitch Extension overlay would be positioned to match your screen layout.
-- `Sync enabled`: toggle off to disable all syncing and clear current data.
-- `Extension Client ID`: the unique identifier of the Twitch Extension where the data should be sent to. This is pre-filled with an extension known to work well with this plugin.
+- `Sync display name`: toggle to show basic player info.
+- `Sync weight of carried items`: toggle to sync weight.
 
 ## 🔒 Security & Technical Details
 
