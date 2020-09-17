@@ -156,6 +156,12 @@ public class TwitchState {
 		if (!config.syncEnabled())
 		{
 			filteredState = new JsonObject();
+
+			// set null for all keys to make sure all viewers have their state cleared as well
+			for (TwitchStateEntry stateEntry : TwitchStateEntry.values())
+			{
+				filteredState.add(stateEntry.getKey(), null);
+			}
 		}
 
 		if (!config.playerInfoEnabled())
