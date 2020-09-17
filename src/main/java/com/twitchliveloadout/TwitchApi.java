@@ -149,7 +149,7 @@ public class TwitchApi
 			log.error(exception.toString());
 		}
 
-		log.error("Sending out {} state (v{}):", segment, version);
+		log.debug("Sending out {} state (v{}):", segment, version);
 		log.debug(state.toString());
 		log.debug("Compressed state:");
 		log.debug(compressedState);
