@@ -20,12 +20,7 @@ import java.util.HashMap;
  * an in-memory state is useful. Looks like this does not give significant
  * overhead.
  *
- * For each property getters and setters are available to make this plugin
- * easily testable in the future. In the future it is also possible to define
- * properties that are dependent on others and determine them on the fly when
- * calling a getter.
- *
- * The Configuration Service state does have limitations: it can only be a maximum of 5KB.
+ * The Configuration and PubSub Service state do have limitations: it can only be a maximum of 5KB.
  *
  * Configuration Service documentation:
  * https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment

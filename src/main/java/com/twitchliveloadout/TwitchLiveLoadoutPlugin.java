@@ -164,12 +164,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	/**
 	 * Polling mechanism to update the state only when it has changed.
-	 * This avoids data being pushed when any of part of the state changed
-	 * and forces us to combine update requests in one.
-	 *
-	 * A maximum of every three seconds seems to not trigger the rate limit of Twitch.
 	 */
-	@Schedule(period = 3, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 500, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncState()
 	{
 		final boolean updateRequired = twitchState.isChanged();
@@ -185,7 +181,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// We will not verify whether the set was successful here
 		// because it is possible that the request is being delayed
 		// due to the custom streamer delay
-		twitchApi.scheduleBroadcasterState(filteredState);
+		final boolean isScheduled = twitchApi.scheduleBroadcasterState(filteredState);
+
+		// guard: check if the scheduling was successful due to for example rate limiting
+		// if not we will not acknowledge the change
+		if (!isScheduled) {
+			return;
+		}
 
 		final String filteredStateString = filteredState.toString();
 		final String newFilteredStateString = twitchState.getFilteredState().toString();

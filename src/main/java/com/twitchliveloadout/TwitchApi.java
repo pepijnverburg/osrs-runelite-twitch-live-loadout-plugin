@@ -33,8 +33,9 @@ import java.util.zip.GZIPOutputStream;
 public class TwitchApi
 {
 	public final static int MAX_PAYLOAD_SIZE = 5120;
-	public final static int MIN_SYNC_DELAY = 0;
-	public final static int BASE_SYNC_DELAY = 2;
+	public final static int MIN_SCHEDULE_DELAY = 3; // seconds
+	public final static int MIN_SYNC_DELAY = 0; // seconds
+	public final static int BASE_SYNC_DELAY = 1; // seconds
 	public final static boolean CHAT_ERRORS_ENABLED = false;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
@@ -59,6 +60,7 @@ public class TwitchApi
 	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
+	private Instant lastScheduleStateTime = null;
 	private String lastCompressedState = "";
 	private String lastConfigurationServiceState = "";
 	private String lastResponseMessage = "";
@@ -73,9 +75,14 @@ public class TwitchApi
 		this.chatMessageManager = chatMessageManager;
 	}
 
-	public void scheduleBroadcasterState(final JsonObject state)
+	public boolean scheduleBroadcasterState(final JsonObject state)
 	{
 		int delay = config.syncDelay();
+
+		if (!canScheduleState())
+		{
+			return false;
+		}
 
 		if (delay < MIN_SYNC_DELAY)
 		{
@@ -94,6 +101,23 @@ public class TwitchApi
 				boolean validResults = serviceUpdateResult && pubSubResult;
 			}
 		}, delay, TimeUnit.SECONDS);
+
+		lastScheduleStateTime = Instant.now();
+		return true;
+	}
+
+	public boolean canScheduleState()
+	{
+
+		if (lastScheduleStateTime == null)
+		{
+			return true;
+		}
+
+		Instant now = Instant.now();
+		Instant minTime = lastScheduleStateTime.plusSeconds(MIN_SCHEDULE_DELAY);
+
+		return now.isAfter(minTime);
 	}
 
 	public void clearScheduledBroadcasterStates()
@@ -125,7 +149,7 @@ public class TwitchApi
 			log.error(exception.toString());
 		}
 
-		log.debug("Sending out {} state (v{}):", segment, version);
+		log.error("Sending out {} state (v{}):", segment, version);
 		log.debug(state.toString());
 		log.debug("Compressed state:");
 		log.debug(compressedState);
