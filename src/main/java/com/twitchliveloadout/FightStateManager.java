@@ -187,31 +187,43 @@ public class FightStateManager
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
 		boolean isOnSelf = isLocalPlayer(eventActor);
 
-		// Poison damage can come from different sources,
-		// but will be attributed to the DPS.
-		if (hasFight(eventActor)) {
-			if (hitsplatType == Hitsplat.HitsplatType.POISON || hitsplatType == Hitsplat.HitsplatType.VENOM) {
-				registerFightHitsplat(eventActor, FightStatisticEntry.POISON, hitsplat);
-				return;
-			}
+		// Guard: some hitsplats can come from other sources and we will only handle them
+		// when there is already a fight to prevent random fights to appear out of nowhere
+		// because of activity of others.
+		if (hitsplatType == Hitsplat.HitsplatType.POISON || hitsplatType == Hitsplat.HitsplatType.VENOM)
+		{
+			registerExistingFightHitsplat(eventActor, FightStatisticEntry.POISON, hitsplat);
+			return;
 		}
 
-		// Guard: check if the hitsplat is the players damage.
-		// NOTE: we will not guard against hitsplats that are on the player themselves,
-		// because we would also like to track this!
+		if (hitsplatType == Hitsplat.HitsplatType.HEAL)
+		{
+			registerExistingFightHitsplat(eventActor, FightStatisticEntry.HIT_HEAL, hitsplat);
+			return;
+		}
+
+		if (hitsplatType == Hitsplat.HitsplatType.DISEASE)
+		{
+			// not worth tracking
+			return;
+		}
+
+		// Guard: check if the hitsplat is damage of the local player
+		// if not we will register it as a hit from an 'other' source that is also useful
+		// when showing the combat statistics
 		if (!hitsplat.isMine())
 		{
+			registerExistingFightHitsplat(eventActor, FightStatisticEntry.OTHER, hitsplat);
 			return;
 		}
 
 		// TODO: later recognize what damage type was done (magic, ranged or melee).
-		FightStatisticEntry mainDamageName = FightStatisticEntry.SHARED;
-		registerFightHitsplat(eventActor, mainDamageName, hitsplat);
+		registerEnsuredFightHitsplat(eventActor, FightStatisticEntry.TOTAL, hitsplat);
 
 		// Register damage done while having smite up and dealing damage to other entity
 		if (!isOnSelf && headIcon == HeadIcon.SMITE)
 		{
-			registerFightHitsplat(eventActor, FightStatisticEntry.SMITE, hitsplat);
+			registerEnsuredFightHitsplat(eventActor, FightStatisticEntry.SMITE, hitsplat);
 		}
 	}
 
@@ -292,13 +304,31 @@ public class FightStateManager
 		session.addGameTicks(1);
 	}
 
-	public void registerFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
+	public void registerExistingFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
+	{
+		Fight fight = getFight(actor);
+
+		registerFightHitsplat(fight, actor, statisticEntry, hitsplat);
+	}
+
+	public void registerEnsuredFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
+	{
+		Fight fight = ensureFight(actor);
+
+		registerFightHitsplat(fight, actor, statisticEntry, hitsplat);
+	}
+
+	public void registerFightHitsplat(Fight fight, Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
 	{
 		int amount = hitsplat.getAmount();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
-		Fight fight = ensureFight(actor);
 		Actor lastActor = fight.getLastActor();
 		FightStatistic statistic = fight.ensureStatistic(actor, statisticEntry);
+
+		if (fight == null)
+		{
+			return;
+		}
 
 		if (lastActor != actor)
 		{
@@ -310,13 +340,25 @@ public class FightStateManager
 		// already provide a spec what statistic entry and what property to apply it on.
 		fight.registerQueuedStatistics(actor, amount);
 
-		// check for block or hit
+		// check for block or damage
+		// NOTE: we explicitly don't have a default
+		// to make sure the behaviour is predictable after updates
 		switch (hitsplatType)
 		{
 			case BLOCK_ME:
+			case BLOCK_OTHER:
 				statistic.registerMiss(amount);
 				break;
-			default:
+			case DAMAGE_ME:
+			case DAMAGE_ME_CYAN:
+			case DAMAGE_ME_ORANGE:
+			case DAMAGE_ME_WHITE:
+			case DAMAGE_ME_YELLOW:
+			case DAMAGE_OTHER:
+			case DAMAGE_OTHER_CYAN:
+			case DAMAGE_OTHER_ORANGE:
+			case DAMAGE_OTHER_WHITE:
+			case DAMAGE_OTHER_YELLOW:
 				statistic.registerHit(amount);
 				break;
 		}

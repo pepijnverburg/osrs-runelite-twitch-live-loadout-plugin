@@ -1,13 +1,15 @@
 package net.runelite.client.plugins.twitchliveloadout;
 
 public enum FightStatisticEntry {
-	SHARED("shared", true),
+	TOTAL("total", true),
 //	MELEE("melee", true),
 //	MAGIC("magic", true),
 //	RANGED("ranged", true),
+	OTHER("other", false),
 
 	FREEZE("freeze", true),
 	ENTANGLE("entangle", true),
+	HIT_HEAL("hitHeal", true),
 	BLOOD_HEAL("bloodHeal", true),
 	SPELL("spell", true),
 	POISON("poison", false),
