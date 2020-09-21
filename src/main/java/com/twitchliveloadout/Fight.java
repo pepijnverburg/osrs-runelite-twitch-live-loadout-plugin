@@ -14,12 +14,10 @@ public class Fight {
 	private final FightStateManager.ActorType actorType;
 	private final int actorCombatLevel;
 	private final ArrayList<FightQueuedStatistic> queuedStatistics = new ArrayList();
+	private final HashMap<Actor, FightSession> sessions = new HashMap();
 
 	private Actor lastActor;
-
 	private int finishedSessionCounter = 0;
-
-	private HashMap<Actor, FightSession> sessions = new HashMap();
 
 	public Fight(Actor actor, boolean isLocalPlayer)
 	{

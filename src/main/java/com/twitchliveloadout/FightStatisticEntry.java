@@ -5,7 +5,7 @@ public enum FightStatisticEntry {
 //	MELEE("melee", true),
 //	MAGIC("magic", true),
 //	RANGED("ranged", true),
-	OTHER("other", false),
+	OTHER("other", true),
 
 	FREEZE("freeze", true),
 	ENTANGLE("entangle", true),

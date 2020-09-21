@@ -271,6 +271,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onInteractingChanged(InteractingChanged interactingChanged)
+	{
+		fightStateManager.onInteractingChanged(interactingChanged);
+	}
+
+	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
 		 fightStateManager.onGameTick(tick);

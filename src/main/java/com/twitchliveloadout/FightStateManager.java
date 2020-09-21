@@ -31,6 +31,9 @@ public class FightStateManager
 	private static final String SESSION_COUNTERS_KEY = "sessionCounters";
 	private static final String STATISTICS_KEY = "statistics";
 
+	private static final int MAX_INTERACTING_ACTORS_HISTORY = 2;
+	private ArrayList<Actor> interactingActors = new ArrayList();
+
 	public enum FightGraphic {
 		ICE_BARRAGE(369, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
 		ICE_BLITZ(367, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
@@ -114,11 +117,11 @@ public class FightStateManager
 		final int graphicId = eventActor.getGraphic();
 		boolean isLocalPlayer = false;
 
-		// Only allow tracking of graphic IDs for combat statistics in single combat areas.
+		// Only allow tracking of graphic IDs for combat statistics in single combat areas or multi when there are no other players.
 		// This is due to the fact that we cannot classify a certain graphic to the local player.
 		// This would cause for example range hits to be classified as a barrage when someone else
 		// triggered the barrage graphic on the same enemy.
-		if (isInMultiCombatArea())
+		if (isInMultiCombatArea() && otherPlayersPresent())
 		{
 			return;
 		}
@@ -138,9 +141,7 @@ public class FightStateManager
 			isLocalPlayer = localPlayer.getName().equals(eventActorName);
 		}
 
-		Actor interactingActor = localPlayer.getInteracting();
-
-		if (eventActor != interactingActor && !isLocalPlayer)
+		if (!interactingActors.contains(eventActor) && !isLocalPlayer)
 		{
 			return;
 		}
@@ -271,6 +272,32 @@ public class FightStateManager
 		fight.finishSession(eventActor);
 	}
 
+	public void onInteractingChanged(InteractingChanged interactingChanged)
+	{
+		Actor source = interactingChanged.getSource();
+		Actor target = interactingChanged.getTarget();
+		Actor localPlayer = client.getLocalPlayer();
+
+		if (source != localPlayer)
+		{
+			return;
+		}
+
+		if (target == null)
+		{
+			return;
+		}
+
+		//log.error("Updating last interacting target to {}", target.getName());
+
+		interactingActors.add(target);
+
+		if (interactingActors.size() > MAX_INTERACTING_ACTORS_HISTORY)
+		{
+			interactingActors.remove(0);
+		}
+	}
+
 	public void onGameTick(GameTick tick)
 	{
 		Actor interactingActor = client.getLocalPlayer().getInteracting();
@@ -320,25 +347,30 @@ public class FightStateManager
 
 	public void registerFightHitsplat(Fight fight, Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
 	{
-		int amount = hitsplat.getAmount();
-		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
-		Actor lastActor = fight.getLastActor();
-		FightStatistic statistic = fight.ensureStatistic(actor, statisticEntry);
-
 		if (fight == null)
 		{
 			return;
 		}
 
-		if (lastActor != actor)
+		int amount = hitsplat.getAmount();
+		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
+		Actor lastActor = fight.getLastActor();
+		FightStatistic statistic = fight.ensureStatistic(actor, statisticEntry);
+
+		// only update the last actor when the damage is dealt by the local player
+		// the other hitsplats are merely for statistic purposes
+		if (lastActor != actor && hitsplat.isMine())
 		{
 			fight.setLastActor(actor);
 		}
 
 		// Handle this damage as being part of the queued statistics.
-		// Note that the hitsplat type doesn't matter here as the queued statistic
-		// already provide a spec what statistic entry and what property to apply it on.
-		fight.registerQueuedStatistics(actor, amount);
+		// Note that only hitsplats by the local player are handled to
+		// prevent other player hits to trigger the queueing
+		if (hitsplat.isMine())
+		{
+			fight.registerQueuedStatistics(actor, amount);
+		}
 
 		// check for block or damage
 		// NOTE: we explicitly don't have a default
@@ -596,6 +628,12 @@ public class FightStateManager
 		int multiCombatVarBit = client.getVar(Varbits.MULTICOMBAT_AREA);
 
 		return multiCombatVarBit == 1;
+	}
+
+	public boolean otherPlayersPresent()
+	{
+		// one is to account for the local player
+		return client.getPlayers().size() > 1;
 	}
 
 	public int getMaxFightAmount()
