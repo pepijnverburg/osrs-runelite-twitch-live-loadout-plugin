@@ -1,13 +1,11 @@
 package net.runelite.client.plugins.twitchliveloadout.ui;
 
-import java.awt.BorderLayout;
-import java.awt.GridBagLayout;
-import javax.swing.JPanel;
+import java.awt.*;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 import net.runelite.client.plugins.twitchliveloadout.FightStateManager;
 import net.runelite.client.plugins.twitchliveloadout.TwitchApi;
-import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.materialtabs.MaterialTab;
 import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
@@ -24,8 +22,7 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 
 	public TwitchLiveLoadoutPanel(TwitchApi twitchApi, FightStateManager fightStateManager)
 	{
-		super(false);
-
+		super(true);
 		setLayout(new BorderLayout());
 
 		combatPanel = new CombatPanel(fightStateManager);
