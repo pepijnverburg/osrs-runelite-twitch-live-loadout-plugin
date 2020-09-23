@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -19,6 +20,7 @@ public class FightStateManager
 
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
 	public static final int MAX_FIGHT_AMOUNT = 10;
+	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2500; // ms
 	private static final String ACTOR_NAME_KEY = "actorNames";
 	private static final String ACTOR_TYPE_KEY = "actorTypes";
 	private static final String ACTOR_ID_KEY = "actorIds";
@@ -31,8 +33,9 @@ public class FightStateManager
 	private static final String SESSION_COUNTERS_KEY = "sessionCounters";
 	private static final String STATISTICS_KEY = "statistics";
 
-	private static final int MAX_INTERACTING_ACTORS_HISTORY = 2;
-	private ArrayList<Actor> interactingActors = new ArrayList();
+	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
+	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 5000; // ms
+	private HashMap<Actor, Instant> interactingActors = new HashMap();
 
 	public enum FightGraphic {
 		ICE_BARRAGE(369, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
@@ -114,6 +117,7 @@ public class FightStateManager
 		Actor eventActor = event.getActor();
 		String eventActorName = eventActor.getName();
 		Player localPlayer = client.getLocalPlayer();
+		final boolean hasInteractedWithActor = interactingActors.containsKey(eventActor);
 		final int graphicId = eventActor.getGraphic();
 		boolean isLocalPlayer = false;
 
@@ -141,12 +145,32 @@ public class FightStateManager
 			isLocalPlayer = localPlayer.getName().equals(eventActorName);
 		}
 
-		if (!interactingActors.contains(eventActor) && !isLocalPlayer)
+//		log.error("Graphic ID changed: {}", graphicId);
+
+		// Guard: in complex fight situations it is possible that a graphic will be triggered
+		// on a previous interacting actors, therefore we check all previous interacting actors.
+		// When someone else is triggering the graphic ID it will cause the queue to expire (due to tinted hitsplat).
+		// Graphics without a hitsplat are the exception here and might trigger faulty stats.
+		if (!hasInteractedWithActor && !isLocalPlayer)
 		{
 			return;
 		}
 
-		// log.error("Graphic ID changed: {}", graphicId);
+		// Guard: make sure the interacted actor is not expired.
+		// The map does not automatically expire as we can use it for other purposes as well
+		// that are not time dependent.
+		if (hasInteractedWithActor)
+		{
+			final Instant now = Instant.now();
+			final Instant lastInteractedOn = interactingActors.get(eventActor);
+			final boolean isExpired = now.isAfter(lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME));
+
+			if (isExpired)
+			{
+				return;
+			}
+
+		}
 
 		for (FightGraphic graphic : FightGraphic.values())
 		{
@@ -174,7 +198,7 @@ public class FightStateManager
 			else if (property == FightStatisticProperty.HIT_DAMAGES)
 			{
 				// After testing a bit longer than 4 game ticks catches all hitsplats
-				fight.queueStatistic(eventActor, entry, property, 2500);
+				fight.queueStatistic(eventActor, entry, property, GRAPHIC_HITSPLAT_EXPIRY_TIME);
 			}
 		}
 	}
@@ -288,9 +312,9 @@ public class FightStateManager
 			return;
 		}
 
-		//log.error("Updating last interacting target to {}", target.getName());
+		log.debug("Adding last interacting target to {}", target.getName());
 
-		interactingActors.add(target);
+		interactingActors.put(target, Instant.now());
 
 		if (interactingActors.size() > MAX_INTERACTING_ACTORS_HISTORY)
 		{
