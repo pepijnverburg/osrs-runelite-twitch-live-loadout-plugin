@@ -2,14 +2,18 @@ package net.runelite.client.plugins.twitchliveloadout;
 
 import net.runelite.api.Actor;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+
+import static net.runelite.client.plugins.twitchliveloadout.FightStateManager.*;
 
 public class FightSession {
 	private final Actor actor;
 
 	private HashMap<FightStatisticEntry, FightStatistic> statistics = new HashMap();
-	private long gameTickCounter = 0;
+	private long interactingTickCounter = 0;
+	private long idleTickCounter = 0;
 	private boolean finished = false;
 
 	public FightSession(Actor actor)
@@ -27,19 +31,49 @@ public class FightSession {
 		return statistics.get(statisticEntry);
 	}
 
-	public void addGameTicks(long amount)
+	public void addInteractingTicks(long amount)
 	{
-		gameTickCounter += amount;
+		interactingTickCounter += amount;
 	}
 
-	public long getGameTickCounter()
+	public void addIdleTicks(long amount)
 	{
-		return gameTickCounter;
+		idleTickCounter += amount;
+	}
+
+	public long getInteractingTickCounter()
+	{
+		return interactingTickCounter;
+	}
+
+	public long getIdleTickCounter()
+	{
+		return idleTickCounter;
+	}
+
+	public long getIdleDuration()
+	{
+		return (long) (idleTickCounter * GAME_TICK_DURATION);
 	}
 
 	public long getDurationSeconds()
 	{
-		return getLastUpdate() - getFirstUpdate();
+		return getLastUpdate() - getFirstUpdate() - getIdleDuration();
+	}
+
+	// TODO: the idling time is not yet correctly substracted from the total duration
+	public boolean isIdling()
+	{
+		if (!ENABLE_SESSION_IDLING)
+		{
+			return false;
+		}
+
+		final Instant now = Instant.now();
+		final Instant lastUpdate = Instant.ofEpochSecond(getLastUpdate());
+		final boolean isIdling = now.isAfter(lastUpdate.plusMillis(SESSION_IDLING_TIME));
+
+		return isIdling;
 	}
 
 	public void finish()

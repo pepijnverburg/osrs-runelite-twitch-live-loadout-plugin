@@ -19,8 +19,19 @@ public class FightStateManager
 	private final Client client;
 
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
+
 	public static final int MAX_FIGHT_AMOUNT = 10;
+
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2500; // ms
+
+	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
+	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 5000; // ms
+	private HashMap<Actor, Instant> interactingActors = new HashMap();
+
+	public static final boolean ENABLE_SESSION_IDLING = false; // TODO: finish session idling
+	public static final int SESSION_IDLING_TIME = 60 * 1000; // ms
+	public static final float GAME_TICK_DURATION = 0.6f; // seconds
+
 	private static final String ACTOR_NAME_KEY = "actorNames";
 	private static final String ACTOR_TYPE_KEY = "actorTypes";
 	private static final String ACTOR_ID_KEY = "actorIds";
@@ -32,10 +43,6 @@ public class FightStateManager
 	private static final String UPDATED_ATS_KEY = "updatedAts";
 	private static final String SESSION_COUNTERS_KEY = "sessionCounters";
 	private static final String STATISTICS_KEY = "statistics";
-
-	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
-	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 5000; // ms
-	private HashMap<Actor, Instant> interactingActors = new HashMap();
 
 	public enum FightGraphic {
 		ICE_BARRAGE(369, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
@@ -324,6 +331,32 @@ public class FightStateManager
 
 	public void onGameTick(GameTick tick)
 	{
+		registerIdleGameTick();
+		registerInteractingGameTick();
+	}
+
+	public void registerIdleGameTick()
+	{
+		for (Fight fight : fights.values())
+		{
+			FightSession session = fight.getLastSession();
+
+			if (session == null)
+			{
+				continue;
+			}
+
+			if (!session.isIdling())
+			{
+				return;
+			}
+
+			session.addIdleTicks(1);
+		}
+	}
+
+	public void registerInteractingGameTick()
+	{
 		Actor interactingActor = client.getLocalPlayer().getInteracting();
 
 		if (interactingActor == null)
@@ -331,28 +364,22 @@ public class FightStateManager
 			return;
 		}
 
-		registerFightGameTick(interactingActor);
-	}
-
-	public void registerFightGameTick(Actor actor)
-	{
-
 		// Guard: only handle game tick when a fight is initiated (which means one hitsplat was dealt).
 		// This is to prevent non-attackable NPC's to also count interacting game ticks.
-		if (!hasFight(actor))
+		if (!hasFight(interactingActor))
 		{
 			return;
 		}
 
-		Fight fight = getFight(actor);
+		Fight fight = getFight(interactingActor);
 
-		if (!fight.hasSession(actor))
+		if (!fight.hasSession(interactingActor))
 		{
 			return;
 		}
 
-		FightSession session = fight.getSession(actor);
-		session.addGameTicks(1);
+		FightSession session = fight.getSession(interactingActor);
+		session.addInteractingTicks(1);
 	}
 
 	public void registerExistingFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
@@ -591,8 +618,8 @@ public class FightStateManager
 			actorIds.add(fight.getActorId());
 			actorCombatLevels.add(fight.getActorCombatLevel());
 
-			totalInteractingTicks.add(totalSession.getGameTickCounter());
-			lastInteractingTicks.add(lastSession.getGameTickCounter());
+			totalInteractingTicks.add(totalSession.getInteractingTickCounter());
+			lastInteractingTicks.add(lastSession.getInteractingTickCounter());
 
 			totalDurations.add(totalSession.getDurationSeconds());
 			lastDurations.add(lastSession.getDurationSeconds());

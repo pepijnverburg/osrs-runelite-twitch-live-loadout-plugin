@@ -185,7 +185,8 @@ public class Fight {
 
 		for (FightSession session : sessions.values())
 		{
-			totalSession.addGameTicks(session.getGameTickCounter());
+			totalSession.addInteractingTicks(session.getInteractingTickCounter());
+			totalSession.addIdleTicks(session.getIdleTickCounter());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
