@@ -112,6 +112,11 @@ public class FightSession {
 
 	public long getLastUpdate()
 	{
+		return getLastUpdate(false);
+	}
+
+	public long getLastUpdate(boolean updatedAtInfluencerOnly)
+	{
 		long maxLastUpdate = 0;
 
 		for (Map.Entry<FightStatisticEntry, FightStatistic> entry : statistics.entrySet())
@@ -121,6 +126,11 @@ public class FightSession {
 			final long lastUpdate = statistic.getLastUpdate();
 
 			if (!statisticEntry.isDurationInfluencer() || lastUpdate == 0)
+			{
+				continue;
+			}
+
+			if (!statisticEntry.isUpdatedAtInfluencer() && updatedAtInfluencerOnly)
 			{
 				continue;
 			}

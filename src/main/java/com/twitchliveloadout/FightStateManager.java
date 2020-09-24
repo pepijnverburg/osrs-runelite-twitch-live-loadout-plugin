@@ -627,7 +627,7 @@ public class FightStateManager
 			lastDurations.add(lastSession.getDurationSeconds());
 
 			sessionCounters.add(fight.getFinishedSessionCounter());
-			updatedAts.add(fight.getLastUpdate());
+			updatedAts.add(fight.getLastUpdate(true));
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{

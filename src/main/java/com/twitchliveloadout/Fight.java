@@ -164,11 +164,16 @@ public class Fight {
 
 	public long getLastUpdate()
 	{
+		return getLastUpdate(false);
+	}
+
+	public long getLastUpdate(boolean updatedAtInfluencerOnly)
+	{
 		long maxLastUpdate = 0;
 
 		for (FightSession session : sessions.values())
 		{
-			long lastUpdate = session.getLastUpdate();
+			long lastUpdate = session.getLastUpdate(updatedAtInfluencerOnly);
 
 			if (lastUpdate > maxLastUpdate)
 			{
