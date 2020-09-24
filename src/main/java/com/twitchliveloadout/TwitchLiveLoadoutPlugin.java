@@ -168,7 +168,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 500, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncState()
 	{
-		final boolean updateRequired = twitchState.isChanged();
+		// Base this on the fact is the state is changed for a fixed time for debouncing purposes.
+		// This makes the updates more smooth when multiple changes occur fast after each other.
+		// Take for example switching gear: when the first armour piece is worn a change is directly
+		// triggered, causing the rest of the switch to come the update after (a few seconds later).
+		// This debouncing behaviour makes sure that quickly succeeding changes are batched and with that
+		// let for example gear switches come through in one state update towards the viewer.
+		final boolean updateRequired = twitchState.isChangedLongEnough();
 
 		// Guard: check if something has changed to avoid unnecessary updates.
 		if (!updateRequired)

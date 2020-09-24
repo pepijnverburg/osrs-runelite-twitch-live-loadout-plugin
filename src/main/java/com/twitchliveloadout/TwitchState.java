@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import net.runelite.api.*;
 import net.runelite.client.game.ItemManager;
 
+import java.time.Instant;
 import java.util.HashMap;
 
 /**
@@ -62,7 +63,9 @@ public class TwitchState {
 	 * one of the setters was invoked. This allow for more
 	 * efficient updating towards the Configuration Service.
 	 */
+	private final static int CHANGED_DEBOUNCE_TIME = 1000; // ms
 	private boolean changed = false;
+	private Instant changedAt;
 
 	public TwitchState(TwitchLiveLoadoutConfig config, ItemManager itemManager)
 	{
@@ -263,6 +266,19 @@ public class TwitchState {
 		return changed;
 	}
 
+	public boolean isChangedLongEnough()
+	{
+		if (!isChanged())
+		{
+			return false;
+		}
+
+		final Instant now = Instant.now();
+		final boolean longEnough = now.isAfter(changedAt.plusMillis(CHANGED_DEBOUNCE_TIME));
+
+		return longEnough;
+	}
+
 	private boolean checkForChange()
 	{
 		if (currentState.equals(previousState))
@@ -276,6 +292,12 @@ public class TwitchState {
 
 	public void forceChange()
 	{
+		if (isChanged())
+		{
+			return;
+		}
+
+		changedAt = Instant.now();
 		changed = true;
 	}
 
