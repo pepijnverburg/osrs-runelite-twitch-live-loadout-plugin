@@ -32,6 +32,8 @@ public class FightStateManager
 	public static final int SESSION_IDLING_TIME = 60 * 1000; // ms
 	public static final float GAME_TICK_DURATION = 0.6f; // seconds
 
+	public static final int IS_NOT_ATTACKING_ANYMORE_TIME = 5000; // ms
+
 	private static final String ACTOR_NAME_KEY = "actorNames";
 	private static final String ACTOR_TYPE_KEY = "actorTypes";
 	private static final String ACTOR_ID_KEY = "actorIds";
@@ -128,6 +130,11 @@ public class FightStateManager
 		final int graphicId = eventActor.getGraphic();
 		boolean isLocalPlayer = false;
 
+		if (graphicId < 0)
+		{
+			return;
+		}
+
 		if (localPlayer == null || eventActorName == null)
 		{
 			return;
@@ -136,16 +143,11 @@ public class FightStateManager
 		final Actor interactingActor = localPlayer.getInteracting();
 		final boolean isInteractingWithActor = (eventActor == interactingActor);
 
-		// Only allow tracking of graphic IDs for combat statistics in single combat areas or multi when there are no other players.
-		// This is due to the fact that we cannot classify a certain graphic to the local player.
-		// This would cause for example range hits to be classified as a barrage when someone else
-		// triggered the barrage graphic on the same enemy.
-		if (isInMultiCombatArea() && otherPlayersPresent())
-		{
-			return;
-		}
-
-		if (graphicId < 0)
+		// Only allow tracking of graphic IDs for combat statistics in single combat areas or multi
+		// when there are no other players. This is due to the fact that we cannot classify a certain
+		// graphic to the local player. This would cause for example range hits to be classified as
+		// a barrage when someone else triggered the barrage graphic on the same enemy.
+		if (isInMultiCombatArea() && otherPlayersPresent(eventActor))
 		{
 			return;
 		}
@@ -166,9 +168,27 @@ public class FightStateManager
 			return;
 		}
 
-		// Guard: make sure the interacted actor is not expired.
-		// The map does not automatically expire as we can use it for other purposes as well
-		// that are not time dependent.
+		// Guard: skip any fights where player is not fighting anymore
+		// but still attempting to interact with the player, for example:
+		// Another player is splashing on the enemy and the local player is triggering
+		// interacting events for that enemy. The splashes are then incorrectly attributed to the local player.
+		// This guard makes sure that the last time a statistic was updated did not expire yet
+		if (otherPlayersPresent(eventActor))
+		{
+			Fight fight = getFight(eventActor);
+			Instant now = Instant.now();
+			long lastUpdate = (fight == null ? 0 : fight.getLastUpdate(true));
+			boolean isNotAttacking = now.isAfter(Instant.ofEpochSecond(lastUpdate).plusMillis(IS_NOT_ATTACKING_ANYMORE_TIME));
+
+			if (isNotAttacking)
+			{
+				return;
+			}
+		}
+
+		// Guard: make sure the previously interacted actor is not expired, because
+		// a few interacting actors are remembered for complex combat situations and still
+		// using delayed graphics as statistics
 		if (hasInteractedWithActor && !isInteractingWithActor)
 		{
 			final Instant now = Instant.now();
@@ -683,10 +703,17 @@ public class FightStateManager
 		return multiCombatVarBit == 1;
 	}
 
-	public boolean otherPlayersPresent()
+	public boolean otherPlayersPresent(Actor allowedActor)
 	{
-		// one is to account for the local player
-		return client.getPlayers().size() > 1;
+		// one is to account for the local player themselves
+		int allowedPlayerAmount = 1;
+
+		// one for when the currently interacted actor is a player
+		if (allowedActor instanceof Player) {
+			allowedPlayerAmount += 1;
+		}
+
+		return client.getPlayers().size() > allowedPlayerAmount;
 	}
 
 	public int getMaxFightAmount()
