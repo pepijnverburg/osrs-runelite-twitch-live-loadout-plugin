@@ -28,6 +28,7 @@ import com.google.inject.Provides;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
@@ -250,6 +251,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onStatChanged(StatChanged event)
 	{
 		skillStateManager.onStatChanged(event);
+		fightStateManager.onStatChanged(event);
+	}
+
+	@Subscribe
+	public void onFakeXpDrop(FakeXpDrop event)
+	{
+		fightStateManager.onFakeXpDrop(event);
 	}
 
 	@Subscribe
