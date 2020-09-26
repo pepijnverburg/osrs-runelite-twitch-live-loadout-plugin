@@ -21,14 +21,14 @@ public class FightStateManager
 	private final TwitchLiveLoadoutConfig config;
 	private final Client client;
 
-	private static final int ON_GRAPHIC_CHANGED_DELAY = 200; // ms
+	private static final int ON_GRAPHIC_CHANGED_DELAY = 500; // ms
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
 	public static final int MAX_FIGHT_AMOUNT = 10;
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2500; // ms, after testing a bit longer than 4 game ticks catches all hitsplats
 
-	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = 1000; // ms, after testing they can be either -1ms or 1ms apart from each other
+	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = 1500; // ms, after testing they can be either -1ms or 1ms apart from each other
 	private HashMap<Skill, Instant> lastSkillUpdates = new HashMap();
 
 	private static final int MAX_INTERACTING_ACTORS_HISTORY = 2;
