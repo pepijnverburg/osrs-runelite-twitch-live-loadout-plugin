@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
+import net.runelite.api.Player;
 
 import java.util.*;
 
@@ -15,13 +16,15 @@ public class Fight {
 	private final int actorCombatLevel;
 	private final ArrayList<FightQueuedStatistic> queuedStatistics = new ArrayList();
 	private final HashMap<Actor, FightSession> sessions = new HashMap();
+	private final ArrayList<FightSession> finishedSessions = new ArrayList();
 
 	private Actor lastActor;
-	private int finishedSessionCounter = 0;
+	private FightSession lastSession;
 
 	public Fight(Actor actor, boolean isLocalPlayer)
 	{
 		this.lastActor = actor;
+		this.lastSession = ensureSession(actor);
 		this.actorCombatLevel = actor.getCombatLevel();
 
 		// Remove any HTML-like tags from the actor name, this is the case
@@ -48,8 +51,6 @@ public class Fight {
 			actorId = -1;
 			actorType = FightStateManager.ActorType.PLAYER;
 		}
-
-		ensureSession(actor);
 	}
 
 	public void queueStatistic(Actor actor, FightStatisticEntry entry, FightStatisticProperty property, int expiryTimeMs)
@@ -171,7 +172,7 @@ public class Fight {
 	{
 		long maxLastUpdate = 0;
 
-		for (FightSession session : sessions.values())
+		for (FightSession session : getAllSessions())
 		{
 			long lastUpdate = session.getLastUpdate(updatedAtInfluencerOnly);
 
@@ -188,7 +189,7 @@ public class Fight {
 	{
 		FightSession totalSession = new FightSession(lastActor);
 
-		for (FightSession session : sessions.values())
+		for (FightSession session : getAllSessions())
 		{
 			totalSession.addInteractingTicks(session.getInteractingTickCounter());
 			totalSession.addIdleTicks(session.getIdleTickCounter());
@@ -207,12 +208,13 @@ public class Fight {
 
 	public FightSession getLastSession()
 	{
-		return ensureSession(lastActor);
+		return lastSession;
 	}
 
 	public void setLastActor(Actor actor)
 	{
 		this.lastActor = actor;
+		this.lastSession = ensureSession(actor);
 	}
 
 	public void finishSession(Actor actor)
@@ -220,7 +222,11 @@ public class Fight {
 		FightSession session = ensureSession(actor);
 
 		session.finish();
-		finishedSessionCounter ++;
+
+		// After finishing a session make sure the session
+		// gets its dedicated key so that no new stats are added
+		sessions.remove(actor);
+		finishedSessions.add(session);
 	}
 
 	public FightStateManager.ActorType getActorType()
@@ -250,6 +256,16 @@ public class Fight {
 
 	public int getFinishedSessionCounter()
 	{
-		return finishedSessionCounter;
+		return finishedSessions.size();
+	}
+
+	public ArrayList<FightSession> getAllSessions()
+	{
+		ArrayList<FightSession> allSessions = new ArrayList();
+
+		allSessions.addAll(finishedSessions);
+		allSessions.addAll(sessions.values());
+
+		return allSessions;
 	}
 }

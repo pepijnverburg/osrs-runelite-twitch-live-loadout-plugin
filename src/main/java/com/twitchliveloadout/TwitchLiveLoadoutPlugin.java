@@ -261,6 +261,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onAnimationChanged(final AnimationChanged event)
+	{
+		fightStateManager.onAnimationChanged(event);
+	}
+
+	@Subscribe
 	public void onGraphicChanged(GraphicChanged event)
 	{
 		fightStateManager.onGraphicChanged(event);

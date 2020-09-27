@@ -25,6 +25,7 @@ public class FightStateManager
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
+	public static final int DEATH_ANIMATION_ID = 836;
 	public static final int MAX_FIGHT_AMOUNT = 10;
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2500; // ms, after testing a bit longer than 4 game ticks catches all hitsplats
 
@@ -266,6 +267,31 @@ public class FightStateManager
 		}
 	}
 
+	public void onAnimationChanged(AnimationChanged event)
+	{
+		Actor eventActor = event.getActor();
+		int animationId = eventActor.getAnimation();
+		Player localPlayer = client.getLocalPlayer();
+
+		// Handle local player deaths as we cannot use the despawned event
+		if (event.getActor() == localPlayer && animationId == DEATH_ANIMATION_ID)
+		{
+			if (!hasFight(eventActor))
+			{
+				return;
+			}
+
+			Fight fight = getFight(eventActor);
+
+			if (!fight.hasSession(eventActor))
+			{
+				return;
+			}
+
+			fight.finishSession(eventActor);
+		}
+	}
+
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
 		Actor eventActor = event.getActor();
@@ -333,6 +359,7 @@ public class FightStateManager
 		final Player player = playerDespawned.getPlayer();
 		final Actor eventActor = playerDespawned.getActor();
 
+		// Guard: make sure the player died
 		if (player.getHealthRatio() != 0)
 		{
 			return;
@@ -480,7 +507,7 @@ public class FightStateManager
 
 		// only update the last actor when the damage is dealt by the local player
 		// the other hitsplats are merely for statistic purposes
-		if (lastActor != actor && hitsplat.isMine())
+		if (hitsplat.isMine())
 		{
 			fight.setLastActor(actor);
 		}
