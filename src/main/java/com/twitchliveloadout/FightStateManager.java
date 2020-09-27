@@ -182,7 +182,7 @@ public class FightStateManager
 		// when there are no other players. This is due to the fact that we cannot classify a certain
 		// graphic to the local player. This would cause for example range hits to be classified as
 		// a barrage when someone else triggered the barrage graphic on the same enemy.
-		if (isInMultiCombatArea() && otherPlayersPresent)
+		if (!isLocalPlayer && isInMultiCombatArea() && otherPlayersPresent)
 		{
 			return;
 		}
@@ -195,7 +195,7 @@ public class FightStateManager
 
 		// Guard: filter out false positives where the local player is not interacting
 		// with the enemy for a while where other players can potentially trigger the same graphics
-		if (otherPlayersPresent && !isLocalPlayer && hasInteractedWithActor && !isInteractingWithActor)
+		if (!isLocalPlayer && otherPlayersPresent && hasInteractedWithActor && !isInteractingWithActor)
 		{
 			final Instant now = Instant.now();
 			final Instant lastInteractedOn = lastInteractingActors.get(eventActor);
@@ -220,14 +220,20 @@ public class FightStateManager
 				continue;
 			}
 
-			log.error("Graphic ID changed: {}", graphicId);
+			// Guard: skip spell tracking when disabled
+			if (xpDropSkill == Skill.MAGIC && !config.fightStatisticsSpellsEnabled())
+			{
+				continue;
+			}
+
+//			log.error("Graphic ID changed: {}", graphicId);
 
 			// Guard: check if the required skill has been updated recently.
 			// This is to prevent false positives where for example another player is splashing on the enemy
 			// and the local player is interacting with that enemy. By checking a skill xp drop we can filter
 			// these false positives partially. It will not for example work when the local player is alching
 			// and at the same time interacting with the enemy. These are edge-cases we accept.
-			if (xpDropSkill != null && otherPlayersPresent)
+			if (!isLocalPlayer && xpDropSkill != null && otherPlayersPresent)
 			{
 				if (xpDropSkillUpdate == null)
 				{
@@ -238,8 +244,8 @@ public class FightStateManager
 				Instant expiryTime = xpDropSkillUpdate.plusMillis(GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME);
 				boolean skillXpDropIsExpired = now.isAfter(expiryTime);
 
-				log.error("Is Expired: "+ skillXpDropIsExpired);
-				log.error("MS before expiry: "+ (expiryTime.toEpochMilli() - now.toEpochMilli()));
+//				log.error("Is Expired: "+ skillXpDropIsExpired);
+//				log.error("MS before expiry: "+ (expiryTime.toEpochMilli() - now.toEpochMilli()));
 
 				if (skillXpDropIsExpired)
 				{
@@ -327,7 +333,10 @@ public class FightStateManager
 		// when showing the combat statistics
 		if (!hitsplat.isMine())
 		{
-			registerExistingFightHitsplat(eventActor, FightStatisticEntry.OTHER, hitsplat);
+			if (config.fightStatisticsOthersEnabled())
+			{
+				registerExistingFightHitsplat(eventActor, FightStatisticEntry.OTHER, hitsplat);
+			}
 			return;
 		}
 
@@ -546,7 +555,6 @@ public class FightStateManager
 
 	public void registerSkillUpdate(Skill skill)
 	{
-		log.error("skill update: "+ skill.getName());
 		lastSkillUpdates.put(skill, Instant.now());
 	}
 

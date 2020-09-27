@@ -175,10 +175,34 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "fightStatisticsSpellsEnabled",
+			name = "Track magic spells",
+			description = "Enable tracking of freezes, entangles, blood spells and splashes.",
+			position = 4,
+			section = combatSection
+	)
+	default boolean fightStatisticsSpellsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "fightStatisticsOthersEnabled",
+			name = "Track damage by others",
+			description = "Enable tracking of hitsplats of other players.",
+			position = 6,
+			section = combatSection
+	)
+	default boolean fightStatisticsOthersEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "fightStatisticsMaxFightAmount",
 			name = "Max combat fights",
 			description = "Maximum amount of tracked fights with fixed upper limit of "+ FightStateManager.MAX_FIGHT_AMOUNT +".",
-			position = 4,
+			position = 8,
 			section = combatSection
 	)
 	default int fightStatisticsMaxFightAmount()
