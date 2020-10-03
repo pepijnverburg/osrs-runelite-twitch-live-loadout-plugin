@@ -26,7 +26,6 @@ public class FightStateManager
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
 	public static final int DEATH_ANIMATION_ID = 836;
 	public static final int MAX_FIGHT_AMOUNT = 10;
-	public static final int FIGHT_EXPIRY_TIME = (int) (0.5f * 60 * 60); // seconds
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2500; // ms, after testing a bit longer than 4 game ticks catches all hitsplats
 
 	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = 1500; // ms, after testing they can be either -1ms or 1ms apart from each other
@@ -578,9 +577,10 @@ public class FightStateManager
 		long now = Instant.now().getEpochSecond();
 		long lastUpdate = fight.getLastUpdate();
 		long lastUpdateDelta = now - lastUpdate;
+		long expiryTime = config.fightStatisticsExpiryTime() * 60;
 
 		// refresh when fight is expired and the statistics will be non-representative
-		if (lastUpdate > 0 && lastUpdateDelta > FIGHT_EXPIRY_TIME)
+		if (lastUpdate > 0 && lastUpdateDelta > expiryTime)
 		{
 			deleteFight(fight);
 			createFight(actor);

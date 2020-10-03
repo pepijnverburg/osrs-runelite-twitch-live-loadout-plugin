@@ -77,7 +77,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "syncDelay",
-			name = "Sync delay",
+			name = "Sync delay (seconds)",
 			description = "The amount of seconds to delay the sending of data to match your stream delay.",
 			position = 6,
 			section = twitchSection
@@ -208,6 +208,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default int fightStatisticsMaxFightAmount()
 	{
 		return FightStateManager.MAX_FIGHT_AMOUNT;
+	}
+
+	@ConfigItem(
+			keyName = "fightStatisticsExpiryTime",
+			name = "Fight expiry time (minutes)",
+			description = "Reset a fight after the configured minutes of inactivity.",
+			position = 10,
+			section = combatSection
+	)
+	default int fightStatisticsExpiryTime()
+	{
+		return 30;
 	}
 
 	@ConfigSection(
