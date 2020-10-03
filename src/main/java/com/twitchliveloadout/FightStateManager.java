@@ -30,6 +30,7 @@ public class FightStateManager
 
 	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = 1500; // ms, after testing they can be either -1ms or 1ms apart from each other
 	private HashMap<Skill, Instant> lastSkillUpdates = new HashMap();
+	private HashMap<Skill, Integer> lastSkillXp = new HashMap();
 
 	private static final int MAX_INTERACTING_ACTORS_HISTORY = 2;
 	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 5000; // ms
@@ -430,7 +431,17 @@ public class FightStateManager
 	public void onStatChanged(StatChanged event)
 	{
 		Skill skill = event.getSkill();
+		Integer newExperience = client.getSkillExperience(skill);
+		Integer lastExperience = lastSkillXp.get(skill);
 
+		// Guard: make sure experience was added
+		// Note: we use the int object to allow for null
+		if (newExperience.equals(lastExperience))
+		{
+			return;
+		}
+
+		lastSkillXp.put(skill, newExperience);
 		registerSkillUpdate(skill);
 	}
 
