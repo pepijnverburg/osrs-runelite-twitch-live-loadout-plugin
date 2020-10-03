@@ -26,7 +26,7 @@ public class FightQueuedStatistic {
 		Instant now = Instant.now();
 		Instant expiredAt = createdAt.plusMillis(expiryTimeMs);
 
-		return !isRegistered && expiredAt.isAfter(now);
+		return !isRegistered && !now.isAfter(expiredAt);
 	}
 
 	public void register()
