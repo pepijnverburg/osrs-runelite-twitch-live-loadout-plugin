@@ -65,7 +65,7 @@ public class ConnectivityPanel extends JPanel
 		try {
 			final JsonObject decodedToken = twitchApi.getDecodedToken();
 			tokenExpiry = decodedToken.get("exp").getAsLong();
-			final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd MMMM YYYY");
+			final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM YYYY, HH:mm");
 			final String tokenExpiryFormatted = Instant.ofEpochSecond(tokenExpiry).atZone(ZoneId.systemDefault()).format(formatter);
 			final long secondsUntilExpired = tokenExpiry - unixTimestamp;
 
