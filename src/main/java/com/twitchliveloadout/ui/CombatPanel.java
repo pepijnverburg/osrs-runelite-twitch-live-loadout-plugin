@@ -122,6 +122,8 @@ public class CombatPanel extends JPanel
 	public void rebuild()
 	{
 		rebuildFightList();
+		repaint();
+		revalidate();
 	}
 
 	public void rebuildFightList()
