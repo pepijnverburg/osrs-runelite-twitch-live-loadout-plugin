@@ -165,7 +165,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "fightStatisticsEnabled",
 			name = "Sync combat statistics",
-			description = "Synchronize statistics about PvM and PvP, such as DPS per attack type, freezes, splashes, etc.",
+			description = "Synchronize statistics about PvM and PvP, such as DPS, freezes, splashes, etc.",
 			position = 2,
 			section = combatSection
 	)
