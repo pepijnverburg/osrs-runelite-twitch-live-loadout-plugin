@@ -177,17 +177,18 @@ public class FightStateManager
 		final boolean isInteractingWithActor = (eventActor == interactingActor);
 		final boolean otherPlayersPresent = otherPlayersPresent(eventActor);
 
+		// Guard: make sure the actor is interacted with when in a single-combat area.
+		// This prevents for example splash graphics from other players to add to the local player counter
+		if (!isLocalPlayer && !isInMultiCombatArea() && !hasInteractedWithActor && otherPlayersPresent)
+		{
+			return;
+		}
+
 		// Only allow tracking of graphic IDs for combat statistics in single combat areas or multi
 		// when there are no other players. This is due to the fact that we cannot classify a certain
 		// graphic to the local player. This would cause for example range hits to be classified as
 		// a barrage when someone else triggered the barrage graphic on the same enemy.
 		if (!isLocalPlayer && isInMultiCombatArea() && otherPlayersPresent)
-		{
-			return;
-		}
-
-		// Guard: make sure the actor is interacted with
-		if (!isLocalPlayer && !hasInteractedWithActor)
 		{
 			return;
 		}
@@ -622,6 +623,8 @@ public class FightStateManager
 		{
 			return;
 		}
+
+		log.debug("Removing a fight for actor {}", fight.getActorName());
 
 		String actorName = fight.getActorName();
 		fights.remove(actorName);
