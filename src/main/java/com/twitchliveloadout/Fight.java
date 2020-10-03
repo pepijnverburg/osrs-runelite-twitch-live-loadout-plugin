@@ -63,51 +63,48 @@ public class Fight {
 
 	public void registerQueuedStatistics(Actor actor, int hitsplatAmount)
 	{
-		List list = Collections.synchronizedList(queuedStatistics);
-		log.debug("QUEUED: Checking queue, queued size {} - hitsplat {}", list.size(), hitsplatAmount);
+		log.debug("QUEUED: Checking queue, queued size {} - hitsplat {}", queuedStatistics.size(), hitsplatAmount);
 
-		synchronized (list)
+		// synchronized list does not seem to be needed here?
+		Iterator iterator = queuedStatistics.iterator();
+		while (iterator.hasNext())
 		{
-			Iterator iterator = list.iterator();
-			while (iterator.hasNext())
+			FightQueuedStatistic queuedStatistic = (FightQueuedStatistic) iterator.next();
+			Actor queuedActor = queuedStatistic.getActor();
+			FightStatisticEntry entry = queuedStatistic.getEntry();
+			FightStatisticProperty property = queuedStatistic.getProperty();
+
+			log.debug("QUEUED: Attempt register {} - {}", entry.getKey(), property.getKey());
+
+			// Guard: check if this hitsplat is on the right actor
+			if (actor != queuedActor)
 			{
-				FightQueuedStatistic queuedStatistic = (FightQueuedStatistic) iterator.next();
-				Actor queuedActor = queuedStatistic.getActor();
-				FightStatisticEntry entry = queuedStatistic.getEntry();
-				FightStatisticProperty property = queuedStatistic.getProperty();
-
-				log.debug("QUEUED: Attempt register {} - {}", entry.getKey(), property.getKey());
-
-				// Guard: check if this hitsplat is on the right actor
-				if (actor != queuedActor)
-				{
-					log.debug("QUEUED: Skipping because of wrong actor.");
-					continue;
-				}
-
-				// Will prevent registering twice
-				if (!queuedStatistic.isValid())
-				{
-					log.debug("QUEUED: Skipping because of invalid.");
-					continue;
-				}
-
-				FightStatistic statistic = ensureStatistic(actor, entry);
-
-				if (property == FightStatisticProperty.MISS_DAMAGES || property == FightStatisticProperty.MISS_COUNTERS)
-				{
-					log.debug("QUEUED: Register miss");
-					statistic.registerMiss(hitsplatAmount);
-				}
-				else if (property == FightStatisticProperty.HIT_DAMAGES || property == FightStatisticProperty.HIT_COUNTERS)
-				{
-					log.debug("QUEUED: register hit ");
-					statistic.registerHit(hitsplatAmount);
-				}
-
-				// Flag to clean up later
-				queuedStatistic.register();
+				log.debug("QUEUED: Skipping because of wrong actor.");
+				continue;
 			}
+
+			// Will prevent registering twice
+			if (!queuedStatistic.isValid())
+			{
+				log.debug("QUEUED: Skipping because of invalid.");
+				continue;
+			}
+
+			FightStatistic statistic = ensureStatistic(actor, entry);
+
+			if (property == FightStatisticProperty.MISS_DAMAGES || property == FightStatisticProperty.MISS_COUNTERS)
+			{
+				log.debug("QUEUED: Register miss");
+				statistic.registerMiss(hitsplatAmount);
+			}
+			else if (property == FightStatisticProperty.HIT_DAMAGES || property == FightStatisticProperty.HIT_COUNTERS)
+			{
+				log.debug("QUEUED: register hit ");
+				statistic.registerHit(hitsplatAmount);
+			}
+
+			// Flag to clean up later
+			queuedStatistic.register();
 		}
 	}
 
@@ -122,7 +119,7 @@ public class Fight {
 				continue;
 			}
 
-			log.debug("Remove from queue {}", queuedStatistic.getEntry().getKey());
+			log.debug("QUEUED: Remove from queue {}", queuedStatistic.getEntry().getKey());
 			iterator.remove();
 		}
 	}
