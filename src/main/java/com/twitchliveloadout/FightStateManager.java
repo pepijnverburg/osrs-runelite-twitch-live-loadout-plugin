@@ -281,7 +281,7 @@ public class FightStateManager
 		Player localPlayer = client.getLocalPlayer();
 
 		// Handle local player deaths as we cannot use the despawned event
-		if (event.getActor() == localPlayer && animationId == DEATH_ANIMATION_ID)
+		if (eventActor == localPlayer && animationId == DEATH_ANIMATION_ID)
 		{
 			if (!hasFight(eventActor))
 			{
@@ -289,11 +289,6 @@ public class FightStateManager
 			}
 
 			Fight fight = getFight(eventActor);
-
-			if (!fight.hasSession(eventActor))
-			{
-				return;
-			}
 
 			fight.finishSession(eventActor);
 		}
@@ -387,11 +382,6 @@ public class FightStateManager
 		}
 
 		Fight fight = getFight(eventActor);
-
-		if (!fight.hasSession(eventActor))
-		{
-			return;
-		}
 
 		fight.finishSession(eventActor);
 	}
@@ -502,6 +492,20 @@ public class FightStateManager
 	public void registerExistingFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
 	{
 		Fight fight = getFight(actor);
+
+		// Guard: check the fight is existing
+		if (fight == null)
+		{
+			return;
+		}
+
+		// Guard: check if a session exists for this specific actor.
+		// This will prevent hitsplats of others / poison / venom on actors
+		// that were never attacked by the local player to be added
+		if (!fight.hasSession(actor))
+		{
+			return;
+		}
 
 		registerFightHitsplat(fight, actor, statisticEntry, hitsplat);
 	}

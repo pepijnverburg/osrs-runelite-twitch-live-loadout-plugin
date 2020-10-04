@@ -216,7 +216,12 @@ public class Fight {
 
 	public void finishSession(Actor actor)
 	{
-		FightSession session = ensureSession(actor);
+		if (!hasSession(actor))
+		{
+			return;
+		}
+
+		FightSession session = getSession(actor);
 
 		session.finish();
 
