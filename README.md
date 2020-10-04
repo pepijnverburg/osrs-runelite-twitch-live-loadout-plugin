@@ -15,7 +15,7 @@ Get better engagement with...
 ![Summary](./docs/summary.gif "Summary")
 
 ## Requirements
-- [Runelite Client](https://runelite.net/) with Plugin Hub enabled
+- [Runelite Client](https://runelite.net/) with [Plugin Hub](https://runelite.net/plugin-hub/) enabled
 - [Twitch Account](https://www.twitch.tv/) as broadcaster
 - [OSRS Live Loadout Twitch Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1)
 
@@ -33,7 +33,7 @@ You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hu
 This plugin is implemented in such a way any Twitch Extension can use the synchronized information. A list below is available to show what Twitch Extensions can be used with this plugin:
 
 #### 1. OSRS Live Loadout
-The [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1) is directly compatible. You should add this extension to your Twitch account first to get the proper Twitch token to authenticate the Runelite plugin.
+The [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1) is directly compatible. You can add this extension to your Twitch account for a Twitch Extension Token to authenticate the RuneLite plugin. The token can be retrieved through the configuration screen of the extension at Twitch.
 
 ## Features
 Below you can find an overview which features are implemented and which ones are still in progress. Note that the screenshots shown are from the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1). The use of other Twitch Extensions cause it to look differently.
@@ -52,7 +52,6 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `Blood heals`: count potential heals through blood spells (single combat only).
 - [x] `Incoming hits`: damage, splashes, etc. are also tracked on the logged in player.
 - [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
-- [ ] `DPS per attack type`: show DPS per for ranged, magic and melee separately.
 
 ![Combat Stats](./docs/screenshots/combat-stats-all-compact.png "Combat Stats")
 ![Combat Stats](./docs/screenshots/combat-tracking-spells.png "Combat Stats")
@@ -85,7 +84,7 @@ Below you can find an overview which features are implemented and which ones are
 
 ![Plugin Panel](./docs/controls.png "Plugin Panel")
 
-### 🔲 Panels
+### ![Panel Icon](./docs/icons/panel_icon.png "Panel Icon") Panels 
 
 #### Twitch Connectivity
 The plugin also lets you see the current status of the connection with Twitch.
@@ -135,7 +134,7 @@ To simplify the state management one large state object is being send to Twitch.
 The state updates are dependant on the maximum amount allowed by Twitch. Rate limit documentation can be found [here](https://dev.twitch.tv/docs/api/guide/#rate-limits). Currently the maximum update frequency is is once per two seconds. This means the updates are never truly 'real-time'.
 
 ### Oldschool weekly updates
-The plugin is implemented with the OSRS weekly updates in mind. There are no dependencies on specific content meaning that all updates are directly reflected in the plugin as well. This allows for lower maintenance of this plugin and less down-time or faulty behaviour.
+The plugin is implemented with the OSRS weekly updates in mind. There are few dependencies on specific content meaning that almost all updates are directly reflected in the plugin as well. For example external item caches are used to make sure item icons and names are directly up to date. This allows for lower maintenance of this plugin and less down-time or faulty behaviour.
 
 ## 🔮 Future
 Future features that might be added based on feedback are:
