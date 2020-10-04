@@ -33,7 +33,7 @@ You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hu
 This plugin is implemented in such a way any Twitch Extension can use the synchronized information. A list below is available to show what Twitch Extensions can be used with this plugin:
 
 #### 1. OSRS Live Loadout
-The [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1) is directly compatible and is a 1-minute setup! You can add this extension to your Twitch account for a Twitch Extension Token to authenticate the RuneLite plugin. The token can be retrieved through the configuration screen of the extension at Twitch as shown below. Note that for security reasons the token is **valid for a limited time** requiring you to repeat this process once in a while. The RuneLite plugin panels show the validity of the token.
+The [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1) is directly compatible and has a 1-minute setup! You can add this extension to your Twitch account for a Twitch Extension Token to authenticate the RuneLite plugin. The token can be retrieved through the configuration screen of the extension at Twitch as shown below. Note that for security reasons the token is **valid for a limited time** requiring you to repeat this process once in a while. The RuneLite plugin panels show the validity of the token.
 
 ![Summary](./docs/configuration.gif "Summary")
 
