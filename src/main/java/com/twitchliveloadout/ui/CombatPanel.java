@@ -2,6 +2,7 @@ package net.runelite.client.plugins.twitchliveloadout.ui;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.plugins.twitchliveloadout.Fight;
+import net.runelite.client.plugins.twitchliveloadout.FightSorter;
 import net.runelite.client.plugins.twitchliveloadout.FightStateManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.components.PluginErrorPanel;
@@ -12,6 +13,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 
 @Slf4j
@@ -112,7 +115,7 @@ public class CombatPanel extends JPanel
 		add(wrapper, BorderLayout.NORTH);
 
 		// initialize all the fight panel slots without adding them to the UI
-		for (int i = 0; i < FightStateManager.MAX_FIGHT_AMOUNT; i++)
+		for (int i = 0; i < FightStateManager.MAX_FIGHT_AMOUNT_IN_MEMORY; i++)
 		{
 			FightPanel fightPanel = new FightPanel(fightStateManager);
 			fightPanels.add(fightPanel);
@@ -128,8 +131,14 @@ public class CombatPanel extends JPanel
 
 	public void rebuildFightList()
 	{
-		final HashMap<String, Fight> fights = fightStateManager.getFights();
+		final ArrayList<Fight> fights = new ArrayList();
 		int fightPanelIndex = 0;
+
+		// add all fights by default
+		fights.addAll(fightStateManager.getFights().values());
+
+		// order by last update time
+		Collections.sort(fights, new FightSorter());
 
 		// guard: check if there are no fights to show
 		if (fights.size() <= 0)
@@ -149,7 +158,7 @@ public class CombatPanel extends JPanel
 		}
 
 		// directly add all the fights again in the new order
-		for (Fight fight : fights.values())
+		for (Fight fight : fights)
 		{
 			FightPanel fightPanel = fightPanels.get(fightPanelIndex);
 

@@ -8,6 +8,7 @@ import net.runelite.api.events.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +27,7 @@ public class FightStateManager
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
 	public static final int DEATH_ANIMATION_ID = 836;
 	public static final int MAX_FIGHT_AMOUNT = 10;
+	public static final int MAX_FIGHT_AMOUNT_IN_MEMORY = 50;
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2500; // ms, after testing a bit longer than 4 game ticks catches all hitsplats
 
 	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = 1500; // ms, after testing they can be either -1ms or 1ms apart from each other
@@ -526,7 +528,6 @@ public class FightStateManager
 
 		int amount = hitsplat.getAmount();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
-		Actor lastActor = fight.getLastActor();
 		FightStatistic statistic = fight.ensureStatistic(actor, statisticEntry);
 
 		// only update the last actor when the damage is dealt by the local player
@@ -619,7 +620,8 @@ public class FightStateManager
 		Fight fight = new Fight(actor, isLocalPlayer);
 		String actorName = fight.getActorName();
 
-		while (fights.size() > 0 && fights.size() >= getMaxFightAmount())
+		// Rotate fights to prevent memory leaks when the client is on for a long time
+		while (fights.size() >= MAX_FIGHT_AMOUNT_IN_MEMORY)
 		{
 			rotateOldestFight();
 		}
@@ -680,7 +682,7 @@ public class FightStateManager
 
 	public JsonObject getFightStatisticsState()
 	{
-		final ArrayList<Fight> includedFights = new ArrayList();
+		ArrayList<Fight> includedFights = new ArrayList();
 
 		final JsonObject state = new JsonObject();
 		JsonObject statistics = new JsonObject();
@@ -704,7 +706,7 @@ public class FightStateManager
 		// override the included fights when we want to stress test the state
 		if (TwitchState.STATE_STRESS_TEST_ENABLED && fights.size() > 0)
 		{
-			final int maxFightAmount = getMaxFightAmount();
+			final int maxFightAmount = getMaxFightAmountInState();
 			final Fight firstFight = fights.values().iterator().next();
 			includedFights.clear();
 
@@ -713,6 +715,20 @@ public class FightStateManager
 				includedFights.add(firstFight);
 			}
 		}
+
+		int fightAmount = includedFights.size();
+		int maxFightAmountInState = getMaxFightAmountInState();
+
+		if (fightAmount > maxFightAmountInState) {
+			fightAmount = maxFightAmountInState;
+		}
+
+		// order by last update time
+		Collections.sort(includedFights, new FightSorter());
+
+		// only send a specific maximum to Twitch
+		ArrayList<Fight> slicedFights = new ArrayList();
+		slicedFights.addAll(includedFights.subList(0, fightAmount));
 
 		state.add(ACTOR_NAME_KEY, actorNames);
 		state.add(ACTOR_TYPE_KEY, actorTypes);
@@ -742,7 +758,7 @@ public class FightStateManager
 			statistics.add(statisticKey.getKey(), fightStatistic);
 		}
 
-		for (Fight fight : includedFights)
+		for (Fight fight : slicedFights)
 		{
 			FightSession totalSession = fight.calculateTotalSession();
 			FightSession lastSession = fight.getLastSession();
@@ -835,7 +851,7 @@ public class FightStateManager
 		return client.getPlayers().size() > allowedPlayerAmount;
 	}
 
-	public int getMaxFightAmount()
+	public int getMaxFightAmountInState()
 	{
 		int maxAmount = config.fightStatisticsMaxFightAmount();
 
