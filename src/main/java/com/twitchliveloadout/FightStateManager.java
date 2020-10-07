@@ -29,12 +29,13 @@ public class FightStateManager
 	public static final int MAX_FIGHT_AMOUNT = 10;
 	public static final int MAX_FIGHT_AMOUNT_IN_MEMORY = 50;
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2500; // ms, after testing a bit longer than 4 game ticks catches all hitsplats
+	public static final int OTHER_DAMAGE_EXPIRY_TIME = 2000;
 
 	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = 1500; // ms, after testing they can be either -1ms or 1ms apart from each other
 	private HashMap<Skill, Instant> lastSkillUpdates = new HashMap();
 	private HashMap<Skill, Integer> lastSkillXp = new HashMap();
 
-	private static final int MAX_INTERACTING_ACTORS_HISTORY = 2;
+	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
 	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 5000; // ms
 	private HashMap<Actor, Instant> lastInteractingActors = new HashMap();
 
@@ -187,13 +188,35 @@ public class FightStateManager
 			return;
 		}
 
+
+		// Guard: prevent
+
 		// Only allow tracking of graphic IDs for combat statistics in single combat areas or multi
 		// when there are no other players. This is due to the fact that we cannot classify a certain
 		// graphic to the local player. This would cause for example range hits to be classified as
 		// a barrage when someone else triggered the barrage graphic on the same enemy.
 		if (!isLocalPlayer && isInMultiCombatArea() && otherPlayersPresent)
 		{
-			return;
+			Fight fight = getFight(eventActor);
+
+			if (fight != null && fight.hasSession(eventActor))
+			{
+				FightSession session = fight.getSession(eventActor);
+				FightStatistic statistic = session.getStatistic(FightStatisticEntry.OTHER);
+
+				if (statistic != null)
+				{
+					long lastUpdate = statistic.getLastUpdate();
+					long now = Instant.now().getEpochSecond();
+					long lastUpdateDelta = now - lastUpdate;
+
+					// Guard: check if any damages by other players are known
+					if (lastUpdateDelta < OTHER_DAMAGE_EXPIRY_TIME)
+					{
+						return;
+					}
+				}
+			}
 		}
 
 		// Guard: filter out false positives where the local player is not interacting
@@ -506,7 +529,10 @@ public class FightStateManager
 		// that were never attacked by the local player to be added
 		if (!fight.hasSession(actor))
 		{
-			return;
+			// NOTE: disabled for now and waiting for feedback on this
+			// as in team situations you want to see the DPS others are doing
+			// on actors you haven't attacked yet and how it relates to yours.
+			// return;
 		}
 
 		registerFightHitsplat(fight, actor, statisticEntry, hitsplat);
