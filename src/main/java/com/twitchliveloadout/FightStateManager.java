@@ -25,23 +25,27 @@ public class FightStateManager
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
+	public static final float GAME_TICK_DURATION = 0.6f; // seconds
 	public static final int DEATH_ANIMATION_ID = 836;
 	public static final int MAX_FIGHT_AMOUNT = 10;
 	public static final int MAX_FIGHT_AMOUNT_IN_MEMORY = 50;
-	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2500; // ms, after testing a bit longer than 4 game ticks catches all hitsplats
-	public static final int OTHER_DAMAGE_EXPIRY_TIME = 2000;
 
-	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = 1500; // ms, after testing they can be either -1ms or 1ms apart from each other
+	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2600; // ms, this varies for spell and enemy distance, farcasting is around 2600ms max
+	public static final int OTHER_DAMAGE_EXPIRY_TIME = 2000; // ms
+
+	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = ON_GRAPHIC_CHANGED_DELAY + 50; // ms, takes around 5ms
 	private HashMap<Skill, Instant> lastSkillUpdates = new HashMap();
 	private HashMap<Skill, Integer> lastSkillXp = new HashMap();
 
+	public static final int GRAPHIC_ANIMATION_EXPIRY_TIME = ON_GRAPHIC_CHANGED_DELAY + 50; // ms, takes around 5ms
+	private HashMap<Integer, Instant> lastAnimationUpdates = new HashMap();
+
 	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
-	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 5000; // ms
+	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 3000; // ms
 	private HashMap<Actor, Instant> lastInteractingActors = new HashMap();
 
 	public static final boolean ENABLE_SESSION_IDLING = false; // TODO: finish session idling
 	public static final int SESSION_IDLING_TIME = 60 * 1000; // ms
-	public static final float GAME_TICK_DURATION = 0.6f; // seconds
 
 	private static final String ACTOR_NAME_KEY = "actorNames";
 	private static final String ACTOR_TYPE_KEY = "actorTypes";
@@ -55,31 +59,45 @@ public class FightStateManager
 	private static final String SESSION_COUNTERS_KEY = "sessionCounters";
 	private static final String STATISTICS_KEY = "statistics";
 
+	public static final Skill NO_SKILL = null;
+	public static final int NO_ANIMATION_ID = -1;
+	public static final int SINGLE_ANCIENT_ANIMATION_ID = 1978;
+	public static final int MULTI_ANCIENT_ANIMATION_ID = 1979;
+	public static final int ENTANGLE_ANIMATION_ID = 710;
+
 	public enum FightGraphic {
-		ICE_BARRAGE(369, Skill.MAGIC, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
-		ICE_BLITZ(367, Skill.MAGIC, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
-		ICE_BURST(363, Skill.MAGIC, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
-		ICE_RUSH(361, Skill.MAGIC, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+		ICE_BARRAGE(369, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+		ICE_BLITZ(367, Skill.MAGIC, NO_SKILL, SINGLE_ANCIENT_ANIMATION_ID, true, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+		ICE_BURST(363, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+		ICE_RUSH(361, Skill.MAGIC, NO_SKILL, SINGLE_ANCIENT_ANIMATION_ID, true, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
 
-		BLOOD_BARRAGE(377, Skill.MAGIC, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
-		BLOOD_BLITZ(375, Skill.MAGIC, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
-		BLOOD_BURST(376, Skill.MAGIC, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
-		BLOOD_RUSH(373, Skill.MAGIC, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
+		BLOOD_BARRAGE(377, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
+		BLOOD_BLITZ(375, Skill.MAGIC, NO_SKILL, SINGLE_ANCIENT_ANIMATION_ID, true, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
+		BLOOD_BURST(376, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
+		BLOOD_RUSH(373, Skill.MAGIC, NO_SKILL, SINGLE_ANCIENT_ANIMATION_ID, true, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
 
-		ENTANGLE(179, Skill.MAGIC, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_DAMAGES),
-		SNARE(180, Skill.MAGIC, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_DAMAGES),
-		BIND(181, Skill.MAGIC, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_COUNTERS), // no hitsplat
+		ENTANGLE(179, Skill.MAGIC, NO_SKILL, ENTANGLE_ANIMATION_ID, true, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_DAMAGES),
+		SNARE(180, Skill.MAGIC, NO_SKILL, ENTANGLE_ANIMATION_ID, true, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_DAMAGES),
+		BIND(181, Skill.MAGIC, Skill.HITPOINTS, ENTANGLE_ANIMATION_ID, true, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_COUNTERS), // no hitsplat
 
-		SPLASH(85, Skill.MAGIC, FightStatisticEntry.SPELL, FightStatisticProperty.MISS_COUNTERS); // no hitsplat
+		// Note that with the interaction required boolean to true splashes on multi-target enemies will not register (e.g. while barraging).
+		// However, this is needed because otherwise splashes from other actors have a very high change to trigger false positives.
+		SPLASH(85, Skill.MAGIC, Skill.HITPOINTS, NO_ANIMATION_ID, true, FightStatisticEntry.SPELL, FightStatisticProperty.MISS_COUNTERS); // no hitsplat
 
 		private final int graphicId;
-		private final Skill xpDropSkill;
+		private final Skill requiredSkill;
+		private final Skill invalidSkill;
+		private final int animationId;
+		private final boolean interactionRequired;
 		private final FightStatisticEntry entry;
 		private final FightStatisticProperty property;
 
-		FightGraphic(int graphicId, Skill xpDropSkill, FightStatisticEntry entry, FightStatisticProperty property) {
+		FightGraphic(int graphicId, Skill requiredSkill, Skill invalidSkill, int animationId, boolean interactionRequired, FightStatisticEntry entry, FightStatisticProperty property) {
 			this.graphicId = graphicId;
-			this.xpDropSkill = xpDropSkill;
+			this.requiredSkill = requiredSkill;
+			this.invalidSkill = invalidSkill;
+			this.animationId = animationId;
+			this.interactionRequired = interactionRequired;
 			this.entry = entry;
 			this.property = property;
 		}
@@ -89,9 +107,24 @@ public class FightStateManager
 			return graphicId;
 		}
 
-		public Skill getXpDropSkill()
+		public Skill getRequiredSkill()
 		{
-			return xpDropSkill;
+			return requiredSkill;
+		}
+
+		public Skill getInvalidSkill()
+		{
+			return invalidSkill;
+		}
+
+		public int getAnimationId()
+		{
+			return animationId;
+		}
+
+		public boolean isInteractionRequired()
+		{
+			return interactionRequired;
 		}
 
 		public FightStatisticEntry getEntry()
@@ -159,121 +192,52 @@ public class FightStateManager
 		final String eventActorName = eventActor.getName();
 		final Player localPlayer = client.getLocalPlayer();
 		final int graphicId = eventActor.getGraphic();
-		boolean isLocalPlayer = false;
+		final boolean isLocalPlayer = (eventActor == localPlayer);
+		final boolean isInMultiCombatArea = isInMultiCombatArea();
 
-		if (graphicId < 0)
+		if (graphicId < 0  || localPlayer == null || eventActorName == null)
 		{
 			return;
 		}
 
-		if (localPlayer == null || eventActorName == null)
-		{
-			return;
-		}
-
-		if (eventActor instanceof Player)
-		{
-			isLocalPlayer = localPlayer.getName().equals(eventActorName);
-		}
-
-		final boolean hasInteractedWithActor = lastInteractingActors.containsKey(eventActor);
-		final Actor interactingActor = localPlayer.getInteracting();
-		final boolean isInteractingWithActor = (eventActor == interactingActor);
-		final boolean otherPlayersPresent = otherPlayersPresent(eventActor);
-
-		// Guard: make sure the actor is interacted with when in a single-combat area.
-		// This prevents for example splash graphics from other players to add to the local player counter
-		if (!isLocalPlayer && !isInMultiCombatArea() && !hasInteractedWithActor && otherPlayersPresent)
-		{
-			return;
-		}
-
-
-		// Guard: prevent
-
-		// Only allow tracking of graphic IDs for combat statistics in single combat areas or multi
-		// when there are no other players. This is due to the fact that we cannot classify a certain
-		// graphic to the local player. This would cause for example range hits to be classified as
-		// a barrage when someone else triggered the barrage graphic on the same enemy.
-		if (!isLocalPlayer && isInMultiCombatArea() && otherPlayersPresent)
-		{
-			Fight fight = getFight(eventActor);
-
-			if (fight != null && fight.hasSession(eventActor))
-			{
-				FightSession session = fight.getSession(eventActor);
-				FightStatistic statistic = session.getStatistic(FightStatisticEntry.OTHER);
-
-				if (statistic != null)
-				{
-					long lastUpdate = statistic.getLastUpdate();
-					long now = Instant.now().getEpochSecond();
-					long lastUpdateDelta = now - lastUpdate;
-
-					// Guard: check if any damages by other players are known
-					if (lastUpdateDelta < OTHER_DAMAGE_EXPIRY_TIME)
-					{
-						return;
-					}
-				}
-			}
-		}
-
-		// Guard: filter out false positives where the local player is not interacting
-		// with the enemy for a while where other players can potentially trigger the same graphics
-		if (!isLocalPlayer && otherPlayersPresent && hasInteractedWithActor && !isInteractingWithActor)
-		{
-			final Instant now = Instant.now();
-			final Instant lastInteractedOn = lastInteractingActors.get(eventActor);
-			final boolean interactingIsExpired = now.isAfter(lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME));
-
-			if (interactingIsExpired)
-			{
-				return;
-			}
-		}
+		final Instant now = Instant.now();
+		final Instant lastInteractedOn = lastInteractingActors.get(eventActor);
+		final boolean lastInteractedWithExpired = (lastInteractedOn == null || lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME).isBefore(now));
+		final boolean validInteractingWith = !lastInteractedWithExpired;
 
 		for (FightGraphic graphic : FightGraphic.values())
 		{
 			int fightGraphicId = graphic.getGraphicId();
+			boolean interactionRequired = !isInMultiCombatArea || graphic.isInteractionRequired();
 			FightStatisticProperty property = graphic.getProperty();
 			FightStatisticEntry entry = graphic.getEntry();
-			Skill xpDropSkill = graphic.getXpDropSkill();
-			Instant xpDropSkillUpdate = lastSkillUpdates.get(xpDropSkill);
 
 			if (fightGraphicId != graphicId)
 			{
 				continue;
 			}
 
-			// Guard: skip spell tracking when disabled
-			if (xpDropSkill == Skill.MAGIC && !config.fightStatisticsSpellsEnabled())
+			log.debug("Detected fight graphic, now validating... Graphic ID: {}", fightGraphicId);
+			log.debug("Required skill time until expiry: {}", (lastInteractedOn == null ? "N/A" : (now.toEpochMilli() - lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME).toEpochMilli())));
+
+			// Guard: single target spells can check whether the local player interacted with the actor.
+			// In single combat area's interactions are always required
+			if (interactionRequired && !validInteractingWith)
 			{
 				continue;
 			}
 
-//			log.error("Graphic ID changed: {}", graphicId);
-
-			// Guard: check if the required skill has been updated recently.
-			// This is to prevent false positives where for example another player is splashing on the enemy
-			// and the local player is interacting with that enemy. By checking a skill xp drop we can filter
-			// these false positives partially. It will not for example work when the local player is alching
-			// and at the same time interacting with the enemy. These are edge-cases we accept.
-			if (!isLocalPlayer && xpDropSkill != null && otherPlayersPresent)
+			// Some checks only apply when the event target is not the local player
+			if (!isLocalPlayer)
 			{
-				if (xpDropSkillUpdate == null)
-				{
-					continue;
-				}
+				boolean validSkillUpdates = verifySkillsForFightGraphic(graphic);
+				boolean validAnimationUpdates = verifyAnimationForFightGraphic(graphic);
 
-				Instant now = Instant.now();
-				Instant expiryTime = xpDropSkillUpdate.plusMillis(GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME);
-				boolean skillXpDropIsExpired = now.isAfter(expiryTime);
-
-//				log.error("Is Expired: "+ skillXpDropIsExpired);
-//				log.error("MS before expiry: "+ (expiryTime.toEpochMilli() - now.toEpochMilli()));
-
-				if (skillXpDropIsExpired)
+				// Guard: check if the required skills and animations were recently updated.
+				// This is to prevent false positives where for example another player is splashing on the enemy
+				// and the local player is interacting with that enemy. By checking a skill xp drop we can filter
+				// these false positives partially.
+				if (!validSkillUpdates || !validAnimationUpdates)
 				{
 					continue;
 				}
@@ -299,11 +263,98 @@ public class FightStateManager
 		}
 	}
 
+	private boolean verifySkillsForFightGraphic(FightGraphic graphic)
+	{
+		Instant now = Instant.now();
+		Skill requiredSkill = graphic.getRequiredSkill();
+		Skill invalidSkill = graphic.getInvalidSkill();
+		Instant requiredSkillUpdate = lastSkillUpdates.get(requiredSkill);
+		Instant invalidSkillUpdate = lastSkillUpdates.get(invalidSkill);
+
+		// Guard: skip spell tracking when disabled
+		if (requiredSkill == Skill.MAGIC && !config.fightStatisticsSpellsEnabled())
+		{
+			return false;
+		}
+
+		if (requiredSkill != null)
+		{
+
+			// Guard: skip when there was no update at all
+			if (requiredSkillUpdate == null)
+			{
+				return false;
+			}
+
+			Instant requiredSkillExpiryTime = requiredSkillUpdate.plusMillis(GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME);
+			boolean requiredSkillIsExpired = now.isAfter(requiredSkillExpiryTime);
+
+			log.debug("Required skill time until expiry: {}", (requiredSkillExpiryTime.toEpochMilli() - now.toEpochMilli()));
+
+			if (requiredSkillIsExpired)
+			{
+				return false;
+			}
+		}
+
+		if (invalidSkill != null && invalidSkillUpdate != null)
+		{
+			Instant invalidSkillExpiryTime = invalidSkillUpdate.plusMillis(GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME);
+			boolean invalidSkillIsExpired = now.isAfter(invalidSkillExpiryTime);
+
+			log.debug("Invalid skill time until expiry: {}", (invalidSkillExpiryTime.toEpochMilli() - now.toEpochMilli()));
+
+			if (!invalidSkillIsExpired)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private boolean verifyAnimationForFightGraphic(FightGraphic graphic)
+	{
+		Instant now = Instant.now();
+		int requiredAnimationId = graphic.getAnimationId();
+		Instant requiredSkillUpdate = lastAnimationUpdates.get(requiredAnimationId);
+
+		// Guard: check if an animation should be checked
+		if (requiredAnimationId < 0)
+		{
+			return true;
+		}
+
+		// Guard: skip when there was no update at all
+		if (requiredSkillUpdate == null)
+		{
+			return false;
+		}
+
+		Instant requiredAnimationExpiryTime = requiredSkillUpdate.plusMillis(GRAPHIC_ANIMATION_EXPIRY_TIME);
+		boolean requiredAnimationIsExpired = now.isAfter(requiredAnimationExpiryTime);
+
+		log.debug("Animation time until expiry: {}", (requiredAnimationExpiryTime.toEpochMilli() - now.toEpochMilli()));
+
+		if (requiredAnimationIsExpired)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
 	public void onAnimationChanged(AnimationChanged event)
 	{
 		Actor eventActor = event.getActor();
 		int animationId = eventActor.getAnimation();
 		Player localPlayer = client.getLocalPlayer();
+
+		// Handle animation updates
+		if (eventActor == localPlayer)
+		{
+			lastAnimationUpdates.put(animationId, Instant.now());
+		}
 
 		// Handle local player deaths as we cannot use the despawned event
 		if (eventActor == localPlayer && animationId == DEATH_ANIMATION_ID)
@@ -433,14 +484,26 @@ public class FightStateManager
 
 		if (lastInteractingActors.size() > MAX_INTERACTING_ACTORS_HISTORY)
 		{
-			lastInteractingActors.remove(0);
+			rotateOldestInteractingActor();
 		}
 	}
 
-	public void onGameTick(GameTick tick)
+	private void rotateOldestInteractingActor()
 	{
-		registerIdleGameTick();
-		registerInteractingGameTick();
+		Actor oldestActor = null;
+
+		for (Actor interactingActor : lastInteractingActors.keySet())
+		{
+			Instant lastUpdate = lastInteractingActors.get(interactingActor);
+			Instant oldestLastUpdate = lastInteractingActors.get(oldestActor);
+
+			if (oldestLastUpdate == null || lastUpdate.isBefore(oldestLastUpdate))
+			{
+				oldestActor = interactingActor;
+			}
+		}
+
+		lastInteractingActors.remove(oldestActor);
 	}
 
 	public void onStatChanged(StatChanged event)
@@ -467,7 +530,13 @@ public class FightStateManager
 		registerSkillUpdate(skill);
 	}
 
-	public void registerIdleGameTick()
+	public void onGameTick(GameTick tick)
+	{
+		registerIdleGameTick();
+		registerInteractingGameTick();
+	}
+
+	private void registerIdleGameTick()
 	{
 		for (Fight fight : fights.values())
 		{
@@ -487,7 +556,7 @@ public class FightStateManager
 		}
 	}
 
-	public void registerInteractingGameTick()
+	private void registerInteractingGameTick()
 	{
 		Actor interactingActor = client.getLocalPlayer().getInteracting();
 
@@ -495,6 +564,10 @@ public class FightStateManager
 		{
 			return;
 		}
+
+		// Always update the current interacting actor to make sure it doesn't expire
+		// while the local player is still interacting with them
+		lastInteractingActors.put(interactingActor, Instant.now());
 
 		// Guard: only handle game tick when a fight is initiated (which means one hitsplat was dealt).
 		// This is to prevent non-attackable NPC's to also count interacting game ticks.
@@ -514,7 +587,7 @@ public class FightStateManager
 		session.addInteractingTicks(1);
 	}
 
-	public void registerExistingFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
+	private void registerExistingFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
 	{
 		Fight fight = getFight(actor);
 
@@ -538,14 +611,14 @@ public class FightStateManager
 		registerFightHitsplat(fight, actor, statisticEntry, hitsplat);
 	}
 
-	public void registerEnsuredFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
+	private void registerEnsuredFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
 	{
 		Fight fight = ensureValidFight(actor);
 
 		registerFightHitsplat(fight, actor, statisticEntry, hitsplat);
 	}
 
-	public void registerFightHitsplat(Fight fight, Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
+	private void registerFightHitsplat(Fight fight, Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
 	{
 		if (fight == null)
 		{
@@ -595,7 +668,7 @@ public class FightStateManager
 		}
 	}
 
-	public void registerSkillUpdate(Skill skill)
+	private void registerSkillUpdate(Skill skill)
 	{
 		lastSkillUpdates.put(skill, Instant.now());
 	}

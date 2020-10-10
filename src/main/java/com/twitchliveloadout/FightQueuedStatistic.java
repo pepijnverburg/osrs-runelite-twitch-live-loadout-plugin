@@ -1,9 +1,11 @@
 package net.runelite.client.plugins.twitchliveloadout;
 
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 
 import java.time.Instant;
 
+@Slf4j
 public class FightQueuedStatistic {
 	private final Instant createdAt;
 	private final Actor actor;
@@ -25,6 +27,8 @@ public class FightQueuedStatistic {
 	{
 		Instant now = Instant.now();
 		Instant expiredAt = createdAt.plusMillis(expiryTimeMs);
+
+		log.debug("Queued statistic time until expiry: {}", (expiredAt.toEpochMilli() - now.toEpochMilli()));
 
 		return !isRegistered && !now.isAfter(expiredAt);
 	}
