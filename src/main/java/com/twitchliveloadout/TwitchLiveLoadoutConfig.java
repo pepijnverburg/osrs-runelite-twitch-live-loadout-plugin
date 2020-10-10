@@ -225,25 +225,13 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "fightStatisticsAutoIdling",
 			name = "Auto idling of fight timer",
-			description = "Stop fight timer when enemy is not visible or without activity for configured seconds.",
+			description = "Stop fight timer when enemy is not visible.",
 			position = 12,
 			section = combatSection
 	)
 	default boolean fightStatisticsAutoIdling()
 	{
 		return true;
-	}
-
-	@ConfigItem(
-			keyName = "fightStatisticsIdleTime",
-			name = "Fight idle time (seconds)",
-			description = "Stop fight timer after the configured seconds of inactivity",
-			position = 10,
-			section = combatSection
-	)
-	default int fightStatisticsIdleTime()
-	{
-		return 60;
 	}
 
 	@ConfigSection(

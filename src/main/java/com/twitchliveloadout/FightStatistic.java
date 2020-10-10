@@ -3,14 +3,14 @@ package net.runelite.client.plugins.twitchliveloadout;
 import java.time.Instant;
 
 public class FightStatistic {
+	private final FightSession session;
+
 	private long firstUpdate = 0;
 	private long lastUpdate = 0;
 	private long hitDamage = 0;
 	private long missDamage = 0;
 	private long hitCounter = 0;
 	private long missCounter = 0;
-
-	private final FightSession session;
 
 	public FightStatistic(FightSession session)
 	{

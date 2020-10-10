@@ -9,6 +9,7 @@ import java.util.Map;
 import static net.runelite.client.plugins.twitchliveloadout.FightStateManager.*;
 
 public class FightSession {
+	private final Fight fight;
 	private final Actor actor;
 
 	private HashMap<FightStatisticEntry, FightStatistic> statistics = new HashMap();
@@ -17,8 +18,9 @@ public class FightSession {
 	private long idleQueuedTickCounter = 0;
 	private boolean finished = false;
 
-	public FightSession(Actor actor)
+	public FightSession(Fight fight, Actor actor)
 	{
+		this.fight = fight;
 		this.actor = actor;
 
 		for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
@@ -35,6 +37,7 @@ public class FightSession {
 	public void handleStatisticUpdate()
 	{
 		registerQueuedIdleTicks();
+		fight.handleStatisticUpdate();
 	}
 
 	public void addInteractingTicks(long amount)
@@ -76,15 +79,6 @@ public class FightSession {
 	public long getDurationSeconds()
 	{
 		return getLastUpdate() - getFirstUpdate() - getIdleDuration();
-	}
-
-	public boolean isIdling()
-	{
-		final Instant now = Instant.now();
-		final Instant lastUpdate = Instant.ofEpochSecond(getLastUpdate(false));
-		final boolean isIdling = now.isAfter(lastUpdate.plusMillis(SESSION_IDLING_TIME));
-
-		return isIdling;
 	}
 
 	public void finish()

@@ -10,18 +10,23 @@ import java.util.*;
 
 @Slf4j
 public class Fight {
+	private final Client client;
+
 	private final String actorName;
 	private final int actorId;
 	private final FightStateManager.ActorType actorType;
 	private final int actorCombatLevel;
+
 	private final ArrayList<FightQueuedStatistic> queuedStatistics = new ArrayList();
+
 	private final HashMap<Actor, FightSession> sessions = new HashMap();
 	private final ArrayList<FightSession> finishedSessions = new ArrayList();
 
+	private long idleTickCounter = 0;
+	private long idleQueuedTickCounter = 0;
+
 	private Actor lastActor;
 	private FightSession lastSession;
-
-	private final Client client;
 
 	public Fight(Client client, Actor actor, boolean isLocalPlayer)
 	{
@@ -140,6 +145,27 @@ public class Fight {
 		return session.getStatistic(statisticEntry);
 	}
 
+	public void handleStatisticUpdate()
+	{
+		registerQueuedIdleTicks();
+	}
+
+	public void queueIdleTicks(long amount)
+	{
+		idleQueuedTickCounter += amount;
+	}
+
+	public void registerQueuedIdleTicks()
+	{
+		idleTickCounter += idleQueuedTickCounter;
+		idleQueuedTickCounter = 0;
+	}
+
+	public long getIdleTickCounter()
+	{
+		return idleTickCounter;
+	}
+
 	public boolean hasSession(Actor actor)
 	{
 		return sessions.containsKey(actor);
@@ -157,7 +183,7 @@ public class Fight {
 			return sessions.get(actor);
 		}
 
-		FightSession session = new FightSession(actor);
+		FightSession session = new FightSession(this, actor);
 		sessions.put(actor, session);
 
 		return session;
@@ -187,12 +213,12 @@ public class Fight {
 
 	public FightSession calculateTotalSession()
 	{
-		FightSession totalSession = new FightSession(lastActor);
+		FightSession totalSession = new FightSession(this, lastActor);
+		totalSession.addIdleTicks(idleTickCounter);
 
 		for (FightSession session : getAllSessions())
 		{
 			totalSession.addInteractingTicks(session.getInteractingTickCounter());
-			totalSession.addIdleTicks(session.getIdleTickCounter());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
@@ -222,7 +248,7 @@ public class Fight {
 		{
 			String actorName = actor.getName();
 
-			if (actorName.equals(this.actorName))
+			if (this.actorName.equals(actorName))
 			{
 				return false;
 			}

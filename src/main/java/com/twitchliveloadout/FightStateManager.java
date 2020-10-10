@@ -542,12 +542,21 @@ public class FightStateManager
 
 		for (Fight fight : fights.values())
 		{
+			if (!fight.isIdling())
+			{
+				return;
+			}
+
+			// log.error("Fight with {} is idling...", fight.getActorName());
+
+			// add shared idle ticks for the total session
+			fight.queueIdleTicks(1);
+
+			// add a tick to all of the sessions that currently exist
+			// to get the right duration of the last session
 			for (FightSession session : fight.getOngoingSessions())
 			{
-				if (session.isIdling() || fight.isIdling())
-				{
-					session.queueIdleTicks(1);
-				}
+				session.queueIdleTicks(1);
 			}
 		}
 	}
