@@ -14,6 +14,7 @@ public class FightSession {
 	private HashMap<FightStatisticEntry, FightStatistic> statistics = new HashMap();
 	private long interactingTickCounter = 0;
 	private long idleTickCounter = 0;
+	private long idleQueuedTickCounter = 0;
 	private boolean finished = false;
 
 	public FightSession(Actor actor)
@@ -22,13 +23,18 @@ public class FightSession {
 
 		for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 		{
-			statistics.put(statisticEntry, new FightStatistic());
+			statistics.put(statisticEntry, new FightStatistic(this));
 		}
 	}
 
 	public FightStatistic getStatistic(FightStatisticEntry statisticEntry)
 	{
 		return statistics.get(statisticEntry);
+	}
+
+	public void handleStatisticUpdate()
+	{
+		registerQueuedIdleTicks();
 	}
 
 	public void addInteractingTicks(long amount)
@@ -39,6 +45,17 @@ public class FightSession {
 	public void addIdleTicks(long amount)
 	{
 		idleTickCounter += amount;
+	}
+
+	public void queueIdleTicks(long amount)
+	{
+		idleQueuedTickCounter += amount;
+	}
+
+	public void registerQueuedIdleTicks()
+	{
+		idleTickCounter += idleQueuedTickCounter;
+		idleQueuedTickCounter = 0;
 	}
 
 	public long getInteractingTickCounter()
@@ -61,16 +78,10 @@ public class FightSession {
 		return getLastUpdate() - getFirstUpdate() - getIdleDuration();
 	}
 
-	// TODO: the idling time is not yet correctly substracted from the total duration
 	public boolean isIdling()
 	{
-		if (!ENABLE_SESSION_IDLING)
-		{
-			return false;
-		}
-
 		final Instant now = Instant.now();
-		final Instant lastUpdate = Instant.ofEpochSecond(getLastUpdate());
+		final Instant lastUpdate = Instant.ofEpochSecond(getLastUpdate(false));
 		final boolean isIdling = now.isAfter(lastUpdate.plusMillis(SESSION_IDLING_TIME));
 
 		return isIdling;

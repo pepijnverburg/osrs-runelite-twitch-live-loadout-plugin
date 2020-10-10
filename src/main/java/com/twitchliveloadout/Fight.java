@@ -2,9 +2,9 @@ package net.runelite.client.plugins.twitchliveloadout;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
+import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
-import net.runelite.api.Player;
 
 import java.util.*;
 
@@ -21,8 +21,11 @@ public class Fight {
 	private Actor lastActor;
 	private FightSession lastSession;
 
-	public Fight(Actor actor, boolean isLocalPlayer)
+	private final Client client;
+
+	public Fight(Client client, Actor actor, boolean isLocalPlayer)
 	{
+		this.client = client;
 		this.lastActor = actor;
 		this.lastSession = ensureSession(actor);
 		this.actorCombatLevel = actor.getCombatLevel();
@@ -208,6 +211,26 @@ public class Fight {
 		return lastSession;
 	}
 
+	public boolean isIdling()
+	{
+		ArrayList<Actor> actors = new ArrayList();
+		actors.addAll(client.getNpcs());
+		actors.addAll(client.getPlayers());
+
+		// TODO: check if this is something to optimise, especially if ran every tick.
+		for (Actor actor : actors)
+		{
+			String actorName = actor.getName();
+
+			if (actorName.equals(this.actorName))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public void setLastActor(Actor actor)
 	{
 		this.lastActor = actor;
@@ -259,6 +282,11 @@ public class Fight {
 	public int getFinishedSessionCounter()
 	{
 		return finishedSessions.size();
+	}
+
+	public Collection<FightSession> getOngoingSessions()
+	{
+		return sessions.values();
 	}
 
 	public ArrayList<FightSession> getAllSessions()

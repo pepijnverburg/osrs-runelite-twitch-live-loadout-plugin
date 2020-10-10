@@ -106,10 +106,11 @@ It is also possible to configure what information is being sent through the foll
 - `Sync bank items`: toggle to sync bank items.
 - `Max bank items`: the maximum amount of bank items with an upper limit set by the plugin.
 - `Sync combat statistics`: toggle to sync combat statistics.
-- `Track magic spells`: Enable tracking of freezes, entangles, blood spells and splashes.
-- `Track damage by others`: Enable tracking of hitsplats of other players.
+- `Track magic spells`: enable tracking of freezes, entangles, blood spells and splashes.
+- `Track damage by others`: enable tracking of hitsplats of other players.
 - `Max combat fights`: the maximum amount of fights tracked with an upper limit set by the plugin.
 - `Fight expiry time`: reset a fight after the configured minutes of inactivity.
+- `Auto idling of fight timer`: stop fight timer when enemy is not visible or without activity for longer periods.
 - `Sync skill levels`: toggle to sync (boosted) skills.
 - `Virtual levels enabled`: when enabled the maximum level shown based on experience is 126 instead of 99. 
 - `Sync display name`: toggle to show basic player info.

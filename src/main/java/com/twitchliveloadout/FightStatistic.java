@@ -10,6 +10,13 @@ public class FightStatistic {
 	private long hitCounter = 0;
 	private long missCounter = 0;
 
+	private final FightSession session;
+
+	public FightStatistic(FightSession session)
+	{
+		this.session = session;
+	}
+
 	public void registerHit(int damage)
 	{
 		hitDamage += damage;
@@ -55,6 +62,7 @@ public class FightStatistic {
 		}
 
 		lastUpdate = now;
+		session.handleStatisticUpdate();
 	}
 
 	public long getDurationSeconds()

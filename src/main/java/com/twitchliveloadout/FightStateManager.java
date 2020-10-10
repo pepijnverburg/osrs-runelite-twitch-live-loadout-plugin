@@ -44,9 +44,6 @@ public class FightStateManager
 	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 3000; // ms
 	private HashMap<Actor, Instant> lastInteractingActors = new HashMap();
 
-	public static final boolean ENABLE_SESSION_IDLING = false; // TODO: finish session idling
-	public static final int SESSION_IDLING_TIME = 60 * 1000; // ms
-
 	private static final String ACTOR_NAME_KEY = "actorNames";
 	private static final String ACTOR_TYPE_KEY = "actorTypes";
 	private static final String ACTOR_ID_KEY = "actorIds";
@@ -538,21 +535,20 @@ public class FightStateManager
 
 	private void registerIdleGameTick()
 	{
+		if (!config.fightStatisticsAutoIdling())
+		{
+			return;
+		}
+
 		for (Fight fight : fights.values())
 		{
-			FightSession session = fight.getLastSession();
-
-			if (session == null)
+			for (FightSession session : fight.getOngoingSessions())
 			{
-				continue;
+				if (session.isIdling() || fight.isIdling())
+				{
+					session.queueIdleTicks(1);
+				}
 			}
-
-			if (!session.isIdling())
-			{
-				return;
-			}
-
-			session.addIdleTicks(1);
 		}
 	}
 
@@ -649,6 +645,9 @@ public class FightStateManager
 		// to make sure the behaviour is predictable after updates
 		switch (hitsplatType)
 		{
+			case DISEASE:
+				// not handled
+				break;
 			case BLOCK_ME:
 			case BLOCK_OTHER:
 				statistic.registerMiss(amount);
@@ -663,6 +662,9 @@ public class FightStateManager
 			case DAMAGE_OTHER_ORANGE:
 			case DAMAGE_OTHER_WHITE:
 			case DAMAGE_OTHER_YELLOW:
+			case VENOM:
+			case POISON:
+			case HEAL:
 				statistic.registerHit(amount);
 				break;
 		}
@@ -716,7 +718,7 @@ public class FightStateManager
 	{
 		String localPlayerName = client.getLocalPlayer().getName();
 		boolean isLocalPlayer = (actor instanceof Player) && localPlayerName.equals(actor.getName());
-		Fight fight = new Fight(actor, isLocalPlayer);
+		Fight fight = new Fight(client, actor, isLocalPlayer);
 		String actorName = fight.getActorName();
 
 		// Rotate fights to prevent memory leaks when the client is on for a long time
