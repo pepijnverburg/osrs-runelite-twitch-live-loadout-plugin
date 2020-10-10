@@ -52,13 +52,6 @@ public class TwitchState {
 	private JsonObject previousState = new JsonObject();
 
 	/**
-	 * Cache to optimize the various item containers that are synced.
-	 * This helps to avoid item syncing done via polling to not require
-	 * JSON parsing every time the polling cycle ends.
-	 */
-	private HashMap<String, Item[]> itemsCache = new HashMap();
-
-	/**
 	 * Flag to identify whether the state has changed after
 	 * one of the setters was invoked. This allow for more
 	 * efficient updating towards the Configuration Service.
@@ -74,6 +67,10 @@ public class TwitchState {
 		// initialize the states that are not directly synced with events
 		setOverlayTopPosition(config.overlayTopPosition());
 		setVirtualLevelsEnabled(config.virtualLevelsEnabled());
+
+		// set initial items as no events are triggered when the collection is empty
+		setInventoryItems(new Item[0], 0);
+		setEquipmentItems(new Item[0], 0);
 	}
 
 	public JsonObject getState()
