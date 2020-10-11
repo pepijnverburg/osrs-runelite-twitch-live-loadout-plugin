@@ -21,7 +21,7 @@ public class FightStateManager
 	private final TwitchLiveLoadoutConfig config;
 	private final Client client;
 
-	private static final int ON_GRAPHIC_CHANGED_DELAY = 500; // ms
+	private static final int ON_GRAPHIC_CHANGED_DELAY = 200; // ms
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
@@ -79,7 +79,7 @@ public class FightStateManager
 
 		// Note that with the interaction required boolean to true splashes on multi-target enemies will not register (e.g. while barraging).
 		// However, this is needed because otherwise splashes from other actors have a very high change to trigger false positives.
-		SPLASH(85, Skill.MAGIC, Skill.HITPOINTS, NO_ANIMATION_ID, true, FightStatisticEntry.SPELL, FightStatisticProperty.MISS_COUNTERS); // no hitsplat
+		SPLASH(85, Skill.MAGIC, NO_SKILL, NO_ANIMATION_ID, true, FightStatisticEntry.SPELL, FightStatisticProperty.MISS_COUNTERS); // no hitsplat
 
 		private final int graphicId;
 		private final Skill requiredSkill;
