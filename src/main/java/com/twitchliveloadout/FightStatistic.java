@@ -100,6 +100,11 @@ public class FightStatistic {
 		return firstUpdate;
 	}
 
+	public boolean isEverUpdated()
+	{
+		return lastUpdate != 0 || firstUpdate != 0;
+	}
+
 	public long getValueByProperty(FightStatisticProperty property)
 	{
 		final String key = property.getKey();

@@ -819,6 +819,7 @@ public class FightStateManager
 	public JsonObject getFightStatisticsState()
 	{
 		ArrayList<Fight> includedFights = new ArrayList();
+		ArrayList<FightStatisticEntry> includedStatisticEntries = new ArrayList();
 
 		final JsonObject state = new JsonObject();
 		JsonObject statistics = new JsonObject();
@@ -882,7 +883,7 @@ public class FightStateManager
 
 		state.add(STATISTICS_KEY, statistics);
 
-		for (FightStatisticEntry statisticKey : FightStatisticEntry.values())
+		for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 		{
 			JsonObject fightStatistic = new JsonObject();
 
@@ -891,7 +892,7 @@ public class FightStateManager
 				fightStatistic.add(property.getKey(), new JsonArray());
 			}
 
-			statistics.add(statisticKey.getKey(), fightStatistic);
+			statistics.add(statisticEntry.getKey(), fightStatistic);
 		}
 
 		for (Fight fight : slicedFights)
@@ -939,10 +940,29 @@ public class FightStateManager
 						lastValue = (int) (Math.random() * TwitchState.MAX_FIGHT_STATISTIC_VALUE);
 					}
 
+					if (totalStatistic.isEverUpdated() || lastStatistic.isEverUpdated())
+					{
+						if (!includedStatisticEntries.contains(statisticEntry))
+						{
+							includedStatisticEntries.add(statisticEntry);
+						}
+					}
+
 					totalAndLastValue.add(totalValue);
 					totalAndLastValue.add(lastValue);
 					statisticState.getAsJsonArray(property.getKey()).add(totalAndLastValue);
 				}
+			}
+		}
+
+		// Save space by filtering out the statistics that have only 0 values.
+		// This happens quite often as for example the majority of activities don't
+		// have any freezes, heals, blood heals, smite drains etc.
+		for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
+		{
+			if (!includedStatisticEntries.contains(statisticEntry))
+			{
+				statistics.remove(statisticEntry.getKey());
 			}
 		}
 
