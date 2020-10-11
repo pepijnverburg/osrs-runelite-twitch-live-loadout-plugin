@@ -211,6 +211,12 @@ public class FightStateManager
 			FightStatisticProperty property = graphic.getProperty();
 			FightStatisticEntry entry = graphic.getEntry();
 
+			// Guard: check if this is the correct graphic
+			if (fightGraphicId != graphicId)
+			{
+				continue;
+			}
+
 			// In singles interacting is always required.
 			if (!isInMultiCombatArea)
 			{
@@ -225,24 +231,19 @@ public class FightStateManager
 				interactionRequired = false;
 			}
 
-			if (fightGraphicId != graphicId)
-			{
-				continue;
-			}
-
 			log.debug("Detected fight graphic, now validating... Graphic ID: {}", fightGraphicId);
 			log.debug("Required skill time until expiry: {}", (lastInteractedOn == null ? "N/A" : (now.toEpochMilli() - lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME).toEpochMilli())));
 
-			// Guard: single target spells can check whether the local player interacted with the actor.
-			// In single combat area's interactions are always required
-			if (interactionRequired && !validInteractingWith)
-			{
-				continue;
-			}
-
-			// Some checks only apply when the event target is not the local player
+			// Most checks only apply when the event target is not the local player
 			if (!isLocalPlayer)
 			{
+				// Guard: single target spells can check whether the local player interacted with the actor.
+				// In single combat area's interactions are always required
+				if (interactionRequired && !validInteractingWith)
+				{
+					continue;
+				}
+
 				boolean validSkillUpdates = verifySkillsForFightGraphic(graphic);
 				boolean validAnimationUpdates = verifyAnimationForFightGraphic(graphic);
 
