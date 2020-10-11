@@ -299,7 +299,21 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		 fightStateManager.onGameTick(tick);
+		 fightStateManager.onGameTick();
+	}
+
+	/**
+	 * Simulate game ticks when not logged in to still register for idling fight time when not logged in
+	 */
+	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
+	public void onLobbyGameTick()
+	{
+		if (client.getGameState() != GameState.LOGIN_SCREEN)
+		{
+			return;
+		}
+
+		fightStateManager.onGameTick();
 	}
 
 	@Subscribe

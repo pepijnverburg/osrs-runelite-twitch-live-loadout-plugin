@@ -259,7 +259,7 @@ public class TwitchApi
 		}
 
 		// append the time
-		responseCodeMessage += " The time was: "+ nowFormatted;
+		responseCodeMessage += " The time of this message was: "+ nowFormatted;
 
 		response.close();
 		lastResponseMessage = responseCodeMessage;

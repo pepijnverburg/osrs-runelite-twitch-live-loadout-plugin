@@ -225,7 +225,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "fightStatisticsAutoIdling",
 			name = "Auto idling of fight timer",
-			description = "Stop fight timer when enemy is not visible.",
+			description = "Stop fight timer when logged out or enemy is not visible.",
 			position = 12,
 			section = combatSection
 	)

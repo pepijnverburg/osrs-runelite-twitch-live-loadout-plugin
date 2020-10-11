@@ -10,8 +10,6 @@ import java.util.*;
 
 @Slf4j
 public class Fight {
-	private final Client client;
-
 	private final String actorName;
 	private final int actorId;
 	private final FightStateManager.ActorType actorType;
@@ -28,9 +26,8 @@ public class Fight {
 	private Actor lastActor;
 	private FightSession lastSession;
 
-	public Fight(Client client, Actor actor, boolean isLocalPlayer)
+	public Fight(Actor actor, boolean isLocalPlayer)
 	{
-		this.client = client;
 		this.lastActor = actor;
 		this.lastSession = ensureSession(actor);
 		this.actorCombatLevel = actor.getCombatLevel();
@@ -237,17 +234,10 @@ public class Fight {
 		return lastSession;
 	}
 
-	public boolean isIdling()
+	public boolean isIdling(ArrayList<String> actorNames)
 	{
-		ArrayList<Actor> actors = new ArrayList();
-		actors.addAll(client.getNpcs());
-		actors.addAll(client.getPlayers());
-
-		// TODO: check if this is something to optimise, especially if ran every tick.
-		for (Actor actor : actors)
+		for (String actorName : actorNames)
 		{
-			String actorName = actor.getName();
-
 			if (this.actorName.equals(actorName))
 			{
 				return false;

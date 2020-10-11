@@ -190,13 +190,14 @@ public class FightStateManager
 		final Player localPlayer = client.getLocalPlayer();
 		final int graphicId = eventActor.getGraphic();
 		final boolean isLocalPlayer = (eventActor == localPlayer);
-		final boolean isInMultiCombatArea = isInMultiCombatArea();
 
 		if (graphicId < 0  || localPlayer == null || eventActorName == null)
 		{
 			return;
 		}
 
+		final boolean isInMultiCombatArea = isInMultiCombatArea();
+		final boolean otherPlayersPresent = otherPlayersPresent(eventActor);
 		final Instant now = Instant.now();
 		final Instant lastInteractedOn = lastInteractingActors.get(eventActor);
 		final boolean lastInteractedWithExpired = (lastInteractedOn == null || lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME).isBefore(now));
@@ -205,9 +206,23 @@ public class FightStateManager
 		for (FightGraphic graphic : FightGraphic.values())
 		{
 			int fightGraphicId = graphic.getGraphicId();
-			boolean interactionRequired = !isInMultiCombatArea || graphic.isInteractionRequired();
+			boolean interactionRequired = graphic.isInteractionRequired();
 			FightStatisticProperty property = graphic.getProperty();
 			FightStatisticEntry entry = graphic.getEntry();
+
+			// In singles interacting is always required.
+			if (!isInMultiCombatArea)
+			{
+				interactionRequired = true;
+			}
+
+			// In multi-combat when there are no players the interaction is not required.
+			// The one situation where this goes wrong is with NPC's that are also triggering graphics, such as splashes on other NPC's.
+			// An example of this are the Spiritual Mages in GWD.
+			if (!otherPlayersPresent && isInMultiCombatArea)
+			{
+				interactionRequired = false;
+			}
 
 			if (fightGraphicId != graphicId)
 			{
@@ -527,7 +542,7 @@ public class FightStateManager
 		registerSkillUpdate(skill);
 	}
 
-	public void onGameTick(GameTick tick)
+	public void onGameTick()
 	{
 		registerIdleGameTick();
 		registerInteractingGameTick();
@@ -540,14 +555,17 @@ public class FightStateManager
 			return;
 		}
 
+		final boolean isLoggedIn = (client.getGameState() == GameState.LOGGED_IN);
+		final ArrayList<String> actorNames = getOtherActorNames();
+
 		for (Fight fight : fights.values())
 		{
-			if (!fight.isIdling())
+			if (!fight.isIdling(actorNames) && isLoggedIn)
 			{
-				return;
+				continue;
 			}
 
-			// log.error("Fight with {} is idling...", fight.getActorName());
+			//log.error("Fight with {} is idling...", fight.getActorName());
 
 			// add shared idle ticks for the total session
 			fight.queueIdleTicks(1);
@@ -563,7 +581,14 @@ public class FightStateManager
 
 	private void registerInteractingGameTick()
 	{
-		Actor interactingActor = client.getLocalPlayer().getInteracting();
+		Player localPlayer = client.getLocalPlayer();
+
+		if (localPlayer == null)
+		{
+			return;
+		}
+
+		Actor interactingActor = localPlayer.getInteracting();
 
 		if (interactingActor == null)
 		{
@@ -727,7 +752,7 @@ public class FightStateManager
 	{
 		String localPlayerName = client.getLocalPlayer().getName();
 		boolean isLocalPlayer = (actor instanceof Player) && localPlayerName.equals(actor.getName());
-		Fight fight = new Fight(client, actor, isLocalPlayer);
+		Fight fight = new Fight(actor, isLocalPlayer);
 		String actorName = fight.getActorName();
 
 		// Rotate fights to prevent memory leaks when the client is on for a long time
@@ -959,6 +984,22 @@ public class FightStateManager
 		}
 
 		return client.getPlayers().size() > allowedPlayerAmount;
+	}
+
+	public ArrayList<String> getOtherActorNames()
+	{
+		final ArrayList<String> actorNames = new ArrayList();
+		final ArrayList<Actor> actors = new ArrayList();
+
+		actors.addAll(client.getNpcs());
+		actors.addAll(client.getPlayers());
+
+		for (Actor actor : actors)
+		{
+			actorNames.add(actor.getName());
+		}
+
+		return actorNames;
 	}
 
 	public int getMaxFightAmountInState()

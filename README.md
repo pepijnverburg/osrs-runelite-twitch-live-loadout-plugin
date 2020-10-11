@@ -110,7 +110,7 @@ It is also possible to configure what information is being sent through the foll
 - `Track damage by others`: enable tracking of hitsplats of other players.
 - `Max combat fights`: the maximum amount of fights tracked with an upper limit set by the plugin.
 - `Fight expiry time`: reset a fight after the configured minutes of inactivity.
-- `Auto idling of fight timer`: stop fight timer when enemy is not visible.
+- `Auto idling of fight timer`: stop fight timer when logged out or enemy is not visible.
 - `Sync skill levels`: toggle to sync (boosted) skills.
 - `Virtual levels enabled`: when enabled the maximum level shown based on experience is 126 instead of 99. 
 - `Sync display name`: toggle to show basic player info.
