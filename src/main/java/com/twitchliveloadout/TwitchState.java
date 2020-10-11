@@ -71,6 +71,7 @@ public class TwitchState {
 		// set initial items as no events are triggered when the collection is empty
 		setInventoryItems(new Item[0], 0);
 		setEquipmentItems(new Item[0], 0);
+		setWeight(0);
 	}
 
 	public JsonObject getState()

@@ -79,6 +79,7 @@ public class FightStateManager
 
 		// Note that with the interaction required boolean to true splashes on multi-target enemies will not register (e.g. while barraging).
 		// However, this is needed because otherwise splashes from other actors have a very high change to trigger false positives.
+		// No invalid skill as multi-target spells can both hit and splash on enemies in the same attack.
 		SPLASH(85, Skill.MAGIC, NO_SKILL, NO_ANIMATION_ID, true, FightStatisticEntry.SPELL, FightStatisticProperty.MISS_COUNTERS); // no hitsplat
 
 		private final int graphicId;
