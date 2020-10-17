@@ -29,8 +29,10 @@ public class FightStateManager
 	public static final int DEATH_ANIMATION_ID = 836;
 	public static final int MAX_FIGHT_AMOUNT = 15;
 	public static final int MAX_FIGHT_AMOUNT_IN_MEMORY = 50;
+	public static final int MAX_FIGHT_DISTANCE = 15; // above max fight range on purpose
 
-	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2600; // ms, this varies for spell and enemy distance, farcasting is around 2600ms max
+	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME_BASE = 1600; // ms
+	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME_PER_SQUARE = 160; // ms, this varies for spell and enemy distance, this is an approximate
 	public static final int OTHER_DAMAGE_EXPIRY_TIME = 2000; // ms
 
 	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = ON_GRAPHIC_CHANGED_DELAY + 50; // ms, takes around 5ms
@@ -203,6 +205,12 @@ public class FightStateManager
 		final Instant lastInteractedOn = lastInteractingActors.get(eventActor);
 		final boolean lastInteractedWithExpired = (lastInteractedOn == null || lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME).isBefore(now));
 		final boolean validInteractingWith = !lastInteractedWithExpired;
+		int distanceTo = localPlayer.getWorldLocation().distanceTo(eventActor.getWorldLocation());
+
+		if (distanceTo > MAX_FIGHT_DISTANCE)
+		{
+			distanceTo = MAX_FIGHT_DISTANCE;
+		}
 
 		for (FightGraphic graphic : FightGraphic.values())
 		{
@@ -272,7 +280,9 @@ public class FightStateManager
 			}
 			else if (property == FightStatisticProperty.HIT_DAMAGES)
 			{
-				fight.queueStatistic(eventActor, entry, property, GRAPHIC_HITSPLAT_EXPIRY_TIME);
+				log.debug("The distance to the enemy for the queue expiry time was: {}", distanceTo);
+				final int expiryTimeMs = GRAPHIC_HITSPLAT_EXPIRY_TIME_BASE + GRAPHIC_HITSPLAT_EXPIRY_TIME_PER_SQUARE * distanceTo;
+				fight.queueStatistic(eventActor, entry, property, expiryTimeMs);
 			}
 		}
 	}

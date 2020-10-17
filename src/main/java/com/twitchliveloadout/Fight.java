@@ -60,7 +60,7 @@ public class Fight {
 
 	public void queueStatistic(Actor actor, FightStatisticEntry entry, FightStatisticProperty property, int expiryTimeMs)
 	{
-		log.debug("QUEUED: Adding {} - {} - {} - {}", actor.getName(), entry.getKey(), property.getKey(), expiryTimeMs);
+		log.debug("Adding queued statistic: {} - {} - {} - {}", actor.getName(), entry.getKey(), property.getKey(), expiryTimeMs);
 		FightQueuedStatistic queuedStatistic = new FightQueuedStatistic(actor, entry, property, expiryTimeMs);
 		queuedStatistics.add(queuedStatistic);
 		cleanQueuedStatistics();
@@ -68,7 +68,7 @@ public class Fight {
 
 	public void registerQueuedStatistics(Actor actor, int hitsplatAmount)
 	{
-		log.debug("QUEUED: Checking queue, queued size {} - hitsplat {}", queuedStatistics.size(), hitsplatAmount);
+		log.debug("Checking queue statistics, queued size {} for hitsplat {}", queuedStatistics.size(), hitsplatAmount);
 
 		// synchronized list does not seem to be needed here?
 		Iterator iterator = queuedStatistics.iterator();
@@ -79,19 +79,19 @@ public class Fight {
 			FightStatisticEntry entry = queuedStatistic.getEntry();
 			FightStatisticProperty property = queuedStatistic.getProperty();
 
-			log.debug("QUEUED: Attempt register {} - {}", entry.getKey(), property.getKey());
+			log.debug("Attempt register queued statistic {} - {}", entry.getKey(), property.getKey());
 
 			// Guard: check if this hitsplat is on the right actor
 			if (actor != queuedActor)
 			{
-				log.debug("QUEUED: Skipping because of wrong actor.");
+				log.debug("Skipping queued statistic because of wrong actor.");
 				continue;
 			}
 
 			// Will prevent registering twice
 			if (!queuedStatistic.isValid())
 			{
-				log.debug("QUEUED: Skipping because of invalid.");
+				log.debug("Skipping queued statistic because of invalid.");
 				continue;
 			}
 
@@ -99,12 +99,12 @@ public class Fight {
 
 			if (property == FightStatisticProperty.MISS_DAMAGES || property == FightStatisticProperty.MISS_COUNTERS)
 			{
-				log.debug("QUEUED: Register miss");
+				log.debug("Register queued statistic miss: {}", hitsplatAmount);
 				statistic.registerMiss(hitsplatAmount);
 			}
 			else if (property == FightStatisticProperty.HIT_DAMAGES || property == FightStatisticProperty.HIT_COUNTERS)
 			{
-				log.debug("QUEUED: register hit ");
+				log.debug("Register queued statistic hit: {}", hitsplatAmount);
 				statistic.registerHit(hitsplatAmount);
 			}
 
@@ -124,8 +124,8 @@ public class Fight {
 				continue;
 			}
 
-			log.debug("QUEUED: Remove from queue {}", queuedStatistic.getEntry().getKey());
-			iterator.remove();
+			log.debug("Remove queued statistic {}", queuedStatistic.getEntry().getKey());
+			queuedStatistics.remove(queuedStatistic);
 		}
 	}
 
