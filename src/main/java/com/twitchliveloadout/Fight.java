@@ -238,6 +238,13 @@ public class Fight {
 	{
 		for (String actorName : actorNames)
 		{
+
+			// Not idling when the actor can be found in the surroundings
+			// for some boss fights this would not work (e.g. The Gauntlet)
+			// because often you are seeing the boss while prepping.
+			// We accept these inconsistencies as it weighs out situations where
+			// you are not interacting/attacking the boss due to a certain phase and
+			// then we don't want idling to kick in to skew your DPS (e.g. certain Olm phases)
 			if (this.actorName.equals(actorName))
 			{
 				return false;
