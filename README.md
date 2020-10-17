@@ -10,7 +10,7 @@ Get better engagement with...
 - **Existing casual players** who are not up-to-date about the latest changes. 
 - **Existing frequent players** who would like to give advice on the loadout. 
 
-[Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with.
+[Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with. The screenshots in this README are made using a Twitch Extension that is compatible with this plugin.
 
 ![Summary](./docs/summary.gif "Summary")
 
@@ -67,10 +67,6 @@ Below you can find an overview which features are implemented and which ones are
 
 ![Bank](./docs/screenshots/bank.png "Bank")
 ![Equipment](./docs/screenshots/worn-equipment.png "Equipment")
-
-### 🎯 Goals
-- [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
-- [ ] `Item goals with KC`: for each item goal a boss killcount can be attached that is visible on hover.  
 
 ### 📊 Skills
 - [x] `Skill experiences`: all experience amounts per skill.
@@ -141,7 +137,12 @@ The plugin is implemented with the OSRS weekly updates in mind. There are few de
 
 ## 🔮 Future
 Future features that might be added based on feedback are:
-- [ ] List of current goal items with automatic progress based on items in bank/inventory/equipment.
+
+### 🎯 Goals
+- [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
+- [ ] `Item goals with KC`: for each item goal a boss killcount can be attached that is visible on hover.  
+
+### Others
 - [ ] More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).
 - [ ] Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
 - [ ] If the full bank is important, complex state management is considered where the bank is incrementally sent to Twitch in payloads of 5KB in size.
