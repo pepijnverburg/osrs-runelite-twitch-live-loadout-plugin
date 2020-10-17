@@ -5,8 +5,8 @@ import java.time.Instant;
 public class FightStatistic {
 	private final FightSession session;
 
-	private long firstUpdate = 0;
-	private long lastUpdate = 0;
+	private Instant firstUpdate;
+	private Instant lastUpdate;
 	private long hitDamage = 0;
 	private long missDamage = 0;
 	private long hitCounter = 0;
@@ -33,20 +33,20 @@ public class FightStatistic {
 
 	public void addStatistic(FightStatistic statistic)
 	{
-		long candidateFirstUpdate = statistic.getFirstUpdate();
-		long candidateLastUpdate = statistic.getLastUpdate();
+		Instant candidateFirstUpdate = statistic.getFirstUpdate();
+		Instant candidateLastUpdate = statistic.getLastUpdate();
 
 		hitDamage += statistic.getHitDamage();
 		hitCounter += statistic.getHitCounter();
 		missDamage += statistic.getMissDamage();
 		missCounter += statistic.getMissCounter();
 
-		if ((candidateFirstUpdate != 0 && candidateFirstUpdate < firstUpdate) || firstUpdate == 0)
+		if (firstUpdate == null || (candidateFirstUpdate != null && candidateFirstUpdate.isBefore(firstUpdate)))
 		{
 			firstUpdate = candidateFirstUpdate;
 		}
 
-		if ((candidateLastUpdate != 0 && candidateLastUpdate > lastUpdate) || lastUpdate == 0)
+		if (lastUpdate == null || (candidateLastUpdate != null && candidateLastUpdate.isAfter(lastUpdate)))
 		{
 			lastUpdate = candidateLastUpdate;
 		}
@@ -54,9 +54,9 @@ public class FightStatistic {
 
 	public void registerUpdate()
 	{
-		final long now = Instant.now().getEpochSecond();
+		final Instant now = Instant.now();
 
-		if (firstUpdate == 0)
+		if (firstUpdate == null)
 		{
 			firstUpdate = now;
 		}
@@ -67,7 +67,15 @@ public class FightStatistic {
 
 	public long getDurationSeconds()
 	{
-		return lastUpdate - firstUpdate;
+		Instant lastUpdate = getLastUpdate();
+		Instant firstUpdate = getFirstUpdate();
+
+		if (lastUpdate == null || firstUpdate == null)
+		{
+			return 0;
+		}
+
+		return getLastUpdate().getEpochSecond() - getFirstUpdate().getEpochSecond();
 	}
 
 	public long getHitDamage()
@@ -90,19 +98,19 @@ public class FightStatistic {
 		return missCounter;
 	}
 
-	public long getLastUpdate()
+	public Instant getLastUpdate()
 	{
 		return lastUpdate;
 	}
 
-	public long getFirstUpdate()
+	public Instant getFirstUpdate()
 	{
 		return firstUpdate;
 	}
 
 	public boolean isEverUpdated()
 	{
-		return lastUpdate != 0 || firstUpdate != 0;
+		return lastUpdate != null || firstUpdate != null;
 	}
 
 	public long getValueByProperty(FightStatisticProperty property)
@@ -140,7 +148,7 @@ public class FightStatistic {
 		hitCounter = 0;
 		missCounter = 0;
 
-		firstUpdate = 0;
-		lastUpdate = 0;
+		firstUpdate = null;
+		lastUpdate = null;
 	}
 }

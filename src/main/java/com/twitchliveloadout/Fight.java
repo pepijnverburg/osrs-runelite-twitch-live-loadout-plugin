@@ -6,6 +6,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
 
+import java.time.Instant;
 import java.util.*;
 
 @Slf4j
@@ -186,20 +187,25 @@ public class Fight {
 		return session;
 	}
 
-	public long getLastUpdate()
+	public Instant getLastUpdate()
 	{
 		return getLastUpdate(false);
 	}
 
-	public long getLastUpdate(boolean updatedAtInfluencerOnly)
+	public Instant getLastUpdate(boolean updatedAtInfluencerOnly)
 	{
-		long maxLastUpdate = 0;
+		Instant maxLastUpdate = null;
 
 		for (FightSession session : getAllSessions())
 		{
-			long lastUpdate = session.getLastUpdate(updatedAtInfluencerOnly);
+			Instant lastUpdate = session.getLastUpdate(updatedAtInfluencerOnly);
 
-			if (lastUpdate > maxLastUpdate)
+			if (lastUpdate == null)
+			{
+				continue;
+			}
+
+			if (maxLastUpdate == null || lastUpdate.isAfter(maxLastUpdate))
 			{
 				maxLastUpdate = lastUpdate;
 			}

@@ -78,7 +78,15 @@ public class FightSession {
 
 	public long getDurationSeconds()
 	{
-		return getLastUpdate() - getFirstUpdate() - getIdleDuration();
+		Instant lastUpdate = getLastUpdate();
+		Instant firstUpdate = getFirstUpdate();
+
+		if (lastUpdate == null || firstUpdate == null)
+		{
+			return 0;
+		}
+
+		return getLastUpdate().getEpochSecond() - getFirstUpdate().getEpochSecond() - getIdleDuration();
 	}
 
 	public void finish()
@@ -91,22 +99,22 @@ public class FightSession {
 		return finished;
 	}
 
-	public long getFirstUpdate()
+	public Instant getFirstUpdate()
 	{
-		long minFirstUpdate = 0;
+		Instant minFirstUpdate = null;
 
 		for (Map.Entry<FightStatisticEntry, FightStatistic> entry : statistics.entrySet())
 		{
 			final FightStatisticEntry statisticEntry = entry.getKey();
 			final FightStatistic statistic = entry.getValue();
-			final long firstUpdate = statistic.getFirstUpdate();
+			final Instant firstUpdate = statistic.getFirstUpdate();
 
-			if (!statisticEntry.isDurationInfluencer() || firstUpdate == 0)
+			if (!statisticEntry.isDurationInfluencer() || firstUpdate == null)
 			{
 				continue;
 			}
 
-			if (firstUpdate < minFirstUpdate || minFirstUpdate == 0)
+			if (minFirstUpdate == null || firstUpdate.isBefore(minFirstUpdate))
 			{
 				minFirstUpdate = firstUpdate;
 			}
@@ -115,22 +123,22 @@ public class FightSession {
 		return minFirstUpdate;
 	}
 
-	public long getLastUpdate()
+	public Instant getLastUpdate()
 	{
 		return getLastUpdate(false);
 	}
 
-	public long getLastUpdate(boolean updatedAtInfluencerOnly)
+	public Instant getLastUpdate(boolean updatedAtInfluencerOnly)
 	{
-		long maxLastUpdate = 0;
+		Instant maxLastUpdate = null;
 
 		for (Map.Entry<FightStatisticEntry, FightStatistic> entry : statistics.entrySet())
 		{
 			final FightStatisticEntry statisticEntry = entry.getKey();
 			final FightStatistic statistic = entry.getValue();
-			final long lastUpdate = statistic.getLastUpdate();
+			final Instant lastUpdate = statistic.getLastUpdate();
 
-			if (!statisticEntry.isDurationInfluencer() || lastUpdate == 0)
+			if (!statisticEntry.isDurationInfluencer() || lastUpdate == null)
 			{
 				continue;
 			}
@@ -140,7 +148,7 @@ public class FightSession {
 				continue;
 			}
 
-			if (lastUpdate > maxLastUpdate)
+			if (maxLastUpdate == null || lastUpdate.isAfter(maxLastUpdate))
 			{
 				maxLastUpdate = lastUpdate;
 			}
