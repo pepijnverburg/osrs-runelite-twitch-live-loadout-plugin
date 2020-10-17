@@ -219,7 +219,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default int fightStatisticsExpiryTime()
 	{
-		return 120;
+		return 180;
 	}
 
 	@ConfigItem(
