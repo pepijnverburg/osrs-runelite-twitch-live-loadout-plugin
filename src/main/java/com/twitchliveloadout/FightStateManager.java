@@ -44,6 +44,7 @@ public class FightStateManager
 
 	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
 	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 3000; // ms
+	private static final int DEATH_REGISTER_ACTOR_EXPIRY_TIME = 60000; // ms
 	private HashMap<Actor, Instant> lastInteractingActors = new HashMap();
 
 	private static final String ACTOR_NAME_KEY = "actorNames";
@@ -481,7 +482,16 @@ public class FightStateManager
 			return;
 		}
 
+		Instant now = Instant.now();
 		Fight fight = getFight(eventActor);
+		boolean hasSession = fight.hasSession(eventActor);
+		Instant lastUpdate = fight.getLastUpdate(true);
+
+		// Guard: skip the register of the despawn if the activity on this fight was too long ago
+		if (!hasSession || lastUpdate == null || lastUpdate.plusMillis(DEATH_REGISTER_ACTOR_EXPIRY_TIME).isBefore(now))
+		{
+			return;
+		}
 
 		fight.finishSession(eventActor);
 	}
@@ -738,16 +748,20 @@ public class FightStateManager
 		}
 
 		Fight fight = getFight(actor);
-		long now = Instant.now().getEpochSecond();
-		long lastUpdate = fight.getLastUpdate();
-		long lastUpdateDelta = now - lastUpdate;
+		Instant now = Instant.now();
+		Instant lastUpdate = fight.getLastUpdate();
 		long expiryTime = config.fightStatisticsExpiryTime() * 60;
 
 		// refresh when fight is expired and the statistics will be non-representative
-		if (lastUpdate > 0 && lastUpdateDelta > expiryTime)
+		if (lastUpdate != null)
 		{
-			deleteFight(fight);
-			createFight(actor);
+			long lastUpdateDelta = now.getEpochSecond() - lastUpdate.getEpochSecond();
+
+			if (lastUpdateDelta > expiryTime)
+			{
+				deleteFight(fight);
+				createFight(actor);
+			}
 		}
 
 		return getFight(actor);
@@ -797,14 +811,14 @@ public class FightStateManager
 
 	public Fight rotateOldestFight()
 	{
-		long oldestLastUpdate = -1;
+		Instant oldestLastUpdate = null;
 		Fight oldestFight = null;
 
 		for (Fight fight : fights.values())
 		{
-			long lastUpdate = fight.getLastUpdate();
+			Instant lastUpdate = fight.getLastUpdate();
 
-			if (oldestLastUpdate < 0 || oldestLastUpdate > lastUpdate)
+			if (oldestLastUpdate == null || lastUpdate == null || lastUpdate.isBefore(oldestLastUpdate))
 			{
 				oldestLastUpdate = lastUpdate;
 				oldestFight = fight;
@@ -911,6 +925,7 @@ public class FightStateManager
 			FightSession totalSession = fight.calculateTotalSession();
 			FightSession lastSession = fight.getLastSession();
 			String actorName = fight.getActorName();
+			Instant lastUpdate = fight.getLastUpdate(true);
 
 			// Hide display name when this is not allowed to be published due to the config
 			if (fight.getActorType() == ActorType.LOCAL_PLAYER && !config.playerInfoEnabled())
@@ -930,7 +945,7 @@ public class FightStateManager
 			lastDurations.add(lastSession.getDurationSeconds());
 
 			sessionCounters.add(fight.getFinishedSessionCounter());
-			updatedAts.add(fight.getLastUpdate(true));
+			updatedAts.add(lastUpdate == null ? 0 : lastUpdate.getEpochSecond());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 			{
