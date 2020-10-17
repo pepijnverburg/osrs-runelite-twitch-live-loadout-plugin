@@ -27,7 +27,7 @@ public class FightStateManager
 	public static final String HIDDEN_PLAYER_ACTOR_NAME = "__self__";
 	public static final float GAME_TICK_DURATION = 0.6f; // seconds
 	public static final int DEATH_ANIMATION_ID = 836;
-	public static final int MAX_FIGHT_AMOUNT = 10;
+	public static final int MAX_FIGHT_AMOUNT = 15;
 	public static final int MAX_FIGHT_AMOUNT_IN_MEMORY = 50;
 
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME = 2600; // ms, this varies for spell and enemy distance, farcasting is around 2600ms max
