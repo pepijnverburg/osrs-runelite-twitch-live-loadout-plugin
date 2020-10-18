@@ -45,6 +45,7 @@ public class FightStateManager
 	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
 	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 3000; // ms
 	private static final int DEATH_REGISTER_ACTOR_EXPIRY_TIME = 60000; // ms
+	private static final int INCOMING_FIGHT_SESSION_AUTO_EXPIRY_TIME = 60000; // ms
 	private HashMap<Actor, Instant> lastInteractingActors = new HashMap();
 
 	private static final String ACTOR_NAME_KEY = "actorNames";
@@ -441,7 +442,7 @@ public class FightStateManager
 		registerEnsuredFightHitsplat(eventActor, FightStatisticEntry.TOTAL, hitsplat);
 
 		// Register damage done while having smite up and dealing damage to other entity
-		if (!isOnSelf && headIcon == HeadIcon.SMITE)
+		if (!isOnSelf && isPlayer(eventActor) && headIcon == HeadIcon.SMITE)
 		{
 			registerEnsuredFightHitsplat(eventActor, FightStatisticEntry.SMITE, hitsplat);
 		}
@@ -677,11 +678,30 @@ public class FightStateManager
 			return;
 		}
 
+		Instant now = Instant.now();
+		boolean isOnSelf = isLocalPlayer(actor);
+
+		// check if we should automatically finish the last session for incoming damage
+		// as it is timed out. This is because the incoming fight sessions are only finishing
+		// when the local player died and this is not always indicating a fight ending.
+		// An automatic timeout for this makes sense.
+		if (isOnSelf)
+		{
+			Instant lastUpdate = fight.getLastUpdate();
+
+			if (lastUpdate != null && lastUpdate.plusMillis(INCOMING_FIGHT_SESSION_AUTO_EXPIRY_TIME).isBefore(now))
+			{
+				fight.finishSession(actor);
+			}
+		}
+
 		int amount = hitsplat.getAmount();
 		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
+
+		// NOTE: get the statistic after the fight session was potentially ended!
 		FightStatistic statistic = fight.ensureStatistic(actor, statisticEntry);
 
-		// only update the last actor when the damage is dealt by the local player
+		// Only update the last actor when the damage is dealt by the local player
 		// the other hitsplats are merely for statistic purposes
 		if (hitsplat.isMine())
 		{
@@ -696,7 +716,7 @@ public class FightStateManager
 			fight.registerQueuedStatistics(actor, amount);
 		}
 
-		// check for block or damage
+		// Check for block or damage
 		// NOTE: we explicitly don't have a default
 		// to make sure the behaviour is predictable after updates
 		switch (hitsplatType)
