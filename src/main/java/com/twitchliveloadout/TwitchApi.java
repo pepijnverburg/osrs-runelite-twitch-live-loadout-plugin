@@ -36,10 +36,10 @@ public class TwitchApi
 	public final static int MIN_SCHEDULE_DELAY = 3; // seconds
 	public final static int MIN_SYNC_DELAY = 0; // seconds
 	public final static int BASE_SYNC_DELAY = 1; // seconds
-	public final static boolean CHAT_ERRORS_ENABLED = false;
+	public final static boolean CHAT_ERRORS_ENABLED = true;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
-	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 5 * 60 * 1000; // in ms
+	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 15 * 60 * 1000; // in ms
 	private final static String VERSION = "0.0.1";
 	private final static String USER_AGENT = "RuneLite";
 	private enum PubSubTarget {
