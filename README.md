@@ -19,6 +19,8 @@ Get better engagement with...
 - [Twitch Account](https://www.twitch.tv/) as broadcaster
 - [OSRS Live Loadout Twitch Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6-0.0.1)
 
+### PLEASE NOTE: the compatible Twitch Extension is currently in review with Twitch!
+
 #### Client Settings
 Within the client the following should be enabled for all features to work:
 - Enable fake XP Drops via the OSRS settings (used for combat statistics).
