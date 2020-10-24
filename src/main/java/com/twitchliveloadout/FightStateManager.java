@@ -44,7 +44,8 @@ public class FightStateManager
 
 	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
 	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 3000; // ms
-	private static final int DEATH_REGISTER_ACTOR_EXPIRY_TIME = 60000; // ms
+	private static final int DEATH_REGISTER_ACTOR_EXPIRY_TIME = 5 * 60000; // ms
+	private static final float DEATH_REGISTER_MIN_DAMAGE_PERCENTAGE = 0.1f; // 0 to 1 scale
 	private static final int INCOMING_FIGHT_SESSION_AUTO_EXPIRY_TIME = 60000; // ms
 	private HashMap<Actor, Instant> lastInteractingActors = new HashMap();
 
@@ -493,9 +494,15 @@ public class FightStateManager
 		}
 
 		Instant lastUpdate = session.getLastUpdate(true);
+		FightStatistic totalStatistic = session.getStatistic(FightStatisticEntry.TOTAL);
+		FightStatistic otherStatistic = session.getStatistic(FightStatisticEntry.OTHER);
+		double totalDamage = totalStatistic.getHitDamage();
+		double otherDamage = otherStatistic.getHitDamage();
+		double allDamage = totalDamage + otherDamage;
+		boolean didEnoughDamage = allDamage > 0 && ((totalDamage / allDamage) > DEATH_REGISTER_MIN_DAMAGE_PERCENTAGE);
 
-		// Guard: skip the register of the despawn if the activity on this fight was too long ago
-		if (lastUpdate == null || lastUpdate.plusMillis(DEATH_REGISTER_ACTOR_EXPIRY_TIME).isBefore(now))
+		// Guard: skip the register of the despawn if not enough damage orthe activity on this fight was too long ago
+		if (!didEnoughDamage || lastUpdate == null || lastUpdate.plusMillis(DEATH_REGISTER_ACTOR_EXPIRY_TIME).isBefore(now))
 		{
 			return;
 		}
