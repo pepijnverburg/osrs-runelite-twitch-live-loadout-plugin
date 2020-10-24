@@ -485,11 +485,17 @@ public class FightStateManager
 
 		Instant now = Instant.now();
 		Fight fight = getFight(eventActor);
-		boolean hasSession = fight.hasSession(eventActor);
-		Instant lastUpdate = fight.getLastUpdate(true);
+		FightSession session = fight.getSession(eventActor);
+
+		if (session == null)
+		{
+			return;
+		}
+
+		Instant lastUpdate = session.getLastUpdate(true);
 
 		// Guard: skip the register of the despawn if the activity on this fight was too long ago
-		if (!hasSession || lastUpdate == null || lastUpdate.plusMillis(DEATH_REGISTER_ACTOR_EXPIRY_TIME).isBefore(now))
+		if (lastUpdate == null || lastUpdate.plusMillis(DEATH_REGISTER_ACTOR_EXPIRY_TIME).isBefore(now))
 		{
 			return;
 		}
