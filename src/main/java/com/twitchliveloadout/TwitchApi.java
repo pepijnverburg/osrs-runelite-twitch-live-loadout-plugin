@@ -273,7 +273,10 @@ public class TwitchApi
 			log.error("The response body was {}", responseText);
 			log.error(state.toString());
 
-			if (CHAT_ERRORS_ENABLED && isLoggedIn && canSendErrorChatMessage) {
+			// Only send a chat message when the token is not set or expired as other errors
+			// also occur due to reliability of the Twitch servers (e.g. random 500's in between).
+			// Normally they are good again for the next request.
+			if (isAuthErrorResponseCode(responseCode) && CHAT_ERRORS_ENABLED && isLoggedIn && canSendErrorChatMessage) {
 				final ChatMessageBuilder message = new ChatMessageBuilder()
 					.append(ChatColorType.HIGHLIGHT)
 					.append("Could not synchronize loadout to Twitch " + type + " (code: " + responseCode + "). ")
@@ -355,6 +358,11 @@ public class TwitchApi
 		gzip.flush();
 		gzip.close();
 		return obj.toByteArray();
+	}
+
+	public boolean isAuthErrorResponseCode(int responseCode)
+	{
+		return responseCode == 401 || responseCode == 403;
 	}
 
 	public boolean isErrorResponseCode(int responseCode)
