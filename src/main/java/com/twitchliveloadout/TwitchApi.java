@@ -362,7 +362,8 @@ public class TwitchApi
 
 	public boolean isAuthErrorResponseCode(int responseCode)
 	{
-		return responseCode == 401 || responseCode == 403;
+		// it seems that 401 is also sometimes randomly triggered, 403 is most reliable
+		return responseCode == 403;
 	}
 
 	public boolean isErrorResponseCode(int responseCode)
