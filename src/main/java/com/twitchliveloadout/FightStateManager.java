@@ -33,7 +33,6 @@ public class FightStateManager
 
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME_BASE = 1600; // ms
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME_PER_SQUARE = 160; // ms, this varies for spell and enemy distance, this is an approximate
-	public static final int OTHER_DAMAGE_EXPIRY_TIME = 2000; // ms
 
 	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = ON_GRAPHIC_CHANGED_DELAY + 50; // ms, takes around 5ms
 	private HashMap<Skill, Instant> lastSkillUpdates = new HashMap();
@@ -44,7 +43,8 @@ public class FightStateManager
 
 	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
 	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 3000; // ms
-	private static final int DEATH_REGISTER_ACTOR_EXPIRY_TIME = 5 * 60000; // ms
+	private static final int DEATH_REGISTER_ACTOR_EXPIRY_TIME = 2 * 60000; // ms
+	private static final boolean DEATH_REGISTER_MIN_DAMAGE_ENABLED = false;
 	private static final float DEATH_REGISTER_MIN_DAMAGE_PERCENTAGE = 0.1f; // 0 to 1 scale
 	private static final int INCOMING_FIGHT_SESSION_AUTO_EXPIRY_TIME = 60000; // ms
 	private HashMap<Actor, Instant> lastInteractingActors = new HashMap();
@@ -501,8 +501,13 @@ public class FightStateManager
 		double allDamage = totalDamage + otherDamage;
 		boolean didEnoughDamage = allDamage > 0 && ((totalDamage / allDamage) > DEATH_REGISTER_MIN_DAMAGE_PERCENTAGE);
 
-		// Guard: skip the register of the despawn if not enough damage orthe activity on this fight was too long ago
-		if (!didEnoughDamage || lastUpdate == null || lastUpdate.plusMillis(DEATH_REGISTER_ACTOR_EXPIRY_TIME).isBefore(now))
+		if (DEATH_REGISTER_MIN_DAMAGE_ENABLED && !didEnoughDamage)
+		{
+			return;
+		}
+
+		// Guard: skip the register of the de-spawn if the local player activity was too long ago
+		if (lastUpdate == null || lastUpdate.plusMillis(DEATH_REGISTER_ACTOR_EXPIRY_TIME).isBefore(now))
 		{
 			return;
 		}
@@ -668,9 +673,6 @@ public class FightStateManager
 		// that were never attacked by the local player to be added
 		if (!fight.hasSession(actor))
 		{
-			// NOTE: disabled for now and waiting for feedback on this
-			// as in team situations you want to see the DPS others are doing
-			// on actors you haven't attacked yet and how it relates to yours.
 			// return;
 		}
 
