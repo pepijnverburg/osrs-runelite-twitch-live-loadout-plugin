@@ -21,6 +21,11 @@ public class Fight {
 	private final HashMap<Actor, FightSession> sessions = new HashMap();
 	private final ArrayList<FightSession> finishedSessions = new ArrayList();
 
+	// The session counter should not match the finished session list size,
+	// because some finished sessions are not kills / deaths, separate counter for this.
+	// For example when a fight expires due to time it should not register a kill / death.
+	private int sessionCounter = 0;
+
 	private long idleTickCounter = 0;
 	private long idleQueuedTickCounter = 0;
 
@@ -283,6 +288,11 @@ public class Fight {
 		finishedSessions.add(session);
 	}
 
+	public void increaseSessionCounter()
+	{
+		sessionCounter++;
+	}
+
 	public FightStateManager.ActorType getActorType()
 	{
 		return actorType;
@@ -308,9 +318,9 @@ public class Fight {
 		return actorCombatLevel;
 	}
 
-	public int getFinishedSessionCounter()
+	public int getSessionCounter()
 	{
-		return finishedSessions.size();
+		return sessionCounter;
 	}
 
 	public Collection<FightSession> getOngoingSessions()

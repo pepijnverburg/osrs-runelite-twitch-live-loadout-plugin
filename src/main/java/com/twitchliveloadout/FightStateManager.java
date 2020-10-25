@@ -394,6 +394,7 @@ public class FightStateManager
 			Fight fight = getFight(eventActor);
 
 			fight.finishSession(eventActor);
+			fight.increaseSessionCounter();
 		}
 	}
 
@@ -513,6 +514,7 @@ public class FightStateManager
 		}
 
 		fight.finishSession(eventActor);
+		fight.increaseSessionCounter();
 	}
 
 	public void onInteractingChanged(InteractingChanged interactingChanged)
@@ -979,7 +981,7 @@ public class FightStateManager
 			totalDurations.add(totalSession.getDurationSeconds());
 			lastDurations.add(lastSession.getDurationSeconds());
 
-			sessionCounters.add(fight.getFinishedSessionCounter());
+			sessionCounters.add(fight.getSessionCounter());
 			updatedAts.add(lastUpdate == null ? 0 : lastUpdate.getEpochSecond());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
