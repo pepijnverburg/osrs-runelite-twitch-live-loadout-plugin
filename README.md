@@ -137,6 +137,16 @@ The state updates are dependant on the maximum amount allowed by Twitch. Rate li
 ### Oldschool weekly updates
 The plugin is implemented with the OSRS weekly updates in mind. There are few dependencies on specific content meaning that almost all updates are directly reflected in the plugin as well. For example external item caches are used to make sure item icons and names are directly up to date. This allows for lower maintenance of this plugin and less down-time or faulty behaviour.
 
+## 👥 Acknowledgements
+Shout-out to the following people helping out a lot giving feedback on several release versions of both the RuneLite Plugin and Twitch Extension:
+- Gamma1991
+- dkvl
+- Adam
+- deathbeam
+- Alexsuperfly
+- melky
+- Hannah IM
+
 ## 🔮 Future
 Future features that might be added based on feedback are:
 
