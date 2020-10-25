@@ -673,7 +673,7 @@ public class FightStateManager
 		// that were never attacked by the local player to be added
 		if (!fight.hasSession(actor))
 		{
-			// return;
+			return;
 		}
 
 		registerFightHitsplat(fight, actor, statisticEntry, hitsplat);
