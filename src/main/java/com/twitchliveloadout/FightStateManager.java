@@ -673,7 +673,7 @@ public class FightStateManager
 		// Guard: check if a session exists for this specific actor.
 		// This will prevent hitsplats of others / poison / venom on actors
 		// that were never attacked by the local player to be added
-		if (!fight.hasSession(actor))
+		if (!config.fightStatisticsUnattackedEnabled() && !fight.hasSession(actor))
 		{
 			return;
 		}

@@ -199,10 +199,22 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "fightStatisticsUnattackedEnabled",
+			name = "Track un-attacked enemies",
+			description = "Enable tracking of hitsplats on enemies you have not attacked, recommended in team settings such as Cox and ToB.",
+			position = 8,
+			section = combatSection
+	)
+	default boolean fightStatisticsUnattackedEnabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 			keyName = "fightStatisticsMaxFightAmount",
 			name = "Max combat fights",
 			description = "Maximum amount of tracked fights with fixed upper limit of "+ FightStateManager.MAX_FIGHT_AMOUNT +".",
-			position = 8,
+			position = 10,
 			section = combatSection
 	)
 	default int fightStatisticsMaxFightAmount()
@@ -214,7 +226,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "fightStatisticsExpiryTime",
 			name = "Fight expiry time (minutes)",
 			description = "Reset a fight after the configured minutes of inactivity.",
-			position = 10,
+			position = 12,
 			section = combatSection
 	)
 	default int fightStatisticsExpiryTime()
@@ -226,7 +238,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "fightStatisticsAutoIdling",
 			name = "Auto idling of fight timer",
 			description = "Stop fight timer when logged out or enemy is not visible.",
-			position = 12,
+			position = 14,
 			section = combatSection
 	)
 	default boolean fightStatisticsAutoIdling()

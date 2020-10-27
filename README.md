@@ -106,6 +106,7 @@ It is also possible to configure what information is being sent through the foll
 - `Sync combat statistics`: toggle to sync combat statistics.
 - `Track magic spells`: enable tracking of freezes, entangles, blood spells and splashes.
 - `Track damage by others`: enable tracking of hitsplats of other players.
+- `Track un-attacked enemies`: enable tracking of hitsplats on enemies you have not attacked, recommended in team settings such as Cox and ToB. Note that the enemy type should be attacked at least once. So for example: once you have attacked a goblin it will be in your combat stats. If then other players attack a different goblin you haven't attacked yet it will add to the damage by others stats.
 - `Max combat fights`: the maximum amount of fights tracked with an upper limit set by the plugin.
 - `Fight expiry time`: reset a fight after the configured minutes of inactivity.
 - `Auto idling of fight timer`: stop fight timer when logged out or enemy is not visible.
