@@ -56,7 +56,7 @@ import java.time.temporal.ChronoUnit;
 @PluginDescriptor(
 	name = "Twitch Live Loadout",
 	description = "Send live Equipment, Bank, Combat Statistics and more to Twitch Extensions as a streamer.",
-	enabledByDefault = false
+	enabledByDefault = true
 )
 @PluginDependency(AttackStylesPlugin.class)
 public class TwitchLiveLoadoutPlugin extends Plugin
