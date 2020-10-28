@@ -22,7 +22,6 @@ Get better engagement with...
 #### Client Settings
 Within the client the following should be enabled for all features to work:
 - Enable fake XP Drops via the OSRS settings (used for combat statistics).
-- Enable tinted hitsplats via the OSRS settings (used for combat statistics).
 
 ## 🚀 Getting Started
 
