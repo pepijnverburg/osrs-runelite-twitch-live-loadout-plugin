@@ -90,13 +90,13 @@ public class TwitchApi
 			return false;
 		}
 
+		// add the base delay
+		delay += BASE_SYNC_DELAY;
+
 		if (delay < MIN_SYNC_DELAY)
 		{
 			delay = MIN_SYNC_DELAY;
 		}
-
-		// add the base delay
-		delay += BASE_SYNC_DELAY;
 
 		scheduledExecutor.schedule(new Runnable()
 		{
@@ -274,7 +274,7 @@ public class TwitchApi
 
 		if (isErrorResponseCode(responseCode))
 		{
-			log.error("Could not update state, http code was: {}", responseCode);
+			log.error("Could not update state via {}, http code was: {}", type, responseCode);
 			log.error("The state was ({} bytes compressed): ", compressesStateSize);
 			log.error("The response body was {}", responseText);
 			log.error(state.toString());
@@ -300,7 +300,6 @@ public class TwitchApi
 		}
 
 		log.debug("Successfully sent state: {}", responseCode);
-		lastErrorChatMessage = 0;
 	}
 
 	private String getChannelId() throws Exception
