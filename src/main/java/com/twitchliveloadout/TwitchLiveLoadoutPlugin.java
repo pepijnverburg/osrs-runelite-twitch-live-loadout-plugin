@@ -122,6 +122,45 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		initializePanel();
 	}
 
+	/**
+	 * Cleanup properly after disabling the plugin
+	 * @throws Exception
+	 */
+	@Override
+	protected void shutDown() throws Exception
+	{
+		super.shutDown();
+
+		shutDownPanels();
+		shutDownManagers();
+		shutDownTwitch();
+	}
+
+	private void shutDownTwitch()
+	{
+		// Only the API requires dedicated shutdown
+		twitchApi.shutDown();
+
+		twitchState = null;
+		twitchApi = null;
+	}
+
+	private void shutDownManagers()
+	{
+		// Only the fight state manager requires dedicated shutdown
+		fightStateManager.shutDown();
+
+		fightStateManager = null;
+		itemStateManager = null;
+		skillStateManager = null;
+	}
+
+	private void shutDownPanels()
+	{
+		pluginPanel = null;
+		clientToolbar.removeNavigation(navigationButton);
+	}
+
 	private void initializePanel()
 	{
 		pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager);

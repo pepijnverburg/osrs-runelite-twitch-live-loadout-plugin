@@ -75,6 +75,11 @@ public class TwitchApi
 		this.chatMessageManager = chatMessageManager;
 	}
 
+	public void shutDown()
+	{
+		clearScheduledBroadcasterStates();
+	}
+
 	public boolean scheduleBroadcasterState(final JsonObject state)
 	{
 		int delay = config.syncDelay();

@@ -173,6 +173,11 @@ public class FightStateManager
 		this.client = client;
 	}
 
+	public void shutDown()
+	{
+		clearScheduledUpdates();
+	}
+
 	public void onGraphicChanged(GraphicChanged event)
 	{
 
@@ -187,6 +192,11 @@ public class FightStateManager
 				onGraphicChangedDelayed(event);
 			}
 		}, ON_GRAPHIC_CHANGED_DELAY, TimeUnit.MILLISECONDS);
+	}
+
+	public void clearScheduledUpdates()
+	{
+		scheduledExecutor.getQueue().clear();
 	}
 
 	public void onGraphicChangedDelayed(GraphicChanged event)
