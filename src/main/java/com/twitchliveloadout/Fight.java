@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.twitchliveloadout;
+package com.twitchliveloadout;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;

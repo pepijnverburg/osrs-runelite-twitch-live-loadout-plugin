@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.twitchliveloadout;
+package com.twitchliveloadout;
 
 public enum TwitchStateEntry {
 	PLAYER_NAME("playerName"),

@@ -1,7 +1,7 @@
-package net.runelite.client.plugins.twitchliveloadout.ui;
+package com.twitchliveloadout.ui;
 
 import com.google.gson.JsonObject;
-import net.runelite.client.plugins.twitchliveloadout.TwitchApi;
+import com.twitchliveloadout.TwitchApi;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

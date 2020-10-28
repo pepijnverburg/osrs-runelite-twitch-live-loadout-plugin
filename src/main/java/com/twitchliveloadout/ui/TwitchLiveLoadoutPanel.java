@@ -1,11 +1,11 @@
-package net.runelite.client.plugins.twitchliveloadout.ui;
+package com.twitchliveloadout.ui;
 
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import net.runelite.client.plugins.twitchliveloadout.FightStateManager;
-import net.runelite.client.plugins.twitchliveloadout.TwitchApi;
+import com.twitchliveloadout.FightStateManager;
+import com.twitchliveloadout.TwitchApi;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.materialtabs.MaterialTab;
 import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;

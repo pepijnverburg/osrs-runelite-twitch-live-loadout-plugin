@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.twitchliveloadout;
+package com.twitchliveloadout;
 
 import net.runelite.api.Actor;
 
@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
-import static net.runelite.client.plugins.twitchliveloadout.FightStateManager.*;
+import static com.twitchliveloadout.FightStateManager.*;
 
 public class FightSession {
 	private final Fight fight;

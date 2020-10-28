@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.twitchliveloadout;
+package com.twitchliveloadout;
 
 import net.runelite.api.Client;
 import net.runelite.api.events.StatChanged;

@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.twitchliveloadout;
+package com.twitchliveloadout;
 
 import com.google.common.collect.ImmutableList;
 import net.runelite.api.*;

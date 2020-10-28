@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.plugins.twitchliveloadout;
+package com.twitchliveloadout;
 
 import com.google.inject.Provides;
 import net.runelite.api.*;
@@ -34,10 +34,8 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.plugins.Plugin;
-import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.attackstyles.AttackStylesPlugin;
-import net.runelite.client.plugins.twitchliveloadout.ui.TwitchLiveLoadoutPanel;
+import com.twitchliveloadout.ui.TwitchLiveLoadoutPanel;
 import net.runelite.client.task.Schedule;
 import com.google.gson.*;
 import net.runelite.client.ui.ClientToolbar;
@@ -58,7 +56,6 @@ import java.time.temporal.ChronoUnit;
 	description = "Send live Equipment, Bank, Combat Statistics and more to Twitch Extensions as a streamer.",
 	enabledByDefault = true
 )
-@PluginDependency(AttackStylesPlugin.class)
 public class TwitchLiveLoadoutPlugin extends Plugin
 {
 	@Inject
@@ -79,7 +76,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * The plugin panel to manage data such as combat fights.
 	 */
-	private static final String ICON_FILE = "panel_icon.png";
+	private static final String ICON_FILE = "/panel_icon.png";
 	private TwitchLiveLoadoutPanel pluginPanel;
 	private NavigationButton navigationButton;
 

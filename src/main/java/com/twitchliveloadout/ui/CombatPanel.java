@@ -1,9 +1,9 @@
-package net.runelite.client.plugins.twitchliveloadout.ui;
+package com.twitchliveloadout.ui;
 
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.plugins.twitchliveloadout.Fight;
-import net.runelite.client.plugins.twitchliveloadout.FightSorter;
-import net.runelite.client.plugins.twitchliveloadout.FightStateManager;
+import com.twitchliveloadout.Fight;
+import com.twitchliveloadout.FightSorter;
+import com.twitchliveloadout.FightStateManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.components.PluginErrorPanel;
 

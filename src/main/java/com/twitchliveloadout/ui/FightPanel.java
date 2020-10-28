@@ -1,8 +1,8 @@
-package net.runelite.client.plugins.twitchliveloadout.ui;
+package com.twitchliveloadout.ui;
 
-import net.runelite.client.plugins.twitchliveloadout.Fight;
-import net.runelite.client.plugins.twitchliveloadout.FightStateManager;
-import net.runelite.client.plugins.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.Fight;
+import com.twitchliveloadout.FightStateManager;
+import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.ImageUtil;
 
@@ -27,7 +27,7 @@ public class FightPanel extends JPanel
 
 	static
 	{
-		final BufferedImage deleteImg = ImageUtil.getResourceStreamFromClass(TwitchLiveLoadoutPlugin.class, "delete_icon.png");
+		final BufferedImage deleteImg = ImageUtil.getResourceStreamFromClass(TwitchLiveLoadoutPlugin.class, "/delete_icon.png");
 		DELETE_ICON = new ImageIcon(deleteImg);
 		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
 	}

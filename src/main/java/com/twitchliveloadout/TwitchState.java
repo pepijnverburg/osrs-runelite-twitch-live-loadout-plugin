@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.twitchliveloadout;
+package com.twitchliveloadout;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
