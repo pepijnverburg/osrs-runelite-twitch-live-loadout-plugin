@@ -179,6 +179,12 @@ public class ItemStateManager {
 	{
 		final List<PricedItem> pricedItems = getPricedItems(items, tabAmounts);
 		Collections.sort(pricedItems, new ItemPriceSorter());
+		final int itemAmount = pricedItems.size();
+
+		if (maxAmount > itemAmount)
+		{
+			maxAmount = itemAmount;
+		}
 
 		final List<PricedItem> highestPricedItems = pricedItems.subList(0, maxAmount);
 		Collections.sort(highestPricedItems, new ItemSlotIdSorter());
