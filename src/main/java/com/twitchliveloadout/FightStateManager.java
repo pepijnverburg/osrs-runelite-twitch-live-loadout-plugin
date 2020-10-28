@@ -176,6 +176,7 @@ public class FightStateManager
 	public void shutDown()
 	{
 		clearScheduledUpdates();
+		scheduledExecutor.shutdown();
 	}
 
 	public void onGraphicChanged(GraphicChanged event)

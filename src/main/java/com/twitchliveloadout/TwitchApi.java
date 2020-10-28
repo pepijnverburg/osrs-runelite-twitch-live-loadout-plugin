@@ -78,6 +78,7 @@ public class TwitchApi
 	public void shutDown()
 	{
 		clearScheduledBroadcasterStates();
+		scheduledExecutor.shutdown();
 	}
 
 	public boolean scheduleBroadcasterState(final JsonObject state)
