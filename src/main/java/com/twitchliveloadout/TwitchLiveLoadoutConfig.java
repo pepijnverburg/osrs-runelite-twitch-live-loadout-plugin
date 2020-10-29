@@ -72,7 +72,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default int overlayTopPosition()
 	{
-		return 0;
+		return 35;
 	}
 
 	@ConfigItem(
