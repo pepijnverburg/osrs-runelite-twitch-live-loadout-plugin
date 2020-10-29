@@ -25,19 +25,35 @@ Within the client the following should be enabled for all features to work:
 
 ## 🚀 Getting Started
 
-### Runelite Plugin
-You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/).
+### Step 1: Install Runelite Plugin
+You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/). 
 
-### Twitch Extension
-This plugin is implemented in such a way any Twitch Extension can use the synchronized information. A list below is available to show what Twitch Extensions can be used with this plugin:
+The plugin hub can be found all the way to the bottom of the RuneLite plugins:
+![Plugin Hub](./docs/getting-started/plugin-hub-location.png "Plugin Hub")
 
-#### 1. OSRS Live Loadout
-The reviewed [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is directly compatible and has a 1-minute setup! You can add this extension to your Twitch account for a Twitch Extension Token to authenticate the RuneLite plugin. The token can be retrieved through the configuration screen of the extension at Twitch as shown below. Note that for security reasons the token is **valid for a limited time** requiring you to repeat this process once in a while. The RuneLite plugin panels show the validity of the token.
+When in the Plugin Hub search for `Twitch Live Loadout` and click `Install`:
+![Plugin Hub](./docs/getting-started/plugin-hub-search.png "Plugin Hub")
 
-![Summary](./docs/configuration.gif "Summary")
+### Step 2: Install Twitch Extension
+The reviewed [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is directly compatible and has a 1-minute setup! 
+
+First install the Twitch Extension via the `Creator Dashboard`:
+![Twitch Extension](./docs/getting-started/twitch-extension-install.png "Twitch Extension")
+
+Now go to `My Extensions` and configure OSRS Live Loadout by clicking on the `settings/cog icon`:
+![Twitch Extension](./docs/getting-started/twitch-extension-configure-small.png "Twitch Extension")
+
+The `Configuration view` is opened where you see a preview of what the extension looks like. The `Settings tab` opens automatically where you can copy an Extension Token that you need to authenticate RuneLite to send data to the extension. Below you can see a GIF of how to copy that over:
+![Configuration](./docs/configuration.gif "Configuration")
+
+Note that for security reasons the token is **valid for a limited time** requiring you to repeat this process once in a while. The RuneLite plugin panels show the validity of the token.
+
+### Step 3: Test if everything works
+Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can also verify whether data is now synced, for example your gear:
+![Twitch Extension](./docs/getting-started/twitch-extension-testing.png "Twitch Extension")
 
 ## Features
-Below you can find an overview which features are implemented and which ones are still in progress. Note that the screenshots shown are from the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6). The use of other Twitch Extensions cause it to look differently.
+Below you can find an overview which features are implemented. Note that the screenshots shown are from the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6). The use of other Twitch Extensions cause it to look differently.
 
 ![Icon](./docs/icons/combat.png "Icon") ![Icon](./docs/icons/items.png "Icon") ![Icon](./docs/icons/skills.png "Icon") 
 
@@ -55,7 +71,9 @@ Below you can find an overview which features are implemented and which ones are
 - [x] `Wiki / Highscore lookup`: enemies can be looked up on the Wiki for NPC's and Highscores for players.
 
 ![Combat Stats](./docs/screenshots/combat-stats-all-compact.png "Combat Stats")
+![Combat Stats](./docs/screenshots/combat-stats-list.png "Combat Stats")
 ![Combat Stats](./docs/screenshots/combat-tracking-spells.png "Combat Stats")
+![Combat Stats](./docs/screenshots/combat-stats-self-close-up.png "Combat Stats")
 
 ### 🎒 Items
 - [x] `Inventory items`: live view of the inventory and total price.
@@ -76,6 +94,11 @@ Below you can find an overview which features are implemented and which ones are
 ### 📝 General
 - [x] `Player weight`: weight of worn and carried items including weight reducing items.
 - [x] `Display name`: the name of the player in the chat bar.
+
+### Twitch Extension specific
+There are also some features available for the viewer specifically available in the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6). 
+![Dragging](./docs/screenshots/dragging.png "Dragging")
+![Controls](./docs/screenshots/viewer-controls.png "Controls")
 
 ## Settings & Panels
 
