@@ -87,19 +87,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return 0;
 	}
 
-	@ConfigItem(
-			keyName = "extensionClientId",
-			name = "Twitch Extension ID",
-			description = "This is the ID of the Twitch Extension you want to sync the data to. Defaults to 'OSRS Live Loadout'.",
-			secret = true,
-			position = 8,
-			section = twitchSection
-	)
-	default String extensionClientId()
-	{
-		return TwitchApi.DEFAULT_EXTENSION_CLIENT_ID;
-	}
-
 	@ConfigSection(
 			name = "Items",
 			description = "Syncing of items in inventory, equipment and bank.",
@@ -319,5 +306,24 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default boolean itemGoalsEnabled()
 	{
 		return true;
+	}
+
+	@ConfigSection(
+			name = "Advanced",
+			description = "Settings for advanced usage",
+			position = 10
+	)
+	String advancedSection = "general-info";
+
+	@ConfigItem(
+			keyName = "extensionClientId",
+			name = "Twitch Extension ID",
+			description = "This is the ID of the Twitch Extension you want to sync the data to. Defaults to 'OSRS Live Loadout'.",
+			position = 2,
+			section = advancedSection
+	)
+	default String extensionClientId()
+	{
+		return TwitchApi.DEFAULT_EXTENSION_CLIENT_ID;
 	}
 }
