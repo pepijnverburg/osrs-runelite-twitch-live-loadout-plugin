@@ -29,28 +29,22 @@ Within the client the following should be enabled for all features to work:
 You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/). 
 
 The plugin hub can be found all the way to the bottom of the RuneLite plugins:
-![Plugin Hub](./docs/getting-started/plugin-hub-location.png "Plugin Hub")
-
-When in the Plugin Hub search for `Twitch Live Loadout` and click `Install`:
-![Plugin Hub](./docs/getting-started/plugin-hub-search.png "Plugin Hub")
+![Plugin Hub](./docs/getting-started/runelite-plugin-installation.gif "Plugin Hub")
 
 ### Step 2: Install Twitch Extension
 The reviewed [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is directly compatible and has a 1-minute setup! 
 
-First install the Twitch Extension via the `Creator Dashboard`:
-![Twitch Extension](./docs/getting-started/twitch-extension-install.png "Twitch Extension")
+First install the Twitch Extension via the `Creator Dashboard` and set the extension to `Overlay 1`:
+![Twitch Extension](./docs/getting-started/twitch-extension-installation.gif "Twitch Extension")
 
-Now go to `My Extensions` and configure OSRS Live Loadout by clicking on the `settings/cog icon`:
-![Twitch Extension](./docs/getting-started/twitch-extension-configure-small.png "Twitch Extension")
-
-The `Configuration view` is opened where you see a preview of what the extension looks like. The `Settings tab` opens automatically where you can copy an Extension Token that you need to authenticate RuneLite to send data to the extension. Below you can see a GIF of how to copy that over:
+Now open the `Configuration view` by clicking on the `settings/cog icon`. Here you can preview what the extension looks like. The `Settings tab` opens automatically where you can copy an Extension Token that you need to authenticate RuneLite to send data to the extension. Below you can see a GIF of how to copy that over:
 ![Configuration](./docs/configuration.gif "Configuration")
 
 Note that for security reasons the token is **valid for a limited time** requiring you to repeat this process once in a while. The RuneLite plugin panels show the validity of the token.
 
 ### Step 3: Test if everything works
 Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can also verify whether data is now synced, for example your gear:
-![Twitch Extension](./docs/getting-started/twitch-extension-testing.png "Twitch Extension")
+![Twitch Extension](./docs/getting-started/twitch-extension-testing.gif "Twitch Extension")
 
 ## Features
 Below you can find an overview which features are implemented. Note that the screenshots shown are from the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6). The use of other Twitch Extensions cause it to look differently.
