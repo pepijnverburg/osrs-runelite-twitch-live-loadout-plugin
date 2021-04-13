@@ -32,6 +32,9 @@ import net.runelite.client.config.ConfigSection;
 @ConfigGroup("twitchstreamer")
 public interface TwitchLiveLoadoutConfig extends Config
 {
+	String PLUGIN_CONFIG_GROUP = "twitch-live-loadout";
+	String COLLECTION_LOG_CONFIG_KEY = "collection-log";
+
 	@ConfigItem(
 			keyName = "syncEnabled",
 			name = "Sync enabled",

@@ -52,6 +52,13 @@ public class TwitchState {
 	private JsonObject previousState = new JsonObject();
 
 	/**
+	 * An additional cyclic state that cannot be sent out at once
+	 * due to Twitch limitations, currently the bank and the collection log
+	 * are sent in smaller parts via this state
+	 */
+	private JsonObject cyclicState = new JsonObject();
+
+	/**
 	 * Flag to identify whether the state has changed after
 	 * one of the setters was invoked. This allow for more
 	 * efficient updating towards the Configuration Service.
@@ -131,12 +138,6 @@ public class TwitchState {
 		setItems(TwitchStateEntry.EQUIPMENT_ITEMS.getKey(), TwitchStateEntry.EQUIPMENT_PRICE.getKey(), items, totalPrice);
 	}
 
-	public void setBankItems(Item[] items, long totalPrice, int[] tabAmounts)
-	{
-		currentState.add(TwitchStateEntry.BANK_TAB_AMOUNTS.getKey(), convertToJson(tabAmounts, 0));
-		setItems(TwitchStateEntry.BANK_ITEMS.getKey(), TwitchStateEntry.BANK_PRICE.getKey(), items, totalPrice);
-	}
-
 	private void setItems(String itemsKey, String priceKey, Item[] items, long totalPrice)
 	{
 		currentState.add(itemsKey, convertToJson(items));
@@ -148,6 +149,23 @@ public class TwitchState {
 	{
 		currentState = new JsonObject();
 		checkForChange();
+	}
+
+	public void setBankItems(Item[] items, long totalPrice, int[] tabAmounts)
+	{
+		cyclicState.add(TwitchStateEntry.BANK_TAB_AMOUNTS.getKey(), convertToJson(tabAmounts, 0));
+		cyclicState.add(TwitchStateEntry.BANK_ITEMS.getKey(), convertToJson(items));
+		cyclicState.addProperty(TwitchStateEntry.BANK_PRICE.getKey(), totalPrice);
+	}
+
+	public void setCollectionLog(JsonObject collectionLog)
+	{
+		cyclicState.add(TwitchStateEntry.COLLECTION_LOG.getKey(), collectionLog);
+	}
+
+	public JsonObject getCollectionLog()
+	{
+		return cyclicState.getAsJsonObject(TwitchStateEntry.COLLECTION_LOG.getKey());
 	}
 
 	public JsonObject getFilteredState()
@@ -187,6 +205,11 @@ public class TwitchState {
 			filteredState.add(TwitchStateEntry.BANK_ITEMS.getKey(), null);
 			filteredState.add(TwitchStateEntry.BANK_PRICE.getKey(), null);
 			filteredState.add(TwitchStateEntry.BANK_TAB_AMOUNTS.getKey(), null);
+		}
+
+		if (!config.collectionLogEnabled())
+		{
+			filteredState.add(TwitchStateEntry.COLLECTION_LOG.getKey(), null);
 		}
 
 		if (!config.fightStatisticsEnabled())
