@@ -1,22 +1,24 @@
 package com.twitchliveloadout;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import net.runelite.api.Client;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CollectionLogManager {
-	private JsonObject collectionLog = new JsonObject();
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.COLLECTION_LOG_CONFIG_KEY;
 
+public class CollectionLogManager {
 	private final TwitchState twitchState;
 	private final Client client;
 	private final ClientThread clientThread;
+	private final ConfigManager configManager;
 
 	private static final int COLLECTION_LOG_GROUP_ID = 621;
 	private static final int COLLECTION_LOG_TITLE = 1;
@@ -41,11 +43,14 @@ public class CollectionLogManager {
 		COLLECTION_LOG_OTHER_TAB,
 	};
 
-	public CollectionLogManager(TwitchState twitchState, Client client, ClientThread clientThread)
+	public CollectionLogManager(TwitchState twitchState, Client client, ClientThread clientThread, ConfigManager configManager)
 	{
 		this.twitchState = twitchState;
 		this.client = client;
 		this.clientThread = clientThread;
+		this.configManager = configManager;
+
+		loadCollectionLogCache();
 	}
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
@@ -134,17 +139,17 @@ public class CollectionLogManager {
 		final int killCount = getCurrentKillCount();
 		final String categoryTitle = getCategoryTitle();
 		final String tabTitle = getTabTitle();
+		JsonObject collectionLog = twitchState.getCollectionLog();
+
+		if (collectionLog == null)
+		{
+			collectionLog = new JsonObject();
+		}
 
 		if (items == null || categoryTitle == null || tabTitle == null)
 		{
 			return;
 		}
-
-		System.out.println("-------------------");
-		System.out.println("Category title: "+ categoryTitle);
-		System.out.println("Tab title: "+ tabTitle);
-		System.out.println("Kill count: "+ killCount);
-		System.out.println("Item count: "+ items.length);
 
 		if (!collectionLog.has(tabTitle))
 		{
@@ -168,7 +173,6 @@ public class CollectionLogManager {
 			serializedItems.add(serializedItem);
 		}
 
-		categoryLog.addProperty("t", categoryTitle);
 		categoryLog.addProperty("kc", killCount);
 		categoryLog.add("i", serializedItems);
 		tabLog.add(categoryTitle, categoryLog);
@@ -185,8 +189,19 @@ public class CollectionLogManager {
 //			}
 //		}
 
-		System.out.println("---------------- NEW collection log is:");
+		System.out.println("-------------------");
+		System.out.println("Category title: "+ categoryTitle);
+		System.out.println("Tab title: "+ tabTitle);
+		System.out.println("Kill count: "+ killCount);
+		System.out.println("Item count: "+ items.length);
+		System.out.println("New collection log is:");
 		System.out.println(collectionLog.toString());
+
+		// update the twitch state
+		twitchState.setCollectionLog(collectionLog);
+
+		// save to persistent storage
+		configManager.setConfiguration(PLUGIN_CONFIG_GROUP, COLLECTION_LOG_CONFIG_KEY, collectionLog);
 	}
 
 	private CollectionLogItem[] getCurrentItems()
@@ -226,13 +241,33 @@ public class CollectionLogManager {
 		}
 
 		final String rawKillCount = children[2].getText();
-		final String killCount = rawKillCount
-			.split(": ")[1]
+		final String[] killCountPieces = rawKillCount.split(": ");
+		final String killCount = killCountPieces[1]
 			.split(">")[1]
 			.split("<")[0]
 			.replace(",", "");
 		final int parsedKillCount = Integer.parseInt(killCount);
 
 		return parsedKillCount;
+	}
+
+	private void loadCollectionLogCache()
+	{
+		final String rawCollectionLog = configManager.getConfiguration(PLUGIN_CONFIG_GROUP, COLLECTION_LOG_CONFIG_KEY);
+		JsonObject parsedCollectionLog = null;
+
+		try {
+			parsedCollectionLog = new JsonParser().parse(rawCollectionLog).getAsJsonObject();
+		} catch (Exception error) {
+			// no error
+			return;
+		}
+
+		if (parsedCollectionLog == null)
+		{
+			return;
+		}
+
+		twitchState.setCollectionLog(parsedCollectionLog);
 	}
 }

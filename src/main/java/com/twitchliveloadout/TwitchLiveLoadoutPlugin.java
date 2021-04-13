@@ -75,6 +75,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private ChatMessageManager chatMessageManager;
 
 	@Inject
+	private ConfigManager configManager;
+
+	@Inject
 	private ClientToolbar clientToolbar;
 
 	/**
@@ -195,7 +198,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		fightStateManager = new FightStateManager(this, config, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
-		collectionLogManager = new CollectionLogManager(twitchState, client, clientThread);
+		collectionLogManager = new CollectionLogManager(twitchState, client, clientThread, configManager);
 	}
 
 	/**
