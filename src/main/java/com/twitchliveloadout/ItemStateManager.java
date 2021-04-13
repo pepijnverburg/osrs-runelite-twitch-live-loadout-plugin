@@ -138,10 +138,21 @@ public class ItemStateManager {
 			final int tabId = getItemTabId(slotId, tabAmounts);
 			final PricedItem pricedItem = new PricedItem(item, itemPrice, slotId, tabId);
 
+			// skip placeholder items to not be synced from the bank
+			if (isPlaceholderItem(itemId))
+			{
+				continue;
+			}
+
 			pricedItems.add(pricedItem);
 		}
 
 		return pricedItems;
+	}
+
+	public boolean isPlaceholderItem(int itemId)
+	{
+		return itemManager.getItemComposition(itemId).getPlaceholderTemplateId() != -1;
 	}
 
 	public int getItemTabId(int slotId, int[] tabAmounts)
