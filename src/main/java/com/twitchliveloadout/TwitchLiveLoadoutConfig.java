@@ -52,7 +52,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "twitchToken",
-			name = "Twitch Extension Token",
+			name = "Your copied Twitch Extension Token",
 			description = "Your token can be found when configuring the Twitch Extension.",
 			secret = true,
 			position = 2,
@@ -140,6 +140,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default int bankItemAmount()
 	{
 		return ItemStateManager.MAX_BANK_ITEMS;
+	}
+
+	@ConfigItem(
+			keyName = "collectionLogEnabled",
+			name = "Sync collection log",
+			description = "Synchronize the collection log quantities and kill counts.",
+			position = 12,
+			section = itemsSection
+	)
+	default boolean collectionLogEnabled()
+	{
+		return true;
 	}
 
 	@ConfigSection(
@@ -311,9 +323,9 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Advanced",
 			description = "Settings for advanced usage",
-			position = 10
+			position = 12
 	)
-	String advancedSection = "general-info";
+	String advancedSection = "advanced";
 
 	@ConfigItem(
 			keyName = "extensionClientId",

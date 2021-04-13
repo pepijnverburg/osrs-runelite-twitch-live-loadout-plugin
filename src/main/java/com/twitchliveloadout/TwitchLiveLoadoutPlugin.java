@@ -27,6 +27,7 @@ package com.twitchliveloadout;
 import com.google.inject.Provides;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -63,6 +64,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread clientThread;
 
 	@Inject
 	private ItemManager itemManager;
@@ -104,6 +108,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Dedicated manager for all skill / stat information.
 	 */
 	private SkillStateManager skillStateManager;
+
+	/**
+	 * Dedicated manager for collection log information.
+	 */
+	private CollectionLogManager collectionLogManager;
 
 	/**
 	 * Initialize this plugin
@@ -186,6 +195,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		fightStateManager = new FightStateManager(this, config, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
+		collectionLogManager = new CollectionLogManager(twitchState, client, clientThread);
 	}
 
 	/**
@@ -336,6 +346,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onGameTick(GameTick tick)
 	{
 		 fightStateManager.onGameTick();
+	}
+
+	@Subscribe
+	public void onScriptPostFired(ScriptPostFired scriptPostFired)
+	{
+		collectionLogManager.onScriptPostFired(scriptPostFired);
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged varbitChanged)
+	{
+		collectionLogManager.onVarbitChanged(varbitChanged);
 	}
 
 	/**
