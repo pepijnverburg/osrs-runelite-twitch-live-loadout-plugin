@@ -33,7 +33,7 @@ import java.util.zip.GZIPOutputStream;
 public class TwitchApi
 {
 	public final static int MAX_PAYLOAD_SIZE = 5120;
-	public final static int MIN_SCHEDULE_DELAY = 3; // seconds
+	public final static int MIN_SCHEDULE_DELAY = 4; // seconds
 	public final static int MIN_SYNC_DELAY = 0; // seconds
 	public final static int BASE_SYNC_DELAY = 1; // seconds
 	public final static boolean CHAT_ERRORS_ENABLED = true;
@@ -102,9 +102,8 @@ public class TwitchApi
 		{
 			public void run()
 			{
-				boolean serviceUpdateResult = setConfigurationService(state);
+				//boolean serviceUpdateResult = setConfigurationService(state);
 				boolean pubSubResult = sendPubSubState(state);
-				boolean validResults = serviceUpdateResult && pubSubResult;
 			}
 		}, delay, TimeUnit.SECONDS);
 

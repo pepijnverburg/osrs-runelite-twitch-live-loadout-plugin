@@ -47,6 +47,9 @@ import javax.inject.Inject;
 import java.awt.image.BufferedImage;
 import java.time.temporal.ChronoUnit;
 
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.COLLECTION_LOG_CONFIG_KEY;
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
+
 /**
  * Manages polling and event listening mechanisms to synchronize the state
  * to the Twitch Configuration Service. All client data is fetched in this class
@@ -54,7 +57,7 @@ import java.time.temporal.ChronoUnit;
  */
 @PluginDescriptor(
 	name = "Twitch Live Loadout",
-	description = "Send live Equipment, Bank, Combat Statistics and more to Twitch Extensions as a streamer.",
+	description = "Send live Equipment, Collection Log, Combat Statistics and more to Twitch Extensions as a streamer.",
 	enabledByDefault = true
 )
 public class TwitchLiveLoadoutPlugin extends Plugin
@@ -198,7 +201,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		fightStateManager = new FightStateManager(this, config, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
-		collectionLogManager = new CollectionLogManager(twitchState, client, clientThread, configManager);
+		collectionLogManager = new CollectionLogManager(this, twitchState, client, clientThread, configManager);
 	}
 
 	/**
@@ -218,16 +221,17 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 500, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncState()
 	{
-		// Base this on the fact is the state is changed for a fixed time for debouncing purposes.
+		// Base this on the fact is the state is changed for a fixed time for throttling purposes.
 		// This makes the updates more smooth when multiple changes occur fast after each other.
 		// Take for example switching gear: when the first armour piece is worn a change is directly
 		// triggered, causing the rest of the switch to come the update after (a few seconds later).
-		// This debouncing behaviour makes sure that quickly succeeding changes are batched and with that
+		// This throttling behaviour makes sure that quickly succeeding changes are batched and with that
 		// let for example gear switches come through in one state update towards the viewer.
-		final boolean updateRequired = twitchState.isChangedLongEnough();
+		final boolean isChangedLongEnough = twitchState.isChangedLongEnough();
+		final boolean hasCyclicState = twitchState.hasCyclicState();
 
 		// Guard: check if something has changed to avoid unnecessary updates.
-		if (!updateRequired)
+		if (!isChangedLongEnough && !hasCyclicState)
 		{
 			return;
 		}
@@ -256,6 +260,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			return;
 		}
 
+		// when all is scheduled and there are no in-between changes we can move
+		// to the next state slice
+		twitchState.nextCyclicState();
 		twitchState.acknowledgeChange();
 	}
 
@@ -280,13 +287,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncPlayerInfo()
 	{
-
-		if (client.getGameState() != GameState.LOGGED_IN)
-		{
-			return;
-		}
-
-		final String playerName = client.getLocalPlayer().getName();
+		String playerName = getPlayerName();
 		twitchState.setPlayerName(playerName);
 	}
 
@@ -310,7 +311,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onAnimationChanged(final AnimationChanged event)
+	public void onAnimationChanged(AnimationChanged event)
 	{
 		fightStateManager.onAnimationChanged(event);
 	}
@@ -361,6 +362,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onVarbitChanged(VarbitChanged varbitChanged)
 	{
 		collectionLogManager.onVarbitChanged(varbitChanged);
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		collectionLogManager.onGameStateChanged(gameStateChanged);
 	}
 
 	/**
@@ -429,5 +436,42 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		pluginPanel.getCombatPanel().rebuild();
+	}
+
+	public void setConfiguration(String configKey, Object payload)
+	{
+		String scopedConfigKey = getScopedConfigKey(configKey);
+		configManager.setConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey, payload);
+	}
+
+	public String getConfiguration(String configKey)
+	{
+		String scopedConfigKey = getScopedConfigKey(configKey);
+		return configManager.getConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey);
+	}
+
+	private String getScopedConfigKey(String configKey)
+	{
+		String playerName = getPlayerName();
+
+		if (playerName == null)
+		{
+			playerName = "unknown";
+		}
+
+		String playerNamePrefix = playerName.replaceAll("\\s+","_").trim();
+		String scopedConfigKey = playerNamePrefix +"-"+ configKey;
+		return scopedConfigKey;
+	}
+
+	private String getPlayerName()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN)
+		{
+			return null;
+		}
+
+		final String playerName = client.getLocalPlayer().getName();
+		return playerName;
 	}
 }

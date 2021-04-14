@@ -1,7 +1,10 @@
 package com.twitchliveloadout;
 
 import com.google.gson.*;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
@@ -11,15 +14,17 @@ import net.runelite.client.config.ConfigManager;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.COLLECTION_LOG_CONFIG_KEY;
 
+@Slf4j
 public class CollectionLogManager {
+	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchState twitchState;
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
 
+	private static final boolean DEBUG_WIDGETS = false;
 	private static final int COLLECTION_LOG_GROUP_ID = 621;
 	private static final int COLLECTION_LOG_TITLE = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
@@ -42,9 +47,12 @@ public class CollectionLogManager {
 		COLLECTION_LOG_MINIGAMES_TAB,
 		COLLECTION_LOG_OTHER_TAB,
 	};
+	public static final String KILL_COUNT_KEY_NAME = "k";
+	public static final String ITEMS_KEY_NAME = "i";
 
-	public CollectionLogManager(TwitchState twitchState, Client client, ClientThread clientThread, ConfigManager configManager)
+	public CollectionLogManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ClientThread clientThread, ConfigManager configManager)
 	{
+		this.plugin = plugin;
 		this.twitchState = twitchState;
 		this.client = client;
 		this.clientThread = clientThread;
@@ -67,6 +75,16 @@ public class CollectionLogManager {
 		{
 			clientThread.invokeLater(this::updateCurrentCategory);
 		}
+	}
+
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		if (gameStateChanged.getGameState() != GameState.LOGGED_IN)
+		{
+			return;
+		}
+
+		loadCollectionLogCache();
 	}
 
 	private Widget getCategoryHead()
@@ -173,21 +191,29 @@ public class CollectionLogManager {
 			serializedItems.add(serializedItem);
 		}
 
-		categoryLog.addProperty("kc", killCount);
-		categoryLog.add("i", serializedItems);
+		categoryLog.addProperty(KILL_COUNT_KEY_NAME, killCount);
+		categoryLog.add(ITEMS_KEY_NAME, serializedItems);
 		tabLog.add(categoryTitle, categoryLog);
 
-		// TMP: debugger
-//		for (int i = 0; i < 35; i++) {
-//			System.out.println("---------------- Widget with ID: "+ i);
-//			Widget testWidget = client.getWidget(COLLECTION_LOG_GROUP_ID, i);
-//			int j = 0;
-//			for (Widget text : testWidget.getDynamicChildren()) {
-//				System.out.println("Widget part on index "+ j +": "+ text.getText());
-//				System.out.println("Widget part on index "+ j +": "+ text.getTextColor());
-//				j++;
-//			}
-//		}
+		if (DEBUG_WIDGETS)
+		{
+			for (int i = 0; i < 40; i++) {
+				log.debug("---------------- Widget with ID: "+ i);
+				Widget testWidget = client.getWidget(COLLECTION_LOG_GROUP_ID, i);
+
+				if (testWidget == null)
+				{
+					continue;
+				}
+				int j = 0;
+				for (Widget text : testWidget.getDynamicChildren()) {
+					log.debug("Widget text on index "+ j +": "+ text.getText());
+					log.debug("Widget text on index "+ j +": "+ text.getTextColor());
+					j++;
+				}
+			}
+		}
+
 
 		System.out.println("-------------------");
 		System.out.println("Category title: "+ categoryTitle);
@@ -201,7 +227,7 @@ public class CollectionLogManager {
 		twitchState.setCollectionLog(collectionLog);
 
 		// save to persistent storage
-		configManager.setConfiguration(PLUGIN_CONFIG_GROUP, COLLECTION_LOG_CONFIG_KEY, collectionLog);
+		plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
 	}
 
 	private CollectionLogItem[] getCurrentItems()
@@ -253,7 +279,7 @@ public class CollectionLogManager {
 
 	private void loadCollectionLogCache()
 	{
-		final String rawCollectionLog = configManager.getConfiguration(PLUGIN_CONFIG_GROUP, COLLECTION_LOG_CONFIG_KEY);
+		final String rawCollectionLog = plugin.getConfiguration(COLLECTION_LOG_CONFIG_KEY);
 		JsonObject parsedCollectionLog = null;
 
 		try {
