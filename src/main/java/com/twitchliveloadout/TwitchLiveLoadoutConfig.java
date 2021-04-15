@@ -90,6 +90,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return 0;
 	}
 
+	@ConfigItem(
+			keyName = "multiLogDisplayName",
+			name = "Multi-log display name",
+			description = "When multi-logging set the display name here of the account you want to sync.",
+			position = 8,
+			section = twitchSection
+	)
+	default String multiLogDisplayName()
+	{
+		return "";
+	}
+
 	@ConfigSection(
 			name = "Items",
 			description = "Syncing of items in inventory, equipment and bank.",

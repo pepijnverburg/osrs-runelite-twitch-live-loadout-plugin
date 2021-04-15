@@ -85,6 +85,11 @@ public class TwitchApi
 	{
 		int delay = config.syncDelay();
 
+		if (!isSelectedMultiLogDisplayName())
+		{
+			return false;
+		}
+
 		if (!canScheduleState())
 		{
 			return false;
@@ -111,6 +116,24 @@ public class TwitchApi
 		return true;
 	}
 
+	public boolean isSelectedMultiLogDisplayName()
+	{
+		final String multiLogDisplayName = config.multiLogDisplayName();
+		final String currentDisplayName = plugin.getPlayerName();
+
+		if (multiLogDisplayName == null || multiLogDisplayName.equals(""))
+		{
+			return true;
+		}
+
+		if (multiLogDisplayName.equals(currentDisplayName))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 	public boolean canScheduleState()
 	{
 
@@ -119,8 +142,8 @@ public class TwitchApi
 			return true;
 		}
 
-		Instant now = Instant.now();
-		Instant minTime = lastScheduleStateTime.plusSeconds(MIN_SCHEDULE_DELAY);
+		final Instant now = Instant.now();
+		final Instant minTime = lastScheduleStateTime.plusSeconds(MIN_SCHEDULE_DELAY);
 
 		return now.isAfter(minTime);
 	}
