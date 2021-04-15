@@ -25,6 +25,7 @@ public class CollectionLogManager {
 	private final ConfigManager configManager;
 
 	private static final boolean DEBUG_WIDGETS = false;
+	private static final boolean DEBUG_CURRENT_CATEGORY = false;
 	private static final int COLLECTION_LOG_GROUP_ID = 621;
 	private static final int COLLECTION_LOG_TITLE = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
@@ -77,13 +78,8 @@ public class CollectionLogManager {
 		}
 	}
 
-	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	public void onPlayerNameChanged(String playerName)
 	{
-		if (gameStateChanged.getGameState() != GameState.LOGGED_IN)
-		{
-			return;
-		}
-
 		loadCollectionLogCache();
 	}
 
@@ -214,14 +210,16 @@ public class CollectionLogManager {
 			}
 		}
 
-
-		System.out.println("-------------------");
-		System.out.println("Category title: "+ categoryTitle);
-		System.out.println("Tab title: "+ tabTitle);
-		System.out.println("Kill count: "+ killCount);
-		System.out.println("Item count: "+ items.length);
-		System.out.println("New collection log is:");
-		System.out.println(collectionLog.toString());
+		if (DEBUG_CURRENT_CATEGORY)
+		{
+			log.debug("-------------------");
+			log.debug("Category title: "+ categoryTitle);
+			log.debug("Tab title: "+ tabTitle);
+			log.debug("Kill count: "+ killCount);
+			log.debug("Item count: "+ items.length);
+			log.debug("New collection log is:");
+			log.debug(collectionLog.toString());
+		}
 
 		// update the twitch state
 		twitchState.setCollectionLog(collectionLog);
@@ -266,15 +264,33 @@ public class CollectionLogManager {
 			return -1;
 		}
 
-		final String rawKillCount = children[2].getText();
-		final String[] killCountPieces = rawKillCount.split(": ");
-		final String killCount = killCountPieces[1]
-			.split(">")[1]
-			.split("<")[0]
-			.replace(",", "");
-		final int parsedKillCount = Integer.parseInt(killCount);
+		int totalKillCount = 0;
 
-		return parsedKillCount;
+		// add all kill counts of all lines in the widget (starting from child index 2)
+		for (int childIndex = 2; childIndex < children.length; childIndex++)
+		{
+			final String rawKillCount = children[childIndex].getText();
+			final String[] killCountPieces = rawKillCount.split(": ");
+
+			// guard: make sure this is a KC line
+			if (killCountPieces.length <= 1)
+			{
+				continue;
+			}
+
+			final String killCount = killCountPieces[1]
+				.split(">")[1]
+				.split("<")[0]
+				.replace(",", "");
+
+			try {
+				totalKillCount += Integer.parseInt(killCount);
+			} catch (Exception error) {
+				// empty?
+			}
+		}
+
+		return totalKillCount;
 	}
 
 	private void loadCollectionLogCache()
