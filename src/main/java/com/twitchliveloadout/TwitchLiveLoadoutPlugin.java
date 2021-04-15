@@ -121,6 +121,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private CollectionLogManager collectionLogManager;
 
 	/**
+	 * Cache to check for player name changes as game state is not reliable for this
+	 */
+	private String lastPlayerName = null;
+
+	/**
 	 * Initialize this plugin
 	 * @throws Exception
 	 */
@@ -288,7 +293,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncPlayerInfo()
 	{
 		String playerName = getPlayerName();
-		twitchState.setPlayerName(playerName);
+
+		if (playerName == null || playerName.equals(lastPlayerName))
+		{
+			return;
+		}
+
+		onPlayerNameChanged(playerName);
+		lastPlayerName = playerName;
 	}
 
 	@Subscribe
@@ -364,10 +376,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		collectionLogManager.onVarbitChanged(varbitChanged);
 	}
 
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	public void onPlayerNameChanged(String playerName)
 	{
-		collectionLogManager.onGameStateChanged(gameStateChanged);
+		twitchState.setPlayerName(playerName);
+		collectionLogManager.onPlayerNameChanged(playerName);
 	}
 
 	/**
@@ -464,7 +476,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		return scopedConfigKey;
 	}
 
-	private String getPlayerName()
+	public String getPlayerName()
 	{
 		if (client.getGameState() != GameState.LOGGED_IN)
 		{
