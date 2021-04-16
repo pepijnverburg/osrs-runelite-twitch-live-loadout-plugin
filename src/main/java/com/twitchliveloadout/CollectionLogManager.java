@@ -3,8 +3,6 @@ package com.twitchliveloadout;
 import com.google.gson.*;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
@@ -48,7 +46,7 @@ public class CollectionLogManager {
 		COLLECTION_LOG_MINIGAMES_TAB,
 		COLLECTION_LOG_OTHER_TAB,
 	};
-	public static final String KILL_COUNT_KEY_NAME = "k";
+	public static final String COUNTERS_KEY_NAME = "c";
 	public static final String ITEMS_KEY_NAME = "i";
 
 	public CollectionLogManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ClientThread clientThread, ConfigManager configManager)
@@ -150,7 +148,7 @@ public class CollectionLogManager {
 	private void updateCurrentCategory()
 	{
 		final CollectionLogItem[] items = getCurrentItems();
-		final int killCount = getCurrentKillCount();
+		final JsonObject counters = getCurrentCounters();
 		final String categoryTitle = getCategoryTitle();
 		final String tabTitle = getTabTitle();
 		JsonObject collectionLog = twitchState.getCollectionLog();
@@ -187,7 +185,7 @@ public class CollectionLogManager {
 			serializedItems.add(serializedItem);
 		}
 
-		categoryLog.addProperty(KILL_COUNT_KEY_NAME, killCount);
+		categoryLog.add(COUNTERS_KEY_NAME, counters);
 		categoryLog.add(ITEMS_KEY_NAME, serializedItems);
 		tabLog.add(categoryTitle, categoryLog);
 
@@ -215,7 +213,7 @@ public class CollectionLogManager {
 			log.debug("-------------------");
 			log.debug("Category title: "+ categoryTitle);
 			log.debug("Tab title: "+ tabTitle);
-			log.debug("Kill count: "+ killCount);
+			log.debug("Counters: "+ counters.toString());
 			log.debug("Item count: "+ items.length);
 			log.debug("New collection log is:");
 			log.debug(collectionLog.toString());
@@ -248,49 +246,49 @@ public class CollectionLogManager {
 		return items.toArray(CollectionLogItem[]::new);
 	}
 
-	private int getCurrentKillCount()
+	private JsonObject getCurrentCounters()
 	{
+		final JsonObject counters = new JsonObject();
 		final Widget categoryHead = getCategoryHead();
 
 		if (categoryHead == null)
 		{
-			return -1;
+			return counters;
 		}
 
 		final Widget[] children = categoryHead.getDynamicChildren();
 
 		if (children == null || children.length < 3)
 		{
-			return -1;
+			return counters;
 		}
 
-		int totalKillCount = 0;
-
-		// add all kill counts of all lines in the widget (starting from child index 2)
+		// add all counters of all lines in the widget (starting from child index 2)
 		for (int childIndex = 2; childIndex < children.length; childIndex++)
 		{
-			final String rawKillCount = children[childIndex].getText();
-			final String[] killCountPieces = rawKillCount.split(": ");
+			final String rawCounter = children[childIndex].getText();
+			final String[] counterPieces = rawCounter.split(": ");
 
 			// guard: make sure this is a KC line
-			if (killCountPieces.length <= 1)
+			if (counterPieces.length <= 1)
 			{
 				continue;
 			}
 
-			final String killCount = killCountPieces[1]
+			final String counterTitle = counterPieces[0];
+			final String counterAmount = counterPieces[1]
 				.split(">")[1]
 				.split("<")[0]
 				.replace(",", "");
 
 			try {
-				totalKillCount += Integer.parseInt(killCount);
+				counters.addProperty(counterTitle, Integer.parseInt(counterAmount));
 			} catch (Exception error) {
 				// empty?
 			}
 		}
 
-		return totalKillCount;
+		return counters;
 	}
 
 	private void loadCollectionLogCache()
