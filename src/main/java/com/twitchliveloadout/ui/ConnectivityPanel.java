@@ -21,6 +21,7 @@ public class ConnectivityPanel extends JPanel
 
 	private final TextPanel statusPanel = new TextPanel("Current Status", "N/A");
 	private final TextPanel authPanel = new TextPanel("Twitch Token Validity", "N/A");
+	private final TextPanel rateLimitPanel = new TextPanel("Twitch API Limit", "N/A");
 	private final TextPanel statePanel = new TextPanel("Loadout State Size", "N/A");
 
 	private final TwitchApi twitchApi;
@@ -44,6 +45,8 @@ public class ConnectivityPanel extends JPanel
 		constraints.gridy++;
 		wrapper.add(authPanel, constraints);
 		constraints.gridy++;
+		wrapper.add(rateLimitPanel, constraints);
+		constraints.gridy++;
 		wrapper.add(statePanel, constraints);
 		constraints.gridy++;
 
@@ -53,6 +56,7 @@ public class ConnectivityPanel extends JPanel
 	public void rebuild()
 	{
 		final long unixTimestamp = System.currentTimeMillis() / 1000L;
+		final int rateLimitRemaining = twitchApi.getLastRateLimitRemaining();
 
 		String statusText = twitchApi.getLastResponseMessage();
 		final int responseCode = twitchApi.getLastResponseCode();
@@ -61,6 +65,9 @@ public class ConnectivityPanel extends JPanel
 		String authText = "No valid Twitch Token.";
 		String authColor = ERROR_TEXT_COLOR;
 		long tokenExpiry = 0;
+
+		String rateLimitText = "There are "+ rateLimitRemaining +" requests available before hitting the Twitch API rate limit.";
+		String rateLimitColor = DEFAULT_TEXT_COLOR;
 
 		try {
 			final JsonObject decodedToken = twitchApi.getDecodedToken();
@@ -101,8 +108,15 @@ public class ConnectivityPanel extends JPanel
 			stateColor = ERROR_TEXT_COLOR;
 		}
 
+		if (rateLimitRemaining <= 10)
+		{
+			rateLimitText += "<br/><br/>Which is almost exceeded! This should not happen. Please contact the plugin maintainer via GitHub or support@osrs-tools.com.";
+			rateLimitColor = ERROR_TEXT_COLOR;
+		}
+
 		statusPanel.setText(getTextInColor(statusText, statusColor));
 		authPanel.setText(getTextInColor(authText, authColor));
+		rateLimitPanel.setText(getTextInColor(rateLimitText, rateLimitColor));
 		statePanel.setText(getTextInColor(stateText, stateColor));
 	}
 

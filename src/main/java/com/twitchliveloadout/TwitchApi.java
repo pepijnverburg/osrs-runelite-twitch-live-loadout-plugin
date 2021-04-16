@@ -32,13 +32,15 @@ import java.util.zip.GZIPOutputStream;
 @Slf4j
 public class TwitchApi
 {
+	public final static boolean ENABLE_CONFIGURATION_SERVICE = false;
 	public final static int MAX_PAYLOAD_SIZE = 5120;
-	public final static int MIN_SCHEDULE_DELAY = 2; // seconds
+	public final static int MIN_SCHEDULE_DELAY = 1; // seconds
 	public final static int MIN_SYNC_DELAY = 0; // seconds
 	public final static int BASE_SYNC_DELAY = 1; // seconds
 	public final static boolean CHAT_ERRORS_ENABLED = true;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
+	private final static String RATE_LIMIT_REMAINING_HEADER = "ratelimit-ratelimitermessagesbychannel-remaining";
 	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 15 * 60 * 1000; // in ms
 	private final static String VERSION = "0.0.1";
 	private final static String USER_AGENT = "RuneLite";
@@ -62,6 +64,7 @@ public class TwitchApi
 	private final ChatMessageManager chatMessageManager;
 	private Instant lastScheduleStateTime = null;
 	private String lastCompressedState = "";
+	private int lastRateLimitRemaining = 100;
 	private String lastConfigurationServiceState = "";
 	private String lastResponseMessage = "";
 	private int lastResponseCode = 200;
@@ -107,8 +110,12 @@ public class TwitchApi
 		{
 			public void run()
 			{
-				//boolean serviceUpdateResult = setConfigurationService(state);
-				boolean pubSubResult = sendPubSubState(state);
+				sendPubSubState(state);
+
+				if (ENABLE_CONFIGURATION_SERVICE)
+				{
+					setConfigurationService(state);
+				}
 			}
 		}, delay, TimeUnit.SECONDS);
 
@@ -219,6 +226,8 @@ public class TwitchApi
 		targets.add(PubSubTarget.BROADCAST.target);
 		String compressedState = compressState(state);
 
+		lastCompressedState = compressedState;
+
 		data.addProperty("content_type", "application/json");
 		data.addProperty("message", compressedState);
 		data.add("targets", targets);
@@ -292,6 +301,7 @@ public class TwitchApi
 		response.close();
 		lastResponseMessage = responseCodeMessage;
 		lastResponseCode = responseCode;
+		lastRateLimitRemaining = Integer.parseInt(response.header(RATE_LIMIT_REMAINING_HEADER, "100"));
 		plugin.updateConnectivityPanel();
 
 		if (isErrorResponseCode(responseCode))
@@ -416,5 +426,10 @@ public class TwitchApi
 	public int getLastResponseCode()
 	{
 		return lastResponseCode;
+	}
+
+	public int getLastRateLimitRemaining()
+	{
+		return lastRateLimitRemaining;
 	}
 }
