@@ -73,11 +73,11 @@ Most data is automatically synced when logged in. The `Bank` and `Collection Log
 ![Equipment](./docs/screenshots/worn-equipment.png "Equipment")
 
 #### Bank
-⚠️ The bank needs to **opened at least once after logging in** for the data to be retrieved by the plugin.
+⚠️ The bank needs to `opened at least once after logging in` for the data to be retrieved by the plugin.
 ![Bank](./docs/screenshots/bank.png "Bank")
 
 #### Collection Log
-⚠️ Please note that you need to **open the collection log on each page** (e.g. each boss, each minigame, etc.) with the RuneLite plugin enabled to retrieve all the data so it can be synced with Twitch. This data is then **stored in your RuneLite profile** to be used in future sessions, so you don't have to do this every time you login 😄. When you want to update the KC or items, you need to **re-open the collection log** on the page of the boss / drop in question.
+⚠️ Please note that you need to `open the collection log on each page` (e.g. each boss, each minigame, etc.) with the RuneLite plugin enabled to retrieve all the data so it can be synced with Twitch. This data is then `stored in your RuneLite profile` to be used in future sessions, so you don't have to do this every time you login 😄. When you want to update the KC or items, you need to `re-open the collection log` on the page of the boss / drop in question.
 
 ![Collection Log](./docs/screenshots/collection-log.png "Collection Log")
 
