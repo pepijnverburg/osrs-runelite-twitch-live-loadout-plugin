@@ -8,6 +8,8 @@ import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.api.widgets.WidgetID;
+import net.runelite.api.widgets.WidgetInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +24,8 @@ public class CollectionLogManager {
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
 
-	private static final boolean DEBUG_WIDGETS = false;
-	private static final boolean DEBUG_CURRENT_CATEGORY = false;
-	private static final int COLLECTION_LOG_GROUP_ID = 621;
+	private static final boolean DEBUG_WIDGETS = true;
+	private static final boolean DEBUG_CURRENT_CATEGORY = true;
 	private static final int COLLECTION_LOG_TITLE = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
 	private static final int COLLECTION_LOG_RAIDS_TAB = 5;
@@ -35,8 +36,6 @@ public class CollectionLogManager {
 	private static final int COLLECTION_LOG_TAB_ACTIVE_COLOR = 16754735;
 	private static final int COLLECTION_LOG_OTHER_TAB = 8;
 	private static final int COLLECTION_LOG_CATEGORY_LIST = 12;
-	private static final int COLLECTION_LOG_CATEGORY_HEAD = 19;
-	private static final int COLLECTION_LOG_CATEGORY_ITEMS = 35;
 	private static final int COLLECTION_LOG_DRAW_LIST_SCRIPT_ID = 2730;
 	private static final int COLLECTION_LOG_CATEGORY_VARBIT_INDEX = 2049;
 	private static final int[] COLLECTION_LOG_TABS = {
@@ -83,7 +82,7 @@ public class CollectionLogManager {
 
 	private Widget getCategoryHead()
 	{
-		Widget categoryHead = client.getWidget(COLLECTION_LOG_GROUP_ID, COLLECTION_LOG_CATEGORY_HEAD);
+		Widget categoryHead = client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY_HEADER);
 
 		return categoryHead;
 	}
@@ -116,7 +115,7 @@ public class CollectionLogManager {
 	{
 		for (int tabId : COLLECTION_LOG_TABS)
 		{
-			final Widget tabWidget = client.getWidget(COLLECTION_LOG_GROUP_ID, tabId);
+			final Widget tabWidget = client.getWidget(WidgetID.COLLECTION_LOG_ID, tabId);
 
 			if (tabWidget == null)
 			{
@@ -193,7 +192,7 @@ public class CollectionLogManager {
 		{
 			for (int i = 0; i < 40; i++) {
 				log.debug("---------------- Widget with ID: "+ i);
-				Widget testWidget = client.getWidget(COLLECTION_LOG_GROUP_ID, i);
+				Widget testWidget = client.getWidget(WidgetID.COLLECTION_LOG_ID, i);
 
 				if (testWidget == null)
 				{
@@ -228,7 +227,7 @@ public class CollectionLogManager {
 
 	private CollectionLogItem[] getCurrentItems()
 	{
-		final Widget itemsContainer = client.getWidget(COLLECTION_LOG_GROUP_ID, COLLECTION_LOG_CATEGORY_ITEMS);
+		final Widget itemsContainer = client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY_ITEMS);
 
 		if (itemsContainer == null)
 		{
