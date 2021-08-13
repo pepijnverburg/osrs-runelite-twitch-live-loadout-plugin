@@ -34,9 +34,9 @@ public class TwitchApi
 {
 	public final static boolean ENABLE_CONFIGURATION_SERVICE = false;
 	public final static int MAX_PAYLOAD_SIZE = 5120;
-	public final static int MIN_SCHEDULE_DELAY = 1; // seconds
-	public final static int MIN_SYNC_DELAY = 0; // seconds
-	public final static int BASE_SYNC_DELAY = 1; // seconds
+	public final static int MIN_SCHEDULE_DELAY = 1500; // ms
+	public final static int MIN_SYNC_DELAY = 0; // ms
+	public final static int BASE_SYNC_DELAY = 1000; // ms
 	public final static boolean CHAT_ERRORS_ENABLED = true;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	private final static String BROADCASTER_SEGMENT = "broadcaster";
@@ -86,7 +86,7 @@ public class TwitchApi
 
 	public boolean scheduleBroadcasterState(final JsonObject state)
 	{
-		int delay = config.syncDelay();
+		int delay = config.syncDelay() * 1000;
 
 		if (!isSelectedMultiLogDisplayName())
 		{
@@ -117,7 +117,7 @@ public class TwitchApi
 					setConfigurationService(state);
 				}
 			}
-		}, delay, TimeUnit.SECONDS);
+		}, delay, TimeUnit.MILLISECONDS);
 
 		lastScheduleStateTime = Instant.now();
 		return true;
@@ -150,7 +150,7 @@ public class TwitchApi
 		}
 
 		final Instant now = Instant.now();
-		final Instant minTime = lastScheduleStateTime.plusSeconds(MIN_SCHEDULE_DELAY);
+		final Instant minTime = lastScheduleStateTime.plusMillis(MIN_SCHEDULE_DELAY);
 
 		return now.isAfter(minTime);
 	}
