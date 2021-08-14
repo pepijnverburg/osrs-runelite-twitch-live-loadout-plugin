@@ -234,9 +234,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// let for example gear switches come through in one state update towards the viewer.
 		final boolean isChangedLongEnough = twitchState.isChangedLongEnough();
 		final boolean hasCyclicState = twitchState.hasCyclicState();
+		final boolean shouldAlwaysSync = twitchState.shouldAlwaysSync();
 
 		// Guard: check if something has changed to avoid unnecessary updates.
-		if (!isChangedLongEnough && !hasCyclicState)
+		if (!shouldAlwaysSync && !isChangedLongEnough && !hasCyclicState)
 		{
 			return;
 		}

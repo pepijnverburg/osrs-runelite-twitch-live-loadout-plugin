@@ -69,8 +69,16 @@ public class TwitchState {
 	 * one of the setters was invoked. This allow for more
 	 * efficient updating towards the Configuration Service.
 	 */
-	private final static int CHANGED_DEBOUNCE_TIME = 1000; // ms
 	private boolean changed = false;
+
+	/**
+	 * True when the changed flag can be ignored when pushing state updates
+	 * With the current Twitch extension new viewers are expected to get the latest
+	 * state at once, because they are not using the Twitch Configuration Service data anymore.
+	 * For v0.0.5+ onwards having the flag to true is recommended, let's test with it for now.
+	 */
+	private final static boolean CONTINUOUS_SYNC = true;
+	private final static int CHANGED_DEBOUNCE_TIME = 1000; // ms
 	private Instant changedAt;
 
 	public TwitchState(TwitchLiveLoadoutConfig config, ItemManager itemManager)
@@ -304,6 +312,11 @@ public class TwitchState {
 	public boolean hasCyclicState()
 	{
 		return cyclicState.size() > 0;
+	}
+
+	public boolean shouldAlwaysSync()
+	{
+		return CONTINUOUS_SYNC;
 	}
 
 	public JsonObject removeDisabledState(JsonObject state)
