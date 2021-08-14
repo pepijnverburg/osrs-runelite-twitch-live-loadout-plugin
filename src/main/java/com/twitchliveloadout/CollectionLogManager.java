@@ -146,7 +146,7 @@ public class CollectionLogManager {
 	 */
 	private void updateCurrentCategory()
 	{
-		final CollectionLogItem[] items = getCurrentItems();
+		final List<CollectionLogItem> items = getCurrentItems();
 		final JsonObject counters = getCurrentCounters();
 		final String categoryTitle = getCategoryTitle();
 		final String tabTitle = getTabTitle();
@@ -213,7 +213,7 @@ public class CollectionLogManager {
 			log.debug("Category title: "+ categoryTitle);
 			log.debug("Tab title: "+ tabTitle);
 			log.debug("Counters: "+ counters.toString());
-			log.debug("Item count: "+ items.length);
+			log.debug("Item count: "+ items.size());
 			log.debug("New collection log is:");
 			log.debug(collectionLog.toString());
 		}
@@ -225,7 +225,7 @@ public class CollectionLogManager {
 		plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
 	}
 
-	private CollectionLogItem[] getCurrentItems()
+	private List<CollectionLogItem> getCurrentItems()
 	{
 		final Widget itemsContainer = client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY_ITEMS);
 
@@ -242,7 +242,7 @@ public class CollectionLogManager {
 			items.add(new CollectionLogItem(widgetItem));
 		}
 
-		return items.toArray(CollectionLogItem[]::new);
+		return items;
 	}
 
 	private JsonObject getCurrentCounters()
