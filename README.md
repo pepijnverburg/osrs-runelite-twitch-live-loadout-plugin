@@ -5,12 +5,12 @@
 
 *"What is that helm you are wearing?!"*
 
-Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank` and more! 
+Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank` and more!
 
 Get better engagement with...
 - **New players** who are not familiar with most of the content.
-- **Existing casual players** who are not up-to-date about the latest changes. 
-- **Existing frequent players** who would like to give advice on the loadout. 
+- **Existing casual players** who are not up-to-date about the latest changes.
+- **Existing frequent players** who would like to give advice on the loadout.
 
 [Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with. The screenshots in this README are made using a Twitch Extension that is compatible with this plugin.
 
@@ -34,13 +34,13 @@ Within the client the following should be enabled for all features to work:
 - Step 4: Verify whether data is synced by previewing it in the `Twitch Extension configuration page`.
 
 ### Step 1: Install Runelite Plugin
-You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/Pepijn%20Verburg). 
+You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/Pepijn%20Verburg).
 
 The plugin hub can be found all the way to the bottom of the RuneLite plugins:
 ![Plugin Hub](./docs/getting-started/runelite-plugin-installation.gif "Plugin Hub")
 
 ### Step 2: Install Twitch Extension
-The reviewed [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is directly compatible and has a 1-minute setup! 
+The reviewed [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is directly compatible and has a 1-minute setup!
 
 First install the Twitch Extension via the `Creator Dashboard` and set the extension to `Overlay 1`:
 ![Twitch Extension](./docs/getting-started/twitch-extension-installation.gif "Twitch Extension")
@@ -60,7 +60,7 @@ Below you can find an overview which features are implemented. Note that the scr
 
 Most data is automatically synced when logged in. The `Bank` and `Collection Log` are exceptions. See the ⚠️ marks below for an explanation.
 
-![Icon](./docs/icons/combat.png "Icon") ![Icon](./docs/icons/items.png "Icon") ![Icon](./docs/icons/skills.png "Icon") 
+![Icon](./docs/icons/combat.png "Icon") ![Icon](./docs/icons/items.png "Icon") ![Icon](./docs/icons/skills.png "Icon")
 
 ### 🎒 Items
 - [x] `Inventory items`: live view of the inventory and total price.
@@ -88,7 +88,7 @@ Most data is automatically synced when logged in. The `Bank` and `Collection Log
 - [x] `Poison damage`: poison and venom damage.
 - [x] `Smite damage`: damage per fight smite has done including (hypothetical) prayer drain.
 - [x] `Spell splashes`: count the splashes done on enemies (single combat only).
-- [x] `Freezes`: count potential freezes and misses (single combat only). 
+- [x] `Freezes`: count potential freezes and misses (single combat only).
 - [x] `Entangle`: count snare/bind/entangle spells and misses (single combat only).
 - [x] `Blood spell heals`: count potential heals through blood spells (single combat only).
 - [x] `Incoming hits`: damage, splashes, etc. are also tracked on the logged in player.
@@ -110,7 +110,7 @@ Most data is automatically synced when logged in. The `Bank` and `Collection Log
 - [x] `Display name`: the name of the player in the chat bar.
 
 ### Twitch Extension specific
-There are also some features available for the viewer specifically available in the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6). 
+There are also some features available for the viewer specifically available in the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6).
 ![Dragging](./docs/screenshots/dragging.png "Dragging")
 ![Controls](./docs/screenshots/viewer-controls.png "Controls")
 
@@ -118,7 +118,7 @@ There are also some features available for the viewer specifically available in 
 
 ![Plugin Panel](./docs/controls.png "Plugin Panel")
 
-### ![Panel Icon](./docs/icons/panel_icon.png "Panel Icon") Panels 
+### ![Panel Icon](./docs/icons/panel_icon.png "Panel Icon") Panels
 
 #### Twitch Connectivity
 The plugin also lets you see the current status of the connection with Twitch.
@@ -141,6 +141,7 @@ It is also possible to configure what information is being sent through the foll
 - `Sync equipment items`: toggle to sync equipment items.
 - `Sync bank items`: toggle to sync bank items.
 - `Max bank items`: the maximum amount of bank items with an upper limit set by the plugin.
+- `Sync bank value`: toggle to sync total bank value.
 - `Sync collection log`: toggle to sync collection log.
 
 #### Combat
@@ -154,7 +155,7 @@ It is also possible to configure what information is being sent through the foll
 
 #### Skills
 - `Sync skill levels`: toggle to sync (boosted) skills.
-- `Virtual levels enabled`: when enabled the maximum level shown based on experience is 126 instead of 99. 
+- `Virtual levels enabled`: when enabled the maximum level shown based on experience is 126 instead of 99.
 
 #### General info
 - `Sync display name`: toggle to show basic player info.
@@ -203,7 +204,7 @@ Future features that might be added based on feedback are:
 
 ### 🎯 Goals
 - [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
-- [ ] `Item goals with KC`: for each item goal a boss killcount can be attached that is visible on hover.  
+- [ ] `Item goals with KC`: for each item goal a boss killcount can be attached that is visible on hover.
 
 ### Others
 - [ ] More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).

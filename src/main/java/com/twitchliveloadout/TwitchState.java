@@ -344,6 +344,11 @@ public class TwitchState {
 			state.add(TwitchStateEntry.BANK_TAB_AMOUNTS.getKey(), null);
 		}
 
+		if (!config.bankPriceEnabled())
+		{
+			state.add(TwitchStateEntry.BANK_PRICE.getKey(), null);
+		}
+
 		if (!config.collectionLogEnabled())
 		{
 			state.add(TwitchStateEntry.COLLECTION_LOG.getKey(), null);

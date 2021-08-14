@@ -158,6 +158,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "bankPriceEnabled",
+			name = "Sync bank value",
+			description = "Synchronize bank value of all items.",
+			position = 11,
+			section = itemsSection
+	)
+	default boolean bankPriceEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "collectionLogEnabled",
 			name = "Sync collection log",
 			description = "Synchronize the collection log quantities and kill counts.",
