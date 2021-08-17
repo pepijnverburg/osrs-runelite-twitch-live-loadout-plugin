@@ -1,7 +1,7 @@
 # OSRS Twitch Live Loadout Plugin ![Plugin Installs](https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/twitch-live-loadout) ![Plugin Rank](https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/rank/plugin/twitch-live-loadout)
 ![OSRS Live Loadout](./docs/banner.png?raw=true "OSRS Live Loadout")
 
-## ⚠️ The collection log feature is not yet released
+## Introduction
 
 *"What is that helm you are wearing?!"*
 
@@ -15,6 +15,9 @@ Get better engagement with...
 [Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with. The screenshots in this README are made using a Twitch Extension that is compatible with this plugin.
 
 ![Summary](./docs/summary.gif "Summary")
+
+### Recent updates
+- 🎉 Collection log is now available to be viewed live by your viewers!
 
 ## Requirements
 - [Runelite Client](https://runelite.net/) with [Plugin Hub](https://runelite.net/plugin-hub/) enabled
