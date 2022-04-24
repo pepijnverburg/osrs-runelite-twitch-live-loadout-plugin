@@ -221,18 +221,19 @@ public class TwitchApi
 
 	private boolean sendPubSubState(JsonObject state)
 	{
-		final JsonObject data = new JsonObject();
-		final JsonArray targets = new JsonArray();
-		targets.add(PubSubTarget.BROADCAST.target);
-		String compressedState = compressState(state);
-
-		lastCompressedState = compressedState;
-
-		data.addProperty("content_type", "application/json");
-		data.addProperty("message", compressedState);
-		data.add("targets", targets);
-
 		try {
+			final JsonObject data = new JsonObject();
+			final JsonArray targets = new JsonArray();
+			final String channelId = getChannelId();
+			targets.add(PubSubTarget.BROADCAST.target);
+			String compressedState = compressState(state);
+
+			lastCompressedState = compressedState;
+
+			data.addProperty("message", compressedState);
+			data.addProperty("broadcaster_id", channelId);
+			data.add("target", targets);
+
 			Response response = performPubSubRequest(data);
 			verifyStateUpdateResponse("PubSub", response, state, compressedState);
 		} catch (Exception exception) {
@@ -246,8 +247,7 @@ public class TwitchApi
 	{
 		final String clientId = config.extensionClientId();
 		final String token = config.twitchToken();
-		final String channelId = getChannelId();
-		final String url = "https://api.twitch.tv/extensions/message/"+ channelId;
+		final String url = "https://api.twitch.tv/helix/extensions/pubsub";
 		final String dataString = data.toString();
 
 		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
@@ -255,6 +255,7 @@ public class TwitchApi
 			.header("Client-ID", clientId)
 			.header("Authorization", "Bearer "+ token)
 			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
 			.post(RequestBody.create(JSON, dataString))
 			.url(url)
 			.build();
