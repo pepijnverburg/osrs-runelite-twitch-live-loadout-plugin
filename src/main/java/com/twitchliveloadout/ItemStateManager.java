@@ -6,6 +6,7 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.game.ItemManager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,16 +19,16 @@ public class ItemStateManager {
 	private final ItemManager itemManager;
 	private final TwitchLiveLoadoutConfig config;
 
-	private static final List<Varbits> BANK_TAB_VARBITS = ImmutableList.of(
-		Varbits.BANK_TAB_ONE_COUNT,
-		Varbits.BANK_TAB_TWO_COUNT,
-		Varbits.BANK_TAB_THREE_COUNT,
-		Varbits.BANK_TAB_FOUR_COUNT,
-		Varbits.BANK_TAB_FIVE_COUNT,
-		Varbits.BANK_TAB_SIX_COUNT,
-		Varbits.BANK_TAB_SEVEN_COUNT,
-		Varbits.BANK_TAB_EIGHT_COUNT,
-		Varbits.BANK_TAB_NINE_COUNT
+	private static final List<Integer> BANK_TAB_VARBITS = Arrays.asList(
+			Varbits.BANK_TAB_ONE_COUNT,
+			Varbits.BANK_TAB_TWO_COUNT,
+			Varbits.BANK_TAB_THREE_COUNT,
+			Varbits.BANK_TAB_FOUR_COUNT,
+			Varbits.BANK_TAB_FIVE_COUNT,
+			Varbits.BANK_TAB_SIX_COUNT,
+			Varbits.BANK_TAB_SEVEN_COUNT,
+			Varbits.BANK_TAB_EIGHT_COUNT,
+			Varbits.BANK_TAB_NINE_COUNT
 	);
 
 	public ItemStateManager(TwitchState twitchState, Client client, ItemManager itemManager, TwitchLiveLoadoutConfig config)
