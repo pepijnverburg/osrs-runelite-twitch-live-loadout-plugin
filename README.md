@@ -17,6 +17,7 @@ Get better engagement with...
 ![Summary](./docs/summary.gif "Summary")
 
 ### Recent updates
+- The Twitch data syncing has been updated to work again due to deprecated functionalities.
 - 🎉 Collection log is now available to be viewed live by your viewers!
 
 ## Requirements
