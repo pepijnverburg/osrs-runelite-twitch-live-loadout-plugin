@@ -32,7 +32,6 @@ import java.util.zip.GZIPOutputStream;
 @Slf4j
 public class TwitchApi
 {
-	public final static boolean ENABLE_CONFIGURATION_SERVICE = false;
 	public final static int MAX_PAYLOAD_SIZE = 5120;
 	public final static int MIN_SCHEDULE_DELAY = 1500; // ms
 	public final static int MIN_SYNC_DELAY = 0; // ms
@@ -65,7 +64,6 @@ public class TwitchApi
 	private Instant lastScheduleStateTime = null;
 	private String lastCompressedState = "";
 	private int lastRateLimitRemaining = 100;
-	private String lastConfigurationServiceState = "";
 	private String lastResponseMessage = "";
 	private int lastResponseCode = 200;
 	private long lastErrorChatMessage = 0;
@@ -111,11 +109,6 @@ public class TwitchApi
 			public void run()
 			{
 				sendPubSubState(state);
-
-				if (ENABLE_CONFIGURATION_SERVICE)
-				{
-					setConfigurationService(state);
-				}
 			}
 		}, delay, TimeUnit.MILLISECONDS);
 
@@ -158,89 +151,6 @@ public class TwitchApi
 	public void clearScheduledBroadcasterStates()
 	{
 		scheduledExecutor.getQueue().clear();
-	}
-
-	private boolean setConfigurationService(JsonObject state)
-	{
-		final String segment = BROADCASTER_SEGMENT;
-		final String version = VERSION;
-		final JsonObject data = new JsonObject();
-		final String compressedState = compressState(state);
-
-		lastCompressedState = compressedState;
-
-		if (compressedState.equals(lastConfigurationServiceState))
-		{
-			return false;
-		}
-
-		try {
-			data.addProperty("segment", segment);
-			data.addProperty("version", version);
-			data.addProperty("content", compressedState);
-			data.addProperty("channel_id", getChannelId());
-		} catch (Exception exception) {
-			log.error("An error occurred when constructing the payload for Twitch state update:");
-			log.error(exception.toString());
-		}
-
-		log.debug("Sending out {} state (v{}):", segment, version);
-		log.debug(state.toString());
-		log.debug("Compressed state:");
-		log.debug(compressedState);
-
-		try {
-			Response response = performConfigurationServiceRequest(data);
-			verifyStateUpdateResponse("ConfigurationService", response, state, compressedState);
-		} catch (Exception exception) {
-			return false;
-		}
-
-		lastConfigurationServiceState = compressedState;
-		return true;
-	}
-
-	private Response performConfigurationServiceRequest(JsonObject data) throws IOException {
-		final String dataString = data.toString();
-		final String clientId = config.extensionClientId();
-		final String token = config.twitchToken();
-		final String url = "https://api.twitch.tv/v5/extensions/"+ clientId +"/configurations/";
-
-		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment
-		Request request = new Request.Builder()
-			.header("Client-ID", clientId)
-			.header("Authorization", "Bearer "+ token)
-			.header("User-Agent", USER_AGENT)
-			.put(RequestBody.create(JSON, dataString))
-			.url(url)
-			.build();
-
-		Response response = httpClient.newCall(request).execute();
-		return response;
-	}
-
-	private boolean sendPubSubState(JsonObject state)
-	{
-		try {
-			final JsonObject data = new JsonObject();
-			final JsonArray targets = new JsonArray();
-			final String channelId = getChannelId();
-			targets.add(PubSubTarget.BROADCAST.target);
-			String compressedState = compressState(state);
-
-			lastCompressedState = compressedState;
-
-			data.addProperty("message", compressedState);
-			data.addProperty("broadcaster_id", channelId);
-			data.add("target", targets);
-
-			Response response = performPubSubRequest(data);
-			verifyStateUpdateResponse("PubSub", response, state, compressedState);
-		} catch (Exception exception) {
-			return false;
-		}
-
-		return true;
 	}
 
 	private Response performPubSubRequest(JsonObject data) throws Exception
