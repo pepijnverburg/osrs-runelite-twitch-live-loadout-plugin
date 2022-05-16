@@ -183,7 +183,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager);
 		pluginPanel.rebuild();
 
-		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), ICON_FILE);
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
 
 		navigationButton = NavigationButton.builder()
 			.tooltip("Twitch Live Loadout Status")
@@ -282,7 +282,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncFightStatisticsState()
 	{
 		JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
-
 		twitchState.setFightStatistics(fightStatistics);
 	}
 
