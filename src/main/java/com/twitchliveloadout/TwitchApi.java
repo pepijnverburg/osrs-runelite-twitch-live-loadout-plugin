@@ -153,6 +153,30 @@ public class TwitchApi
 		scheduledExecutor.getQueue().clear();
 	}
 
+	private boolean sendPubSubState(JsonObject state)
+	{
+		try {
+			final JsonObject data = new JsonObject();
+			final JsonArray targets = new JsonArray();
+			final String channelId = getChannelId();
+			targets.add(PubSubTarget.BROADCAST.target);
+			String compressedState = compressState(state);
+
+			lastCompressedState = compressedState;
+
+			data.addProperty("message", compressedState);
+			data.addProperty("broadcaster_id", channelId);
+			data.add("target", targets);
+
+			Response response = performPubSubRequest(data);
+			verifyStateUpdateResponse("PubSub", response, state, compressedState);
+		} catch (Exception exception) {
+			return false;
+		}
+
+		return true;
+	}
+
 	private Response performPubSubRequest(JsonObject data) throws Exception
 	{
 		final String clientId = config.extensionClientId();
