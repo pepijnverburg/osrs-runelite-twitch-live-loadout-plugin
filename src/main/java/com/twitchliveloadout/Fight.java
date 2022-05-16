@@ -8,6 +8,7 @@ import net.runelite.api.NPC;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class Fight {
@@ -16,10 +17,10 @@ public class Fight {
 	private final FightStateManager.ActorType actorType;
 	private final int actorCombatLevel;
 
-	private final ArrayList<FightQueuedStatistic> queuedStatistics = new ArrayList();
+	private final CopyOnWriteArrayList<FightQueuedStatistic> queuedStatistics = new CopyOnWriteArrayList();
 
 	private final HashMap<Actor, FightSession> sessions = new HashMap();
-	private final ArrayList<FightSession> finishedSessions = new ArrayList();
+	private final CopyOnWriteArrayList<FightSession> finishedSessions = new CopyOnWriteArrayList();
 
 	// The session counter should not match the finished session list size,
 	// because some finished sessions are not kills / deaths, separate counter for this.
@@ -245,7 +246,7 @@ public class Fight {
 		return lastSession;
 	}
 
-	public boolean isIdling(ArrayList<String> actorNames)
+	public boolean isIdling(CopyOnWriteArrayList<String> actorNames)
 	{
 		for (String actorName : actorNames)
 		{
@@ -328,9 +329,9 @@ public class Fight {
 		return sessions.values();
 	}
 
-	public ArrayList<FightSession> getAllSessions()
+	public CopyOnWriteArrayList<FightSession> getAllSessions()
 	{
-		ArrayList<FightSession> allSessions = new ArrayList();
+		CopyOnWriteArrayList<FightSession> allSessions = new CopyOnWriteArrayList();
 
 		allSessions.addAll(finishedSessions);
 		allSessions.addAll(sessions.values());

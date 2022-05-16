@@ -266,12 +266,10 @@ public class TwitchState {
 						slicedCollectionLog.add(tabTitle, new JsonObject());
 					}
 
-//					System.out.println("Adding category: "+ category.toString());
 					JsonObject tabLog = slicedCollectionLog.getAsJsonObject(tabTitle);
 					tabLog.add(categoryTitle, category);
 				});
 			});
-//			System.out.println("Adding collection log: "+ slicedCollectionLog.toString());
 
 			state.add(TwitchStateEntry.COLLECTION_LOG.getKey(), slicedCollectionLog);
 		}

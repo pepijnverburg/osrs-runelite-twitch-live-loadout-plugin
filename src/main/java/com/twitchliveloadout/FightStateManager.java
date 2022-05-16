@@ -7,9 +7,9 @@ import net.runelite.api.*;
 import net.runelite.api.events.*;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -610,7 +610,7 @@ public class FightStateManager
 		}
 
 		final boolean isLoggedIn = (client.getGameState() == GameState.LOGGED_IN);
-		final ArrayList<String> actorNames = getOtherActorNames();
+		final CopyOnWriteArrayList<String> actorNames = getOtherActorNames();
 
 		for (Fight fight : fights.values())
 		{
@@ -891,8 +891,8 @@ public class FightStateManager
 
 	public JsonObject getFightStatisticsState()
 	{
-		ArrayList<Fight> includedFights = new ArrayList();
-		ArrayList<FightStatisticEntry> includedStatisticEntries = new ArrayList();
+		CopyOnWriteArrayList<Fight> includedFights = new CopyOnWriteArrayList();
+		CopyOnWriteArrayList<FightStatisticEntry> includedStatisticEntries = new CopyOnWriteArrayList();
 
 		final JsonObject state = new JsonObject();
 		JsonObject statistics = new JsonObject();
@@ -937,7 +937,7 @@ public class FightStateManager
 		Collections.sort(includedFights, new FightSorter());
 
 		// only send a specific maximum to Twitch
-		ArrayList<Fight> slicedFights = new ArrayList();
+		CopyOnWriteArrayList<Fight> slicedFights = new CopyOnWriteArrayList();
 		slicedFights.addAll(includedFights.subList(0, fightAmount));
 
 		state.add(ACTOR_NAME_KEY, actorNames);
@@ -1081,10 +1081,10 @@ public class FightStateManager
 		return client.getPlayers().size() > allowedPlayerAmount;
 	}
 
-	public ArrayList<String> getOtherActorNames()
+	public CopyOnWriteArrayList<String> getOtherActorNames()
 	{
-		final ArrayList<String> actorNames = new ArrayList();
-		final ArrayList<Actor> actors = new ArrayList();
+		final CopyOnWriteArrayList<String> actorNames = new CopyOnWriteArrayList();
+		final CopyOnWriteArrayList<Actor> actors = new CopyOnWriteArrayList();
 
 		actors.addAll(client.getNpcs());
 		actors.addAll(client.getPlayers());

@@ -11,8 +11,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.COLLECTION_LOG_CONFIG_KEY;
 
@@ -24,8 +23,8 @@ public class CollectionLogManager {
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
 
-	private static final boolean DEBUG_WIDGETS = true;
-	private static final boolean DEBUG_CURRENT_CATEGORY = true;
+	private static final boolean DEBUG_WIDGETS = false;
+	private static final boolean DEBUG_CURRENT_CATEGORY = false;
 	private static final int COLLECTION_LOG_TITLE = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
 	private static final int COLLECTION_LOG_RAIDS_TAB = 5;
@@ -146,7 +145,7 @@ public class CollectionLogManager {
 	 */
 	private void updateCurrentCategory()
 	{
-		final List<CollectionLogItem> items = getCurrentItems();
+		final CopyOnWriteArrayList<CollectionLogItem> items = getCurrentItems();
 		final JsonObject counters = getCurrentCounters();
 		final String categoryTitle = getCategoryTitle();
 		final String tabTitle = getTabTitle();
@@ -225,7 +224,7 @@ public class CollectionLogManager {
 		plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
 	}
 
-	private List<CollectionLogItem> getCurrentItems()
+	private CopyOnWriteArrayList<CollectionLogItem> getCurrentItems()
 	{
 		final Widget itemsContainer = client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY_ITEMS);
 
@@ -235,7 +234,7 @@ public class CollectionLogManager {
 		}
 
 		final Widget[] widgetItems = itemsContainer.getDynamicChildren();
-		final List<CollectionLogItem> items = new ArrayList<>();
+		final CopyOnWriteArrayList<CollectionLogItem> items = new CopyOnWriteArrayList<>();
 
 		for (Widget widgetItem : widgetItems)
 		{

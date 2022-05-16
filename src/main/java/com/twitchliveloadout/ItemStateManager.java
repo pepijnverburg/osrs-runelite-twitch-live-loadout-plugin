@@ -5,10 +5,10 @@ import net.runelite.api.*;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.game.ItemManager;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ItemStateManager {
 
@@ -121,14 +121,14 @@ public class ItemStateManager {
 		twitchState.setBankItems(selectedItems, totalPrice, selectedTabAmounts);
 	}
 
-	public List<PricedItem> getPricedItems(Item[] items)
+	public CopyOnWriteArrayList<PricedItem> getPricedItems(Item[] items)
 	{
 		return getPricedItems(items, new int[0]);
 	}
 
-	public List<PricedItem> getPricedItems(Item[] items, int[] tabAmounts)
+	public CopyOnWriteArrayList<PricedItem> getPricedItems(Item[] items, int[] tabAmounts)
 	{
-		final List<PricedItem> pricedItems = new ArrayList();
+		final CopyOnWriteArrayList<PricedItem> pricedItems = new CopyOnWriteArrayList();
 
 		for (int slotId = 0; slotId < items.length; slotId++)
 		{
@@ -177,7 +177,7 @@ public class ItemStateManager {
 	public long getTotalPrice(Item[] items)
 	{
 		long totalPrice = 0;
-		final List<PricedItem> pricedItems = getPricedItems(items);
+		final CopyOnWriteArrayList<PricedItem> pricedItems = getPricedItems(items);
 
 		for (PricedItem pricedItem : pricedItems)
 		{
@@ -189,7 +189,7 @@ public class ItemStateManager {
 
 	public List<PricedItem> getHighestPricedItems(Item[] items, int[] tabAmounts, int maxAmount)
 	{
-		final List<PricedItem> pricedItems = getPricedItems(items, tabAmounts);
+		final CopyOnWriteArrayList<PricedItem> pricedItems = getPricedItems(items, tabAmounts);
 		Collections.sort(pricedItems, new ItemPriceSorter());
 		final int itemAmount = pricedItems.size();
 

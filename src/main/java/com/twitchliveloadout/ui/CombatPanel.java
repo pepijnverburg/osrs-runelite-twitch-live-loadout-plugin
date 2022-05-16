@@ -12,10 +12,10 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class CombatPanel extends JPanel
@@ -30,7 +30,7 @@ public class CombatPanel extends JPanel
 
 	private final JPanel fightListPanel = new JPanel(new GridBagLayout());
 	private final JPanel fightListWrapper = new JPanel(new BorderLayout());
-	private final ArrayList<FightPanel> fightPanels = new ArrayList();
+	private final CopyOnWriteArrayList<FightPanel> fightPanels = new CopyOnWriteArrayList();
 	private final JPanel deleteAllPanel = new JPanel(new BorderLayout());
 	private final JLabel deleteAllLabel = new JLabel();
 
@@ -131,7 +131,7 @@ public class CombatPanel extends JPanel
 
 	public void rebuildFightList()
 	{
-		final ArrayList<Fight> fights = new ArrayList();
+		final CopyOnWriteArrayList<Fight> fights = new CopyOnWriteArrayList();
 		int fightPanelIndex = 0;
 
 		// add all fights by default
