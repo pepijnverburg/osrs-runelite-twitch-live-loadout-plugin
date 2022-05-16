@@ -619,8 +619,6 @@ public class FightStateManager
 				continue;
 			}
 
-			//log.error("Fight with {} is idling...", fight.getActorName());
-
 			// add shared idle ticks for the total session
 			fight.queueIdleTicks(1);
 

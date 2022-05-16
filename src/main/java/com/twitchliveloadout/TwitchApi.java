@@ -241,10 +241,9 @@ public class TwitchApi
 
 		if (isErrorResponseCode(responseCode))
 		{
-			log.error("Could not update state via {}, http code was: {}", type, responseCode);
-			log.error("The state was ({} bytes compressed): ", compressesStateSize);
-			log.error("The response body was {}", responseText);
-			log.error(state.toString());
+			log.debug("Could not update state via {}, http code was: {}", type, responseCode);
+			log.debug("The state was ({} bytes compressed): ", compressesStateSize);
+			log.debug("The response body was {}", responseText);
 
 			// Only send a chat message when the token is not set or expired as other errors
 			// also occur due to reliability of the Twitch servers (e.g. random 500's in between).
