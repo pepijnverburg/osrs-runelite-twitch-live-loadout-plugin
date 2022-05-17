@@ -25,11 +25,11 @@
 package com.twitchliveloadout;
 
 import com.google.inject.Provides;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
@@ -47,7 +47,6 @@ import javax.inject.Inject;
 import java.awt.image.BufferedImage;
 import java.time.temporal.ChronoUnit;
 
-import static com.twitchliveloadout.TwitchLiveLoadoutConfig.COLLECTION_LOG_CONFIG_KEY;
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
 
 /**
@@ -60,6 +59,7 @@ import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
 	description = "Send live Equipment, Collection Log, Combat Statistics and more to Twitch Extensions as a streamer.",
 	enabledByDefault = true
 )
+@Slf4j
 public class TwitchLiveLoadoutPlugin extends Plugin
 {
 	@Inject
@@ -226,50 +226,54 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 500, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncState()
 	{
-		// Base this on the fact is the state is changed for a fixed time for throttling purposes.
-		// This makes the updates more smooth when multiple changes occur fast after each other.
-		// Take for example switching gear: when the first armour piece is worn a change is directly
-		// triggered, causing the rest of the switch to come the update after (a few seconds later).
-		// This throttling behaviour makes sure that quickly succeeding changes are batched and with that
-		// let for example gear switches come through in one state update towards the viewer.
-		final boolean isChangedLongEnough = twitchState.isChangedLongEnough();
-		final boolean hasCyclicState = twitchState.hasCyclicState();
-		final boolean shouldAlwaysSync = twitchState.shouldAlwaysSync();
+		try {
+			// Base this on the fact is the state is changed for a fixed time for throttling purposes.
+			// This makes the updates more smooth when multiple changes occur fast after each other.
+			// Take for example switching gear: when the first armour piece is worn a change is directly
+			// triggered, causing the rest of the switch to come the update after (a few seconds later).
+			// This throttling behaviour makes sure that quickly succeeding changes are batched and with that
+			// let for example gear switches come through in one state update towards the viewer.
+			final boolean isChangedLongEnough = twitchState.isChangedLongEnough();
+			final boolean hasCyclicState = twitchState.hasCyclicState();
+			final boolean shouldAlwaysSync = twitchState.shouldAlwaysSync();
 
-		// Guard: check if something has changed to avoid unnecessary updates.
-		if (!shouldAlwaysSync && !isChangedLongEnough && !hasCyclicState)
-		{
-			return;
+			// Guard: check if something has changed to avoid unnecessary updates.
+			if (!shouldAlwaysSync && !isChangedLongEnough && !hasCyclicState)
+			{
+				return;
+			}
+
+			final JsonObject filteredState = twitchState.getFilteredState();
+
+			// We will not verify whether the set was successful here
+			// because it is possible that the request is being delayed
+			// due to the custom streamer delay
+			final boolean isScheduled = twitchApi.scheduleBroadcasterState(filteredState);
+
+			// guard: check if the scheduling was successful due to for example rate limiting
+			// if not we will not acknowledge the change
+			if (!isScheduled) {
+				return;
+			}
+
+			final String filteredStateString = filteredState.toString();
+			final String newFilteredStateString = twitchState.getFilteredState().toString();
+
+			// Guard: check if the state has changed in the mean time,
+			// because the request takes some time, in this case we will
+			// not acknowledge the change
+			if (!filteredStateString.equals(newFilteredStateString))
+			{
+				return;
+			}
+
+			// when all is scheduled and there are no in-between changes we can move
+			// to the next state slice
+			twitchState.nextCyclicState();
+			twitchState.acknowledgeChange();
+		} catch (Exception exception) {
+			log.debug("Could not sync the current state to Twitch due to the following error:", exception);
 		}
-
-		final JsonObject filteredState = twitchState.getFilteredState();
-
-		// We will not verify whether the set was successful here
-		// because it is possible that the request is being delayed
-		// due to the custom streamer delay
-		final boolean isScheduled = twitchApi.scheduleBroadcasterState(filteredState);
-
-		// guard: check if the scheduling was successful due to for example rate limiting
-		// if not we will not acknowledge the change
-		if (!isScheduled) {
-			return;
-		}
-
-		final String filteredStateString = filteredState.toString();
-		final String newFilteredStateString = twitchState.getFilteredState().toString();
-
-		// Guard: check if the state has changed in the mean time,
-		// because the request takes some time, in this case we will
-		// not acknowledge the change
-		if (!filteredStateString.equals(newFilteredStateString))
-		{
-			return;
-		}
-
-		// when all is scheduled and there are no in-between changes we can move
-		// to the next state slice
-		twitchState.nextCyclicState();
-		twitchState.acknowledgeChange();
 	}
 
 	/**
@@ -281,8 +285,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncFightStatisticsState()
 	{
-		JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
-		twitchState.setFightStatistics(fightStatistics);
+		try {
+			JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
+			twitchState.setFightStatistics(fightStatistics);
+		} catch (Exception exception) {
+			log.debug("Could not update the fight statistics due to the following error:", exception);
+		}
 	}
 
 	/**
