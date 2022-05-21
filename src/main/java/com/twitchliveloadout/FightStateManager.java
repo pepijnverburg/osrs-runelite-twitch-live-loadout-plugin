@@ -8,7 +8,7 @@ import net.runelite.api.events.*;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class FightStateManager
 {
-	private HashMap<String, Fight> fights = new HashMap();
+	private ConcurrentHashMap<String, Fight> fights = new ConcurrentHashMap();
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
 	private final Client client;
@@ -35,11 +35,11 @@ public class FightStateManager
 	public static final int GRAPHIC_HITSPLAT_EXPIRY_TIME_PER_SQUARE = 160; // ms, this varies for spell and enemy distance, this is an approximate
 
 	public static final int GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME = ON_GRAPHIC_CHANGED_DELAY + 50; // ms, takes around 5ms
-	private HashMap<Skill, Instant> lastSkillUpdates = new HashMap();
-	private HashMap<Skill, Integer> lastSkillXp = new HashMap();
+	private ConcurrentHashMap<Skill, Instant> lastSkillUpdates = new ConcurrentHashMap();
+	private ConcurrentHashMap<Skill, Integer> lastSkillXp = new ConcurrentHashMap();
 
 	public static final int GRAPHIC_ANIMATION_EXPIRY_TIME = ON_GRAPHIC_CHANGED_DELAY + 50; // ms, takes around 5ms
-	private HashMap<Integer, Instant> lastAnimationUpdates = new HashMap();
+	private ConcurrentHashMap<Integer, Instant> lastAnimationUpdates = new ConcurrentHashMap();
 
 	private static final int MAX_INTERACTING_ACTORS_HISTORY = 3;
 	private static final int INTERACTING_ACTOR_EXPIRY_TIME = 3000; // ms
@@ -47,7 +47,7 @@ public class FightStateManager
 	private static final boolean DEATH_REGISTER_MIN_DAMAGE_ENABLED = false;
 	private static final float DEATH_REGISTER_MIN_DAMAGE_PERCENTAGE = 0.1f; // 0 to 1 scale
 	private static final int INCOMING_FIGHT_SESSION_AUTO_EXPIRY_TIME = 60000; // ms
-	private HashMap<Actor, Instant> lastInteractingActors = new HashMap();
+	private ConcurrentHashMap<Actor, Instant> lastInteractingActors = new ConcurrentHashMap();
 
 	private static final String ACTOR_NAME_KEY = "actorNames";
 	private static final String ACTOR_TYPE_KEY = "actorTypes";
@@ -1112,7 +1112,7 @@ public class FightStateManager
 		return maxAmount;
 	}
 
-	public HashMap<String, Fight> getFights()
+	public ConcurrentHashMap<String, Fight> getFights()
 	{
 		return fights;
 	}

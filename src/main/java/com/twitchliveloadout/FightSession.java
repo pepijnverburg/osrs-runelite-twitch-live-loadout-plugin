@@ -3,7 +3,7 @@ package com.twitchliveloadout;
 import net.runelite.api.Actor;
 
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
 import static com.twitchliveloadout.FightStateManager.*;
@@ -12,7 +12,7 @@ public class FightSession {
 	private final Fight fight;
 	private final Actor actor;
 
-	private HashMap<FightStatisticEntry, FightStatistic> statistics = new HashMap();
+	private ConcurrentHashMap<FightStatisticEntry, FightStatistic> statistics = new ConcurrentHashMap();
 	private long interactingTickCounter = 0;
 	private long idleTickCounter = 0;
 	private long idleQueuedTickCounter = 0;

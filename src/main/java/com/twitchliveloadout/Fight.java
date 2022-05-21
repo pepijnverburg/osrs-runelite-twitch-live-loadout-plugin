@@ -2,12 +2,13 @@ package com.twitchliveloadout;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
-import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -19,7 +20,7 @@ public class Fight {
 
 	private final CopyOnWriteArrayList<FightQueuedStatistic> queuedStatistics = new CopyOnWriteArrayList();
 
-	private final HashMap<Actor, FightSession> sessions = new HashMap();
+	private final ConcurrentHashMap<Actor, FightSession> sessions = new ConcurrentHashMap();
 	private final CopyOnWriteArrayList<FightSession> finishedSessions = new CopyOnWriteArrayList();
 
 	// The session counter should not match the finished session list size,
