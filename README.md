@@ -1,6 +1,7 @@
 # OSRS Twitch Live Loadout Plugin ![Plugin Installs](https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/twitch-live-loadout) ![Plugin Rank](https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/rank/plugin/twitch-live-loadout)
 ![OSRS Live Loadout](./docs/banner.png?raw=true "OSRS Live Loadout")
 
+Join the Discord server for questions or feature requests:
 [![Support Server](https://img.shields.io/discord/968224650163273798.svg?label=Discord&logo=Discord&colorB=7289da&style=for-the-badge)](https://discord.gg/3Fjm5HTFGM)
 
 ## Introduction
@@ -55,7 +56,7 @@ First install the Twitch Extension via the `Creator Dashboard` and set the exten
 Now open the `Configuration view` by clicking on the `settings/cog icon`. Here you can preview what the extension looks like. The `Settings tab` opens automatically where you can copy an Extension Token that you need to authenticate RuneLite to send data to the extension. Below you can see a GIF of how to copy that over:
 ![Configuration](./docs/configuration.gif "Configuration")
 
-Note that for security reasons the token is **valid for a limited time** requiring you to repeat this process once in a while. The RuneLite plugin panels show the validity of the token.
+Note that the token is **valid for quite a long time**, meaning it is important you don't share the token with anyone. The RuneLite plugin panels show the validity of the token.
 
 ### Step 4: Test if everything works
 Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can also verify whether data is now synced, for example your gear:
