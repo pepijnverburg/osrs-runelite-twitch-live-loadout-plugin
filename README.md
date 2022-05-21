@@ -1,7 +1,7 @@
 # OSRS Twitch Live Loadout Plugin ![Plugin Installs](https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/twitch-live-loadout) ![Plugin Rank](https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/rank/plugin/twitch-live-loadout)
 ![OSRS Live Loadout](./docs/banner.png?raw=true "OSRS Live Loadout")
 
-Join the Discord server for questions or feature requests:
+Join the Discord server for questions or feature requests:<br/>
 [![Support Server](https://img.shields.io/discord/968224650163273798.svg?label=Discord&logo=Discord&colorB=7289da&style=for-the-badge)](https://discord.gg/3Fjm5HTFGM)
 
 ## Introduction
