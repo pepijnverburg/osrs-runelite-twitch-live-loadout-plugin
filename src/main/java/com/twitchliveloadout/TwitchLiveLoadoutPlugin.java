@@ -307,87 +307,134 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			return;
 		}
 
-		onPlayerNameChanged(playerName);
-		lastPlayerName = playerName;
+		try {
+			twitchState.setPlayerName(playerName);
+			collectionLogManager.onPlayerNameChanged(playerName);
+			lastPlayerName = playerName;
+		} catch (Exception exception) {
+			log.debug("Could not sync player info to state:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		itemStateManager.onItemContainerChanged(event);
+		try {
+			itemStateManager.onItemContainerChanged(event);
+		} catch (Exception exception) {
+			log.debug("Could not handle item container change event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onStatChanged(StatChanged event)
 	{
-		skillStateManager.onStatChanged(event);
-		fightStateManager.onStatChanged(event);
+		try {
+			skillStateManager.onStatChanged(event);
+			fightStateManager.onStatChanged(event);
+		} catch (Exception exception) {
+			log.debug("Could not handle stat change event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onFakeXpDrop(FakeXpDrop event)
 	{
-		fightStateManager.onFakeXpDrop(event);
+		try {
+			fightStateManager.onFakeXpDrop(event);
+		} catch (Exception exception) {
+			log.debug("Could not handle fake XP drop event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onAnimationChanged(AnimationChanged event)
 	{
-		fightStateManager.onAnimationChanged(event);
+		try {
+			fightStateManager.onAnimationChanged(event);
+		} catch (Exception exception) {
+			log.debug("Could not handle animation change event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onGraphicChanged(GraphicChanged event)
 	{
-		fightStateManager.onGraphicChanged(event);
+		try {
+			fightStateManager.onGraphicChanged(event);
+		} catch (Exception exception) {
+			log.debug("Could not handle graphic change event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		 fightStateManager.onHitsplatApplied(event);
+		try {
+			fightStateManager.onHitsplatApplied(event);
+		} catch (Exception exception) {
+			log.debug("Could not handle hitsplat event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onNpcDespawned(NpcDespawned npcDespawned)
 	{
-		fightStateManager.onNpcDespawned(npcDespawned);
+		try {
+			fightStateManager.onNpcDespawned(npcDespawned);
+		} catch (Exception exception) {
+			log.debug("Could not handle NPC despawned event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onPlayerDespawned(PlayerDespawned playerDespawned)
 	{
-		fightStateManager.onPlayerDespawned(playerDespawned);
+		try {
+			fightStateManager.onPlayerDespawned(playerDespawned);
+		} catch (Exception exception) {
+			log.debug("Could not handle player despawned event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onInteractingChanged(InteractingChanged interactingChanged)
 	{
-		fightStateManager.onInteractingChanged(interactingChanged);
+		try {
+			fightStateManager.onInteractingChanged(interactingChanged);
+		} catch (Exception exception) {
+			log.debug("Could not handle interacting change event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		 fightStateManager.onGameTick();
+		try {
+			fightStateManager.onGameTick();
+		} catch (Exception exception) {
+			log.debug("Could not handle game tick event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
 	{
-		collectionLogManager.onScriptPostFired(scriptPostFired);
+		try {
+			collectionLogManager.onScriptPostFired(scriptPostFired);
+		} catch (Exception exception) {
+			log.debug("Could not collection log script execution:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged varbitChanged)
 	{
-		collectionLogManager.onVarbitChanged(varbitChanged);
-	}
-
-	public void onPlayerNameChanged(String playerName)
-	{
-		twitchState.setPlayerName(playerName);
-		collectionLogManager.onPlayerNameChanged(playerName);
+		try {
+			collectionLogManager.onVarbitChanged(varbitChanged);
+		} catch (Exception exception) {
+			log.debug("Could not handle varbit change event:", exception);
+		}
 	}
 
 	/**
@@ -401,36 +448,44 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			return;
 		}
 
-		fightStateManager.onGameTick();
+		try {
+			fightStateManager.onGameTick();
+		} catch (Exception exception) {
+			log.debug("Could not handle lobby game tick event:", exception);
+		}
 	}
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged)
 	{
-		String key = configChanged.getKey();
+		try {
+			String key = configChanged.getKey();
 
-		// Always clear the scheduled state updates
-		// when either the value is increased of decreased
-		// it can mess up the state updates badly
-		if (key.equals("syncDelay"))
-		{
-			twitchApi.clearScheduledBroadcasterStates();
-		}
+			// Always clear the scheduled state updates
+			// when either the value is increased of decreased
+			// it can mess up the state updates badly
+			if (key.equals("syncDelay"))
+			{
+				twitchApi.clearScheduledBroadcasterStates();
+			}
 
-		// Handle keys that should trigger an update of the state as well.
-		// Note that on load these events are not triggered, meaning that
-		// in the constructor of the TwitchState class one should also load
-		// this configuration value!
-		if (key.equals("overlayTopPosition"))
-		{
-			twitchState.setOverlayTopPosition(config.overlayTopPosition());
-		}
-		else if (key.equals("virtualLevelsEnabled"))
-		{
-			twitchState.setVirtualLevelsEnabled(config.virtualLevelsEnabled());
-		}
+			// Handle keys that should trigger an update of the state as well.
+			// Note that on load these events are not triggered, meaning that
+			// in the constructor of the TwitchState class one should also load
+			// this configuration value!
+			if (key.equals("overlayTopPosition"))
+			{
+				twitchState.setOverlayTopPosition(config.overlayTopPosition());
+			}
+			else if (key.equals("virtualLevelsEnabled"))
+			{
+				twitchState.setVirtualLevelsEnabled(config.virtualLevelsEnabled());
+			}
 
-		twitchState.forceChange();
+			twitchState.forceChange();
+		} catch (Exception exception) {
+			log.debug("Could not handle config change event:", exception);
+		}
 	}
 
 	public boolean hasValidPanels()
