@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.twitchliveloadout.FightStateManager.MAX_FINISHED_FIGHT_SESSION_AMOUNT;
+
 @Slf4j
 public class Fight {
 	private final String actorName;
@@ -188,7 +190,7 @@ public class Fight {
 			return sessions.get(actor);
 		}
 
-		FightSession session = new FightSession(this, actor);
+		FightSession session = new FightSession(this);
 		sessions.put(actor, session);
 
 		return session;
@@ -223,7 +225,7 @@ public class Fight {
 
 	public FightSession calculateTotalSession()
 	{
-		FightSession totalSession = new FightSession(this, lastActor);
+		FightSession totalSession = new FightSession(this);
 		totalSession.addIdleTicks(idleTickCounter);
 
 		for (FightSession session : getAllSessions())
@@ -288,6 +290,12 @@ public class Fight {
 		// gets its dedicated key so that no new stats are added
 		sessions.remove(actor);
 		finishedSessions.add(session);
+
+		if (finishedSessions.size() > MAX_FINISHED_FIGHT_SESSION_AMOUNT)
+		{
+			log.debug("Removing a finished session due to maximum amount reached...");
+			finishedSessions.remove(0);
+		}
 	}
 
 	public void increaseSessionCounter()

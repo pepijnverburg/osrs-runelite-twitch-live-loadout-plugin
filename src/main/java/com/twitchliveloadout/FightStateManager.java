@@ -28,6 +28,7 @@ public class FightStateManager
 	public static final float GAME_TICK_DURATION = 0.6f; // seconds
 	public static final int DEATH_ANIMATION_ID = 836;
 	public static final int MAX_FIGHT_AMOUNT = 15;
+	public static final int MAX_FINISHED_FIGHT_SESSION_AMOUNT = 1000;
 	public static final int MAX_FIGHT_AMOUNT_IN_MEMORY = 50;
 	public static final int MAX_FIGHT_DISTANCE = 15; // above max fight range on purpose
 

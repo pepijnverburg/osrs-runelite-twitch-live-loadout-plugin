@@ -10,7 +10,6 @@ import static com.twitchliveloadout.FightStateManager.*;
 
 public class FightSession {
 	private final Fight fight;
-	private final Actor actor;
 
 	private ConcurrentHashMap<FightStatisticEntry, FightStatistic> statistics = new ConcurrentHashMap();
 	private long interactingTickCounter = 0;
@@ -18,10 +17,9 @@ public class FightSession {
 	private long idleQueuedTickCounter = 0;
 	private boolean finished = false;
 
-	public FightSession(Fight fight, Actor actor)
+	public FightSession(Fight fight)
 	{
 		this.fight = fight;
-		this.actor = actor;
 
 		for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
 		{
