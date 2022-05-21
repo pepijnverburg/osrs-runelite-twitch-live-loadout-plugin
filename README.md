@@ -20,8 +20,9 @@ Get better engagement with...
 ![Summary](./docs/summary.gif "Summary")
 
 ### Recent updates
-- The Twitch data syncing has been updated to work again due to deprecated functionalities.
 - 🎉 Collection log is now available to be viewed live by your viewers!
+- Enhanced stability of plugin when there are breaking client or Twitch changes.
+- The Twitch data syncing has been updated to work again due to deprecated functionalities.
 
 ## Requirements
 - [Runelite Client](https://runelite.net/) with [Plugin Hub](https://runelite.net/plugin-hub/) enabled
