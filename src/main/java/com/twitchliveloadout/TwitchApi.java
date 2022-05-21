@@ -38,10 +38,8 @@ public class TwitchApi
 	public final static int BASE_SYNC_DELAY = 1000; // ms
 	public final static boolean CHAT_ERRORS_ENABLED = true;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
-	private final static String BROADCASTER_SEGMENT = "broadcaster";
 	private final static String RATE_LIMIT_REMAINING_HEADER = "ratelimit-ratelimitermessagesbychannel-remaining";
 	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 15 * 60 * 1000; // in ms
-	private final static String VERSION = "0.0.1";
 	private final static String USER_AGENT = "RuneLite";
 	private enum PubSubTarget {
 		BROADCAST("broadcast"),
