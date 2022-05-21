@@ -169,6 +169,7 @@ public class TwitchApi
 			Response response = performPubSubRequest(data);
 			verifyStateUpdateResponse("PubSub", response, state, compressedState);
 		} catch (Exception exception) {
+			log.debug("Could not send pub sub state due to the following error:", exception);
 			return false;
 		}
 
@@ -263,7 +264,7 @@ public class TwitchApi
 			throw new Exception("Could not set the Twitch Configuration State due to invalid response code: "+ responseCode);
 		}
 
-		log.debug("Successfully sent state: {}", responseCode);
+		log.debug("Successfully sent state with response code: {}", responseCode);
 	}
 
 	private String getChannelId() throws Exception

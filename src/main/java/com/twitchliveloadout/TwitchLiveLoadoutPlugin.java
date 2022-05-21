@@ -289,7 +289,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
 			twitchState.setFightStatistics(fightStatistics);
 		} catch (Exception exception) {
-			log.debug("Could not update the fight statistics due to the following error:", exception);
+			log.error("Could not update the fight statistics due to the following error:", exception);
 		}
 	}
 
@@ -322,7 +322,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			itemStateManager.onItemContainerChanged(event);
 		} catch (Exception exception) {
-			log.debug("Could not handle item container change event:", exception);
+			log.error("Could not handle item container change event:", exception);
 		}
 	}
 
