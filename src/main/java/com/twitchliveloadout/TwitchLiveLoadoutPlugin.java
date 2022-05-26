@@ -300,14 +300,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncPlayerInfo()
 	{
-		String playerName = getPlayerName();
-
-		if (playerName == null || playerName.equals(lastPlayerName))
-		{
-			return;
-		}
-
 		try {
+			String playerName = getPlayerName();
+
+			if (playerName == null || playerName.equals(lastPlayerName))
+			{
+				return;
+			}
+
 			twitchState.setPlayerName(playerName);
 			collectionLogManager.onPlayerNameChanged(playerName);
 			lastPlayerName = playerName;
@@ -443,12 +443,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void onLobbyGameTick()
 	{
-		if (client.getGameState() != GameState.LOGIN_SCREEN)
-		{
-			return;
-		}
-
 		try {
+			if (client.getGameState() != GameState.LOGIN_SCREEN)
+			{
+				return;
+			}
+
 			fightStateManager.onGameTick();
 		} catch (Exception exception) {
 			log.warn("Could not handle lobby game tick event: ", exception);
@@ -495,28 +495,40 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public void updateConnectivityPanel()
 	{
-		if (!hasValidPanels())
-		{
-			return;
-		}
+		try {
+			if (!hasValidPanels())
+			{
+				return;
+			}
 
-		pluginPanel.getConnectivityPanel().rebuild();
+			pluginPanel.getConnectivityPanel().rebuild();
+		} catch (Exception exception) {
+			log.warn("Could not update the connectivity panel due to the following error: ", exception);
+		}
 	}
 
 	public void updateCombatPanel()
 	{
-		if (!hasValidPanels())
-		{
-			return;
-		}
+		try {
+			if (!hasValidPanels())
+			{
+				return;
+			}
 
-		pluginPanel.getCombatPanel().rebuild();
+			pluginPanel.getCombatPanel().rebuild();
+		} catch (Exception exception) {
+			log.warn("Could not update the combat panel due to the following error: ", exception);
+		}
 	}
 
 	public void setConfiguration(String configKey, Object payload)
 	{
-		String scopedConfigKey = getScopedConfigKey(configKey);
-		configManager.setConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey, payload);
+		try {
+			String scopedConfigKey = getScopedConfigKey(configKey);
+			configManager.setConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey, payload);
+		} catch (Exception exception) {
+			log.warn("Could not set the configuration due to the following error: ", exception);
+		}
 	}
 
 	public String getConfiguration(String configKey)

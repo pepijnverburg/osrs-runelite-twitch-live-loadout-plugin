@@ -102,6 +102,7 @@ public class TwitchApi
 			delay = MIN_SYNC_DELAY;
 		}
 
+		// schedule in the future, this also makes sure the HTTP requests are done on their own thread.
 		scheduledExecutor.schedule(new Runnable()
 		{
 			public void run()
