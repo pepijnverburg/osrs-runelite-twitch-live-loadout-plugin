@@ -99,7 +99,8 @@ public class ItemStateManager {
 	public void setSlicedBankItems(Item[] items, long totalPrice)
 	{
 		final int[] tabAmounts = getBankTabAmounts();
-		final List<PricedItem> highestPricedItems = getHighestPricedItems(items, tabAmounts, getMaxBankItemAmount());
+		final int maxItemAmount = getMaxBankItemAmount();
+		final List<PricedItem> highestPricedItems = getHighestPricedItems(items, tabAmounts, maxItemAmount);
 		final Item[] selectedItems = new Item[highestPricedItems.size()];
 		final int[] selectedTabAmounts = new int[tabAmounts.length];
 
