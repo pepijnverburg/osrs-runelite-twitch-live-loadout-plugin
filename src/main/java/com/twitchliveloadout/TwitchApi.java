@@ -109,7 +109,7 @@ public class TwitchApi
 				try {
 					sendPubSubState(state);
 				} catch (Exception exception) {
-					log.error("Could not send the pub sub state due to the following error:", exception);
+					log.warn("Could not send the pub sub state due to the following error: {}", exception);
 				}
 			}
 		}, delay, TimeUnit.MILLISECONDS);
@@ -173,7 +173,7 @@ public class TwitchApi
 			Response response = performPubSubRequest(data);
 			verifyStateUpdateResponse("PubSub", response, state, compressedState);
 		} catch (Exception exception) {
-			log.debug("Could not send pub sub state due to the following error:", exception);
+			log.warn("Could not send pub sub state due to the following error: {}", exception);
 			return false;
 		}
 

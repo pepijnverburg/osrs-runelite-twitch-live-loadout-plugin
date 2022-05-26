@@ -163,7 +163,7 @@ public class CombatPanel extends JPanel
 			// guard: check if the panel is valid
 			if (fightPanel == null)
 			{
-				log.debug("An invalid fight panel index was requested: "+ fightPanelIndex);
+				log.warn("An invalid fight panel index was requested: "+ fightPanelIndex);
 				break;
 			}
 
