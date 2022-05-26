@@ -585,7 +585,7 @@ public class FightStateManager
 		for (Actor interactingActor : lastInteractingActors.keySet())
 		{
 			Instant lastUpdate = lastInteractingActors.get(interactingActor);
-			Instant oldestLastUpdate = lastInteractingActors.get(oldestActor);
+			Instant oldestLastUpdate = (oldestActor == null ? null : lastInteractingActors.get(oldestActor));
 
 			if (oldestLastUpdate == null || lastUpdate.isBefore(oldestLastUpdate))
 			{
@@ -840,6 +840,12 @@ public class FightStateManager
 	public Fight getFight(Actor actor)
 	{
 		String actorName = actor.getName();
+
+		// guard: make sure the actor is valid
+		if (actorName == null)
+		{
+			return null;
+		}
 
 		return fights.get(actorName);
 	}
