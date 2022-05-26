@@ -106,7 +106,11 @@ public class TwitchApi
 		{
 			public void run()
 			{
-				sendPubSubState(state);
+				try {
+					sendPubSubState(state);
+				} catch (Exception exception) {
+					log.error("Could not send the pub sub state due to the following error:", exception);
+				}
 			}
 		}, delay, TimeUnit.MILLISECONDS);
 

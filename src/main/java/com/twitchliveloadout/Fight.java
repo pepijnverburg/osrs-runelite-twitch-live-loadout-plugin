@@ -204,9 +204,12 @@ public class Fight {
 	public Instant getLastUpdate(boolean updatedAtInfluencerOnly)
 	{
 		Instant maxLastUpdate = null;
+		CopyOnWriteArrayList<FightSession> allSessions = getAllSessions();
+		Iterator<FightSession> allSessionIterator = allSessions.iterator();
 
-		for (FightSession session : getAllSessions())
+		while (allSessionIterator.hasNext())
 		{
+			FightSession session = allSessionIterator.next();
 			Instant lastUpdate = session.getLastUpdate(updatedAtInfluencerOnly);
 
 			if (lastUpdate == null)
@@ -226,10 +229,14 @@ public class Fight {
 	public FightSession calculateTotalSession()
 	{
 		FightSession totalSession = new FightSession(this);
+		CopyOnWriteArrayList<FightSession> allSessions = getAllSessions();
+		Iterator<FightSession> allSessionIterator = allSessions.iterator();
+
 		totalSession.addIdleTicks(idleTickCounter);
 
-		for (FightSession session : getAllSessions())
+		while (allSessionIterator.hasNext())
 		{
+			FightSession session = allSessionIterator.next();
 			totalSession.addInteractingTicks(session.getInteractingTickCounter());
 
 			for (FightStatisticEntry statisticEntry : FightStatisticEntry.values())
@@ -341,9 +348,18 @@ public class Fight {
 	public CopyOnWriteArrayList<FightSession> getAllSessions()
 	{
 		CopyOnWriteArrayList<FightSession> allSessions = new CopyOnWriteArrayList();
+		Iterator<FightSession> finishedSessionIterator = finishedSessions.iterator();
+		Iterator<FightSession> sessionIterator = sessions.values().iterator();
 
-		allSessions.addAll(finishedSessions);
-		allSessions.addAll(sessions.values());
+		while (finishedSessionIterator.hasNext())
+		{
+			allSessions.add(finishedSessionIterator.next());
+		}
+
+		while (sessionIterator.hasNext())
+		{
+			allSessions.add(sessionIterator.next());
+		}
 
 		return allSessions;
 	}

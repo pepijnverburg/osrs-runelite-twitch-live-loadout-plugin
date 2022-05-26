@@ -191,7 +191,11 @@ public class FightStateManager
 		{
 			public void run()
 			{
-				onGraphicChangedDelayed(event);
+				try {
+					onGraphicChangedDelayed(event);
+				} catch (Exception exception) {
+					log.error("Could not handle an delayed graphic on changed due to the following error:", exception);
+				}
 			}
 		}, ON_GRAPHIC_CHANGED_DELAY, TimeUnit.MILLISECONDS);
 	}
