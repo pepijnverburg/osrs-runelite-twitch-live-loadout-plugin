@@ -145,83 +145,82 @@ public class CollectionLogManager {
 	 */
 	private void updateCurrentCategory()
 	{
-		final CopyOnWriteArrayList<CollectionLogItem> items = getCurrentItems();
-		final JsonObject counters = getCurrentCounters();
-		final String categoryTitle = getCategoryTitle();
-		final String tabTitle = getTabTitle();
-		JsonObject collectionLog = twitchState.getCollectionLog();
+		// debug errors because this method is called on the client thread
+		// using invokeLater which makes it harder to verify than on our own threads.
+		try {
+			final CopyOnWriteArrayList<CollectionLogItem> items = getCurrentItems();
+			final JsonObject counters = getCurrentCounters();
+			final String categoryTitle = getCategoryTitle();
+			final String tabTitle = getTabTitle();
+			JsonObject collectionLog = twitchState.getCollectionLog();
 
-		if (collectionLog == null)
-		{
-			collectionLog = new JsonObject();
-		}
+			if (collectionLog == null) {
+				collectionLog = new JsonObject();
+			}
 
-		if (items == null || categoryTitle == null || tabTitle == null)
-		{
-			return;
-		}
+			if (items == null || categoryTitle == null || tabTitle == null) {
+				return;
+			}
 
-		if (!collectionLog.has(tabTitle))
-		{
-			collectionLog.add(tabTitle, new JsonObject());
-		}
+			if (!collectionLog.has(tabTitle)) {
+				collectionLog.add(tabTitle, new JsonObject());
+			}
 
-		final JsonObject tabLog = collectionLog.getAsJsonObject(tabTitle);
+			final JsonObject tabLog = collectionLog.getAsJsonObject(tabTitle);
 
-		// always overwrite with new category log to make sure
-		// new data structures in versioning are directly supported
-		final JsonObject categoryLog = new JsonObject();
-		final JsonArray serializedItems = new JsonArray();
+			// always overwrite with new category log to make sure
+			// new data structures in versioning are directly supported
+			final JsonObject categoryLog = new JsonObject();
+			final JsonArray serializedItems = new JsonArray();
 
-		// serialize all items to arrays to be space efficient like:
-		// [[itemId, quantity]] = [[995, 1], [2949, 2], [12304, 1]]
-		for (CollectionLogItem item : items)
-		{
-			final JsonArray serializedItem = new JsonArray();
-			serializedItem.add(item.getId());
-			serializedItem.add(item.getQuantity());
-			serializedItems.add(serializedItem);
-		}
+			// serialize all items to arrays to be space efficient like:
+			// [[itemId, quantity]] = [[995, 1], [2949, 2], [12304, 1]]
+			for (CollectionLogItem item : items) {
+				final JsonArray serializedItem = new JsonArray();
+				serializedItem.add(item.getId());
+				serializedItem.add(item.getQuantity());
+				serializedItems.add(serializedItem);
+			}
 
-		categoryLog.add(COUNTERS_KEY_NAME, counters);
-		categoryLog.add(ITEMS_KEY_NAME, serializedItems);
-		tabLog.add(categoryTitle, categoryLog);
+			categoryLog.add(COUNTERS_KEY_NAME, counters);
+			categoryLog.add(ITEMS_KEY_NAME, serializedItems);
+			tabLog.add(categoryTitle, categoryLog);
 
-		if (DEBUG_WIDGETS)
-		{
-			for (int i = 0; i < 40; i++) {
-				log.debug("---------------- Widget with ID: "+ i);
-				Widget testWidget = client.getWidget(WidgetID.COLLECTION_LOG_ID, i);
+			if (DEBUG_WIDGETS) {
+				for (int i = 0; i < 40; i++) {
+					log.debug("---------------- Widget with ID: " + i);
+					Widget testWidget = client.getWidget(WidgetID.COLLECTION_LOG_ID, i);
 
-				if (testWidget == null)
-				{
-					continue;
-				}
-				int j = 0;
-				for (Widget text : testWidget.getDynamicChildren()) {
-					log.debug("Widget text on index "+ j +": "+ text.getText());
-					log.debug("Widget text on index "+ j +": "+ text.getTextColor());
-					j++;
+					if (testWidget == null) {
+						continue;
+					}
+					int j = 0;
+					for (Widget text : testWidget.getDynamicChildren()) {
+						log.debug("Widget text on index " + j + ": " + text.getText());
+						log.debug("Widget text on index " + j + ": " + text.getTextColor());
+						j++;
+					}
 				}
 			}
+
+			if (DEBUG_CURRENT_CATEGORY) {
+				log.debug("-------------------");
+				log.debug("Category title: " + categoryTitle);
+				log.debug("Tab title: " + tabTitle);
+				log.debug("Counters: " + counters.toString());
+				log.debug("Item count: " + items.size());
+				log.debug("New collection log is:");
+				log.debug(collectionLog.toString());
+			}
+
+			// update the twitch state
+			twitchState.setCollectionLog(collectionLog);
+
+			// save to persistent storage
+			plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
+		} catch (Exception exception) {
+			log.warn("Could not update the collection log due to the following error: ", exception);
 		}
-
-		if (DEBUG_CURRENT_CATEGORY)
-		{
-			log.debug("-------------------");
-			log.debug("Category title: "+ categoryTitle);
-			log.debug("Tab title: "+ tabTitle);
-			log.debug("Counters: "+ counters.toString());
-			log.debug("Item count: "+ items.size());
-			log.debug("New collection log is:");
-			log.debug(collectionLog.toString());
-		}
-
-		// update the twitch state
-		twitchState.setCollectionLog(collectionLog);
-
-		// save to persistent storage
-		plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
 	}
 
 	private CopyOnWriteArrayList<CollectionLogItem> getCurrentItems()
