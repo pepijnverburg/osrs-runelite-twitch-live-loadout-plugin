@@ -209,7 +209,7 @@ public class FightStateManager
 				try {
 					onGraphicChangedDelayed(eventActor, graphicId, isInMultiCombatArea, otherPlayersPresent);
 				} catch (Exception exception) {
-					log.warn("Could not handle an delayed graphic on changed due to the following error: {}", exception);
+					log.warn("Could not handle an delayed graphic on changed due to the following error: ", exception);
 				}
 			}
 		}, ON_GRAPHIC_CHANGED_DELAY, TimeUnit.MILLISECONDS);

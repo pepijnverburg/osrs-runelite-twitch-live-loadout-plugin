@@ -272,7 +272,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			twitchState.nextCyclicState();
 			twitchState.acknowledgeChange();
 		} catch (Exception exception) {
-			log.warn("Could not sync the current state to Twitch due to the following error: {}", exception);
+			log.warn("Could not sync the current state to Twitch due to the following error: ", exception);
 		}
 	}
 
@@ -289,7 +289,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
 			twitchState.setFightStatistics(fightStatistics);
 		} catch (Exception exception) {
-			log.warn("Could not update the fight statistics due to the following error: {}", exception);
+			log.warn("Could not update the fight statistics due to the following error: ", exception);
 		}
 	}
 
@@ -312,7 +312,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			collectionLogManager.onPlayerNameChanged(playerName);
 			lastPlayerName = playerName;
 		} catch (Exception exception) {
-			log.warn("Could not sync player info to state: {}", exception);
+			log.warn("Could not sync player info to state: ", exception);
 		}
 	}
 
@@ -322,7 +322,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			itemStateManager.onItemContainerChanged(event);
 		} catch (Exception exception) {
-			log.warn("Could not handle item container change event: {}", exception);
+			log.warn("Could not handle item container change event: ", exception);
 		}
 	}
 
@@ -333,7 +333,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			skillStateManager.onStatChanged(event);
 			fightStateManager.onStatChanged(event);
 		} catch (Exception exception) {
-			log.warn("Could not handle stat change event: {}", exception);
+			log.warn("Could not handle stat change event: ", exception);
 		}
 	}
 
@@ -343,7 +343,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onFakeXpDrop(event);
 		} catch (Exception exception) {
-			log.warn("Could not handle fake XP drop event: {}", exception);
+			log.warn("Could not handle fake XP drop event: ", exception);
 		}
 	}
 
@@ -353,7 +353,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onAnimationChanged(event);
 		} catch (Exception exception) {
-			log.warn("Could not handle animation change event: {}", exception);
+			log.warn("Could not handle animation change event: ", exception);
 		}
 	}
 
@@ -363,7 +363,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onGraphicChanged(event);
 		} catch (Exception exception) {
-			log.warn("Could not handle graphic change event: {}", exception);
+			log.warn("Could not handle graphic change event: ", exception);
 		}
 	}
 
@@ -373,7 +373,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onHitsplatApplied(event);
 		} catch (Exception exception) {
-			log.warn("Could not handle hitsplat event: {}", exception);
+			log.warn("Could not handle hitsplat event: ", exception);
 		}
 	}
 
@@ -383,7 +383,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onNpcDespawned(npcDespawned);
 		} catch (Exception exception) {
-			log.warn("Could not handle NPC despawned event: {}", exception);
+			log.warn("Could not handle NPC despawned event: ", exception);
 		}
 	}
 
@@ -393,7 +393,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onPlayerDespawned(playerDespawned);
 		} catch (Exception exception) {
-			log.warn("Could not handle player despawned event: {}", exception);
+			log.warn("Could not handle player despawned event: ", exception);
 		}
 	}
 
@@ -403,7 +403,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onInteractingChanged(interactingChanged);
 		} catch (Exception exception) {
-			log.warn("Could not handle interacting change event: {}", exception);
+			log.warn("Could not handle interacting change event: ", exception);
 		}
 	}
 
@@ -413,7 +413,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onGameTick();
 		} catch (Exception exception) {
-			log.warn("Could not handle game tick event: {}", exception);
+			log.warn("Could not handle game tick event: ", exception);
 		}
 	}
 
@@ -433,7 +433,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			collectionLogManager.onVarbitChanged(varbitChanged);
 		} catch (Exception exception) {
-			log.warn("Could not handle varbit change event: {}", exception);
+			log.warn("Could not handle varbit change event: ", exception);
 		}
 	}
 
@@ -451,7 +451,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			fightStateManager.onGameTick();
 		} catch (Exception exception) {
-			log.warn("Could not handle lobby game tick event: {}", exception);
+			log.warn("Could not handle lobby game tick event: ", exception);
 		}
 	}
 
@@ -484,7 +484,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			twitchState.forceChange();
 		} catch (Exception exception) {
-			log.warn("Could not handle config change event: {}", exception);
+			log.warn("Could not handle config change event: ", exception);
 		}
 	}
 
