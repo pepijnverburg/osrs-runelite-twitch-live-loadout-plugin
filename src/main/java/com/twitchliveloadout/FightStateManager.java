@@ -182,6 +182,21 @@ public class FightStateManager
 
 	public void onGraphicChanged(GraphicChanged event)
 	{
+		final Actor eventActor = event.getActor();
+		final String eventActorName = eventActor.getName();
+		final int graphicId = eventActor.getGraphic();
+
+		// NOTE: collect this here to make sure the varbit and other things are fetched on the client thread
+		final boolean isInMultiCombatArea = isInMultiCombatArea();
+		final boolean otherPlayersPresent = otherPlayersPresent(eventActor);
+
+		// guard: skip invalid graphics or actors
+		if (graphicId < 0 || eventActorName == null)
+		{
+			return;
+		}
+
+		log.debug("Scheduling delayed onGraphicChanged, graphicId: {}", graphicId);
 
 		// delay the handler to make sure other events have time to also be triggered.
 		// For example some graphics are translated to statistics, but require a certain skill
@@ -192,9 +207,9 @@ public class FightStateManager
 			public void run()
 			{
 				try {
-					onGraphicChangedDelayed(event);
+					onGraphicChangedDelayed(eventActor, graphicId, isInMultiCombatArea, otherPlayersPresent);
 				} catch (Exception exception) {
-					log.error("Could not handle an delayed graphic on changed due to the following error:", exception);
+					log.warn("Could not handle an delayed graphic on changed due to the following error: {}", exception);
 				}
 			}
 		}, ON_GRAPHIC_CHANGED_DELAY, TimeUnit.MILLISECONDS);
@@ -205,21 +220,18 @@ public class FightStateManager
 		scheduledExecutor.getQueue().clear();
 	}
 
-	public void onGraphicChangedDelayed(GraphicChanged event)
+	public void onGraphicChangedDelayed(Actor eventActor, int graphicId, boolean isInMultiCombatArea, boolean otherPlayersPresent)
 	{
-		final Actor eventActor = event.getActor();
-		final String eventActorName = eventActor.getName();
 		final Player localPlayer = client.getLocalPlayer();
-		final int graphicId = eventActor.getGraphic();
 		final boolean isLocalPlayer = (eventActor == localPlayer);
 
-		if (graphicId < 0  || localPlayer == null || eventActorName == null)
+		log.debug("Handling delayed onGraphicChanged, graphic ID: {}", graphicId);
+
+		if (localPlayer == null)
 		{
 			return;
 		}
 
-		final boolean isInMultiCombatArea = isInMultiCombatArea();
-		final boolean otherPlayersPresent = otherPlayersPresent(eventActor);
 		final Instant now = Instant.now();
 		final Instant lastInteractedOn = lastInteractingActors.get(eventActor);
 		final boolean lastInteractedWithExpired = (lastInteractedOn == null || lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME).isBefore(now));
@@ -244,6 +256,9 @@ public class FightStateManager
 				continue;
 			}
 
+			log.debug("Detected fight graphic, now validating... Graphic ID: {}", fightGraphicId);
+			log.debug("Required skill time until expiry: {}", (lastInteractedOn == null ? "N/A" : (now.toEpochMilli() - lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME).toEpochMilli())));
+
 			// In singles interacting is always required.
 			if (!isInMultiCombatArea)
 			{
@@ -257,9 +272,6 @@ public class FightStateManager
 			{
 				interactionRequired = false;
 			}
-
-			log.debug("Detected fight graphic, now validating... Graphic ID: {}", fightGraphicId);
-			log.debug("Required skill time until expiry: {}", (lastInteractedOn == null ? "N/A" : (now.toEpochMilli() - lastInteractedOn.plusMillis(INTERACTING_ACTOR_EXPIRY_TIME).toEpochMilli())));
 
 			// Most checks only apply when the event target is not the local player
 			if (!isLocalPlayer)
@@ -311,8 +323,6 @@ public class FightStateManager
 		Instant now = Instant.now();
 		Skill requiredSkill = graphic.getRequiredSkill();
 		Skill invalidSkill = graphic.getInvalidSkill();
-		Instant requiredSkillUpdate = lastSkillUpdates.get(requiredSkill);
-		Instant invalidSkillUpdate = lastSkillUpdates.get(invalidSkill);
 
 		// Guard: skip spell tracking when disabled
 		if (requiredSkill == Skill.MAGIC && !config.fightStatisticsSpellsEnabled())
@@ -322,6 +332,7 @@ public class FightStateManager
 
 		if (requiredSkill != null)
 		{
+			Instant requiredSkillUpdate = lastSkillUpdates.get(requiredSkill);
 
 			// Guard: skip when there was no update at all
 			if (requiredSkillUpdate == null)
@@ -340,8 +351,16 @@ public class FightStateManager
 			}
 		}
 
-		if (invalidSkill != null && invalidSkillUpdate != null)
+		if (invalidSkill != null)
 		{
+			Instant invalidSkillUpdate = lastSkillUpdates.get(invalidSkill);
+
+			// Guard: skip when there was no update at all
+			if (invalidSkillUpdate == null)
+			{
+				return true;
+			}
+
 			Instant invalidSkillExpiryTime = invalidSkillUpdate.plusMillis(GRAPHIC_SKILL_XP_DROP_EXPIRY_TIME);
 			boolean invalidSkillIsExpired = now.isAfter(invalidSkillExpiryTime);
 
@@ -1066,7 +1085,7 @@ public class FightStateManager
 
 	public boolean isInMultiCombatArea()
 	{
-		int multiCombatVarBit = client.getVar(Varbits.MULTICOMBAT_AREA);
+		int multiCombatVarBit = client.getVarbitValue(Varbits.MULTICOMBAT_AREA);
 
 		return multiCombatVarBit == 1;
 	}
