@@ -83,7 +83,7 @@ public class ItemStateManager {
 
 		for (int tabIndex = 0; tabIndex < tabAmount; tabIndex++)
 		{
-			final int itemAmount = client.getVar(BANK_TAB_VARBITS.get(tabIndex));
+			final int itemAmount = client.getVarbitValue(BANK_TAB_VARBITS.get(tabIndex));
 			amounts[tabIndex] = itemAmount;
 		}
 
