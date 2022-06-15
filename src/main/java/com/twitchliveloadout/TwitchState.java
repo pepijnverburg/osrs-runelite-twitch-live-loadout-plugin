@@ -7,6 +7,7 @@ import net.runelite.api.*;
 import net.runelite.client.game.ItemManager;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.twitchliveloadout.CollectionLogManager.ITEMS_KEY_NAME;
@@ -58,10 +59,10 @@ public class TwitchState {
 	 * due to Twitch limitations, currently the bank and the collection log
 	 * are sent in smaller parts via this state
 	 */
-	private final static int MAX_BANK_ITEMS_PER_SLICE = 200; // TODO: bank items cannot slice yet
+	private final static int MAX_BANK_ITEMS_PER_SLICE = 200;
 	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 200;
 	private JsonObject cyclicState = new JsonObject();
-	private TwitchStateEntry currentCyclicEntry = TwitchStateEntry.BANK_ITEMS;
+	private TwitchStateEntry currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 	private int currentCyclicSliceIndex = 0;
 
 	/**
@@ -167,8 +168,26 @@ public class TwitchState {
 
 	public void setBankItems(Item[] items, long totalPrice, int[] tabAmounts)
 	{
-		cyclicState.add(TwitchStateEntry.BANK_TAB_AMOUNTS.getKey(), convertToJson(tabAmounts, 0));
-		cyclicState.add(TwitchStateEntry.BANK_ITEMS.getKey(), convertToJson(items));
+		JsonArray tabbedBankItems = new JsonArray();
+		int currentItemAmount = 0;
+
+		// convert the client item structure to a nested array with the items
+		for (int tabIndex = 0; tabIndex < tabAmounts.length; tabIndex++)
+		{
+			final int tabAmount = tabAmounts[tabIndex];
+			final Item[] tabItems = Arrays.copyOfRange(items, currentItemAmount, currentItemAmount + tabAmount);
+
+			tabbedBankItems.add(convertToJson(tabItems));
+			currentItemAmount += tabAmount;
+		}
+
+		// get the remaining / zero tab and prepend it
+		final Item[] zeroTabItems = Arrays.copyOfRange(items, currentItemAmount, items.length);
+		JsonArray prependedTabbedBankItems = new JsonArray();
+		prependedTabbedBankItems.add(convertToJson(zeroTabItems));
+		prependedTabbedBankItems.addAll(tabbedBankItems);
+
+		cyclicState.add(TwitchStateEntry.BANK_TABBED_ITEMS.getKey(), prependedTabbedBankItems);
 		cyclicState.addProperty(TwitchStateEntry.BANK_PRICE.getKey(), totalPrice);
 	}
 
@@ -180,6 +199,11 @@ public class TwitchState {
 	public JsonObject getCollectionLog()
 	{
 		return cyclicState.getAsJsonObject(TwitchStateEntry.COLLECTION_LOG.getKey());
+	}
+
+	public JsonArray getTabbedBankItems()
+	{
+		return cyclicState.getAsJsonArray(TwitchStateEntry.BANK_TABBED_ITEMS.getKey());
 	}
 
 	public JsonObject getFilteredState()
@@ -195,19 +219,49 @@ public class TwitchState {
 	{
 
 		// add the bank items when in this mode
-		if (currentCyclicEntry == TwitchStateEntry.BANK_ITEMS)
+		if (currentCyclicEntry == TwitchStateEntry.BANK_TABBED_ITEMS)
 		{
-			final String bankAmountsKey = TwitchStateEntry.BANK_TAB_AMOUNTS.getKey();
-			final String bankItemsKey = TwitchStateEntry.BANK_ITEMS.getKey();
+			final String bankTabbedItemsKey = TwitchStateEntry.BANK_TABBED_ITEMS.getKey();
 			final String bankPriceKey = TwitchStateEntry.BANK_PRICE.getKey();
 
-			if (!cyclicState.has(bankAmountsKey) || !cyclicState.has(bankItemsKey) || !cyclicState.has(bankPriceKey))
+			if (!cyclicState.has(bankTabbedItemsKey) || !cyclicState.has(bankPriceKey))
 			{
 				return state;
 			}
 
-			state.add(bankAmountsKey, cyclicState.getAsJsonArray(bankAmountsKey));
-			state.add(bankItemsKey, cyclicState.getAsJsonArray(bankItemsKey));
+			AtomicInteger currentItemAmount = new AtomicInteger();
+			final JsonArray allTabbedBankItems = cyclicState.getAsJsonArray(bankTabbedItemsKey);
+			final JsonArray slicedTabbedBankItems = new JsonArray();
+			final JsonArray emptyItem = new JsonArray();
+			emptyItem.add(-1); // item ID
+			emptyItem.add(-1); // item quantity
+
+			// loop all the bank items until we find the item where we need to start syncing
+			for (int tabIndex = 0; tabIndex < allTabbedBankItems.size(); tabIndex++)
+			{
+				JsonArray tabItems = allTabbedBankItems.get(tabIndex).getAsJsonArray();
+				JsonArray slicedTabItems = new JsonArray();
+
+				for (int itemIndex = 0; itemIndex < tabItems.size(); itemIndex++)
+				{
+					final boolean afterSliceStart = currentItemAmount.get() >= currentCyclicSliceIndex;
+					final boolean beforeSliceEnd = currentItemAmount.get() < (currentCyclicSliceIndex + MAX_BANK_ITEMS_PER_SLICE);
+					currentItemAmount.addAndGet(1);
+
+					// guard: add empty item when we are not in range
+					if (!afterSliceStart || !beforeSliceEnd) {
+						slicedTabItems.add(emptyItem);
+						continue;
+					}
+
+					slicedTabItems.add(tabItems.get(itemIndex));
+				}
+
+				// add each sliced tab
+				slicedTabbedBankItems.add(slicedTabItems);
+			}
+
+			state.add(bankTabbedItemsKey, slicedTabbedBankItems);
 			state.addProperty(bankPriceKey, cyclicState.get(bankPriceKey).getAsLong());
 
 			return state;
@@ -281,19 +335,27 @@ public class TwitchState {
 	{
 
 		// guard: after bank items are synced we move to the collection log
-		if (currentCyclicEntry == TwitchStateEntry.BANK_ITEMS)
+		// we cannot sync the bank in one go either so we go through the slices
+		if (currentCyclicEntry == TwitchStateEntry.BANK_TABBED_ITEMS)
 		{
-			currentCyclicEntry = TwitchStateEntry.COLLECTION_LOG;
-			currentCyclicSliceIndex = 0;
+			final int itemAmount = getBankItemAmount();
+			final int newSliceIndex = currentCyclicSliceIndex + MAX_BANK_ITEMS_PER_SLICE;
+			currentCyclicSliceIndex = newSliceIndex;
+
+			// if the current slices were already exceeding the current items
+			// we can move to syncing the collection log once again
+			if (currentCyclicSliceIndex >= itemAmount)
+			{
+				currentCyclicEntry = TwitchStateEntry.COLLECTION_LOG;
+				currentCyclicSliceIndex = 0;
+			}
 		}
 
 		// guard: the collection log is a bit more complex as we cannot sync 1351+ items
 		// in one go, for this reason we move across the object category by category
 		else if (currentCyclicEntry == TwitchStateEntry.COLLECTION_LOG)
 		{
-			final JsonObject collectionLog = getCollectionLog();
 			final int itemAmount = getCollectionLogItemAmount();
-
 			final int newSliceIndex = currentCyclicSliceIndex + MAX_COLLECTION_LOG_ITEMS_PER_SLICE;
 			currentCyclicSliceIndex = newSliceIndex;
 
@@ -301,7 +363,7 @@ public class TwitchState {
 			// we can move to syncing the bank once again
 			if (currentCyclicSliceIndex >= itemAmount)
 			{
-				currentCyclicEntry = TwitchStateEntry.BANK_ITEMS;
+				currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 				currentCyclicSliceIndex = 0;
 			}
 		}
@@ -350,9 +412,8 @@ public class TwitchState {
 
 		if (!config.bankEnabled())
 		{
-			state.add(TwitchStateEntry.BANK_ITEMS.getKey(), null);
+			state.add(TwitchStateEntry.BANK_TABBED_ITEMS.getKey(), null);
 			state.add(TwitchStateEntry.BANK_PRICE.getKey(), null);
-			state.add(TwitchStateEntry.BANK_TAB_AMOUNTS.getKey(), null);
 		}
 
 		if (!config.bankPriceEnabled())
@@ -514,5 +575,23 @@ public class TwitchState {
 		});
 
 		return amount.get();
+	}
+
+	private int getBankItemAmount()
+	{
+		final JsonArray tabbedBankItems = getTabbedBankItems();
+		int amount = 0;
+
+		if (tabbedBankItems == null) {
+			return amount;
+		}
+
+		for (int tabIndex = 0; tabIndex < tabbedBankItems.size(); tabIndex++)
+		{
+			JsonArray tabItems = tabbedBankItems.get(tabIndex).getAsJsonArray();
+			amount += tabItems.size();
+		}
+
+		return amount;
 	}
 }

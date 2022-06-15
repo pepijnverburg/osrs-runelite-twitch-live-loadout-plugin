@@ -148,7 +148,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "bankItemAmount",
 			name = "Max bank items",
-			description = "Maximum amount of items synced with fixed upper limit of "+ ItemStateManager.MAX_BANK_ITEMS +".",
+			description = "Maximum amount of items chosen by stack value.",
 			position = 10,
 			section = itemsSection
 	)
@@ -359,6 +359,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Twitch Extension ID",
 			description = "This is the ID of the Twitch Extension you want to sync the data to. Defaults to 'OSRS Live Loadout'.",
 			position = 2,
+			hidden = true,
 			section = advancedSection
 	)
 	default String extensionClientId()

@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ItemStateManager {
 
-	public final static int MAX_BANK_ITEMS = 200;
+	public final static int MAX_BANK_ITEMS = 1500;
 
 	private final TwitchState twitchState;
 	private final Client client;
@@ -133,18 +133,21 @@ public class ItemStateManager {
 
 		for (int slotId = 0; slotId < items.length; slotId++)
 		{
-			final Item item = items[slotId];
-			final int itemId = item.getId();
-			final int itemQuantity = item.getQuantity();
+			Item item = items[slotId];
+			int itemId = item.getId();
+			int itemQuantity = item.getQuantity();
+
+			// translate placeholder IDs to their actual items
+			if (isPlaceholderItem(itemId))
+			{
+				itemId = itemManager.getItemComposition(itemId).getPlaceholderId();
+				itemQuantity = 0;
+				item = new Item(itemId, itemQuantity);
+			}
+
 			final long itemPrice = ((long) itemManager.getItemPrice(itemId)) * itemQuantity;
 			final int tabId = getItemTabId(slotId, tabAmounts);
 			final PricedItem pricedItem = new PricedItem(item, itemPrice, slotId, tabId);
-
-			// skip placeholder items to not be synced from the bank
-			if (isPlaceholderItem(itemId))
-			{
-				continue;
-			}
 
 			pricedItems.add(pricedItem);
 		}

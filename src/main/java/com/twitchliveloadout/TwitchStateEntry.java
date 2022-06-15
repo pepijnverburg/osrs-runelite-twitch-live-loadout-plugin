@@ -13,10 +13,8 @@ public enum TwitchStateEntry {
 	WEIGHT("weight"),
 	ITEM_GOALS("itemGoals"),
 	TOP_POSITION("topPosition"),
-
-	BANK_ITEMS("bank"),
+	BANK_TABBED_ITEMS("bankTabbedItems"),
 	BANK_PRICE("bankPrice"),
-	BANK_TAB_AMOUNTS("bankTabAmounts"),
 	COLLECTION_LOG("collectionLog");
 
 	private final String key;
