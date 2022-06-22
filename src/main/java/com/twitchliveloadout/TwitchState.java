@@ -344,7 +344,7 @@ public class TwitchState {
 
 			// if the current slices were already exceeding the current items
 			// we can move to syncing the collection log once again
-			if (currentCyclicSliceIndex >= itemAmount)
+			if (!config.bankEnabled() || currentCyclicSliceIndex >= itemAmount)
 			{
 				currentCyclicEntry = TwitchStateEntry.COLLECTION_LOG;
 				currentCyclicSliceIndex = 0;
@@ -361,7 +361,7 @@ public class TwitchState {
 
 			// if the current slices were already exceeding the current items
 			// we can move to syncing the bank once again
-			if (currentCyclicSliceIndex >= itemAmount)
+			if (!config.collectionLogEnabled() || currentCyclicSliceIndex >= itemAmount)
 			{
 				currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 				currentCyclicSliceIndex = 0;
