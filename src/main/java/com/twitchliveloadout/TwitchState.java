@@ -61,6 +61,7 @@ public class TwitchState {
 	 */
 	private final static int MAX_BANK_ITEMS_PER_SLICE = 200;
 	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 200;
+	private final static String COLLECTION_LOG_FILTER_SEPARATOR = ",";
 	private JsonObject cyclicState = new JsonObject();
 	private TwitchStateEntry currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 	private int currentCyclicSliceIndex = 0;
@@ -293,6 +294,12 @@ public class TwitchState {
 						return;
 					}
 
+					// guard: skip any categories that should not be included because of the filter
+					if (!shouldIncludeInCollectionLog(tabTitle, categoryTitle))
+					{
+						return;
+					}
+
 					int itemAmount = items.size();
 
 					// guard: check if we already passed the amount of items that were included
@@ -315,6 +322,7 @@ public class TwitchState {
 					// now we can include this category
 					includedItemAmount.addAndGet(itemAmount);
 
+					// make sure the tab exists
 					if (!slicedCollectionLog.has(tabTitle))
 					{
 						slicedCollectionLog.add(tabTitle, new JsonObject());
@@ -329,6 +337,31 @@ public class TwitchState {
 		}
 
 		return state;
+	}
+
+	private boolean shouldIncludeInCollectionLog(String tabTitle, String categoryTitle)
+	{
+		final String filter = config.collectionLogFilter().trim().toLowerCase();
+		final String[] filterPieces = filter.split(COLLECTION_LOG_FILTER_SEPARATOR);
+		final String trimmedTabTitle = tabTitle.trim().toLowerCase();
+		final String trimmedCategoryTitle = categoryTitle.trim().toLowerCase();
+
+		if (filter.equals(""))
+		{
+			return true;
+		}
+
+		for (final String filterPiece : filterPieces)
+		{
+			final String trimmedFilterPiece = filterPiece.trim();
+
+			if (trimmedTabTitle.contains((trimmedFilterPiece)) || trimmedCategoryTitle.contains((trimmedFilterPiece)))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public void nextCyclicState()
@@ -566,6 +599,12 @@ public class TwitchState {
 				JsonArray items = category.getAsJsonArray(ITEMS_KEY_NAME);
 
 				if (items == null)
+				{
+					return;
+				}
+
+				// guard: skip any categories that should not be included because of the filter
+				if (!shouldIncludeInCollectionLog(tabTitle, categoryTitle))
 				{
 					return;
 				}

@@ -92,7 +92,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "multiLogDisplayName",
-			name = "Multi-log display name",
+			name = "Anti multi-log display name",
 			description = "When multi-logging set the display name here of the account you want to sync.",
 			position = 8,
 			section = twitchSection
@@ -179,6 +179,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default boolean collectionLogEnabled()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+			keyName = "collectionLogFilter",
+			name = "Collection log filter (comma separated)",
+			description = "Only include entry titles that include one of the keywords separated with a comma (e.g. 'abyssal, raids')",
+			position = 14,
+			section = itemsSection
+	)
+	default String collectionLogFilter()
+	{
+		return "";
 	}
 
 	@ConfigSection(
