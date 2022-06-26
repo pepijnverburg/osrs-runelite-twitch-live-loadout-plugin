@@ -378,4 +378,30 @@ public interface TwitchLiveLoadoutConfig extends Config
 	{
 		return TwitchApi.DEFAULT_EXTENSION_CLIENT_ID;
 	}
+
+	@ConfigItem(
+			keyName = "devObjectSpawnId",
+			name = "Dev Object Spawn ID",
+			description = "Testing ID when spawning objects for the marketplace.",
+			position = 4,
+			hidden = false,
+			section = advancedSection
+	)
+	default int devObjectSpawnId()
+	{
+		return 41280;
+	}
+
+	@ConfigItem(
+			keyName = "devMarketplaceProductSpawn",
+			name = "Dev Marketplace Product Spawn",
+			description = "Testing product.",
+			position = 6,
+			hidden = false,
+			section = advancedSection
+	)
+	default MarketplaceProduct devMarketplaceProductSpawn()
+	{
+		return MarketplaceProduct.COIN_TROPHY;
+	}
 }

@@ -46,6 +46,7 @@ import net.runelite.client.util.ImageUtil;
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
 
@@ -83,6 +84,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
+	@Inject
+	private ScheduledExecutorService executor;
+
 	/**
 	 * The plugin panel to manage data such as combat fights.
 	 */
@@ -119,6 +123,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Dedicated manager for collection log information.
 	 */
 	private CollectionLogManager collectionLogManager;
+
+	/**
+	 * Dedicated manager for marketplace products information.
+	 */
+	private MarketplaceManager marketplaceManager;
 
 	/**
 	 * Cache to check for player name changes as game state is not reliable for this
@@ -170,6 +179,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		fightStateManager = null;
 		itemStateManager = null;
 		skillStateManager = null;
+		collectionLogManager = null;
+		marketplaceManager = null;
 	}
 
 	private void shutDownPanels()
@@ -206,7 +217,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		fightStateManager = new FightStateManager(this, config, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
-		collectionLogManager = new CollectionLogManager(this, twitchState, client, clientThread, configManager);
+		collectionLogManager = new CollectionLogManager(this, twitchState, client, clientThread);
+		marketplaceManager = new MarketplaceManager(this, twitchState, client, clientThread, config, executor);
 	}
 
 	/**
@@ -313,6 +325,37 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			lastPlayerName = playerName;
 		} catch (Exception exception) {
 			log.warn("Could not sync player info to state: ", exception);
+		}
+	}
+
+	/**
+	 * Simulate game ticks when not logged in to still register for idling fight time when not logged in
+	 */
+	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
+	public void onLobbyGameTick()
+	{
+		try {
+			if (client.getGameState() != GameState.LOGIN_SCREEN)
+			{
+				return;
+			}
+
+			fightStateManager.onGameTick();
+		} catch (Exception exception) {
+			log.warn("Could not handle lobby game tick event: ", exception);
+		}
+	}
+
+	/**
+	 * Keep track of all marketplace products and apply them if they are not yet
+	 */
+	@Schedule(period = 3000, unit = ChronoUnit.MILLIS, asynchronous = true)
+	public void applyMarketplaceProducts()
+	{
+		try {
+			marketplaceManager.applyProducts();
+		} catch (Exception exception) {
+			log.warn("Could not apply marketplace products: ", exception);
 		}
 	}
 
@@ -434,24 +477,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			collectionLogManager.onVarbitChanged(varbitChanged);
 		} catch (Exception exception) {
 			log.warn("Could not handle varbit change event: ", exception);
-		}
-	}
-
-	/**
-	 * Simulate game ticks when not logged in to still register for idling fight time when not logged in
-	 */
-	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
-	public void onLobbyGameTick()
-	{
-		try {
-			if (client.getGameState() != GameState.LOGIN_SCREEN)
-			{
-				return;
-			}
-
-			fightStateManager.onGameTick();
-		} catch (Exception exception) {
-			log.warn("Could not handle lobby game tick event: ", exception);
 		}
 	}
 
