@@ -1,5 +1,7 @@
 package com.twitchliveloadout;
 
+import lombok.Getter;
+
 public enum FightStatisticEntry {
 	TOTAL("total", true, true),
 //	MELEE("melee", true, true),
@@ -23,8 +25,13 @@ public enum FightStatisticEntry {
 //	MAGIC_PRAYER("magicPrayer", false, true),
 	SMITE("smite", false, true);
 
+	@Getter
 	private final String key;
+
+	@Getter
 	private final boolean durationInfluencer;
+
+	@Getter
 	private final boolean updatedAtInfluencer;
 
 	FightStatisticEntry(String key, boolean durationInfluencer, boolean updatedAtInfluencer)
@@ -32,20 +39,5 @@ public enum FightStatisticEntry {
 		this.key = key;
 		this.durationInfluencer = durationInfluencer;
 		this.updatedAtInfluencer = updatedAtInfluencer;
-	}
-
-	public String getKey()
-	{
-		return key;
-	}
-
-	public boolean isDurationInfluencer()
-	{
-		return durationInfluencer;
-	}
-
-	public boolean isUpdatedAtInfluencer()
-	{
-		return updatedAtInfluencer;
 	}
 }
