@@ -16,9 +16,11 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 	private final MaterialTabGroup tabGroup = new MaterialTabGroup(mainPanel);
 	private final MaterialTab connectivityTab;
 	private final MaterialTab combatTab;
+	private final MaterialTab marketplaceTab;
 
 	private final ConnectivityPanel connectivityPanel;
 	private final CombatPanel combatPanel;
+	private final MarketplacePanel marketplacePanel;
 
 	public TwitchLiveLoadoutPanel(TwitchApi twitchApi, FightStateManager fightStateManager)
 	{
@@ -27,13 +29,17 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 
 		combatPanel = new CombatPanel(fightStateManager);
 		connectivityPanel = new ConnectivityPanel(twitchApi);
+		marketplacePanel = new MarketplacePanel(twitchApi);
 
-		connectivityTab = new MaterialTab("Connectivity", tabGroup, connectivityPanel);
+		connectivityTab = new MaterialTab("Twitch", tabGroup, connectivityPanel);
 		combatTab = new MaterialTab("Combat", tabGroup, combatPanel);
+		marketplaceTab = new MaterialTab("Marketplace", tabGroup, marketplacePanel);
 
 		tabGroup.setBorder(new EmptyBorder(5, 0, 0, 0));
+		tabGroup.addTab(marketplaceTab);
 		tabGroup.addTab(connectivityTab);
 		tabGroup.addTab(combatTab);
+
 		tabGroup.select(connectivityTab);
 
 		add(tabGroup, BorderLayout.NORTH);
@@ -44,6 +50,7 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 	{
 		connectivityPanel.rebuild();
 		combatPanel.rebuild();
+		marketplacePanel.rebuild();
 		repaint();
 		revalidate();
 	}
@@ -56,5 +63,10 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 	public ConnectivityPanel getConnectivityPanel()
 	{
 		return connectivityPanel;
+	}
+
+	public MarketplacePanel getMarketplacePanel()
+	{
+		return marketplacePanel;
 	}
 }
