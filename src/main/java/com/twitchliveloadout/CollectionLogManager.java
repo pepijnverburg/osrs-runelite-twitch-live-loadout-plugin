@@ -7,7 +7,6 @@ import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.config.ConfigManager;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
 
@@ -21,7 +20,6 @@ public class CollectionLogManager {
 	private final TwitchState twitchState;
 	private final Client client;
 	private final ClientThread clientThread;
-	private final ConfigManager configManager;
 
 	private static final boolean DEBUG_WIDGETS = false;
 	private static final boolean DEBUG_CURRENT_CATEGORY = false;
@@ -47,13 +45,12 @@ public class CollectionLogManager {
 	public static final String COUNTERS_KEY_NAME = "c";
 	public static final String ITEMS_KEY_NAME = "i";
 
-	public CollectionLogManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ClientThread clientThread, ConfigManager configManager)
+	public CollectionLogManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ClientThread clientThread)
 	{
 		this.plugin = plugin;
 		this.twitchState = twitchState;
 		this.client = client;
 		this.clientThread = clientThread;
-		this.configManager = configManager;
 
 		loadCollectionLogCache();
 	}
