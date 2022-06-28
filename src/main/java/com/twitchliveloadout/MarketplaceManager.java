@@ -1,22 +1,26 @@
 package com.twitchliveloadout;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.callback.ClientThread;
 
+import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class MarketplaceManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchState twitchState;
+
 	private final Client client;
 	private final ClientThread clientThread;
 	private final TwitchLiveLoadoutConfig config;
 	private final ScheduledExecutorService executor;
 
 	private final MarketplaceProduct spawnerProduct = MarketplaceProduct.GROUND_SPAWNING_PORTAL;
-	private final int SPAWNER_DELAY_MS = 1000;
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ClientThread clientThread, TwitchLiveLoadoutConfig config, ScheduledExecutorService executor)
 	{
@@ -41,74 +45,151 @@ public class MarketplaceManager {
 		});
 	}
 
-	private RuneLiteObject spawnProduct(MarketplaceProduct product)
+	private ArrayList<RuneLiteObject> spawnProduct(MarketplaceProduct product)
 	{
-		int objectModelId = product.getObjectModelId();
-		int objectAnimationId = product.getObjectAnimationId();
-		MarketplaceProduct.CustomizeAction customize = product.getCustomizeAction();
-		boolean hasObjectAnimation = objectAnimationId > 0;
-		boolean hasCustomizer = customize != null;
-		RuneLiteObject object = client.createRuneLiteObject();
-		ModelData model = client.loadModelData(objectModelId)
-			.cloneVertices()
-			.cloneColors();
+		final ArrayList<RuneLiteObject> objects = new ArrayList();
+		final ArrayList<ModelData> models = new ArrayList();
+		final MarketplaceModel[] marketplaceModels = product.getMarketplaceModels();
+		final MarketplaceProduct.CustomizeModel customizeModel = product.getCustomizeModel();
+		final MarketplaceProduct.GetSpawnPoints getSpawnPoints = product.getGetSpawnPoints();
+		final MarketplaceProduct.CustomizeSettings customizeSettings = product.getCustomizeSettings();
+		final boolean hasModelCustomizer = customizeModel != null;
+		final boolean hasSpawnPoints = getSpawnPoints != null;
+		final boolean hasCustomizeSettings = customizeSettings != null;
+		final boolean useSpawners = product.isUseSpawners();
+		final int spawnerDurationMs = product.getSpawnerDurationMs();
+		final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
 
-		object.setModel(model.light());
-
-		// play object animations
-		if (hasObjectAnimation) {
-			Animation objectAnimation = client.loadAnimation(objectAnimationId);
-			object.setAnimation(objectAnimation);
-		}
-
-		// random rotation
-		rotateModelRandomly(model);
-
-		if (hasCustomizer) {
-			customize.execute(model, object);
-		}
-
-		// position under player
-		object.setLocation(client.getLocalPlayer().getLocalLocation(), client.getPlane());
-
-		// we start by spawning the spawn object to create a 'spawning' cutscene
-		if (product != spawnerProduct)
+		// if there is no spawn point customizer we will spawn one at the player location
+		if (!hasSpawnPoints)
 		{
-			RuneLiteObject spawnerObject = spawnProduct(spawnerProduct);
-			scheduleSpawn(spawnerObject, 0);
-			scheduleSpawn(object, SPAWNER_DELAY_MS);
-			scheduleDespawn(spawnerObject, SPAWNER_DELAY_MS);
+			spawnPoints.add(new MarketplaceSpawnPoint(client.getLocalPlayer().getLocalLocation(), client.getPlane()));
+		} else {
+			spawnPoints.addAll(getSpawnPoints.generate(this));
 		}
 
-		return object;
+		// first update the settings that need to be used
+		if (hasCustomizeSettings)
+		{
+			customizeSettings.execute(product);
+		}
+
+		// loop all the models that need to be placed
+		for (MarketplaceModel marketplaceModel : marketplaceModels)
+		{
+
+			// loop all the requested spawn points
+			for (MarketplaceSpawnPoint spawnPoint : spawnPoints)
+			{
+				final int modelId = marketplaceModel.getModelId();
+				final int animationId = marketplaceModel.getAnimationId();
+				final int animationDurationMs = marketplaceModel.getAnimationDurationMs();
+				final boolean hasAnimation = animationId > 0;
+				final boolean shouldResetAnimation = animationDurationMs >= 0;
+				final int resetAnimationDelayMs = (useSpawners ? spawnerDurationMs : 0) + animationDurationMs;
+
+				RuneLiteObject object = client.createRuneLiteObject();
+				ModelData model = client.loadModelData(modelId)
+					.cloneVertices()
+					.cloneColors();
+
+				// set the object to the model
+				object.setModel(model.light());
+
+				// play object animations if they are set
+				if (hasAnimation) {
+					Animation objectAnimation = client.loadAnimation(animationId);
+					object.setAnimation(objectAnimation);
+					object.setShouldLoop(true);
+
+					if (shouldResetAnimation)
+					{
+						scheduleAnimationReset(object, resetAnimationDelayMs);
+					}
+				}
+
+				// add each object and model
+				objects.add(object);
+				models.add(model);
+			}
+		}
+
+		// random rotation for all models
+		// NOTE: important to rotate them all the same!
+		rotateModelsRandomly(models);
+
+		// check if the model needs further customization (e.g. recolors)
+		if (hasModelCustomizer)
+		{
+			for (int modelIndex = 0; modelIndex < models.size(); modelIndex++)
+			{
+				ModelData model = models.get(modelIndex);
+				customizeModel.execute(model, modelIndex);
+			}
+		}
+
+		// check if the spawners cutscene applies for this product
+		if (!useSpawners) {
+			scheduleSpawn(objects, 0);
+		}
+		else if (product != spawnerProduct)
+		{
+			ArrayList<RuneLiteObject> spawnerObjects = spawnProduct(spawnerProduct);
+			scheduleSpawn(spawnerObjects, 0);
+			scheduleSpawn(objects, spawnerDurationMs);
+			scheduleDespawn(spawnerObjects, spawnerDurationMs);
+
+			// register the spawners as well
+			objects.addAll(spawnerObjects);
+		}
+
+		return objects;
 	}
 
-	private void rotateModelRandomly(ModelData model)
+	private void rotateModelsRandomly(ArrayList<ModelData> models)
 	{
 		double random = Math.random();
 
 		if (random < 0.25) {
-			model.rotateY90Ccw();
+			for (ModelData model : models) {
+				model.rotateY90Ccw();
+			}
 		} else if (random < 0.5) {
-			model.rotateY180Ccw();
+			for (ModelData model : models) {
+				model.rotateY180Ccw();
+			}
 		} else if (random < 0.75) {
-			model.rotateY270Ccw();
+			for (ModelData model : models) {
+				model.rotateY270Ccw();
+			}
 		} else {
-			// nothing!
+			// no rotation
 		}
 	}
 
-	private void scheduleSpawn(RuneLiteObject object, long delayMs)
+	private void scheduleSpawn(ArrayList<RuneLiteObject> objects, long delayMs)
 	{
 		scheduleOnClientThread(() -> {
-			object.setActive(true);
+			for (RuneLiteObject object : objects) {
+				object.setActive(true);
+			}
 		}, delayMs);
 	}
 
-	private void scheduleDespawn(RuneLiteObject object, long delayMs)
+	private void scheduleDespawn(ArrayList<RuneLiteObject> objects, long delayMs)
 	{
 		scheduleOnClientThread(() -> {
-			object.setActive(false);
+			for (RuneLiteObject object : objects) {
+				object.setActive(false);
+			}
+		}, delayMs);
+	}
+
+	private void scheduleAnimationReset(RuneLiteObject object, long delayMs)
+	{
+		scheduleOnClientThread(() -> {
+			object.setShouldLoop(false);
+			object.setAnimation(null);
 		}, delayMs);
 	}
 
@@ -120,7 +201,11 @@ public class MarketplaceManager {
 				clientThread.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						action.execute();
+						try {
+							action.execute();
+						} catch (Exception exception) {
+							log.warn("Could not execute action on client thread: ", exception);
+						}
 					}
 				});
 			}
@@ -139,10 +224,7 @@ public class MarketplaceManager {
 //				.scale(50, 50, 50);
 
 		try {
-			int rgb = 255;
-			rgb = (rgb << 8) + 0;
-			rgb = (rgb << 8) + 0;
-			model.recolor(model.getFaceColors()[0], JagexColor.rgbToHSL(rgb, 1.0d));
+
 
 		} catch (Exception e) {
 			// empty
@@ -161,6 +243,11 @@ public class MarketplaceManager {
 	private void loadMarketplaceProductCache()
 	{
 
+	}
+
+	public MarketplaceSpawnPoint getAvailableSpawnPoint()
+	{
+		return new MarketplaceSpawnPoint(client.getLocalPlayer().getLocalLocation(), client.getPlane());
 	}
 
 	public interface ClientThreadAction {
