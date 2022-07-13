@@ -24,23 +24,33 @@ public enum MarketplaceProduct {
 	COIN_TROPHY(new MarketplaceModel[] {
 		new MarketplaceModel(32153),
 	}),
+	ARMADYL_GODSWORD(new MarketplaceModel[] {
+		new MarketplaceModel(28075),
+	}, null, null, (product) -> {
+		product.setUseSpawners(false);
+	}),
+	ABYSSAL_WHIP(new MarketplaceModel[] {
+		new MarketplaceModel(5412),
+	}, null, null, (product) -> {
+		product.setUseSpawners(false);
+	}),
 	BITS_TROPHY(new MarketplaceModel[] {
 		new MarketplaceModel(35449, 8105),
 	}),
 	PARTY_BALLOONS(new MarketplaceModel[] {
-		new MarketplaceModel(2227, 498),
+		new MarketplaceModel(2227, 498, 2400),
 	}, null, (manager) -> {
 		final int amountSpawned = 5;
 		ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
 
 		for (int spawnIndex = 0; spawnIndex < amountSpawned; spawnIndex++) {
-			spawnPoints.add(manager.getAvailableSpawnPoint());
+			spawnPoints.add(manager.getAvailableSpawnPoint(10));
 		}
 
 		return spawnPoints;
 	}, (product) -> {
 		product.setUseSpawners(false);
-		product.setRandomSpawnDelayMs(500);
+		product.setRandomSpawnDelayMs(2000);
 	}),
 	INFERNAL_CAPE(new MarketplaceModel[] {
 		new MarketplaceModel(33143),
@@ -56,6 +66,8 @@ public enum MarketplaceProduct {
 	}),
 	ZUK_DISPLAY(new MarketplaceModel[] {
 		new MarketplaceModel(34570),
+	}, (model, modelIndex) -> {
+		makeSmall(model);
 	}),
 	GROUND_SPAWNING_PORTAL(new MarketplaceModel[] {
 		new MarketplaceModel(42302, 9040),
