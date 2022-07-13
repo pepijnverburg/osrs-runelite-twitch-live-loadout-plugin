@@ -154,6 +154,11 @@ public class TwitchState {
 		setItems(TwitchStateEntry.EQUIPMENT_ITEMS.getKey(), TwitchStateEntry.EQUIPMENT_PRICE.getKey(), items, totalPrice);
 	}
 
+	public void setLootingBagItems(Item[] items, long totalPrice)
+	{
+		setItems(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), items, totalPrice);
+	}
+
 	private void setItems(String itemsKey, String priceKey, Item[] items, long totalPrice)
 	{
 		currentState.add(itemsKey, convertToJson(items));
@@ -441,6 +446,12 @@ public class TwitchState {
 		{
 			state.add(TwitchStateEntry.EQUIPMENT_ITEMS.getKey(), null);
 			state.add(TwitchStateEntry.EQUIPMENT_PRICE.getKey(), null);
+		}
+
+		if (!config.lootingBagEnabled())
+		{
+			state.add(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), null);
+			state.add(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), null);
 		}
 
 		if (!config.bankEnabled())

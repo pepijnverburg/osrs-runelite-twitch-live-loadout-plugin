@@ -134,6 +134,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "lootingBagEnabled",
+			name = "Sync looting bag items",
+			description = "Synchronize all looting bag items.",
+			position = 5,
+			section = itemsSection
+	)
+	default boolean lootingBagEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "bankEnabled",
 			name = "Sync bank items",
 			description = "Synchronize bank value and top items based on GE value and configured maximum amount.",

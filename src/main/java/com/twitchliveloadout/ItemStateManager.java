@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ItemStateManager {
 
 	public final static int MAX_BANK_ITEMS = 1500;
+	public final static int LOOTING_BAG_CONTAINER_ID = 516;
 
 	private final TwitchState twitchState;
 	private final Client client;
@@ -45,9 +46,10 @@ public class ItemStateManager {
 		final boolean isInventory = isItemContainer(event, InventoryID.INVENTORY);
 		final boolean isEquipment = isItemContainer(event, InventoryID.EQUIPMENT);
 		final boolean isBank = isItemContainer(event, InventoryID.BANK);
+		final boolean isLootingBag = isItemContainer(event, LOOTING_BAG_CONTAINER_ID);
 
 		// guard: block item containers not applicable for the state
-		if (!isInventory && !isEquipment && !isBank)
+		if (!isInventory && !isEquipment && !isBank && !isLootingBag)
 		{
 			return;
 		}
@@ -67,8 +69,13 @@ public class ItemStateManager {
 		{
 			setSlicedBankItems(items, totalPrice);
 		}
+		else if (isLootingBag)
+		{
+			twitchState.setLootingBagItems(items, totalPrice);
+		}
 
 		// update the weight for specific container changes
+		// NOTE: looting bag does not add weight
 		if (isInventory || isEquipment)
 		{
 			final int weight = client.getWeight();
@@ -90,10 +97,15 @@ public class ItemStateManager {
 		return amounts;
 	}
 
-	public boolean isItemContainer(ItemContainerChanged event, InventoryID containerId)
+	public boolean isItemContainer(ItemContainerChanged event, InventoryID container)
+	{
+		return isItemContainer(event, container.getId());
+	}
+
+	public boolean isItemContainer(ItemContainerChanged event, int containerId)
 	{
 		final int eventContainerId = event.getContainerId();
-		return eventContainerId == containerId.getId();
+		return eventContainerId == containerId;
 	}
 
 	public void setSlicedBankItems(Item[] items, long totalPrice)
