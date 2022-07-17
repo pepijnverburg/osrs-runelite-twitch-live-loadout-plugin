@@ -80,7 +80,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "syncDelay",
-			name = "Sync delay (seconds)",
+			name = "Stream delay (seconds)",
 			description = "The amount of seconds to delay the sending of data to match your stream delay.",
 			position = 6,
 			section = twitchSection

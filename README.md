@@ -151,7 +151,7 @@ It is also possible to configure what information is being sent through the foll
 - `Sync enabled`: toggle off to disable all syncing and clear current data with all viewers.
 - `Twitch extension token`: the login token specifically for the Twitch Extension you want to send the data to. This authenticates RuneLite to change data in the extension. This token should be retrieved when configuring the extension in the online Twitch interface.
 - `Overlay top position`: tweak where a Twitch Extension overlay would be positioned to match your screen layout.
-- `Sync delay`: delay the synchronization with x amount of seconds to match the broadcaster video & audio delay. Also use this to tweak when the video is delayed due to general networking.
+- `Stream delay`: delay the synchronization with x amount of seconds to match the broadcaster video & audio delay. Also use this to tweak when the video is delayed due to general networking.
 - `Anti multi-log display name`: when multi-logging set the display name of the account you want to sync. When multiple Runelite apps are open at the same time it uses the same settings to send data to Twitch. This is to filter out only the account you want to synchronize.
 
 #### Items
