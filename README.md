@@ -20,7 +20,14 @@ Get better engagement with...
 ![Summary](./docs/summary.gif "Summary")
 
 ### Recent updates
-- 🎉 Collection log is now available to be viewed live by your viewers!
+
+#####v1.0.3
+- All bank items are now synced to your viewers, rather than only the 200 most valuable items.
+- The looting bag can now be synced to viewers.
+- Items can now have 'special behaviours' for example the looting bag opens a new side-panel as one of the first items for this behaviour.
+
+#####v1.0.2
+- 🎉  Collection log is now available to be viewed live by your viewers!
 - Enhanced stability of plugin when there are breaking client or Twitch changes.
 - The Twitch data syncing has been updated to work again due to deprecated functionalities.
 
@@ -78,6 +85,7 @@ Most data is automatically synced when logged in. The `Bank` and `Collection Log
 - [x] `Collection log`: the collection log including all items and kill counts.
 - [x] `Bank items`: Top 200 most valuable bank items and price of all bank items (not all due to Twitch Extension limitations).
 - [x] `Bank tabs`: info what items are in what tab.
+- [x] `Looting bag`: items inside the looting bag.
 - [x] `Wiki lookup`: all items can be looked up by opening the official Wiki.
 
 ![Equipment](./docs/screenshots/worn-equipment.png "Equipment")
@@ -152,6 +160,8 @@ It is also possible to configure what information is being sent through the foll
 - `Sync bank items`: toggle to sync bank items.
 - `Max bank items`: the maximum amount of bank items with an upper limit set by the plugin.
 - `Sync bank value`: toggle to sync total bank value.
+- `Sync looting bag`: toggle to sync looting bag items.
+- `Sync looting bag value`: toggle to sync looting bag value.
 - `Sync collection log`: toggle to sync collection log.
 - `Collection log filter`: Only include entry titles that include one of the keywords separated with a comma. For example `raids, abyssal, clue` will include the whole Raids tab (with CoX and ToB), the Abyssal Sire and all clue related categories.
 
