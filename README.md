@@ -41,6 +41,8 @@ Within the client the following should be enabled for all features to work:
 - Step 3: Copy token from the `Twitch Extension configuration page` and paste in the RuneLite plugin setting `Twitch Extension Token`.
 - Step 4: Verify whether data is synced by previewing it in the `Twitch Extension configuration page`.
 
+⚠️ Note that for the `collection log` and `bank` to show you need to `open them` at least once. The collection log will be saved across login sessions, the bank won't.
+
 ### Step 1: Install Runelite Plugin
 You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/Pepijn%20Verburg).
 
