@@ -38,6 +38,15 @@ public class MarketplaceManager {
 
 	public void applyProducts()
 	{
+
+		// guard: only apply the products when the player is logged in
+		// we don't distinquish different accounts, all runelite clients
+		// will spawn the same objects
+		if (!plugin.isLoggedIn())
+		{
+			return;
+		}
+
 		// for testing
 		clientThread.invokeLater(new Runnable() {
 			@Override
