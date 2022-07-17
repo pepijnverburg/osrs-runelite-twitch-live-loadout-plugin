@@ -73,6 +73,8 @@ public class CollectionLogManager {
 
 	public void onPlayerNameChanged(String playerName)
 	{
+		// when another account logs in the cache should be updated to that account
+		twitchState.setCollectionLog(null);
 		loadCollectionLogCache();
 	}
 
