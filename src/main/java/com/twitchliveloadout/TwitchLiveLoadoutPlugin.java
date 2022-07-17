@@ -27,6 +27,7 @@ package com.twitchliveloadout;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -43,9 +44,13 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 
+import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
@@ -329,6 +334,85 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
+	 * Polling mechanism to sync minimap as there is no update event for this.
+	 */
+	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void syncMiniMap()
+	{
+		clientThread.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					String miniMap = getMiniMapAsBase64();
+					System.out.println(miniMap);
+				} catch (Exception exception) {
+					log.warn("Could not sync mini map on client thread: ", exception);
+				}
+			}
+		});
+	}
+
+	private String getMiniMapAsBase64() throws IOException
+	{
+		BufferedImage image = getMiniMapAsBufferedImage();
+
+		if (image == null)
+		{
+			return null;
+		}
+
+		String base64Image = convertBufferedImageToBase64(image);
+		return base64Image;
+	}
+
+	private BufferedImage getMiniMapAsBufferedImage()
+	{
+		if (!isLoggedIn())
+		{
+			return null;
+		}
+
+		int tileSize = 4;
+		int sceneSize = 104;
+		int radiusAroundPlayer = 12;
+		int plane = client.getPlane();
+		Tile[][] planeTiles = client.getScene().getTiles()[plane];
+
+		LocalPoint playerLocation = client.getLocalPlayer().getLocalLocation();
+		int playerX = playerLocation.getSceneX();
+		int playerY = (planeTiles[0].length - 1) - playerLocation.getSceneY(); // flip the y-axis
+
+		SpritePixels map = client.drawInstanceMap(plane);
+		int fullWidth = map.getWidth();
+		int fullHeight = map.getHeight();
+		int[] pixels = map.getPixels();
+
+		BufferedImage image = new BufferedImage(fullWidth, fullHeight, BufferedImage.TYPE_INT_RGB);
+		image.setRGB(0, 0, fullWidth, fullHeight, pixels, 0, fullWidth);
+
+		// first crop to the scene
+		image = image.getSubimage(48, 48, tileSize * sceneSize, tileSize * sceneSize);
+
+		// now crop to the requested area
+		image = image.getSubimage(
+				(playerX - radiusAroundPlayer) * tileSize,
+				(playerY - radiusAroundPlayer) * tileSize,
+				radiusAroundPlayer * 2 * tileSize,
+				radiusAroundPlayer * 2 * tileSize
+		);
+
+		return image;
+	}
+
+	private String convertBufferedImageToBase64(BufferedImage image) throws IOException
+	{
+		final ByteArrayOutputStream os = new ByteArrayOutputStream();
+		ImageIO.write(image, "png", os);
+
+		return Base64.getEncoder().encodeToString(os.toByteArray());
+	}
+
+	/**
 	 * Simulate game ticks when not logged in to still register for idling fight time when not logged in
 	 */
 	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
@@ -578,12 +662,30 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public String getPlayerName()
 	{
-		if (client.getGameState() != GameState.LOGGED_IN)
+		if (!isLoggedIn())
 		{
 			return null;
 		}
 
 		final String playerName = client.getLocalPlayer().getName();
 		return playerName;
+	}
+
+	public boolean isLoggedIn()
+	{
+
+		// guard: check game state
+		if (client.getGameState() != GameState.LOGGED_IN)
+		{
+			return false;
+		}
+
+		// guard: check local player instance
+		if (client.getLocalPlayer() == null)
+		{
+			return false;
+		}
+
+		return true;
 	}
 }
