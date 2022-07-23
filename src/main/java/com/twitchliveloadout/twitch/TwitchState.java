@@ -91,7 +91,7 @@ public class TwitchState {
 		setOverlayTopPosition(config.overlayTopPosition());
 		setVirtualLevelsEnabled(config.virtualLevelsEnabled());
 
-		// set initial items as no events are triggered when the collection is empty
+		// set initial items as no events are triggered when they are empty
 		setInventoryItems(new Item[0], 0);
 		setEquipmentItems(new Item[0], 0);
 		setWeight(0);

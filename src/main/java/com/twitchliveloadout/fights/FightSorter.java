@@ -19,7 +19,7 @@ public class FightSorter implements Comparator<Fight>
 			return 0;
 		}
 
-		// descending order, from later to earlier price
+		// descending order, from later to earlier fight
 		return isLater ? -1 : 1;
 	}
 }
