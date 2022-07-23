@@ -96,9 +96,13 @@ public class TwitchApi
 			return false;
 		}
 
-		// add the base delay
+		// add the base delay, because every streamer
+		// has some delay we want to take into account
+		// to not show the future of the streamer too quickly
 		delay += BASE_SYNC_DELAY;
 
+		// make sure the min sync delay is set when
+		// user inputs negative numbers in the config
 		if (delay < MIN_SYNC_DELAY)
 		{
 			delay = MIN_SYNC_DELAY;
