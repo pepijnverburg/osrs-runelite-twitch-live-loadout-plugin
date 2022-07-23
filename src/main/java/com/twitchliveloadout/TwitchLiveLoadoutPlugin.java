@@ -162,6 +162,39 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		initializePanel();
 	}
 
+	private void initializeTwitch()
+	{
+		twitchState = new TwitchState(config);
+		twitchApi = new TwitchApi(this, client, config, chatMessageManager);
+	}
+
+	private void initializeManagers()
+	{
+		fightStateManager = new FightStateManager(this, config, client);
+		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
+		skillStateManager = new SkillStateManager(twitchState, client);
+		collectionLogManager = new CollectionLogManager(this, twitchState, client);
+		marketplaceManager = new MarketplaceManager(this, twitchState, client, config);
+		minimapManager = new MinimapManager(this, twitchState, client);
+	}
+
+	private void initializePanel()
+	{
+		pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager);
+		pluginPanel.rebuild();
+
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
+
+		navigationButton = NavigationButton.builder()
+				.tooltip("Twitch Live Loadout Status")
+				.icon(icon)
+				.priority(99)
+				.panel(pluginPanel)
+				.build();
+
+		clientToolbar.addNavigation(navigationButton);
+	}
+
 	/**
 	 * Cleanup properly after disabling the plugin
 	 * @throws Exception
@@ -202,39 +235,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		pluginPanel = null;
 		clientToolbar.removeNavigation(navigationButton);
-	}
-
-	private void initializePanel()
-	{
-		pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager);
-		pluginPanel.rebuild();
-
-		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
-
-		navigationButton = NavigationButton.builder()
-			.tooltip("Twitch Live Loadout Status")
-			.icon(icon)
-			.priority(99)
-			.panel(pluginPanel)
-			.build();
-
-		clientToolbar.addNavigation(navigationButton);
-	}
-
-	private void initializeTwitch()
-	{
-		twitchState = new TwitchState(config);
-		twitchApi = new TwitchApi(this, client, config, chatMessageManager);
-	}
-
-	private void initializeManagers()
-	{
-		fightStateManager = new FightStateManager(this, config, client);
-		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
-		skillStateManager = new SkillStateManager(twitchState, client);
-		collectionLogManager = new CollectionLogManager(this, twitchState, client);
-		marketplaceManager = new MarketplaceManager(this, twitchState, client, config);
-		minimapManager = new MinimapManager(this, twitchState, client);
 	}
 
 	/**
@@ -577,16 +577,20 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public void runOnClientThread(ClientThreadAction action)
 	{
-		clientThread.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					action.execute();
-				} catch (Exception exception) {
-					log.warn("Could not execute action on client thread: ", exception);
+		try {
+			clientThread.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						action.execute();
+					} catch (Exception exception) {
+						log.warn("Could not execute action on client thread: ", exception);
+					}
 				}
-			}
-		});
+			});
+		} catch (Exception exception) {
+			log.warn("Could not invoke an action later on client thread: ", exception);
+		}
 	}
 
 	public void scheduleOnClientThread(ClientThreadAction action, long delayMs)
@@ -599,7 +603,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				}
 			}, delayMs, TimeUnit.MILLISECONDS);
 		} catch (Exception exception) {
-			log.warn("Could not schedule an action on the client thread (delay: "+ delayMs +"): "+ exception);
+			log.warn("Could not schedule an action on the client thread (delay: "+ delayMs +"): ", exception);
 		}
 	}
 

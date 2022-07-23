@@ -33,7 +33,7 @@ public class MinimapManager {
 			try {
 				String miniMap = getMiniMapAsBase64();
 			} catch (Exception exception) {
-				log.warn("Could not update minimap: "+ exception);
+				log.warn("Could not update minimap when run on client thread: ", exception);
 			}
 		});
 	}
