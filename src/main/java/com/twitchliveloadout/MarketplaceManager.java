@@ -14,19 +14,17 @@ public class MarketplaceManager {
 
 	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
-	private final ScheduledExecutorService executor;
 
 	private final MarketplaceProduct spawnerProduct = MarketplaceProduct.GROUND_SPAWNING_PORTAL;
 
 	private final int MAX_FIND_SPAWN_POINT_ATTEMPTS = 50;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ScheduledExecutorService executor)
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config)
 	{
 		this.plugin = plugin;
 		this.twitchState = twitchState;
 		this.client = client;
 		this.config = config;
-		this.executor = executor;
 
 		loadMarketplaceProductCache();
 	}

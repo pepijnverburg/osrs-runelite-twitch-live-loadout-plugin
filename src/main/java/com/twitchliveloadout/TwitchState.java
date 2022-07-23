@@ -4,7 +4,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.runelite.api.*;
-import net.runelite.client.game.ItemManager;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -83,7 +82,7 @@ public class TwitchState {
 	private final static int CHANGED_DEBOUNCE_TIME = 1000; // ms
 	private Instant changedAt;
 
-	public TwitchState(TwitchLiveLoadoutConfig config, ItemManager itemManager)
+	public TwitchState(TwitchLiveLoadoutConfig config)
 	{
 		this.config = config;
 

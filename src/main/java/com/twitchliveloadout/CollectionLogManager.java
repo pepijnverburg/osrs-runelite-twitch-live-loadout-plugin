@@ -57,7 +57,9 @@ public class CollectionLogManager {
 	{
 		if (scriptPostFired.getScriptId() == COLLECTION_LOG_DRAW_LIST_SCRIPT_ID)
 		{
-			clientThread.invokeLater(this::updateCurrentCategory);
+			plugin.runOnClientThread(() -> {
+				updateCurrentCategory();
+			});
 		}
 	}
 
@@ -65,7 +67,9 @@ public class CollectionLogManager {
 	{
 		if (varbitChanged.getIndex() == COLLECTION_LOG_CATEGORY_VARBIT_INDEX)
 		{
-			clientThread.invokeLater(this::updateCurrentCategory);
+			plugin.runOnClientThread(() -> {
+				updateCurrentCategory();
+			});
 		}
 	}
 

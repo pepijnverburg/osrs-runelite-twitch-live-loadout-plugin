@@ -27,7 +27,7 @@ public class MinimapManager {
 
 	public void updateMinimap()
 	{
-		plugin.runeOnClientThread(() -> {
+		plugin.runOnClientThread(() -> {
 			try {
 				String miniMap = getMiniMapAsBase64();
 			} catch (Exception exception) {

@@ -215,7 +215,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	private void initializeTwitch()
 	{
-		twitchState = new TwitchState(config, itemManager);
+		twitchState = new TwitchState(config);
 		twitchApi = new TwitchApi(this, client, config, chatMessageManager);
 	}
 
@@ -225,7 +225,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
 		collectionLogManager = new CollectionLogManager(this, twitchState, client);
-		marketplaceManager = new MarketplaceManager(this, twitchState, client, config, executor);
+		marketplaceManager = new MarketplaceManager(this, twitchState, client, config);
 		minimapManager = new MinimapManager(this, twitchState, client);
 	}
 
@@ -567,7 +567,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
-	public void runeOnClientThread(ClientThreadAction action)
+	public void runOnClientThread(ClientThreadAction action)
 	{
 		clientThread.invokeLater(new Runnable() {
 			@Override
@@ -583,12 +583,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public void scheduleOnClientThread(ClientThreadAction action, long delayMs)
 	{
-		executor.schedule(new Runnable() {
-			@Override
-			public void run() {
-				runeOnClientThread(action);
-			}
-		}, delayMs, TimeUnit.MILLISECONDS);
+		try {
+			executor.schedule(new Runnable() {
+				@Override
+				public void run() {
+					runOnClientThread(action);
+				}
+			}, delayMs, TimeUnit.MILLISECONDS);
+		} catch (Exception exception) {
+			log.warn("Could not schedule an action on the client thread (delay: "+ delayMs +"): "+ exception);
+		}
 	}
 
 	public void setConfiguration(String configKey, Object payload)
