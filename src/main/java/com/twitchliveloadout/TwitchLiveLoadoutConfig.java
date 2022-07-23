@@ -429,10 +429,23 @@ public interface TwitchLiveLoadoutConfig extends Config
 	String advancedSection = "advanced";
 
 	@ConfigItem(
+			keyName = "twitchEbsBaseUrl",
+			name = "Twitch EBS Base URL",
+			description = "The base URL of the Twitch Extension Back-end Service used to switch environments during testing.",
+			position = 2,
+			hidden = true,
+			section = advancedSection
+	)
+	default String twitchEbsBaseUrl()
+	{
+		return TwitchApi.DEFAULT_TWITCH_EBS_BASE_URL;
+	}
+
+	@ConfigItem(
 			keyName = "extensionClientId",
 			name = "Twitch Extension ID",
 			description = "This is the ID of the Twitch Extension you want to sync the data to. Defaults to 'OSRS Live Loadout'.",
-			position = 2,
+			position = 4,
 			hidden = true,
 			section = advancedSection
 	)
