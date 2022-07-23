@@ -27,7 +27,6 @@ package com.twitchliveloadout;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -44,14 +43,11 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 
-import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
 
@@ -135,6 +131,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private MarketplaceManager marketplaceManager;
 
 	/**
+	 * Dedicated manager for minimap information.
+	 */
+	private MinimapManager minimapManager;
+
+	/**
 	 * Cache to check for player name changes as game state is not reliable for this
 	 */
 	private String lastPlayerName = null;
@@ -186,6 +187,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		skillStateManager = null;
 		collectionLogManager = null;
 		marketplaceManager = null;
+		minimapManager = null;
 	}
 
 	private void shutDownPanels()
@@ -222,8 +224,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		fightStateManager = new FightStateManager(this, config, client);
 		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
 		skillStateManager = new SkillStateManager(twitchState, client);
-		collectionLogManager = new CollectionLogManager(this, twitchState, client, clientThread);
-		marketplaceManager = new MarketplaceManager(this, twitchState, client, clientThread, config, executor);
+		collectionLogManager = new CollectionLogManager(this, twitchState, client);
+		marketplaceManager = new MarketplaceManager(this, twitchState, client, config, executor);
+		minimapManager = new MinimapManager(this, twitchState, client);
 	}
 
 	/**
@@ -339,77 +342,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncMiniMap()
 	{
-		clientThread.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					String miniMap = getMiniMapAsBase64();
-					System.out.println(miniMap);
-				} catch (Exception exception) {
-					log.warn("Could not sync mini map on client thread: ", exception);
-				}
-			}
-		});
-	}
-
-	private String getMiniMapAsBase64() throws IOException
-	{
-		BufferedImage image = getMiniMapAsBufferedImage();
-
-		if (image == null)
-		{
-			return null;
+		try {
+			minimapManager.updateMinimap();
+		} catch (Exception exception) {
+			log.warn("Could not sync mini map: ", exception);
 		}
-
-		String base64Image = convertBufferedImageToBase64(image);
-		return base64Image;
-	}
-
-	private BufferedImage getMiniMapAsBufferedImage()
-	{
-		if (!isLoggedIn())
-		{
-			return null;
-		}
-
-		int tileSize = 4;
-		int sceneSize = 104;
-		int radiusAroundPlayer = 12;
-		int plane = client.getPlane();
-		Tile[][] planeTiles = client.getScene().getTiles()[plane];
-
-		LocalPoint playerLocation = client.getLocalPlayer().getLocalLocation();
-		int playerX = playerLocation.getSceneX();
-		int playerY = (planeTiles[0].length - 1) - playerLocation.getSceneY(); // flip the y-axis
-
-		SpritePixels map = client.drawInstanceMap(plane);
-		int fullWidth = map.getWidth();
-		int fullHeight = map.getHeight();
-		int[] pixels = map.getPixels();
-
-		BufferedImage image = new BufferedImage(fullWidth, fullHeight, BufferedImage.TYPE_INT_RGB);
-		image.setRGB(0, 0, fullWidth, fullHeight, pixels, 0, fullWidth);
-
-		// first crop to the scene
-		image = image.getSubimage(48, 48, tileSize * sceneSize, tileSize * sceneSize);
-
-		// now crop to the requested area
-		image = image.getSubimage(
-				(playerX - radiusAroundPlayer) * tileSize,
-				(playerY - radiusAroundPlayer) * tileSize,
-				radiusAroundPlayer * 2 * tileSize,
-				radiusAroundPlayer * 2 * tileSize
-		);
-
-		return image;
-	}
-
-	private String convertBufferedImageToBase64(BufferedImage image) throws IOException
-	{
-		final ByteArrayOutputStream os = new ByteArrayOutputStream();
-		ImageIO.write(image, "png", os);
-
-		return Base64.getEncoder().encodeToString(os.toByteArray());
 	}
 
 	/**
@@ -630,6 +567,30 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+	public void runeOnClientThread(ClientThreadAction action)
+	{
+		clientThread.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					action.execute();
+				} catch (Exception exception) {
+					log.warn("Could not execute action on client thread: ", exception);
+				}
+			}
+		});
+	}
+
+	public void scheduleOnClientThread(ClientThreadAction action, long delayMs)
+	{
+		executor.schedule(new Runnable() {
+			@Override
+			public void run() {
+				runeOnClientThread(action);
+			}
+		}, delayMs, TimeUnit.MILLISECONDS);
+	}
+
 	public void setConfiguration(String configKey, Object payload)
 	{
 		try {
@@ -687,5 +648,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return true;
+	}
+
+	public interface ClientThreadAction {
+		public void execute();
 	}
 }

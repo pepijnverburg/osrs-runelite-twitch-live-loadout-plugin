@@ -19,7 +19,6 @@ public class CollectionLogManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchState twitchState;
 	private final Client client;
-	private final ClientThread clientThread;
 
 	private static final boolean DEBUG_WIDGETS = false;
 	private static final boolean DEBUG_CURRENT_CATEGORY = false;
@@ -45,12 +44,11 @@ public class CollectionLogManager {
 	public static final String COUNTERS_KEY_NAME = "c";
 	public static final String ITEMS_KEY_NAME = "i";
 
-	public CollectionLogManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ClientThread clientThread)
+	public CollectionLogManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client)
 	{
 		this.plugin = plugin;
 		this.twitchState = twitchState;
 		this.client = client;
-		this.clientThread = clientThread;
 
 		loadCollectionLogCache();
 	}

@@ -1,14 +1,11 @@
 package com.twitchliveloadout;
 
-import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
-import net.runelite.client.callback.ClientThread;
 
 import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class MarketplaceManager {
@@ -16,7 +13,6 @@ public class MarketplaceManager {
 	private final TwitchState twitchState;
 
 	private final Client client;
-	private final ClientThread clientThread;
 	private final TwitchLiveLoadoutConfig config;
 	private final ScheduledExecutorService executor;
 
@@ -24,12 +20,11 @@ public class MarketplaceManager {
 
 	private final int MAX_FIND_SPAWN_POINT_ATTEMPTS = 50;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ClientThread clientThread, TwitchLiveLoadoutConfig config, ScheduledExecutorService executor)
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ScheduledExecutorService executor)
 	{
 		this.plugin = plugin;
 		this.twitchState = twitchState;
 		this.client = client;
-		this.clientThread = clientThread;
 		this.config = config;
 		this.executor = executor;
 
@@ -47,14 +42,13 @@ public class MarketplaceManager {
 			return;
 		}
 
-		// for testing
-		clientThread.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-//				spawnTest();
-				spawnProduct(config.devMarketplaceProductSpawn());
-			}
-		});
+		// TMP: for testing
+//		clientThread.invokeLater(new Runnable() {
+//			@Override
+//			public void run() {
+//				spawnProduct(config.devMarketplaceProductSpawn());
+//			}
+//		});
 	}
 
 	private ArrayList<RuneLiteObject> spawnProduct(MarketplaceProduct product)
@@ -194,7 +188,7 @@ public class MarketplaceManager {
 
 	private void scheduleSpawn(ArrayList<RuneLiteObject> objects, long delayMs)
 	{
-		scheduleOnClientThread(() -> {
+		plugin.scheduleOnClientThread(() -> {
 			for (RuneLiteObject object : objects) {
 				object.setActive(true);
 			}
@@ -203,7 +197,7 @@ public class MarketplaceManager {
 
 	private void scheduleDespawn(ArrayList<RuneLiteObject> objects, long delayMs)
 	{
-		scheduleOnClientThread(() -> {
+		plugin.scheduleOnClientThread(() -> {
 			for (RuneLiteObject object : objects) {
 				object.setActive(false);
 			}
@@ -212,53 +206,10 @@ public class MarketplaceManager {
 
 	private void scheduleAnimationReset(RuneLiteObject object, long delayMs)
 	{
-		scheduleOnClientThread(() -> {
+		plugin.scheduleOnClientThread(() -> {
 			object.setShouldLoop(false);
 			object.setAnimation(null);
 		}, delayMs);
-	}
-
-	private void scheduleOnClientThread(ClientThreadAction action, long delayMs)
-	{
-		executor.schedule(new Runnable() {
-			@Override
-			public void run() {
-				clientThread.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							action.execute();
-						} catch (Exception exception) {
-							log.warn("Could not execute action on client thread: ", exception);
-						}
-					}
-				});
-			}
-		}, delayMs, TimeUnit.MILLISECONDS);
-	}
-
-	private void spawnTest()
-	{
-		// https://github.com/Maurits825/tob-light-colors/blob/master/src/main/java/com/toblightcolors/TobLightColorsPlugin.java
-		System.out.println("Spawn object!");
-		int id = config.devObjectSpawnId();
-		RuneLiteObject newObject = client.createRuneLiteObject();
-		ModelData model = client.loadModelData(id)
-				.cloneVertices()
-				.cloneColors();
-//				.scale(50, 50, 50);
-
-		try {
-
-
-		} catch (Exception e) {
-			// empty
-		}
-
-		newObject.setModel(model.light());
-
-		newObject.setLocation(client.getLocalPlayer().getLocalLocation(), client.getPlane());
-		newObject.setActive(true);
 	}
 
 	private void loadMarketplaceProductCache()
@@ -299,9 +250,5 @@ public class MarketplaceManager {
 		}
 
 		return defaultSpawnPoint;
-	}
-
-	public interface ClientThreadAction {
-		public void execute();
 	}
 }
