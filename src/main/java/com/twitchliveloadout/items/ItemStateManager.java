@@ -49,7 +49,7 @@ public class ItemStateManager {
 		final boolean isBank = isItemContainer(event, InventoryID.BANK);
 		final boolean isLootingBag = isItemContainer(event, LOOTING_BAG_CONTAINER_ID);
 
-		// guard: block item containers not applicable for the state
+		// guard: block item containers that are not applicable for the state
 		if (!isInventory && !isEquipment && !isBank && !isLootingBag)
 		{
 			return;
@@ -58,26 +58,26 @@ public class ItemStateManager {
 		final Item[] items = container.getItems();
 		long totalPrice = getTotalPrice(items);
 
-		if (isInventory)
+		if (config.inventoryEnabled() && isInventory)
 		{
 			twitchState.setInventoryItems(items, totalPrice);
 		}
-		else if (isEquipment)
+		else if (config.equipmentEnabled() && isEquipment)
 		{
 			twitchState.setEquipmentItems(items, totalPrice);
 		}
-		else if (isBank)
+		else if (config.bankEnabled() && isBank)
 		{
 			setSlicedBankItems(items, totalPrice);
 		}
-		else if (isLootingBag)
+		else if (config.lootingBagEnabled() && isLootingBag)
 		{
 			twitchState.setLootingBagItems(items, totalPrice);
 		}
 
 		// update the weight for specific container changes
 		// NOTE: looting bag does not add weight
-		if (isInventory || isEquipment)
+		if (config.weightEnabled() && (isInventory || isEquipment))
 		{
 			final int weight = client.getWeight();
 			twitchState.setWeight(weight);

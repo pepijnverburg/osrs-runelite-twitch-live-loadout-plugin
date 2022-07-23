@@ -61,8 +61,10 @@ import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
 
 /**
  * Manages polling and event listening mechanisms to synchronize the state
- * to the Twitch Configuration Service. All client data is fetched in this class
- * ad passed to a couple of other classes.
+ * to the Twitch Configuration Service. All client data is fetched in this main entry point
+ * and passed along to dedicated managers. Also you will see that this class if fairly 'polluted'
+ * with try-catch statements. This helps making sure that any breaking changes to Oldschool Runescape and/or
+ * RuneLite will less likely cause issues.
  */
 @PluginDescriptor(
 	name = "Twitch Live Loadout",
@@ -164,35 +166,47 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	private void initializeTwitch()
 	{
-		twitchState = new TwitchState(config);
-		twitchApi = new TwitchApi(this, client, config, chatMessageManager);
+		try {
+			twitchState = new TwitchState(config);
+			twitchApi = new TwitchApi(this, client, config, chatMessageManager);
+		} catch (Exception exception) {
+			log.warn("An error occurred when initializing Twitch: ", exception);
+		}
 	}
 
 	private void initializeManagers()
 	{
-		fightStateManager = new FightStateManager(this, config, client);
-		itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
-		skillStateManager = new SkillStateManager(twitchState, client);
-		collectionLogManager = new CollectionLogManager(this, twitchState, client);
-		marketplaceManager = new MarketplaceManager(this, twitchState, client, config);
-		minimapManager = new MinimapManager(this, twitchState, client);
+		try {
+			fightStateManager = new FightStateManager(this, config, client);
+			itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
+			skillStateManager = new SkillStateManager(twitchState, client);
+			collectionLogManager = new CollectionLogManager(this, twitchState, client);
+			marketplaceManager = new MarketplaceManager(this, twitchState, client, config);
+			minimapManager = new MinimapManager(this, twitchState, client);
+		} catch (Exception exception) {
+			log.warn("An error occurred when initializing the managers: ", exception);
+		}
 	}
 
 	private void initializePanel()
 	{
-		pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager);
-		pluginPanel.rebuild();
+		try {
+			pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager);
+			pluginPanel.rebuild();
 
-		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
+			final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
 
-		navigationButton = NavigationButton.builder()
-				.tooltip("Twitch Live Loadout Status")
-				.icon(icon)
-				.priority(99)
-				.panel(pluginPanel)
-				.build();
+			navigationButton = NavigationButton.builder()
+					.tooltip("Twitch Live Loadout Status")
+					.icon(icon)
+					.priority(99)
+					.panel(pluginPanel)
+					.build();
 
-		clientToolbar.addNavigation(navigationButton);
+			clientToolbar.addNavigation(navigationButton);
+		} catch (Exception exception) {
+			log.warn("An error occurred when initializing the UI panels: ", exception);
+		}
 	}
 
 	/**
@@ -211,41 +225,42 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	private void shutDownTwitch()
 	{
-		// Only the API requires dedicated shutdown
-		twitchApi.shutDown();
+		try {
+			// Only the API requires dedicated shutdown
+			twitchApi.shutDown();
 
-		twitchState = null;
-		twitchApi = null;
+			twitchState = null;
+			twitchApi = null;
+		} catch (Exception exception) {
+			log.warn("An error occurred when shutting down Twitch: ", exception);
+		}
 	}
 
 	private void shutDownManagers()
 	{
-		// Only the fight state manager requires dedicated shutdown
-		fightStateManager.shutDown();
+		try {
+			// Only the fight state manager requires dedicated shutdown
+			fightStateManager.shutDown();
 
-		fightStateManager = null;
-		itemStateManager = null;
-		skillStateManager = null;
-		collectionLogManager = null;
-		marketplaceManager = null;
-		minimapManager = null;
+			fightStateManager = null;
+			itemStateManager = null;
+			skillStateManager = null;
+			collectionLogManager = null;
+			marketplaceManager = null;
+			minimapManager = null;
+		} catch (Exception exception) {
+			log.warn("An error occurred when shutting down the managers: ", exception);
+		}
 	}
 
 	private void shutDownPanels()
 	{
-		pluginPanel = null;
-		clientToolbar.removeNavigation(navigationButton);
-	}
-
-	/**
-	 * Helper to get the current configuration.
-	 * @param configManager
-	 * @return
-	 */
-	@Provides
-	TwitchLiveLoadoutConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(TwitchLiveLoadoutConfig.class);
+		try {
+			pluginPanel = null;
+			clientToolbar.removeNavigation(navigationButton);
+		} catch (Exception exception) {
+		log.warn("An error occurred when shutting down the UI panels: ", exception);
+		}
 	}
 
 	/**
@@ -313,6 +328,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncFightStatisticsState()
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
 			twitchState.setFightStatistics(fightStatistics);
@@ -328,6 +348,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncPlayerInfo()
 	{
+		if (!config.playerInfoEnabled())
+		{
+			return;
+		}
+
 		try {
 			String playerName = getPlayerName();
 
@@ -350,6 +375,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncMiniMap()
 	{
+		if (!config.marketplaceEnabled())
+		{
+			return;
+		}
+
 		try {
 			minimapManager.updateMinimap();
 		} catch (Exception exception) {
@@ -369,7 +399,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				return;
 			}
 
-			fightStateManager.onGameTick();
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onGameTick();
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle lobby game tick event: ", exception);
 		}
@@ -381,6 +414,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 3000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void applyMarketplaceProducts()
 	{
+		if (!config.marketplaceEnabled())
+		{
+			return;
+		}
+
 		try {
 			marketplaceManager.applyProducts();
 		} catch (Exception exception) {
@@ -402,8 +440,15 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onStatChanged(StatChanged event)
 	{
 		try {
-			skillStateManager.onStatChanged(event);
-			fightStateManager.onStatChanged(event);
+			if (config.skillsEnabled())
+			{
+				skillStateManager.onStatChanged(event);
+			}
+
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onStatChanged(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle stat change event: ", exception);
 		}
@@ -412,6 +457,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onFakeXpDrop(FakeXpDrop event)
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			fightStateManager.onFakeXpDrop(event);
 		} catch (Exception exception) {
@@ -422,6 +472,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onAnimationChanged(AnimationChanged event)
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			fightStateManager.onAnimationChanged(event);
 		} catch (Exception exception) {
@@ -432,6 +487,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGraphicChanged(GraphicChanged event)
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			fightStateManager.onGraphicChanged(event);
 		} catch (Exception exception) {
@@ -442,6 +502,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			fightStateManager.onHitsplatApplied(event);
 		} catch (Exception exception) {
@@ -452,6 +517,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onNpcDespawned(NpcDespawned npcDespawned)
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			fightStateManager.onNpcDespawned(npcDespawned);
 		} catch (Exception exception) {
@@ -462,6 +532,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onPlayerDespawned(PlayerDespawned playerDespawned)
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			fightStateManager.onPlayerDespawned(playerDespawned);
 		} catch (Exception exception) {
@@ -472,6 +547,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onInteractingChanged(InteractingChanged interactingChanged)
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			fightStateManager.onInteractingChanged(interactingChanged);
 		} catch (Exception exception) {
@@ -482,6 +562,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
+		if (!config.fightStatisticsEnabled())
+		{
+			return;
+		}
+
 		try {
 			fightStateManager.onGameTick();
 		} catch (Exception exception) {
@@ -493,7 +578,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
 	{
 		try {
-			collectionLogManager.onScriptPostFired(scriptPostFired);
+			if (config.collectionLogEnabled())
+			{
+				collectionLogManager.onScriptPostFired(scriptPostFired);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not collection log script execution:", exception);
 		}
@@ -503,7 +591,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onVarbitChanged(VarbitChanged varbitChanged)
 	{
 		try {
-			collectionLogManager.onVarbitChanged(varbitChanged);
+			if (config.collectionLogEnabled())
+			{
+				collectionLogManager.onVarbitChanged(varbitChanged);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle varbit change event: ", exception);
 		}
@@ -619,51 +710,85 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public String getConfiguration(String configKey)
 	{
-		String scopedConfigKey = getScopedConfigKey(configKey);
-		return configManager.getConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey);
+		try {
+			String scopedConfigKey = getScopedConfigKey(configKey);
+			return configManager.getConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey);
+		} catch (Exception exception) {
+			log.warn("Could not get the configuration due to the following error: ", exception);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Helper to get the current configuration.
+	 * @param configManager
+	 * @return
+	 */
+	@Provides
+	TwitchLiveLoadoutConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(TwitchLiveLoadoutConfig.class);
 	}
 
 	private String getScopedConfigKey(String configKey)
 	{
-		String playerName = getPlayerName();
+		try {
+			String playerName = getPlayerName();
 
-		if (playerName == null)
-		{
-			playerName = "unknown";
+			if (playerName == null)
+			{
+				playerName = "unknown";
+			}
+
+			String playerNamePrefix = playerName.replaceAll("\\s+","_").trim();
+			String scopedConfigKey = playerNamePrefix +"-"+ configKey;
+			return scopedConfigKey;
+		} catch (Exception exception) {
+			log.warn("Could not get the scoped config key due to the following error: ", exception);
 		}
 
-		String playerNamePrefix = playerName.replaceAll("\\s+","_").trim();
-		String scopedConfigKey = playerNamePrefix +"-"+ configKey;
-		return scopedConfigKey;
+		return null;
 	}
 
 	public String getPlayerName()
 	{
-		if (!isLoggedIn())
-		{
-			return null;
+		try {
+			if (!isLoggedIn())
+			{
+				return null;
+			}
+
+			return client.getLocalPlayer().getName();
+		} catch (Exception exception) {
+			log.warn("Could not get the player name due to the following error: ", exception);
 		}
 
-		final String playerName = client.getLocalPlayer().getName();
-		return playerName;
+		return null;
 	}
 
 	public boolean isLoggedIn()
 	{
 
-		// guard: check game state
-		if (client.getGameState() != GameState.LOGGED_IN)
-		{
-			return false;
+		try {
+			// guard: check game state
+			if (client.getGameState() != GameState.LOGGED_IN)
+			{
+				return false;
+			}
+
+			// guard: check local player instance
+			if (client.getLocalPlayer() == null)
+			{
+				return false;
+			}
+
+			return true;
+		} catch (Exception exception) {
+			log.warn("Could not get the whether the player is logged in due to the following error: ", exception);
 		}
 
-		// guard: check local player instance
-		if (client.getLocalPlayer() == null)
-		{
-			return false;
-		}
-
-		return true;
+		return false;
 	}
 
 	public interface ClientThreadAction {
