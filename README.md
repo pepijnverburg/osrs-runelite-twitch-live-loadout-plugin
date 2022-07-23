@@ -15,30 +15,14 @@ Get better engagement with...
 - **Existing casual players** who are not up-to-date about the latest changes.
 - **Existing frequent players** who would like to give advice on the loadout.
 
-[Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with. The screenshots in this README are made using a Twitch Extension that is compatible with this plugin.
+[Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with. The screenshots in this README are made using the compatible [OSRS Live Loadout Twitch Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6).
 
 ![Summary](./docs/summary.gif "Summary")
-
-### Recent updates
-
-#####v1.0.3
-- All bank items are now synced to your viewers, rather than only the 200 most valuable items.
-- The looting bag can now be synced to viewers.
-- Items can now have 'special behaviours' for example the looting bag opens a new side-panel as one of the first items for this behaviour.
-
-#####v1.0.2
-- 🎉  Collection log is now available to be viewed live by your viewers!
-- Enhanced stability of plugin when there are breaking client or Twitch changes.
-- The Twitch data syncing has been updated to work again due to deprecated functionalities.
 
 ## Requirements
 - [Runelite Client](https://runelite.net/) with [Plugin Hub](https://runelite.net/plugin-hub/) enabled
 - [OSRS Live Loadout Twitch Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6)
-- [Twitch Account](https://www.twitch.tv/) as broadcaster
-
-#### Client Settings
-Within the client the following should be enabled for all features to work:
-- Enable fake XP Drops via the OSRS settings (used for `combat statistics`).
+- [Twitch Account](https://www.twitch.tv/)
 
 ## 🚀 Getting Started
 
@@ -48,7 +32,7 @@ Within the client the following should be enabled for all features to work:
 - Step 3: Copy token from the `Twitch Extension configuration page` and paste in the RuneLite plugin setting `Twitch Extension Token`.
 - Step 4: Verify whether data is synced by previewing it in the `Twitch Extension configuration page`.
 
-⚠️ Note that for the `collection log` and `bank` to show you need to `open them` at least once. The collection log will be saved across login sessions, the bank won't.
+⚠️ Note that for the `collection log` and `bank` to show you need to `open them` at least once. The collection log will be saved across sessions, the bank should be opened every session.
 
 ### Step 1: Install Runelite Plugin
 You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/Pepijn%20Verburg).
@@ -72,10 +56,20 @@ Note that the token is **valid for quite a long time**, meaning it is important 
 Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can also verify whether data is now synced, for example your gear:
 ![Twitch Extension](./docs/getting-started/twitch-extension-testing.gif "Twitch Extension")
 
-## Features
-Below you can find an overview which features are implemented. Note that the screenshots shown are from the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6).
+## Recent updates
 
-Most data is automatically synced when logged in. The `Bank` and `Collection Log` are exceptions. See the ⚠️ marks below for an explanation.
+#### v1.0.3
+- All bank items are now synced to your viewers, rather than only the 200 most valuable items.
+- The looting bag can now be synced to viewers.
+- Items can now have 'special behaviours' for example the looting bag opens a new side-panel as one of the first items for this behaviour.
+
+#### v1.0.2
+- 🎉  Collection log is now available to be viewed live by your viewers!
+- Enhanced stability of plugin when there are breaking client or Twitch changes.
+- The Twitch data syncing has been updated to work again due to deprecated functionalities.
+
+## Features
+Below you can find an overview which features are implemented. Most data is automatically synced when logged in. The `Bank` and `Collection Log` are exceptions. See the ⚠️ marks below for an explanation.
 
 ![Icon](./docs/icons/combat.png "Icon") ![Icon](./docs/icons/items.png "Icon") ![Icon](./docs/icons/skills.png "Icon")
 
@@ -83,7 +77,7 @@ Most data is automatically synced when logged in. The `Bank` and `Collection Log
 - [x] `Inventory items`: live view of the inventory and total price.
 - [x] `Equipment items`: live view of worn gear and total price.
 - [x] `Collection log`: the collection log including all items and kill counts.
-- [x] `Bank items`: Top 200 most valuable bank items and price of all bank items (not all due to Twitch Extension limitations).
+- [x] `Bank items`: all bank items and total price.
 - [x] `Bank tabs`: info what items are in what tab.
 - [x] `Looting bag`: items inside the looting bag.
 - [x] `Wiki lookup`: all items can be looked up by opening the official Wiki.
@@ -128,7 +122,7 @@ Most data is automatically synced when logged in. The `Bank` and `Collection Log
 - [x] `Display name`: the name of the player in the chat bar.
 
 ### Twitch Extension specific
-There are also some features available for the viewer specifically available in the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6).
+There are also some features available for the viewer in the [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6).
 ![Dragging](./docs/screenshots/dragging.png "Dragging")
 ![Controls](./docs/screenshots/viewer-controls.png "Controls")
 
@@ -158,7 +152,7 @@ It is also possible to configure what information is being sent through the foll
 - `Sync inventory items`: toggle to sync inventory items.
 - `Sync equipment items`: toggle to sync equipment items.
 - `Sync bank items`: toggle to sync bank items.
-- `Max bank items`: the maximum amount of bank items with an upper limit set by the plugin.
+- `Max bank items`: the maximum amount of bank items you would like to show (most valuable ones are prioritized).
 - `Sync bank value`: toggle to sync total bank value.
 - `Sync looting bag`: toggle to sync looting bag items.
 - `Sync looting bag value`: toggle to sync looting bag value.
@@ -182,25 +176,22 @@ It is also possible to configure what information is being sent through the foll
 - `Sync display name`: toggle to show basic player info.
 - `Sync weight of carried items`: toggle to sync weight.
 
-#### Advanced
-- `Twitch Extension ID`: the unique identifier of the Twitch Extension where the data should be sent to. This is pre-filled with an extension known to work well with this plugin.
-
 ## 🔒 Security & Technical Details
 
 ### Data Flow
 
 #### Twitch as the only third-party
-**All data is send directly to Twitch** to make sure no other third-parties receive any information. This is using the [Twitch Configuration Service](https://dev.twitch.tv/docs/tutorials/extension-101-tutorial-series/config-service) to store a persistent state of the above data. This persistent state is used to load the extension with the latest data when a new viewer opens the stream. When a change happens due to in-game activity an update message is sent to the [Twitch PubSub Service](https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message). This message is used to update the extension for the current viewers. General documentation about Twitch Extensions can be found [here](https://dev.twitch.tv/docs/extensions/reference/
+**All data is send directly to Twitch** to make sure no other third-parties receive any information. When a change happens due to in-game activity an update message is sent to the [Twitch PubSub Service](https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message). This message is used to update the extension for the current viewers. General documentation about Twitch Extensions can be found [here](https://dev.twitch.tv/docs/extensions/reference/
 ).
 
 #### Twitch Extension Token
-It is worth noting that the token retrieved from Twitch to authenticate this plugin can **only access features related to the extension**. Twitch did a good job in preventing extensions and their tokens to have access outside of the extension.
+It is worth noting that the token retrieved from Twitch to authenticate this plugin can **only access features related to the extension**. Twitch did a good job in preventing extensions and their tokens to have access outside of the extension (like controlling your Twitch account).
 
 #### Diagram
 ![Data Flow](https://mermaid.ink/svg/eyJjb2RlIjoic3RhdGVEaWFncmFtXG4gICAgUnVuZUxpdGUgLS0-IFR3aXRjaEFwaVxuICAgIFR3aXRjaEFwaSAtLT4gQ29uZmlndXJhdGlvblNlcnZpY2VcbiAgICBUd2l0Y2hBcGkgLS0-IFB1YlN1YlNlcnZpY2VcbiAgICBDb25maWd1cmF0aW9uU2VydmljZSAtLT4gVHdpdGNoVmlld2VyXG4gICAgUHViU3ViU2VydmljZSAtLT4gVHdpdGNoVmlld2VyIiwibWVybWFpZCI6eyJ0aGVtZSI6Im5ldXRyYWwifSwidXBkYXRlRWRpdG9yIjpmYWxzZX0)
 
 ### Technical Limitations
-To simplify the state management one large state object is being send to Twitch. However, the Twitch Configuration and PubSub Service only allow messages of a *maximum size of 5KB*. This is also the reason why for the bank items only the top 200 most valuable items are synchronized. All messages are compressed using a GZIP compression algorithm to maximize the use of available bytes.
+To simplify the state management one large state object is being send to Twitch. However, the Twitch Configuration and PubSub Service only allow messages of a *maximum size of 5KB*. This is also the reason why you can see the bank and collection log incrementally grow bigger for viewers. They are sent over in smaller parts and merged together later. All messages are compressed using a GZIP compression algorithm to maximize the use of available bytes.
 
 ### State update frequency
 The state updates are dependant on the maximum amount allowed by Twitch. Rate limit documentation can be found [here](https://dev.twitch.tv/docs/api/guide/#rate-limits). Currently the maximum update frequency is is once per two seconds. This means the updates are never truly 'real-time'.
@@ -211,14 +202,7 @@ The plugin is implemented with the OSRS weekly updates in mind. There are few de
 This also works for the collection log. A thing to note here is that if you want any new collection log items shown you need to open the collection log interface at that boss / category at least once.
 
 ## 👥 Acknowledgements
-Shout-out to the following people helping out a lot giving feedback on several release versions of both the RuneLite Plugin and Twitch Extension:
-- Gamma1991
-- dkvl
-- Adam
-- deathbeam
-- Alexsuperfly
-- melky
-- Hannah IM
+Shout-out to the RuneLite team and many streamers providing valuable feedback and suggestions 🙌
 
 ## 🔮 Future
 Future features that might be added based on feedback are:
@@ -230,8 +214,6 @@ Future features that might be added based on feedback are:
 ### Others
 - [ ] More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).
 - [ ] Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
-- [ ] If the full bank is important, complex state management is considered where the bank is incrementally sent to Twitch in payloads of 5KB in size.
-- [ ] Check whether different locations of viewers on the world influence the delay between video an updates so significantly that we would need to have a time reference to know when to update for each viewer independently.
 - [ ] Add clan members to the fight stats to display the damage they are taking. They can then also be part of the 'incoming' fights group.
 - [ ] Add live gear of PvP enemies deduced from graphical models.
 - [ ] Sync data from loot tracker. Possible to have directly via API instead of via Twitch data packets?
@@ -239,4 +221,4 @@ Future features that might be added based on feedback are:
 - [ ] Show list of current people in ToB / CoX party.
 
 ## 💡 Feedback
-If you have any questions or suggestions please contact `support@osrs-tools.com` or open an issue here at Github.
+If you have any questions or suggestions please join the [OSRS Live Loadout Discord](https://discord.gg/3Fjm5HTFGM) or open an issue here at Github.
