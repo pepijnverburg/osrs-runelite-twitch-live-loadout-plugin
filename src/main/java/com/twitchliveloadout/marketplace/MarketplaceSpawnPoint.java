@@ -1,4 +1,4 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.marketplace;
 
 import lombok.Getter;
 import net.runelite.api.coords.LocalPoint;

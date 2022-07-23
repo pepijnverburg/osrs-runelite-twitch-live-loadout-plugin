@@ -1,5 +1,6 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.skills;
 
+import com.twitchliveloadout.twitch.TwitchState;
 import net.runelite.api.Client;
 import net.runelite.api.events.StatChanged;
 

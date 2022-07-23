@@ -1,4 +1,4 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.fights;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
@@ -11,7 +11,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.twitchliveloadout.FightStateManager.MAX_FINISHED_FIGHT_SESSION_AMOUNT;
+import static com.twitchliveloadout.fights.FightStateManager.MAX_FINISHED_FIGHT_SESSION_AMOUNT;
 
 @Slf4j
 public class Fight {

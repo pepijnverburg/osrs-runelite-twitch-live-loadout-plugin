@@ -1,4 +1,4 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.items;
 
 import net.runelite.api.Item;
 

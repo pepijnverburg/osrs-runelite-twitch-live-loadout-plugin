@@ -24,6 +24,10 @@
  */
 package com.twitchliveloadout;
 
+import com.twitchliveloadout.fights.FightStateManager;
+import com.twitchliveloadout.items.ItemStateManager;
+import com.twitchliveloadout.marketplace.MarketplaceProduct;
+import com.twitchliveloadout.twitch.TwitchApi;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;

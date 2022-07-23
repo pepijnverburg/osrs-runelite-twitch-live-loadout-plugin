@@ -1,4 +1,4 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.fights;
 
 import lombok.Getter;
 

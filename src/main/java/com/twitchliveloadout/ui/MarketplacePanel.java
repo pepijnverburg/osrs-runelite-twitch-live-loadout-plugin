@@ -1,14 +1,9 @@
 package com.twitchliveloadout.ui;
 
-import com.google.gson.JsonObject;
-import com.twitchliveloadout.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchApi;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
 public class MarketplacePanel extends JPanel
 {

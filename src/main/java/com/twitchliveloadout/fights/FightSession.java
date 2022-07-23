@@ -1,12 +1,10 @@
-package com.twitchliveloadout;
-
-import net.runelite.api.Actor;
+package com.twitchliveloadout.fights;
 
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
-import static com.twitchliveloadout.FightStateManager.*;
+import static com.twitchliveloadout.fights.FightStateManager.*;
 
 public class FightSession {
 	private final Fight fight;

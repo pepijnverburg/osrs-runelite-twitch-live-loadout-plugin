@@ -4,8 +4,8 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import com.twitchliveloadout.FightStateManager;
-import com.twitchliveloadout.TwitchApi;
+import com.twitchliveloadout.fights.FightStateManager;
+import com.twitchliveloadout.twitch.TwitchApi;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.materialtabs.MaterialTab;
 import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;

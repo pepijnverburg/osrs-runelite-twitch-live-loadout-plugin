@@ -1,11 +1,13 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.marketplace;
 
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
+import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.twitch.TwitchState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 
 import java.util.ArrayList;
-import java.util.concurrent.ScheduledExecutorService;
 
 @Slf4j
 public class MarketplaceManager {

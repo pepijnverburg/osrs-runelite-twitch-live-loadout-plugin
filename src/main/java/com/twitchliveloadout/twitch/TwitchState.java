@@ -1,15 +1,16 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.twitch;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import net.runelite.api.*;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.twitchliveloadout.CollectionLogManager.ITEMS_KEY_NAME;
+import static com.twitchliveloadout.items.CollectionLogManager.ITEMS_KEY_NAME;
 
 /**
  * In-memory state of all the data that is synced

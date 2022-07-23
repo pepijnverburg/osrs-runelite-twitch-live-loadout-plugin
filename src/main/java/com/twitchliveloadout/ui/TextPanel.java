@@ -1,6 +1,5 @@
 package com.twitchliveloadout.ui;
 
-import com.twitchliveloadout.TwitchApi;
 import net.runelite.client.ui.ColorScheme;
 
 import javax.swing.*;

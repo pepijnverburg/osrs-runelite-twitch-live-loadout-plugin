@@ -1,7 +1,10 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.fights;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
+import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.twitch.TwitchState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;

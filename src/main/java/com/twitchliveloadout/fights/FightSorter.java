@@ -1,4 +1,4 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.fights;
 
 import java.time.Instant;
 import java.util.Comparator;

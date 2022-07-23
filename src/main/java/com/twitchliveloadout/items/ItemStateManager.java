@@ -1,6 +1,7 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.items;
 
-import com.google.common.collect.ImmutableList;
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
+import com.twitchliveloadout.twitch.TwitchState;
 import net.runelite.api.*;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.game.ItemManager;

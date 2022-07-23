@@ -1,7 +1,7 @@
 package com.twitchliveloadout.ui;
 
 import com.google.gson.JsonObject;
-import com.twitchliveloadout.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchApi;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

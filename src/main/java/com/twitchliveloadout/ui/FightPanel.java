@@ -1,7 +1,7 @@
 package com.twitchliveloadout.ui;
 
-import com.twitchliveloadout.Fight;
-import com.twitchliveloadout.FightStateManager;
+import com.twitchliveloadout.fights.Fight;
+import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.ImageUtil;

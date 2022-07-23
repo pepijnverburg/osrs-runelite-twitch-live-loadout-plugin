@@ -1,4 +1,4 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.twitch;
 
 public enum TwitchStateEntry {
 	PLAYER_NAME("playerName"),

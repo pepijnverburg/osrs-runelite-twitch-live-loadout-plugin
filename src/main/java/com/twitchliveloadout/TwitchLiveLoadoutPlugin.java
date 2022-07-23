@@ -25,6 +25,14 @@
 package com.twitchliveloadout;
 
 import com.google.inject.Provides;
+import com.twitchliveloadout.fights.FightStateManager;
+import com.twitchliveloadout.items.CollectionLogManager;
+import com.twitchliveloadout.items.ItemStateManager;
+import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.minimap.MinimapManager;
+import com.twitchliveloadout.skills.SkillStateManager;
+import com.twitchliveloadout.twitch.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;

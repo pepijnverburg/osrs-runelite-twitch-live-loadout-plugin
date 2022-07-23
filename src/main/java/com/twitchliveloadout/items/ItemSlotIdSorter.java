@@ -1,4 +1,4 @@
-package com.twitchliveloadout;
+package com.twitchliveloadout.items;
 
 import java.util.Comparator;
 
