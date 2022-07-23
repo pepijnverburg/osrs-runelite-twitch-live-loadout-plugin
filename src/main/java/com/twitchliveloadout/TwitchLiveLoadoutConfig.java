@@ -372,13 +372,59 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default boolean itemGoalsEnabled()
 	{
-		return true;
+		return false;
+	}
+
+	@ConfigSection(
+			name = "Marketplace",
+			description = "Settings for the marketplace",
+			position = 12
+	)
+	String marketplaceSection = "marketplace";
+
+	@ConfigItem(
+			keyName = "marketplaceEnabled",
+			name = "Sync marketplace",
+			description = "Synchronize the marketplace configuration, such as enabled and featured items.",
+			position = 2,
+			hidden = true,
+			section = marketplaceSection
+	)
+	default boolean marketplaceEnabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "devObjectSpawnId",
+			name = "Dev Object Spawn ID",
+			description = "Testing ID when spawning objects for the marketplace.",
+			position = 98,
+			hidden = true,
+			section = marketplaceSection
+	)
+	default int devObjectSpawnId()
+	{
+		return 41280;
+	}
+
+	@ConfigItem(
+			keyName = "devMarketplaceProductSpawn",
+			name = "Dev Marketplace Product Spawn",
+			description = "Testing product.",
+			position = 99,
+			hidden = true,
+			section = marketplaceSection
+	)
+	default MarketplaceProduct devMarketplaceProductSpawn()
+	{
+		return MarketplaceProduct.COIN_TROPHY;
 	}
 
 	@ConfigSection(
 			name = "Advanced",
 			description = "Settings for advanced usage",
-			position = 12
+			position = 99
 	)
 	String advancedSection = "advanced";
 
@@ -393,31 +439,5 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String extensionClientId()
 	{
 		return TwitchApi.DEFAULT_EXTENSION_CLIENT_ID;
-	}
-
-	@ConfigItem(
-			keyName = "devObjectSpawnId",
-			name = "Dev Object Spawn ID",
-			description = "Testing ID when spawning objects for the marketplace.",
-			position = 4,
-			hidden = false,
-			section = advancedSection
-	)
-	default int devObjectSpawnId()
-	{
-		return 41280;
-	}
-
-	@ConfigItem(
-			keyName = "devMarketplaceProductSpawn",
-			name = "Dev Marketplace Product Spawn",
-			description = "Testing product.",
-			position = 6,
-			hidden = false,
-			section = advancedSection
-	)
-	default MarketplaceProduct devMarketplaceProductSpawn()
-	{
-		return MarketplaceProduct.COIN_TROPHY;
 	}
 }
