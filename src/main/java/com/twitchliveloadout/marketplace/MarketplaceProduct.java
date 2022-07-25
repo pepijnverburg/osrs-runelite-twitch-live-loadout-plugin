@@ -24,12 +24,16 @@ public enum MarketplaceProduct {
 	}}, (model, modelId) -> {
 		resizeRandomly(model, 80, 100);
 	}),
-	COX_LOOT_BEAM(new MarketplaceModel[][] {{
-		new MarketplaceModel(5809), // beam
-		new MarketplaceModel(32799), // bow
-	}}, (model, modelId) -> {
+	COX_LOOT_BEAM(new MarketplaceModel[][] {
+		{new MarketplaceModel(5809), new MarketplaceModel(32799)}, // twisted bow
+		{new MarketplaceModel(5809), new MarketplaceModel(32784)}, // claws
+		{new MarketplaceModel(5809), new MarketplaceModel(32697, 7396)}, // olm pet
+	}, (model, modelId) -> {
 		if (modelId == 5809) {
 			recolorAllFaces(model, MarketplaceColor.PURPLE_COLOR.getColor(), 1.0d);
+		}
+		if (modelId == 32697) {
+			resizeSmall(model);
 		}
 	}),
 	TOB_LOOT_CHEST(new MarketplaceModel[][] {{
