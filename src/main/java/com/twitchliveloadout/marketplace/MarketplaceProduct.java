@@ -6,40 +6,40 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.JagexColor;
 import net.runelite.api.ModelData;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
 @Slf4j
 public enum MarketplaceProduct {
-	GRAVESTONE(new MarketplaceModel[] {
-		new MarketplaceModel(41280)
+	NONE(new MarketplaceModel[][] {}),
+
+	GRAVESTONE(new MarketplaceModel[][]{
+		{new MarketplaceModel(1367)}, // old
+		{new MarketplaceModel(1368)}, // old
+		{new MarketplaceModel(1369)}, // old
+		//new MarketplaceModel(41280) // modern
 	}),
-	TOB_LOOT_CHEST(new MarketplaceModel[] {
-		new MarketplaceModel(35425), // 35448, 35425, monumental chest
-	}, (model, modelIndex) -> {
-		makeSmall(model);
+	FIRE(new MarketplaceModel[][] {{
+		new MarketplaceModel(26585, 6853),
+	}}, (model, modelId) -> {
+		resizeRandomly(model, 80, 100);
 	}),
-	GOLDEN_GNOME(new MarketplaceModel[] {
-		new MarketplaceModel(32303),
+	COX_LOOT_BEAM(new MarketplaceModel[][] {{
+		new MarketplaceModel(5809), // beam
+		new MarketplaceModel(32799), // bow
+	}}, (model, modelId) -> {
+		if (modelId == 5809) {
+			recolorAllFaces(model, MarketplaceColor.PURPLE_COLOR.getColor(), 1.0d);
+		}
 	}),
-	COIN_TROPHY(new MarketplaceModel[] {
-		new MarketplaceModel(32153),
+	TOB_LOOT_CHEST(new MarketplaceModel[][] {{
+			new MarketplaceModel(35425), // 35448, 35425, monumental chest
+	}}, (model, modelId) -> {
+		resizeSmall(model);
 	}),
-	ARMADYL_GODSWORD(new MarketplaceModel[] {
-		new MarketplaceModel(28075),
-	}, null, null, (product) -> {
-		product.setUseSpawners(false);
-	}),
-	ABYSSAL_WHIP(new MarketplaceModel[] {
-		new MarketplaceModel(5412),
-	}, null, null, (product) -> {
-		product.setUseSpawners(false);
-	}),
-	BITS_TROPHY(new MarketplaceModel[] {
-		new MarketplaceModel(35449, 8105),
-	}),
-	PARTY_BALLOONS(new MarketplaceModel[] {
+	PARTY_BALLOONS(new MarketplaceModel[][] {{
 		new MarketplaceModel(2227, 498, 2400),
-	}, null, (manager) -> {
+	}}, null, (manager) -> {
 		final int amountSpawned = 5;
 		ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
 
@@ -52,27 +52,53 @@ public enum MarketplaceProduct {
 		product.setUseSpawners(false);
 		product.setRandomSpawnDelayMs(2000);
 	}),
-	INFERNAL_CAPE(new MarketplaceModel[] {
+
+	GOLDEN_GNOME(new MarketplaceModel[][] {{
+		new MarketplaceModel(32303),
+	}}),
+	COIN_TROPHY(new MarketplaceModel[][] {{
+		new MarketplaceModel(32153),
+	}}),
+	ARMADYL_GODSWORD(new MarketplaceModel[][] {{
+		new MarketplaceModel(28075),
+	}}, null, null, (product) -> {
+		product.setUseSpawners(false);
+	}),
+	ABYSSAL_WHIP(new MarketplaceModel[][] {{
+		new MarketplaceModel(5412),
+	}}, null, null, (product) -> {
+		product.setUseSpawners(false);
+	}),
+	TWISTED_BOW(new MarketplaceModel[][] {{
+		new MarketplaceModel(32799),
+	}}, null, null, (product) -> {
+		product.setUseSpawners(false);
+	}),
+	BITS_TROPHY(new MarketplaceModel[][] {{
+		new MarketplaceModel(35449, 8105),
+	}}),
+	INFERNAL_CAPE(new MarketplaceModel[][] {{
 		new MarketplaceModel(33143),
-	}),
-	MAX_CAPE(new MarketplaceModel[] {
+	}}),
+	MAX_CAPE(new MarketplaceModel[][] {{
 		new MarketplaceModel(32188),
-	}),
-	ANIMATED_ARMOUR(new MarketplaceModel[] {
+	}}),
+	ANIMATED_ARMOUR(new MarketplaceModel[][] {{
 		new MarketplaceModel(21262, 5603),
-	}),
-	JUSTICIAR_ARMOUR(new MarketplaceModel[] {
+	}}),
+	JUSTICIAR_ARMOUR(new MarketplaceModel[][] {{
 		new MarketplaceModel(35412), // new style: 35426
+	}}),
+	ZUK_DISPLAY(new MarketplaceModel[][] {{
+			new MarketplaceModel(34570),
+	}}, (model, modelId) -> {
+		resizeSmall(model);
 	}),
-	ZUK_DISPLAY(new MarketplaceModel[] {
-		new MarketplaceModel(34570),
-	}, (model, modelIndex) -> {
-		makeSmall(model);
-	}),
-	GROUND_SPAWNING_PORTAL(new MarketplaceModel[] {
-		new MarketplaceModel(42302, 9040),
-	}, (model, modelIndex) -> {
-		recolorAllFaces(model, 145, 70, 255, 1.0d);
+
+	GROUND_SPAWNING_PORTAL(new MarketplaceModel[][] {
+		{new MarketplaceModel(42302, 9040)}
+	}, (model, modelId) -> {
+		recolorAllFaces(model, MarketplaceColor.PURPLE_COLOR.getColor(), 1.0d);
 	});
 
 //	GOLDEN_GNOME(new int[] {32303}),
@@ -126,7 +152,7 @@ public enum MarketplaceProduct {
 
 	// 28914; // golden gnome: 32303, scythe: 40614, gravestone: 41280 / 40493 / 38055 / 31619 /
 	@Getter
-	private final MarketplaceModel[] marketplaceModels;
+	private final MarketplaceModel[][] marketplaceModels;
 
 	@Getter
 	@Setter
@@ -155,7 +181,7 @@ public enum MarketplaceProduct {
 	@Getter
 	private final CustomizeSettings customizeSettings;
 
-	MarketplaceProduct(MarketplaceModel[] marketplaceModels, CustomizeModel customizeModel, GetSpawnPoints getSpawnPoints, CustomizeSettings customizeSettings)
+	MarketplaceProduct(MarketplaceModel[][] marketplaceModels, CustomizeModel customizeModel, GetSpawnPoints getSpawnPoints, CustomizeSettings customizeSettings)
 	{
 		this.marketplaceModels = marketplaceModels;
 		this.customizeModel = customizeModel;
@@ -163,42 +189,48 @@ public enum MarketplaceProduct {
 		this.customizeSettings = customizeSettings;
 	}
 
-	MarketplaceProduct(MarketplaceModel[] marketplaceModels, CustomizeModel customizeModel, GetSpawnPoints getSpawnPoints)
+	MarketplaceProduct(MarketplaceModel[][] marketplaceModels, CustomizeModel customizeModel, GetSpawnPoints getSpawnPoints)
 	{
 		this(marketplaceModels, customizeModel, getSpawnPoints, null);
 	}
 
-	MarketplaceProduct(MarketplaceModel[] marketplaceModels, CustomizeModel customizeModel)
+	MarketplaceProduct(MarketplaceModel[][] marketplaceModels, CustomizeModel customizeModel)
 	{
 		this(marketplaceModels, customizeModel, null, null);
 	}
 
-	MarketplaceProduct(MarketplaceModel[] marketplaceModels)
+	MarketplaceProduct(MarketplaceModel[][] marketplaceModels)
 	{
 		this(marketplaceModels, null, null, null);
 	}
 
-	public static void makeSmall(ModelData model)
+	public static void resizeSmall(ModelData model)
 	{
 		model.scale(50, 50, 50);
 	}
 
-	public static void recolorAllFaces(ModelData model, int r, int g, int b, double brightness)
+	public static void resizeRandomly(ModelData model, int minScale, int maxScale)
+	{
+		int deltaScale = maxScale - minScale;
+		int randomScale = minScale + ((int) (Math.random() * ((float) deltaScale)));
+
+		model.scale(randomScale, randomScale, randomScale);
+	}
+
+	public static void recolorAllFaces(ModelData model, Color color, double brightness)
 	{
 		short[] faceColors = model.getFaceColors();
 
 		for (int faceColorIndex = 0; faceColorIndex < faceColors.length; faceColorIndex++)
 		{
-			recolorFace(model, faceColorIndex, r, g, b, brightness);
+			recolorFace(model, faceColorIndex, color, brightness);
 		}
 	}
 
-	public static void recolorFace(ModelData model, int faceColorIndex, int r, int g, int b, double brightness)
+	public static void recolorFace(ModelData model, int faceColorIndex, Color color, double brightness)
 	{
 		short[] faceColors = model.getFaceColors();
-		int rgb = 255;
-		rgb = (rgb << 8) + 0;
-		rgb = (rgb << 8) + 0;
+		int rgb = color.getRGB();
 
 		if (faceColorIndex < 0 || faceColorIndex >= faceColors.length)
 		{
@@ -211,7 +243,7 @@ public enum MarketplaceProduct {
 	}
 
 	public interface CustomizeModel {
-		public void execute(ModelData model, int modelIndex);
+		public void execute(ModelData model, int modelId);
 	}
 
 	public interface CustomizeSettings {

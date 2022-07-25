@@ -414,6 +414,31 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 3000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void applyMarketplaceProducts()
 	{
+		if (isLoggedIn()) {
+			System.out.println("GRAPHIC SPAWNED!");
+			Player player = client.getLocalPlayer();
+			// https://everythingrs.com/tools/runescape/graphics
+			player.setGraphic(config.devPlayerGraphicId());
+			player.setSpotAnimFrame(0);
+
+//			actor.setAnimation(currentAnimation.animationId);
+//			actor.setGraphic(currentGfx.gfxId);
+//			actor.setActionFrame(currentAnimation.startFrame);
+//			actor.setSpotAnimFrame(currentGfx.startFrame);
+			// 1167: fire explosion
+			// 453: nice fire under feet
+			// 469: puffs of air out of ears
+			// 1180: puff of round smoke explodes and goes up (mind-blown?)
+			// 481: red big wave under feet
+			// 444: jad heal
+			// 436: redemption heal
+			// 437: retribution
+			// 1176 / 1177: cool spirals around you
+			// 1191: lava opens underneath and spews fire! neat
+			// 199: level up fireworks
+			//
+		}
+
 		if (!config.marketplaceEnabled())
 		{
 			return;

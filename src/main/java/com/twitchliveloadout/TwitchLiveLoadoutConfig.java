@@ -387,25 +387,51 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Sync marketplace",
 			description = "Synchronize the marketplace configuration, such as enabled and featured items.",
 			position = 2,
-			hidden = true,
+			hidden = false,
 			section = marketplaceSection
 	)
 	default boolean marketplaceEnabled()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
-			keyName = "devObjectSpawnId",
-			name = "Dev Object Spawn ID",
-			description = "Testing ID when spawning objects for the marketplace.",
-			position = 98,
-			hidden = true,
+			keyName = "devPlayerGraphicId",
+			name = "Dev Player Graphic ID",
+			description = "Testing Graphic ID on player.",
+			position = 97,
+			hidden = false,
 			section = marketplaceSection
 	)
-	default int devObjectSpawnId()
+	default int devPlayerGraphicId()
 	{
-		return 41280;
+		return 1160;
+	}
+
+	@ConfigItem(
+			keyName = "devObjectSpawnModelId",
+			name = "Dev Object Spawn Model ID",
+			description = "Testing model ID when spawning objects for the marketplace.",
+			position = 97,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default int devObjectSpawnModelId()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+			keyName = "devObjectSpawnAnimationId",
+			name = "Dev Object Spawn Animation ID",
+			description = "Testing animation ID when spawning objects for the marketplace.",
+			position = 98,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default int devObjectSpawnAnimationId()
+	{
+		return 0;
 	}
 
 	@ConfigItem(
@@ -413,12 +439,12 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Dev Marketplace Product Spawn",
 			description = "Testing product.",
 			position = 99,
-			hidden = true,
+			hidden = false,
 			section = marketplaceSection
 	)
 	default MarketplaceProduct devMarketplaceProductSpawn()
 	{
-		return MarketplaceProduct.COIN_TROPHY;
+		return MarketplaceProduct.NONE;
 	}
 
 	@ConfigSection(

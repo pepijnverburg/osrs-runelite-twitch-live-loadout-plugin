@@ -8,6 +8,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 @Slf4j
 public class MarketplaceManager {
@@ -43,12 +44,10 @@ public class MarketplaceManager {
 		}
 
 		// TMP: for testing
-//		clientThread.invokeLater(new Runnable() {
-//			@Override
-//			public void run() {
-//				spawnProduct(config.devMarketplaceProductSpawn());
-//			}
-//		});
+		plugin.runOnClientThread(() -> {
+			spawnProduct(config.devMarketplaceProductSpawn());
+			spawnTestObject(config.devObjectSpawnModelId(), config.devObjectSpawnAnimationId());
+		});
 	}
 
 	private ArrayList<RuneLiteObject> spawnProduct(MarketplaceProduct product)
@@ -79,7 +78,10 @@ public class MarketplaceManager {
 			customizeSettings.execute(product);
 		}
 
-		final MarketplaceModel[] marketplaceModels = product.getMarketplaceModels();
+		final MarketplaceModel[][] candidateMarketplaceModels = product.getMarketplaceModels();
+		final Random marketplaceModelsSelector = new Random();
+		final int marketplaceModelsIndex = marketplaceModelsSelector.nextInt(candidateMarketplaceModels.length);
+		final MarketplaceModel[] marketplaceModels = candidateMarketplaceModels[marketplaceModelsIndex];
 		final boolean useSpawners = product.isUseSpawners();
 		final int spawnerDurationMs = product.getSpawnerDurationMs();
 		final int randomSpawnDelayMs = product.getRandomSpawnDelayMs();
@@ -106,6 +108,13 @@ public class MarketplaceManager {
 					.cloneVertices()
 					.cloneColors();
 
+				// check if the model needs further customization (e.g. recolors)
+				// this needs to be done before applying the light to the model
+				if (hasModelCustomizer)
+				{
+					customizeModel.execute(model, modelId);
+				}
+
 				// set the object to the model
 				object.setModel(model.light());
 
@@ -130,18 +139,8 @@ public class MarketplaceManager {
 			}
 
 			// random rotation for all models
-			// NOTE: important to rotate them all the same!
+			// NOTE: important to rotate them all the same if you have multiple models making up one object
 			rotateModelsRandomly(models);
-
-			// check if the model needs further customization (e.g. recolors)
-			if (hasModelCustomizer)
-			{
-				for (int modelIndex = 0; modelIndex < models.size(); modelIndex++)
-				{
-					ModelData model = models.get(modelIndex);
-					customizeModel.execute(model, modelIndex);
-				}
-			}
 
 			// check if the spawners cutscene applies for this product
 			if (!useSpawners) {
@@ -214,7 +213,7 @@ public class MarketplaceManager {
 
 	private void loadMarketplaceProductCache()
 	{
-
+		// TODO: later for objects that are persistent for longer periods of time across login sessions.
 	}
 
 	public MarketplaceSpawnPoint getAvailableSpawnPoint(int maxRadius)
@@ -250,5 +249,29 @@ public class MarketplaceManager {
 		}
 
 		return defaultSpawnPoint;
+	}
+
+	public void spawnTestObject(int modelId, int animationId)
+	{
+		if (modelId <= 0) {
+			return;
+		}
+
+		boolean hasAnimation = animationId > 0;
+		MarketplaceSpawnPoint spawnPoint = getAvailableSpawnPoint(5);
+		RuneLiteObject object = client.createRuneLiteObject();
+		ModelData model = client.loadModelData(modelId)
+				.cloneVertices()
+				.cloneColors();
+
+		object.setModel(model.light());
+		object.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+		if (hasAnimation) {
+			Animation objectAnimation = client.loadAnimation(animationId);
+			object.setAnimation(objectAnimation);
+			object.setShouldLoop(true);
+		}
+
+		object.setActive(true);
 	}
 }
