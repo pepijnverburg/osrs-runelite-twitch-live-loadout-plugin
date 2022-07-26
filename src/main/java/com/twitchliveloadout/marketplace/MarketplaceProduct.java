@@ -11,44 +11,53 @@ import java.util.ArrayList;
 
 @Slf4j
 public enum MarketplaceProduct {
+
 	NONE(new MarketplaceModel[][] {}),
 
-	GRAVESTONE(new MarketplaceModel[][]{
+	GRAVESTONE(new MarketplaceModel[][] {
 		{new MarketplaceModel(1367)}, // old
 		{new MarketplaceModel(1368)}, // old
 		{new MarketplaceModel(1369)}, // old
+		{new MarketplaceModel(1081), new MarketplaceModel(1082)}, // skeleton
 		//new MarketplaceModel(41280) // modern
 	}),
 	FIRE(new MarketplaceModel[][] {{
 		new MarketplaceModel(26585, 6853),
 	}}, (model, modelId) -> {
-		resizeRandomly(model, 80, 100);
+		resizeRandomly(model, 80, 110);
 	}),
 	COX_LOOT_BEAM(new MarketplaceModel[][] {
-		{new MarketplaceModel(5809), new MarketplaceModel(32799)}, // twisted bow
-		{new MarketplaceModel(5809), new MarketplaceModel(32784)}, // claws
-		{new MarketplaceModel(5809), new MarketplaceModel(32697, 7396)}, // olm pet
+		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32799)}, // twisted bow
+		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32784)}, // claws
+		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(ModelIds.OLMLET, 7396)}, // olm pet
 	}, (model, modelId) -> {
-		if (modelId == 5809) {
-			recolorAllFaces(model, MarketplaceColor.PURPLE_COLOR.getColor(), 1.0d);
+		if (modelId == ModelIds.COX_LOOT_BEAM) {
+			recolorAllFaces(model, ModelColors.PURPLE, 1.0d);
 		}
-		if (modelId == 32697) {
+		if (modelId == ModelIds.OLMLET) {
 			resizeSmall(model);
 		}
 	}),
 	TOB_LOOT_CHEST(new MarketplaceModel[][] {{
-			new MarketplaceModel(35425), // 35448, 35425, monumental chest
+		new MarketplaceModel(35425), // 35448, 35425, monumental chest
 	}}, (model, modelId) -> {
 		resizeSmall(model);
 	}),
-	PARTY_BALLOONS(new MarketplaceModel[][] {{
-		new MarketplaceModel(2227, 498, 2400),
-	}}, null, (manager) -> {
+	PARTY_BALLOONS(new MarketplaceModel[][] {
+		{new MarketplaceModel(2226, AnimationIds.PARTY_BALLOON, AnimationDurations.PARTY_BALLOON)},
+		{new MarketplaceModel(2227, AnimationIds.PARTY_BALLOON, AnimationDurations.PARTY_BALLOON)},
+		{new MarketplaceModel(2228, AnimationIds.PARTY_BALLOON, AnimationDurations.PARTY_BALLOON)},
+	}, (model, modelId) -> {
+		double brightness = 1.0d;
+		if (Math.random() < 0.2) {
+			recolorAllFaces(model, ModelColors.PURPLE, brightness);
+		}
+	}, (manager) -> {
 		final int amountSpawned = 5;
 		ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
 
 		for (int spawnIndex = 0; spawnIndex < amountSpawned; spawnIndex++) {
-			spawnPoints.add(manager.getAvailableSpawnPoint(10));
+			spawnPoints.add(manager.getOutwardSpawnPoint(2, 2, 10));
 		}
 
 		return spawnPoints;
@@ -102,7 +111,7 @@ public enum MarketplaceProduct {
 	GROUND_SPAWNING_PORTAL(new MarketplaceModel[][] {
 		{new MarketplaceModel(42302, 9040)}
 	}, (model, modelId) -> {
-		recolorAllFaces(model, MarketplaceColor.PURPLE_COLOR.getColor(), 1.0d);
+		recolorAllFaces(model, ModelColors.PURPLE, 1.0d);
 	});
 
 //	GOLDEN_GNOME(new int[] {32303}),
@@ -256,5 +265,22 @@ public enum MarketplaceProduct {
 
 	public interface GetSpawnPoints {
 		public ArrayList<MarketplaceSpawnPoint> generate(MarketplaceManager manager);
+	}
+
+	public static class ModelIds {
+		public static int COX_LOOT_BEAM = 5809;
+		public static int OLMLET = 32697;
+	}
+
+	public static class AnimationIds {
+		public static int PARTY_BALLOON = 498;
+	}
+
+	public static class AnimationDurations {
+		public static int PARTY_BALLOON = 2400;
+	}
+
+	public static class ModelColors {
+		public static Color PURPLE = new Color(145, 70, 255);
 	}
 }

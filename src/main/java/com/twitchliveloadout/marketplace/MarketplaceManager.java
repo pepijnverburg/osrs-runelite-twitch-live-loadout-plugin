@@ -83,6 +83,13 @@ public class MarketplaceManager {
 		final int spawnerDurationMs = product.getSpawnerDurationMs();
 		final int randomSpawnDelayMs = product.getRandomSpawnDelayMs();
 
+		// guard: check if there are any candidates
+		// this prevents the below candidate randomizer to trigger errors
+		if (candidateMarketplaceModels.length <= 0)
+		{
+			return allObjects;
+		}
+
 		// loop all the requested spawn points
 		for (MarketplaceSpawnPoint spawnPoint : spawnPoints)
 		{
