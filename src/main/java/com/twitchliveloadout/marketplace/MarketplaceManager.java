@@ -3,6 +3,7 @@ package com.twitchliveloadout.marketplace;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchState;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -15,6 +16,7 @@ public class MarketplaceManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchState twitchState;
 
+	@Getter
 	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
 
@@ -100,10 +102,7 @@ public class MarketplaceManager {
 		// if there is no spawn point customizer we will spawn one at the player location
 		if (!hasSpawnPoints)
 		{
-			spawnPoints.add(new MarketplaceSpawnPoint(
-				client.getLocalPlayer().getLocalLocation(),
-				client.getPlane()
-			));
+			spawnPoints.add(getOutwardSpawnPoint(1, 2, 10));
 		} else {
 			spawnPoints.addAll(getSpawnPoints.generate(this));
 		}
@@ -192,6 +191,13 @@ public class MarketplaceManager {
 			else if (product != spawnerProduct)
 			{
 				ArrayList<RuneLiteObject> spawnerObjects = spawnProduct(spawnerProduct);
+
+				// move them all to the location of the final object
+				for (RuneLiteObject spawnerObject : spawnerObjects)
+				{
+					spawnerObject.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+				}
+
 				scheduleSpawn(spawnerObjects, spawnDelayMs);
 				scheduleSpawn(objects, spawnDelayMs + spawnerDurationMs);
 				scheduleDespawn(spawnerObjects, spawnDelayMs + spawnerDurationMs);
