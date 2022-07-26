@@ -11,14 +11,12 @@ import java.util.ArrayList;
 
 @Slf4j
 public enum MarketplaceProduct {
-
 	NONE(new MarketplaceModel[][] {}),
-
 	GRAVESTONE(new MarketplaceModel[][] {
-		{new MarketplaceModel(1367)}, // old
-		{new MarketplaceModel(1368)}, // old
-		{new MarketplaceModel(1369)}, // old
-		{new MarketplaceModel(1081), new MarketplaceModel(1082)}, // skeleton
+		{new MarketplaceModel(1367)}, // old stone
+		{new MarketplaceModel(1368)}, // old stone
+		{new MarketplaceModel(1369)}, // old stone
+		{new MarketplaceModel(1080)}, // skeleton
 		//new MarketplaceModel(41280) // modern
 	}),
 	FIRE(new MarketplaceModel[][] {{
@@ -58,6 +56,12 @@ public enum MarketplaceProduct {
 	}, SpawnPointFactory.createDefaultOutwardSpawner(5), (product) -> {
 		product.setUseSpawners(false);
 		product.setRandomSpawnDelayMs(2000);
+	}),
+	PK_LOOT(new MarketplaceModel[][] {
+		{new MarketplaceModel(5412)}, // whip
+		{new MarketplaceModel(28075)}, // ags
+	}, null, null, (product) -> {
+		product.setUseSpawners(false);
 	}),
 
 	GOLDEN_GNOME(new MarketplaceModel[][] {{
@@ -279,6 +283,18 @@ public enum MarketplaceProduct {
 	}
 
 	public static class SpawnPointFactory {
+		public static GetSpawnPoints createPlayerLocationSpawner()
+		{
+			return (manager) -> {
+				ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
+				spawnPoints.add(new MarketplaceSpawnPoint(
+						manager.getClient().getLocalPlayer().getLocalLocation(),
+						manager.getClient().getPlane()
+				));
+
+				return spawnPoints;
+			};
+		}
 		public static GetSpawnPoints createDefaultOutwardSpawner(int spawnAmount)
 		{
 			return (manager) -> {
