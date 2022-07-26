@@ -25,6 +25,9 @@ public enum MarketplaceProduct {
 		new MarketplaceModel(26585, 6853),
 	}}, (model, modelId) -> {
 		resizeRandomly(model, 80, 110);
+	}, SpawnPointFactory.createDefaultOutwardSpawner(2), (product) -> {
+		product.setPlayerGraphicId(1191);
+		product.setUseSpawners(false);
 	}),
 	COX_LOOT_BEAM(new MarketplaceModel[][] {
 		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32799)}, // twisted bow
@@ -52,16 +55,7 @@ public enum MarketplaceProduct {
 		if (Math.random() < 0.2) {
 			recolorAllFaces(model, ModelColors.PURPLE, brightness);
 		}
-	}, (manager) -> {
-		final int amountSpawned = 5;
-		ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
-
-		for (int spawnIndex = 0; spawnIndex < amountSpawned; spawnIndex++) {
-			spawnPoints.add(manager.getOutwardSpawnPoint(2, 2, 10));
-		}
-
-		return spawnPoints;
-	}, (product) -> {
+	}, SpawnPointFactory.createDefaultOutwardSpawner(5), (product) -> {
 		product.setUseSpawners(false);
 		product.setRandomSpawnDelayMs(2000);
 	}),
@@ -282,5 +276,20 @@ public enum MarketplaceProduct {
 
 	public static class ModelColors {
 		public static Color PURPLE = new Color(145, 70, 255);
+	}
+
+	public static class SpawnPointFactory {
+		public static GetSpawnPoints createDefaultOutwardSpawner(int spawnAmount)
+		{
+			return (manager) -> {
+				ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
+
+				for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++) {
+					spawnPoints.add(manager.getOutwardSpawnPoint(2, 2, 10));
+				}
+
+				return spawnPoints;
+			};
+		}
 	}
 }

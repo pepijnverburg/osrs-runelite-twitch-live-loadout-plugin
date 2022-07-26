@@ -414,7 +414,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 3000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void applyMarketplaceProducts()
 	{
-		if (isLoggedIn()) {
+		if (isLoggedIn() && config.devPlayerGraphicId() > 0) {
 			System.out.println("GRAPHIC SPAWNED!");
 			Player player = client.getLocalPlayer();
 			// https://everythingrs.com/tools/runescape/graphics
@@ -425,7 +425,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 //			actor.setGraphic(currentGfx.gfxId);
 //			actor.setActionFrame(currentAnimation.startFrame);
 //			actor.setSpotAnimFrame(currentGfx.startFrame);
-			// 1167: fire explosion
 			// 453: nice fire under feet
 			// 469: puffs of air out of ears
 			// 1180: puff of round smoke explodes and goes up (mind-blown?)

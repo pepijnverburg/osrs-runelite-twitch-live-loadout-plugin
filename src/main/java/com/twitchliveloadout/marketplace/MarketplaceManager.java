@@ -45,9 +45,45 @@ public class MarketplaceManager {
 
 		// TMP: for testing
 		plugin.runOnClientThread(() -> {
-			spawnProduct(config.devMarketplaceProductSpawn());
+			applyProduct(config.devMarketplaceProductSpawn());
 			spawnTestObject(config.devObjectSpawnModelId(), config.devObjectSpawnAnimationId());
 		});
+	}
+
+	private void applyProduct(MarketplaceProduct product)
+	{
+		applyProductPlayerGraphic(product);
+		applyProductPlayerAnimation(product);
+		spawnProduct(product);
+	}
+
+	private void applyProductPlayerGraphic(MarketplaceProduct product)
+	{
+		int graphicId = product.getPlayerGraphicId();
+		Player player = client.getLocalPlayer();
+
+		// guard: make sure the graphic is valid
+		if (graphicId < 0)
+		{
+			return;
+		}
+
+		player.setGraphic(graphicId);
+		player.setSpotAnimFrame(0);
+	}
+
+	private void applyProductPlayerAnimation(MarketplaceProduct product)
+	{
+		int animationId = product.getPlayerAnimationId();
+		Player player = client.getLocalPlayer();
+
+		// guard: make sure the animation is valid
+		if (animationId < 0)
+		{
+			return;
+		}
+
+		player.setAnimation(animationId);
 	}
 
 	private ArrayList<RuneLiteObject> spawnProduct(MarketplaceProduct product)
