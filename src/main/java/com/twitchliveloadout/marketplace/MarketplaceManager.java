@@ -79,9 +79,6 @@ public class MarketplaceManager {
 		}
 
 		final MarketplaceModel[][] candidateMarketplaceModels = product.getMarketplaceModels();
-		final Random marketplaceModelsSelector = new Random();
-		final int marketplaceModelsIndex = marketplaceModelsSelector.nextInt(candidateMarketplaceModels.length);
-		final MarketplaceModel[] marketplaceModels = candidateMarketplaceModels[marketplaceModelsIndex];
 		final boolean useSpawners = product.isUseSpawners();
 		final int spawnerDurationMs = product.getSpawnerDurationMs();
 		final int randomSpawnDelayMs = product.getRandomSpawnDelayMs();
@@ -92,6 +89,9 @@ public class MarketplaceManager {
 			final ArrayList<RuneLiteObject> objects = new ArrayList();
 			final ArrayList<ModelData> models = new ArrayList();
 			final int spawnDelayMs = (int) (Math.random() * randomSpawnDelayMs);
+			final Random marketplaceModelsSelector = new Random();
+			final int marketplaceModelsIndex = marketplaceModelsSelector.nextInt(candidateMarketplaceModels.length);
+			final MarketplaceModel[] marketplaceModels = candidateMarketplaceModels[marketplaceModelsIndex];
 
 			// loop all the models that need to be placed
 			for (MarketplaceModel marketplaceModel : marketplaceModels)
@@ -216,7 +216,21 @@ public class MarketplaceManager {
 		// TODO: later for objects that are persistent for longer periods of time across login sessions.
 	}
 
-	public MarketplaceSpawnPoint getAvailableSpawnPoint(int maxRadius)
+	public MarketplaceSpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius)
+	{
+		for (int radius = startRadius; radius < maxRadius; radius += radiusStepSize)
+		{
+			MarketplaceSpawnPoint candidateSpawnPoint = getSpawnPoint(radius);
+
+			if (candidateSpawnPoint != null) {
+				return candidateSpawnPoint;
+			}
+		}
+
+		return null;
+	}
+
+	public MarketplaceSpawnPoint getSpawnPoint(int radius)
 	{
 		CollisionData[] collisionMaps = client.getCollisionMaps();
 		LocalPoint playerLocation = client.getLocalPlayer().getLocalLocation();
@@ -232,8 +246,8 @@ public class MarketplaceManager {
 
 		// attempt an X amount of times before giving up finding a random spawn point
 		for (int attemptIndex = 0; attemptIndex < MAX_FIND_SPAWN_POINT_ATTEMPTS; attemptIndex++) {
-			int deltaX = -1 * maxRadius + (int) (Math.random() * maxRadius * 2);
-			int deltaY = -1 * maxRadius + (int) (Math.random() * maxRadius * 2);
+			int deltaX = -1 * radius + (int) (Math.random() * radius * 2);
+			int deltaY = -1 * radius + (int) (Math.random() * radius * 2);
 			int sceneAttemptX = playerLocation.getSceneX() + deltaX;
 			int sceneAttemptY = playerLocation.getSceneY() + deltaY;
 			int flagData = flags[sceneAttemptX][sceneAttemptY];
@@ -258,7 +272,7 @@ public class MarketplaceManager {
 		}
 
 		boolean hasAnimation = animationId > 0;
-		MarketplaceSpawnPoint spawnPoint = getAvailableSpawnPoint(5);
+		MarketplaceSpawnPoint spawnPoint = getSpawnPoint(5);
 		RuneLiteObject object = client.createRuneLiteObject();
 		ModelData model = client.loadModelData(modelId)
 				.cloneVertices()
