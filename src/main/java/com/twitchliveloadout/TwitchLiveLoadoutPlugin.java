@@ -409,10 +409,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
-	 * Keep track of all marketplace products and apply them if they are not yet
+	 * Keep track of all marketplace transactions and apply them if they are not yet
 	 */
-	@Schedule(period = 3000, unit = ChronoUnit.MILLIS, asynchronous = true)
-	public void applyMarketplaceProducts()
+	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
+	public void syncMarketplaceTransactions()
 	{
 		if (isLoggedIn() && config.devPlayerGraphicId() > 0) {
 			System.out.println("GRAPHIC SPAWNED!");
@@ -444,9 +444,15 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		try {
-			marketplaceManager.applyProducts();
+			marketplaceManager.applyTransactions();
 		} catch (Exception exception) {
-			log.warn("Could not apply marketplace products: ", exception);
+			log.warn("Could not apply marketplace transactions: ", exception);
+		}
+
+		try {
+			marketplaceManager.cleanProducts();
+		} catch (Exception exception) {
+			log.warn("Could not clean marketplace products: ", exception);
 		}
 	}
 

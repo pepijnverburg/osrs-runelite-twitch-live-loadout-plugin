@@ -9,7 +9,9 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class MarketplaceManager {
@@ -20,6 +22,7 @@ public class MarketplaceManager {
 	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
 
+	private final CopyOnWriteArrayList<MarketplaceSpawnedObject> registeredSpawnedObjects = new CopyOnWriteArrayList();
 	private final MarketplaceProduct spawnerProduct = MarketplaceProduct.GROUND_SPAWNING_PORTAL;
 
 	private final int MAX_FIND_SPAWN_POINT_ATTEMPTS = 50;
@@ -34,7 +37,7 @@ public class MarketplaceManager {
 		loadMarketplaceProductCache();
 	}
 
-	public void applyProducts()
+	public void applyTransactions()
 	{
 
 		// guard: only apply the products when the player is logged in
@@ -52,14 +55,32 @@ public class MarketplaceManager {
 		});
 	}
 
-	private void applyProduct(MarketplaceProduct product)
+	public void cleanProducts()
 	{
-		applyProductPlayerGraphic(product);
-		applyProductPlayerAnimation(product);
-		spawnProduct(product);
+		Iterator iterator = registeredSpawnedObjects.iterator();
+
+		while (iterator.hasNext())
+		{
+			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
+
+			if (spawnedObject.isExpired())
+			{
+				registeredSpawnedObjects.remove(spawnedObject);
+				plugin.runOnClientThread(() -> {
+					spawnedObject.hide();
+				});
+			}
+		}
 	}
 
-	private void applyProductPlayerGraphic(MarketplaceProduct product)
+	private void applyProduct(MarketplaceProduct product)
+	{
+		triggerProductPlayerGraphic(product);
+		triggerProductPlayerAnimation(product);
+		spawnProductObjects(product);
+	}
+
+	private void triggerProductPlayerGraphic(MarketplaceProduct product)
 	{
 		int graphicId = product.getPlayerGraphicId();
 		Player player = client.getLocalPlayer();
@@ -74,7 +95,7 @@ public class MarketplaceManager {
 		player.setSpotAnimFrame(0);
 	}
 
-	private void applyProductPlayerAnimation(MarketplaceProduct product)
+	private void triggerProductPlayerAnimation(MarketplaceProduct product)
 	{
 		int animationId = product.getPlayerAnimationId();
 		Player player = client.getLocalPlayer();
@@ -88,9 +109,9 @@ public class MarketplaceManager {
 		player.setAnimation(animationId);
 	}
 
-	private ArrayList<RuneLiteObject> spawnProduct(MarketplaceProduct product)
+	private ArrayList<MarketplaceSpawnedObject> spawnProductObjects(MarketplaceProduct product)
 	{
-		final ArrayList<RuneLiteObject> allObjects = new ArrayList();
+		final ArrayList<MarketplaceSpawnedObject> allObjects = new ArrayList();
 		final MarketplaceProduct.CustomizeModel customizeModel = product.getCustomizeModel();
 		final MarketplaceProduct.GetSpawnPoints getSpawnPoints = product.getGetSpawnPoints();
 		final MarketplaceProduct.CustomizeSettings customizeSettings = product.getCustomizeSettings();
@@ -128,12 +149,19 @@ public class MarketplaceManager {
 		// loop all the requested spawn points
 		for (MarketplaceSpawnPoint spawnPoint : spawnPoints)
 		{
-			final ArrayList<RuneLiteObject> objects = new ArrayList();
+			final ArrayList<MarketplaceSpawnedObject> objects = new ArrayList();
 			final ArrayList<ModelData> models = new ArrayList();
 			final int spawnDelayMs = (int) (Math.random() * randomSpawnDelayMs);
 			final Random marketplaceModelsSelector = new Random();
 			final int marketplaceModelsIndex = marketplaceModelsSelector.nextInt(candidateMarketplaceModels.length);
 			final MarketplaceModel[] marketplaceModels = candidateMarketplaceModels[marketplaceModelsIndex];
+
+			// guard: make sure the spawn point is valid, it can happen no valid tile
+			// could be found resulting in a `null` spawn point
+			if (spawnPoint == null)
+			{
+				continue;
+			}
 
 			// loop all the models that need to be placed
 			for (MarketplaceModel marketplaceModel : marketplaceModels)
@@ -149,6 +177,7 @@ public class MarketplaceManager {
 				ModelData model = client.loadModelData(modelId)
 					.cloneVertices()
 					.cloneColors();
+				MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(object, spawnPoint, product);
 
 				// check if the model needs further customization (e.g. recolors)
 				// this needs to be done before applying the light to the model
@@ -176,7 +205,7 @@ public class MarketplaceManager {
 				}
 
 				// add each object and model
-				objects.add(object);
+				objects.add(spawnedObject);
 				models.add(model);
 			}
 
@@ -186,21 +215,21 @@ public class MarketplaceManager {
 
 			// check if the spawners cutscene applies for this product
 			if (!useSpawners) {
-				scheduleSpawn(objects, spawnDelayMs);
+				scheduleShowObjects(objects, spawnDelayMs);
 			}
 			else if (product != spawnerProduct)
 			{
-				ArrayList<RuneLiteObject> spawnerObjects = spawnProduct(spawnerProduct);
+				ArrayList<MarketplaceSpawnedObject> spawnerObjects = spawnProductObjects(spawnerProduct);
 
 				// move them all to the location of the final object
-				for (RuneLiteObject spawnerObject : spawnerObjects)
+				for (MarketplaceSpawnedObject spawnerObject : spawnerObjects)
 				{
-					spawnerObject.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+					spawnerObject.getObject().setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
 				}
 
-				scheduleSpawn(spawnerObjects, spawnDelayMs);
-				scheduleSpawn(objects, spawnDelayMs + spawnerDurationMs);
-				scheduleDespawn(spawnerObjects, spawnDelayMs + spawnerDurationMs);
+				scheduleShowObjects(spawnerObjects, spawnDelayMs);
+				scheduleShowObjects(objects, spawnDelayMs + spawnerDurationMs);
+				scheduleHideObjects(spawnerObjects, spawnDelayMs + spawnerDurationMs);
 
 				// register the spawners as well
 				objects.addAll(spawnerObjects);
@@ -210,12 +239,24 @@ public class MarketplaceManager {
 			allObjects.addAll(objects);
 		}
 
+		registerSpawnedObjects(allObjects);
 		return allObjects;
+	}
+
+	private void registerSpawnedObjects(ArrayList<MarketplaceSpawnedObject> objects)
+	{
+		Iterator iterator = objects.iterator();
+
+		while (iterator.hasNext())
+		{
+			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
+			registeredSpawnedObjects.add(spawnedObject);
+		}
 	}
 
 	private void rotateModelsRandomly(ArrayList<ModelData> models)
 	{
-		double random = Math.random();
+		final double random = Math.random();
 
 		if (random < 0.25) {
 			for (ModelData model : models) {
@@ -234,20 +275,20 @@ public class MarketplaceManager {
 		}
 	}
 
-	private void scheduleSpawn(ArrayList<RuneLiteObject> objects, long delayMs)
+	private void scheduleShowObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
 	{
 		plugin.scheduleOnClientThread(() -> {
-			for (RuneLiteObject object : objects) {
-				object.setActive(true);
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+				spawnedObject.show();
 			}
 		}, delayMs);
 	}
 
-	private void scheduleDespawn(ArrayList<RuneLiteObject> objects, long delayMs)
+	private void scheduleHideObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
 	{
 		plugin.scheduleOnClientThread(() -> {
-			for (RuneLiteObject object : objects) {
-				object.setActive(false);
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+				spawnedObject.hide();
 			}
 		}, delayMs);
 	}
@@ -269,7 +310,9 @@ public class MarketplaceManager {
 	{
 		for (int radius = startRadius; radius < maxRadius; radius += radiusStepSize)
 		{
-			MarketplaceSpawnPoint candidateSpawnPoint = getSpawnPoint(radius);
+			int randomizedRadius = radius + ((int) (Math.random() * radiusStepSize));
+			int usedRadius = Math.min(randomizedRadius, maxRadius);
+			MarketplaceSpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, false);
 
 			if (candidateSpawnPoint != null) {
 				return candidateSpawnPoint;
@@ -279,27 +322,34 @@ public class MarketplaceManager {
 		return null;
 	}
 
-	public MarketplaceSpawnPoint getSpawnPoint(int radius)
+	public MarketplaceSpawnPoint getSpawnPoint(int radius, boolean enableValidFallback)
 	{
-		CollisionData[] collisionMaps = client.getCollisionMaps();
 		LocalPoint playerLocation = client.getLocalPlayer().getLocalLocation();
 		int playerPlane = client.getPlane();
-		MarketplaceSpawnPoint defaultSpawnPoint = new MarketplaceSpawnPoint(playerLocation, playerPlane);
-
-		// guard: make sure there is a collision map available
-		if (collisionMaps == null) {
-			return defaultSpawnPoint;
-		}
-
-		int[][] flags = collisionMaps[client.getPlane()].getFlags();
+		MarketplaceSpawnPoint defaultSpawnPoint = enableValidFallback ? new MarketplaceSpawnPoint(playerLocation, playerPlane) : null;
+		int[][] collisionFlags = getSceneCollisionFlags();
+		int radiusMaxAttempts = (int) Math.pow(radius * 2, 2);
+		int maxAttempts = Math.min(MAX_FIND_SPAWN_POINT_ATTEMPTS, radiusMaxAttempts);
 
 		// attempt an X amount of times before giving up finding a random spawn point
-		for (int attemptIndex = 0; attemptIndex < MAX_FIND_SPAWN_POINT_ATTEMPTS; attemptIndex++) {
+		for (int attemptIndex = 0; attemptIndex < maxAttempts; attemptIndex++) {
+			// TODO: refactor this to not have it boil down to chance...
 			int deltaX = -1 * radius + (int) (Math.random() * radius * 2);
 			int deltaY = -1 * radius + (int) (Math.random() * radius * 2);
 			int sceneAttemptX = playerLocation.getSceneX() + deltaX;
 			int sceneAttemptY = playerLocation.getSceneY() + deltaY;
-			int flagData = flags[sceneAttemptX][sceneAttemptY];
+
+			// guard: make sure the flag can be found
+			if (
+				sceneAttemptX < 0
+				|| sceneAttemptX >= collisionFlags.length
+				|| sceneAttemptY < 0
+				|| sceneAttemptY >= collisionFlags[sceneAttemptX].length
+			) {
+				continue;
+			}
+
+			int flagData = collisionFlags[sceneAttemptX][sceneAttemptY];
 			int blockedFlags = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
 
 			// guard: check if this tile is not walkable
@@ -307,11 +357,47 @@ public class MarketplaceManager {
 				continue;
 			}
 
+			LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
+
 			// we have found a walkable tile to spawn the object on
-			return new MarketplaceSpawnPoint(LocalPoint.fromScene(sceneAttemptX, sceneAttemptY), playerPlane);
+			return new MarketplaceSpawnPoint(localPoint, playerPlane);
 		}
 
 		return defaultSpawnPoint;
+	}
+
+	private int[][] getSceneCollisionFlags() {
+		final int playerPlane = client.getPlane();
+		final Iterator iterator = registeredSpawnedObjects.iterator();
+		final CollisionData[] collisionMaps = client.getCollisionMaps();
+		int[][] collisionFlags = new int[Constants.SCENE_SIZE][Constants.SCENE_SIZE];
+
+		// if we have map collision flags we populate the starting point with them
+		if (collisionMaps != null) {
+			collisionFlags = collisionMaps[client.getPlane()].getFlags();
+		}
+
+		while (iterator.hasNext())
+		{
+			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
+			MarketplaceSpawnPoint spawnPoint = spawnedObject.getSpawnPoint();
+			int plane = spawnPoint.getPlane();
+			LocalPoint localPoint = spawnPoint.getLocalPoint();
+			int sceneX = localPoint.getSceneX();
+			int sceneY = localPoint.getSceneY();
+
+			// guard: if the planes don't match skip
+			if (playerPlane != plane)
+			{
+				continue;
+			}
+
+			// set the flag to full block on the object location
+			// NOTE: this overrides the map data, so only use this for spawning objects!
+			collisionFlags[sceneX][sceneY] = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
+		}
+
+		return collisionFlags;
 	}
 
 	public void spawnTestObject(int modelId, int animationId)
@@ -321,7 +407,7 @@ public class MarketplaceManager {
 		}
 
 		boolean hasAnimation = animationId > 0;
-		MarketplaceSpawnPoint spawnPoint = getSpawnPoint(5);
+		MarketplaceSpawnPoint spawnPoint = getSpawnPoint(5, true);
 		RuneLiteObject object = client.createRuneLiteObject();
 		ModelData model = client.loadModelData(modelId)
 				.cloneVertices()
