@@ -444,7 +444,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		try {
-			marketplaceManager.applyTransactions();
+			marketplaceManager.applyNewProducts();
 		} catch (Exception exception) {
 			log.warn("Could not apply marketplace transactions: ", exception);
 		}
@@ -453,6 +453,24 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			marketplaceManager.cleanProducts();
 		} catch (Exception exception) {
 			log.warn("Could not clean marketplace products: ", exception);
+		}
+	}
+
+	/**
+	 * Make sure all marketplace objects are shown when chunks are loaded and viewport changes
+	 */
+	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
+	public void syncMarketplaceObjectsToScene()
+	{
+		if (!config.marketplaceEnabled())
+		{
+			return;
+		}
+
+		try {
+			marketplaceManager.syncMarketplaceObjectsToScene();
+		} catch (Exception exception) {
+			log.warn("Could not sync marketplace objects to scene: ", exception);
 		}
 	}
 
@@ -601,6 +619,21 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			fightStateManager.onGameTick();
 		} catch (Exception exception) {
 			log.warn("Could not handle game tick event: ", exception);
+		}
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (!config.marketplaceEnabled())
+		{
+			return;
+		}
+
+		try {
+			marketplaceManager.onGameStateChanged(event);
+		} catch (Exception exception) {
+			log.warn("Could not handle game state event: ", exception);
 		}
 	}
 

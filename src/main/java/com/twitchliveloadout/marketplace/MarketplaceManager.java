@@ -7,10 +7,13 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -22,7 +25,7 @@ public class MarketplaceManager {
 	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
 
-	private final CopyOnWriteArrayList<MarketplaceSpawnedObject> registeredSpawnedObjects = new CopyOnWriteArrayList();
+	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<MarketplaceSpawnedObject>> registeredSpawnedObjects = new ConcurrentHashMap();
 	private final MarketplaceProduct spawnerProduct = MarketplaceProduct.GROUND_SPAWNING_PORTAL;
 
 	private final int MAX_FIND_SPAWN_POINT_ATTEMPTS = 50;
@@ -37,14 +40,32 @@ public class MarketplaceManager {
 		loadMarketplaceProductCache();
 	}
 
-	public void applyTransactions()
+	public void onGameStateChanged(GameStateChanged event)
 	{
+		GameState newGameState = event.getGameState();
+
+		if (newGameState != GameState.LOADING)
+		{
+			return;
+		}
+
+		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : registeredSpawnedObjects.values())
+		{
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+			{
+				// set all objects to require a respawn, because after a loading of
+				// a new scene all custom objects are cleared
+				spawnedObject.setRespawnRequired(true);
+			}
+		}
+	}
+
+	public void applyNewProducts() {
 
 		// guard: only apply the products when the player is logged in
 		// we don't distinquish different accounts, all runelite clients
 		// will spawn the same objects
-		if (!plugin.isLoggedIn())
-		{
+		if (!plugin.isLoggedIn()) {
 			return;
 		}
 
@@ -55,22 +76,67 @@ public class MarketplaceManager {
 		});
 	}
 
-	public void cleanProducts()
+	public void syncMarketplaceObjectsToScene()
 	{
-		Iterator iterator = registeredSpawnedObjects.iterator();
+		ArrayList<MarketplaceSpawnedObject> respawnQueue = new ArrayList();
+		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
+		WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
 
-		while (iterator.hasNext())
+		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : registeredSpawnedObjects.values())
 		{
-			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
-
-			if (spawnedObject.isExpired())
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
 			{
-				registeredSpawnedObjects.remove(spawnedObject);
-				plugin.runOnClientThread(() -> {
-					spawnedObject.hide();
-				});
+				WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+				int distanceToPlayer = worldPoint.distanceTo(playerWorldPoint);
+				boolean isInViewport = distanceToPlayer < Constants.SCENE_SIZE;
+				boolean isRespawnRequired = spawnedObject.isRespawnRequired();
+
+				// only respawn if in viewport and a respawn is required
+				// to prevent animations to be reset all the time
+				if (isInViewport && isRespawnRequired) {
+					respawnQueue.add(spawnedObject);
+					spawnedObject.setRespawnRequired(false);
+				}
 			}
 		}
+
+		// run all hides and respawns on the same action
+		plugin.runOnClientThread(() -> {
+			for (MarketplaceSpawnedObject spawnedObject : respawnQueue)
+			{
+				spawnedObject.respawn();
+			}
+		});
+	}
+
+	public void cleanProducts()
+	{
+		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : registeredSpawnedObjects.values())
+		{
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+			{
+				if (spawnedObject.isExpired())
+				{
+					removeSpawnedObject(spawnedObject, spawnedObjects);
+				}
+			}
+		}
+	}
+
+	private void removeSpawnedObject(MarketplaceSpawnedObject spawnedObject, CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects)
+	{
+		spawnedObjects.remove(spawnedObject);
+
+		// remove this world point if no objects are left
+		if (spawnedObjects.size() <= 0)
+		{
+			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+			registeredSpawnedObjects.remove(worldPoint);
+		}
+
+		plugin.runOnClientThread(() -> {
+			spawnedObject.hide();
+		});
 	}
 
 	private void applyProduct(MarketplaceProduct product)
@@ -177,7 +243,13 @@ public class MarketplaceManager {
 				ModelData model = client.loadModelData(modelId)
 					.cloneVertices()
 					.cloneColors();
-				MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(object, spawnPoint, product);
+				MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(
+					client,
+					object,
+					marketplaceModel,
+					spawnPoint,
+					product
+				);
 
 				// check if the model needs further customization (e.g. recolors)
 				// this needs to be done before applying the light to the model
@@ -229,7 +301,7 @@ public class MarketplaceManager {
 
 				scheduleShowObjects(spawnerObjects, spawnDelayMs);
 				scheduleShowObjects(objects, spawnDelayMs + spawnerDurationMs);
-				scheduleHideObjects(spawnerObjects, spawnDelayMs + spawnerDurationMs);
+				scheduleResetObjects(spawnerObjects, spawnDelayMs + spawnerDurationMs);
 
 				// register the spawners as well
 				objects.addAll(spawnerObjects);
@@ -250,7 +322,18 @@ public class MarketplaceManager {
 		while (iterator.hasNext())
 		{
 			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
-			registeredSpawnedObjects.add(spawnedObject);
+			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint();
+			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+
+			// check whether this world point already has a spawned object to add to
+			if (registeredSpawnedObjects.containsKey(worldPoint)) {
+				CopyOnWriteArrayList<MarketplaceSpawnedObject> safeObjects = registeredSpawnedObjects.get(worldPoint);
+				safeObjects.add(spawnedObject);
+			} else {
+				CopyOnWriteArrayList<MarketplaceSpawnedObject> safeObjects = new CopyOnWriteArrayList();
+				safeObjects.add(spawnedObject);
+				registeredSpawnedObjects.put(worldPoint, safeObjects);
+			}
 		}
 	}
 
@@ -284,11 +367,12 @@ public class MarketplaceManager {
 		}, delayMs);
 	}
 
-	private void scheduleHideObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
+	private void scheduleResetObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
 	{
 		plugin.scheduleOnClientThread(() -> {
 			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
 				spawnedObject.hide();
+				spawnedObject.getObject().setModel(null);
 			}
 		}, delayMs);
 	}
@@ -324,9 +408,10 @@ public class MarketplaceManager {
 
 	public MarketplaceSpawnPoint getSpawnPoint(int radius, boolean enableValidFallback)
 	{
-		LocalPoint playerLocation = client.getLocalPlayer().getLocalLocation();
+		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
+		WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
 		int playerPlane = client.getPlane();
-		MarketplaceSpawnPoint defaultSpawnPoint = enableValidFallback ? new MarketplaceSpawnPoint(playerLocation, playerPlane) : null;
+		MarketplaceSpawnPoint defaultSpawnPoint = enableValidFallback ? new MarketplaceSpawnPoint(playerLocalPoint, playerWorldPoint, playerPlane) : null;
 		int[][] collisionFlags = getSceneCollisionFlags();
 		int radiusMaxAttempts = (int) Math.pow(radius * 2, 2);
 		int maxAttempts = Math.min(MAX_FIND_SPAWN_POINT_ATTEMPTS, radiusMaxAttempts);
@@ -336,8 +421,8 @@ public class MarketplaceManager {
 			// TODO: refactor this to not have it boil down to chance...
 			int deltaX = -1 * radius + (int) (Math.random() * radius * 2);
 			int deltaY = -1 * radius + (int) (Math.random() * radius * 2);
-			int sceneAttemptX = playerLocation.getSceneX() + deltaX;
-			int sceneAttemptY = playerLocation.getSceneY() + deltaY;
+			int sceneAttemptX = playerLocalPoint.getSceneX() + deltaX;
+			int sceneAttemptY = playerLocalPoint.getSceneY() + deltaY;
 
 			// guard: make sure the flag can be found
 			if (
@@ -358,43 +443,28 @@ public class MarketplaceManager {
 			}
 
 			LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
+			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+
+			// guard: check if this world point is already taken by another spawned object
+			if (registeredSpawnedObjects.containsKey(worldPoint))
+			{
+				continue;
+			}
 
 			// we have found a walkable tile to spawn the object on
-			return new MarketplaceSpawnPoint(localPoint, playerPlane);
+			return new MarketplaceSpawnPoint(localPoint, worldPoint, playerPlane);
 		}
 
 		return defaultSpawnPoint;
 	}
 
 	private int[][] getSceneCollisionFlags() {
-		final int playerPlane = client.getPlane();
-		final Iterator iterator = registeredSpawnedObjects.iterator();
 		final CollisionData[] collisionMaps = client.getCollisionMaps();
 		int[][] collisionFlags = new int[Constants.SCENE_SIZE][Constants.SCENE_SIZE];
 
 		// if we have map collision flags we populate the starting point with them
 		if (collisionMaps != null) {
 			collisionFlags = collisionMaps[client.getPlane()].getFlags();
-		}
-
-		while (iterator.hasNext())
-		{
-			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
-			MarketplaceSpawnPoint spawnPoint = spawnedObject.getSpawnPoint();
-			int plane = spawnPoint.getPlane();
-			LocalPoint localPoint = spawnPoint.getLocalPoint();
-			int sceneX = localPoint.getSceneX();
-			int sceneY = localPoint.getSceneY();
-
-			// guard: if the planes don't match skip
-			if (playerPlane != plane)
-			{
-				continue;
-			}
-
-			// set the flag to full block on the object location
-			// NOTE: this overrides the map data, so only use this for spawning objects!
-			collisionFlags[sceneX][sceneY] = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
 		}
 
 		return collisionFlags;

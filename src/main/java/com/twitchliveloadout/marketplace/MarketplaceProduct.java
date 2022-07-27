@@ -3,8 +3,9 @@ package com.twitchliveloadout.marketplace;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.JagexColor;
-import net.runelite.api.ModelData;
+import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -27,18 +28,18 @@ public enum MarketplaceProduct {
 		product.setUseSpawners(false);
 	}),
 	COX_LOOT_BEAM(ProductExpiryTimes.SHORT, new MarketplaceModel[][] {
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32799)}, // twisted bow
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32784)}, // claws
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32792)}, // elder maul
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32794)}, // ancestral hat
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32790)}, // ancestral top
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32787)}, // ancestral bottom
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32770)}, // dex
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32770)}, // arcane
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32793)}, // buckler
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32797)}, // dhcb
-		{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(32805)}, // kodai
-		//{new MarketplaceModel(ModelIds.COX_LOOT_BEAM), new MarketplaceModel(ModelIds.OLMLET, 7396)}, // olm pet, bugged anim
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32799)}, // twisted bow
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32784)}, // claws
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32792)}, // elder maul
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32794)}, // ancestral hat
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32790)}, // ancestral top
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32787)}, // ancestral bottom
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32770)}, // dex
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32770)}, // arcane
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32793)}, // buckler
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32797)}, // dhcb
+		{Models.COX_LOOT_BEAM, new MarketplaceModel(32805)}, // kodai
+		//{Models.COX_LOOT_BEAM, new MarketplaceModel(ModelIds.OLMLET, 7396)}, // olm pet, bugged anim
 	}, (model, modelId) -> {
 		if (modelId == ModelIds.COX_LOOT_BEAM) {
 			recolorAllFaces(model, ModelColors.PURPLE, 1.0d);
@@ -67,6 +68,10 @@ public enum MarketplaceProduct {
 		{new MarketplaceModel(28075)}, // ags
 	}, null, null, (product) -> {
 		product.setUseSpawners(false);
+	}),
+	CRAB(ProductExpiryTimes.SHORT, new MarketplaceModel[][] {
+		{new MarketplaceModel(13799, 3424)}, // crab
+		// 3428 = attack animation, 3429 = defend animation, 3430 = death animation
 	}),
 
 	GOLDEN_GNOME(ProductExpiryTimes.LONG, new MarketplaceModel[][] {{
@@ -275,8 +280,12 @@ public enum MarketplaceProduct {
 	}
 
 	public static class ModelIds {
-		public static int COX_LOOT_BEAM = 5809;
+		public static int COX_LOOT_BEAM = 43330; // 5809
 		public static int OLMLET = 32697;
+	}
+
+	public static class Models {
+		public static MarketplaceModel COX_LOOT_BEAM = new MarketplaceModel(ModelIds.COX_LOOT_BEAM, AnimationIds.COX_LOOT_BEAM);
 	}
 
 	public static class ProductExpiryTimes {
@@ -288,6 +297,7 @@ public enum MarketplaceProduct {
 
 	public static class AnimationIds {
 		public static int PARTY_BALLOON = 498;
+		public static int COX_LOOT_BEAM = 9260;
 	}
 
 	public static class AnimationDurations {
@@ -302,19 +312,21 @@ public enum MarketplaceProduct {
 		public static GetSpawnPoints createPlayerLocationSpawner()
 		{
 			return (manager) -> {
-				ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
-				spawnPoints.add(new MarketplaceSpawnPoint(
-						manager.getClient().getLocalPlayer().getLocalLocation(),
-						manager.getClient().getPlane()
-				));
+				final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
+				final Client client = manager.getClient();
+				final LocalPoint localPoint = client.getLocalPlayer().getLocalLocation();
+				final WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+				final int plane = client.getPlane();
+				final MarketplaceSpawnPoint spawnPoint = new MarketplaceSpawnPoint(localPoint, worldPoint, plane);
 
+				spawnPoints.add(spawnPoint);
 				return spawnPoints;
 			};
 		}
 		public static GetSpawnPoints createDefaultOutwardSpawner(int spawnAmount)
 		{
 			return (manager) -> {
-				ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
+				final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
 
 				for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++) {
 					spawnPoints.add(manager.getOutwardSpawnPoint(2, 2, 10));
