@@ -4,11 +4,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
 import java.awt.Color;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 
 @Slf4j
 public enum MarketplaceProduct {
@@ -276,7 +276,7 @@ public enum MarketplaceProduct {
 	}
 
 	public interface GetSpawnPoints {
-		public ArrayList<MarketplaceSpawnPoint> generate(MarketplaceManager manager);
+		public Collection<MarketplaceSpawnPoint> generate(MarketplaceManager manager);
 	}
 
 	public static class ModelIds {
@@ -309,30 +309,25 @@ public enum MarketplaceProduct {
 	}
 
 	public static class SpawnPointFactory {
-		public static GetSpawnPoints createPlayerLocationSpawner()
-		{
-			return (manager) -> {
-				final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
-				final Client client = manager.getClient();
-				final LocalPoint localPoint = client.getLocalPlayer().getLocalLocation();
-				final WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
-				final int plane = client.getPlane();
-				final MarketplaceSpawnPoint spawnPoint = new MarketplaceSpawnPoint(localPoint, worldPoint, plane);
-
-				spawnPoints.add(spawnPoint);
-				return spawnPoints;
-			};
-		}
 		public static GetSpawnPoints createDefaultOutwardSpawner(int spawnAmount)
 		{
 			return (manager) -> {
-				final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
+				final HashMap<WorldPoint, MarketplaceSpawnPoint> spawnPoints = new HashMap();
 
 				for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++) {
-					spawnPoints.add(manager.getOutwardSpawnPoint(2, 2, 10));
+					MarketplaceSpawnPoint spawnPoint = manager.getOutwardSpawnPoint(2, 2, 12, spawnPoints);
+
+					// guard: make sure the spawnpoint is valid
+					if (spawnPoint == null)
+					{
+						continue;
+					}
+
+					WorldPoint worldPoint = spawnPoint.getWorldPoint();
+					spawnPoints.put(worldPoint, spawnPoint);
 				}
 
-				return spawnPoints;
+				return spawnPoints.values();
 			};
 		}
 	}

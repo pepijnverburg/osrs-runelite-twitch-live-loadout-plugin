@@ -11,6 +11,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,8 +28,6 @@ public class MarketplaceManager {
 
 	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<MarketplaceSpawnedObject>> registeredSpawnedObjects = new ConcurrentHashMap();
 	private final MarketplaceProduct spawnerProduct = MarketplaceProduct.GROUND_SPAWNING_PORTAL;
-
-	private final int MAX_FIND_SPAWN_POINT_ATTEMPTS = 50;
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config)
 	{
@@ -60,11 +59,10 @@ public class MarketplaceManager {
 		}
 	}
 
-	public void applyNewProducts() {
+	public void applyNewProducts()
+	{
 
 		// guard: only apply the products when the player is logged in
-		// we don't distinquish different accounts, all runelite clients
-		// will spawn the same objects
 		if (!plugin.isLoggedIn()) {
 			return;
 		}
@@ -78,6 +76,12 @@ public class MarketplaceManager {
 
 	public void syncMarketplaceObjectsToScene()
 	{
+
+		// guard: only apply the products when the player is logged in
+		if (!plugin.isLoggedIn()) {
+			return;
+		}
+
 		ArrayList<MarketplaceSpawnedObject> respawnQueue = new ArrayList();
 		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
 		WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
@@ -189,7 +193,14 @@ public class MarketplaceManager {
 		// if there is no spawn point customizer we will spawn one at the player location
 		if (!hasSpawnPoints)
 		{
-			spawnPoints.add(getOutwardSpawnPoint(1, 2, 10));
+			final MarketplaceSpawnPoint defaultSpawnPoint = getOutwardSpawnPoint(1, 2, 10, null);
+
+			if (defaultSpawnPoint == null)
+			{
+				return allObjects;
+			}
+
+			spawnPoints.add(defaultSpawnPoint);
 		} else {
 			spawnPoints.addAll(getSpawnPoints.generate(this));
 		}
@@ -390,13 +401,13 @@ public class MarketplaceManager {
 		// TODO: later for objects that are persistent for longer periods of time across login sessions.
 	}
 
-	public MarketplaceSpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius)
+	public MarketplaceSpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)
 	{
 		for (int radius = startRadius; radius < maxRadius; radius += radiusStepSize)
 		{
 			int randomizedRadius = radius + ((int) (Math.random() * radiusStepSize));
 			int usedRadius = Math.min(randomizedRadius, maxRadius);
-			MarketplaceSpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, false);
+			MarketplaceSpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, blacklistedSpawnPoints);
 
 			if (candidateSpawnPoint != null) {
 				return candidateSpawnPoint;
@@ -406,56 +417,78 @@ public class MarketplaceManager {
 		return null;
 	}
 
-	public MarketplaceSpawnPoint getSpawnPoint(int radius, boolean enableValidFallback)
+	public MarketplaceSpawnPoint getSpawnPoint(int radius)
 	{
-		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
-		WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
-		int playerPlane = client.getPlane();
-		MarketplaceSpawnPoint defaultSpawnPoint = enableValidFallback ? new MarketplaceSpawnPoint(playerLocalPoint, playerWorldPoint, playerPlane) : null;
-		int[][] collisionFlags = getSceneCollisionFlags();
-		int radiusMaxAttempts = (int) Math.pow(radius * 2, 2);
-		int maxAttempts = Math.min(MAX_FIND_SPAWN_POINT_ATTEMPTS, radiusMaxAttempts);
+		return getSpawnPoint(radius);
+	}
 
-		// attempt an X amount of times before giving up finding a random spawn point
-		for (int attemptIndex = 0; attemptIndex < maxAttempts; attemptIndex++) {
-			// TODO: refactor this to not have it boil down to chance...
-			int deltaX = -1 * radius + (int) (Math.random() * radius * 2);
-			int deltaY = -1 * radius + (int) (Math.random() * radius * 2);
-			int sceneAttemptX = playerLocalPoint.getSceneX() + deltaX;
-			int sceneAttemptY = playerLocalPoint.getSceneY() + deltaY;
+	public MarketplaceSpawnPoint getSpawnPoint(int radius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)
+	{
+		final ArrayList<MarketplaceSpawnPoint> candidateSpawnPoints = new ArrayList();
+		final LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
+		final int playerPlane = client.getPlane();
+		final int[][] collisionFlags = getSceneCollisionFlags();
+		final int sceneX = playerLocalPoint.getSceneX();
+		final int sceneY = playerLocalPoint.getSceneY();
 
-			// guard: make sure the flag can be found
-			if (
-				sceneAttemptX < 0
-				|| sceneAttemptX >= collisionFlags.length
-				|| sceneAttemptY < 0
-				|| sceneAttemptY >= collisionFlags[sceneAttemptX].length
-			) {
-				continue;
+		// loop all the possible tiles for the requested radius and look for
+		// the candidate tiles to spawn the object on
+		for (int deltaX = -1 * radius; deltaX <= radius; deltaX++) {
+			for (int deltaY = -1 * radius; deltaY <= radius; deltaY++) {
+				int sceneAttemptX = sceneX + deltaX;
+				int sceneAttemptY = sceneY + deltaY;
+
+				// guard: make sure the flag can be found
+				if (
+					sceneAttemptX < 0
+					|| sceneAttemptX >= collisionFlags.length
+					|| sceneAttemptY < 0
+					|| sceneAttemptY >= collisionFlags[sceneAttemptX].length
+				) {
+					continue;
+				}
+
+				int flagData = collisionFlags[sceneAttemptX][sceneAttemptY];
+				int blockedFlags = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
+
+				// guard: check if this tile is not walkable
+				if ((flagData & blockedFlags) != 0)
+				{
+					continue;
+				}
+
+				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
+				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+
+				// guard: check if this world point is already taken by another spawned object
+				if (registeredSpawnedObjects.containsKey(worldPoint))
+				{
+					continue;
+				}
+
+				// guard: check if blacklisted manually
+				if (blacklistedSpawnPoints != null && blacklistedSpawnPoints.containsKey(worldPoint))
+				{
+					continue;
+				}
+
+				// we have found a walkable tile to spawn the object on
+				candidateSpawnPoints.add(new MarketplaceSpawnPoint(localPoint, worldPoint, playerPlane));
 			}
-
-			int flagData = collisionFlags[sceneAttemptX][sceneAttemptY];
-			int blockedFlags = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
-
-			// guard: check if this tile is not walkable
-			if ((flagData & blockedFlags) != 0) {
-				continue;
-			}
-
-			LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
-			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
-
-			// guard: check if this world point is already taken by another spawned object
-			if (registeredSpawnedObjects.containsKey(worldPoint))
-			{
-				continue;
-			}
-
-			// we have found a walkable tile to spawn the object on
-			return new MarketplaceSpawnPoint(localPoint, worldPoint, playerPlane);
 		}
 
-		return defaultSpawnPoint;
+		// guard: make sure there are candidate spawn points to prevent the
+		// random selection of one to trigger errors
+		if (candidateSpawnPoints.size() <= 0)
+		{
+			return null;
+		}
+
+		final Random spawnPointSelector = new Random();
+		final int spawnPointIndex = spawnPointSelector.nextInt(candidateSpawnPoints.size());
+		final MarketplaceSpawnPoint spawnPoint = candidateSpawnPoints.get(spawnPointIndex);
+
+		return spawnPoint;
 	}
 
 	private int[][] getSceneCollisionFlags() {
@@ -477,11 +510,16 @@ public class MarketplaceManager {
 		}
 
 		boolean hasAnimation = animationId > 0;
-		MarketplaceSpawnPoint spawnPoint = getSpawnPoint(5, true);
+		MarketplaceSpawnPoint spawnPoint = getSpawnPoint(5);
 		RuneLiteObject object = client.createRuneLiteObject();
 		ModelData model = client.loadModelData(modelId)
 				.cloneVertices()
 				.cloneColors();
+
+		if (spawnPoint == null)
+		{
+			return;
+		}
 
 		object.setModel(model.light());
 		object.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
