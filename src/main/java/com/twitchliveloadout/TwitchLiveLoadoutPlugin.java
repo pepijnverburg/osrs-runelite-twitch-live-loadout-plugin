@@ -33,6 +33,7 @@ import com.twitchliveloadout.minimap.MinimapManager;
 import com.twitchliveloadout.skills.SkillStateManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchState;
+import com.twitchliveloadout.ui.CanvasListener;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
@@ -151,6 +152,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private String lastPlayerName = null;
 
 	/**
+	 * Listener for any events of the canvas (e.g. focus and unfocus)
+	 */
+	private CanvasListener canvasListener = null;
+
+	/**
 	 * Temporary flags to disable features while still in staging
 	 */
 	private final static boolean ENABLE_MINIMAP = false;
@@ -168,6 +174,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		initializeTwitch();
 		initializeManagers();
 		initializePanel();
+		initializeCanvasListeners();
 	}
 
 	private void initializeTwitch()
@@ -215,6 +222,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+	private void initializeCanvasListeners()
+	{
+		try {
+			canvasListener = new CanvasListener();
+			client.getCanvas().addFocusListener(canvasListener);
+		} catch (Exception exception) {
+			log.warn("An error occurred when initializing the canvas listeners: ", exception);
+		}
+	}
+
 	/**
 	 * Cleanup properly after disabling the plugin
 	 * @throws Exception
@@ -224,9 +241,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		super.shutDown();
 
+		shutDownCanvasListeners();
 		shutDownPanels();
 		shutDownManagers();
 		shutDownTwitch();
+	}
+
+	private void shutDownCanvasListeners()
+	{
+		try {
+			client.getCanvas().removeFocusListener(canvasListener);
+		} catch (Exception exception) {
+			log.warn("An error occurred when removing the canvas listeners: ", exception);
+		}
 	}
 
 	private void shutDownTwitch()
@@ -265,7 +292,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			pluginPanel = null;
 			clientToolbar.removeNavigation(navigationButton);
 		} catch (Exception exception) {
-		log.warn("An error occurred when shutting down the UI panels: ", exception);
+			log.warn("An error occurred when shutting down the UI panels: ", exception);
 		}
 	}
 
