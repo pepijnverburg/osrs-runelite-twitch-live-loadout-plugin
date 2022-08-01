@@ -96,8 +96,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "multiLogDisplayName",
-			name = "Anti multi-log display name",
-			description = "When multi-logging set the display name here of the account you want to sync.",
+			name = "Anti multi-log display names",
+			description = "The display names you want to sync (comma separated).",
 			position = 8,
 			section = twitchSection
 	)
