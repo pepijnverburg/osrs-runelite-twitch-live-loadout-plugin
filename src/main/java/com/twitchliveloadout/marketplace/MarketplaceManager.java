@@ -29,6 +29,8 @@ public class MarketplaceManager {
 	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<MarketplaceSpawnedObject>> registeredSpawnedObjects = new ConcurrentHashMap();
 	private final MarketplaceProduct spawnerProduct = MarketplaceProduct.GROUND_SPAWNING_PORTAL;
 
+	private final static boolean ENABLE_TEST_PRODUCTS = false;
+
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config)
 	{
 		this.plugin = plugin;
@@ -63,12 +65,34 @@ public class MarketplaceManager {
 	{
 
 		// guard: only apply the products when the player is logged in
-		if (!plugin.isLoggedIn()) {
+		if (!plugin.isLoggedIn())
+		{
 			return;
 		}
 
-		// TMP: for testing
+		if (ENABLE_TEST_PRODUCTS)
+		{
+			applyTestProducts();
+		}
+	}
+
+	public void applyTestProducts()
+	{
+		int graphicId = config.devPlayerGraphicId();
+
+		// guard: only apply the products when the player is logged in
+		if (!plugin.isLoggedIn())
+		{
+			return;
+		}
+
 		plugin.runOnClientThread(() -> {
+			if (graphicId > 0) {
+				Player player = client.getLocalPlayer();
+				player.setGraphic(config.devPlayerGraphicId());
+				player.setSpotAnimFrame(0);
+			}
+
 			applyProduct(config.devMarketplaceProductSpawn());
 			spawnTestObject(config.devObjectSpawnModelId(), config.devObjectSpawnAnimationId());
 		});
@@ -78,7 +102,8 @@ public class MarketplaceManager {
 	{
 
 		// guard: only apply the products when the player is logged in
-		if (!plugin.isLoggedIn()) {
+		if (!plugin.isLoggedIn())
+		{
 			return;
 		}
 

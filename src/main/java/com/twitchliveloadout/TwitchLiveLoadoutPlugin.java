@@ -151,6 +151,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private String lastPlayerName = null;
 
 	/**
+	 * Temporary flags to disable features while still in staging
+	 */
+	private final static boolean ENABLE_MINIMAP = false;
+	private final static boolean ENABLE_MARKETPLACE = false;
+
+	/**
 	 * Initialize this plugin
 	 * @throws Exception
 	 */
@@ -375,7 +381,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncMiniMap()
 	{
-		if (!config.marketplaceEnabled())
+		if (!ENABLE_MINIMAP || !config.marketplaceEnabled())
 		{
 			return;
 		}
@@ -388,57 +394,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
-	 * Simulate game ticks when not logged in to still register for idling fight time when not logged in
-	 */
-	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
-	public void onLobbyGameTick()
-	{
-		try {
-			if (client.getGameState() != GameState.LOGIN_SCREEN)
-			{
-				return;
-			}
-
-			if (config.fightStatisticsEnabled())
-			{
-				fightStateManager.onGameTick();
-			}
-		} catch (Exception exception) {
-			log.warn("Could not handle lobby game tick event: ", exception);
-		}
-	}
-
-	/**
 	 * Keep track of all marketplace transactions and apply them if they are not yet
 	 */
 	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncMarketplaceTransactions()
 	{
-		if (isLoggedIn() && config.devPlayerGraphicId() > 0) {
-			System.out.println("GRAPHIC SPAWNED!");
-			Player player = client.getLocalPlayer();
-			// https://everythingrs.com/tools/runescape/graphics
-			player.setGraphic(config.devPlayerGraphicId());
-			player.setSpotAnimFrame(0);
-
-//			actor.setAnimation(currentAnimation.animationId);
-//			actor.setGraphic(currentGfx.gfxId);
-//			actor.setActionFrame(currentAnimation.startFrame);
-//			actor.setSpotAnimFrame(currentGfx.startFrame);
-			// 453: nice fire under feet
-			// 469: puffs of air out of ears
-			// 1180: puff of round smoke explodes and goes up (mind-blown?)
-			// 481: red big wave under feet
-			// 444: jad heal
-			// 436: redemption heal
-			// 437: retribution
-			// 1176 / 1177: cool spirals around you
-			// 1191: lava opens underneath and spews fire! neat
-			// 199: level up fireworks
-			//
-		}
-
-		if (!config.marketplaceEnabled())
+		if (!ENABLE_MARKETPLACE || !config.marketplaceEnabled())
 		{
 			return;
 		}
@@ -462,7 +423,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncMarketplaceObjectsToScene()
 	{
-		if (!config.marketplaceEnabled())
+		if (!ENABLE_MARKETPLACE || !config.marketplaceEnabled())
 		{
 			return;
 		}
@@ -471,6 +432,27 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			marketplaceManager.syncMarketplaceObjectsToScene();
 		} catch (Exception exception) {
 			log.warn("Could not sync marketplace objects to scene: ", exception);
+		}
+	}
+
+	/**
+	 * Simulate game ticks when not logged in to still register for idling fight time when not logged in
+	 */
+	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
+	public void onLobbyGameTick()
+	{
+		try {
+			if (client.getGameState() != GameState.LOGIN_SCREEN)
+			{
+				return;
+			}
+
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onGameTick();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not handle lobby game tick event: ", exception);
 		}
 	}
 
@@ -625,7 +607,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (!config.marketplaceEnabled())
+		if (!ENABLE_MARKETPLACE || !config.marketplaceEnabled())
 		{
 			return;
 		}

@@ -31,7 +31,7 @@ public class MinimapManager {
 	{
 		plugin.runOnClientThread(() -> {
 			try {
-				String miniMap = getMiniMapAsBase64();
+				// String miniMap = getMiniMapAsBase64();
 			} catch (Exception exception) {
 				log.warn("Could not update minimap when run on client thread: ", exception);
 			}
