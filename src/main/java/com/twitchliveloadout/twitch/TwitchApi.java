@@ -131,14 +131,27 @@ public class TwitchApi
 		final String multiLogDisplayName = config.multiLogDisplayName();
 		final String currentDisplayName = plugin.getPlayerName();
 
+		// guard: check if the setting is valid
 		if (multiLogDisplayName == null || multiLogDisplayName.equals(""))
 		{
 			return true;
 		}
 
-		if (multiLogDisplayName.equals(currentDisplayName))
+		// split on comma to support multiple display names
+		String[] multiLogDisplayNames = multiLogDisplayName.split(",");
+
+		for (String candidateDisplayName : multiLogDisplayNames)
 		{
-			return true;
+			if (candidateDisplayName == null)
+			{
+				continue;
+			}
+
+			// check whether there is a match
+			if (candidateDisplayName.equals(currentDisplayName))
+			{
+				return true;
+			}
 		}
 
 		return false;
