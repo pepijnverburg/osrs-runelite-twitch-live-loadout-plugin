@@ -442,25 +442,25 @@ public class FightStateManager
 		Hitsplat hitsplat = event.getHitsplat();
 		Player player = client.getLocalPlayer();
 		HeadIcon headIcon = player.getOverheadIcon();
-		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
+		int hitsplatType = hitsplat.getHitsplatType();
 		boolean isOnSelf = isLocalPlayer(eventActor);
 
 		// Guard: some hitsplats can come from other sources and we will only handle them
 		// when there is already a fight to prevent random fights to appear out of nowhere
 		// because of activity of others.
-		if (hitsplatType == Hitsplat.HitsplatType.POISON || hitsplatType == Hitsplat.HitsplatType.VENOM)
+		if (hitsplatType == HitsplatTypeID.POISON || hitsplatType == HitsplatTypeID.VENOM)
 		{
 			registerExistingFightHitsplat(eventActor, FightStatisticEntry.POISON, hitsplat);
 			return;
 		}
 
-		if (hitsplatType == Hitsplat.HitsplatType.HEAL)
+		if (hitsplatType == HitsplatTypeID.HEAL)
 		{
 			registerExistingFightHitsplat(eventActor, FightStatisticEntry.HIT_HEAL, hitsplat);
 			return;
 		}
 
-		if (hitsplatType == Hitsplat.HitsplatType.DISEASE)
+		if (hitsplatType == HitsplatTypeID.DISEASE)
 		{
 			// not worth tracking
 			return;
@@ -749,7 +749,7 @@ public class FightStateManager
 		}
 
 		int amount = hitsplat.getAmount();
-		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
+		int hitsplatType = hitsplat.getHitsplatType();
 
 		// NOTE: get the statistic after the fight session was potentially ended!
 		FightStatistic statistic = fight.ensureStatistic(actor, statisticEntry);
@@ -774,26 +774,31 @@ public class FightStateManager
 		// to make sure the behaviour is predictable after updates
 		switch (hitsplatType)
 		{
-			case DISEASE:
+			case HitsplatTypeID.DISEASE:
 				// not handled
 				break;
-			case BLOCK_ME:
-			case BLOCK_OTHER:
+			case HitsplatTypeID.BLOCK_ME:
+			case HitsplatTypeID.BLOCK_OTHER:
 				statistic.registerMiss(amount);
 				break;
-			case DAMAGE_ME:
-			case DAMAGE_ME_CYAN:
-			case DAMAGE_ME_ORANGE:
-			case DAMAGE_ME_WHITE:
-			case DAMAGE_ME_YELLOW:
-			case DAMAGE_OTHER:
-			case DAMAGE_OTHER_CYAN:
-			case DAMAGE_OTHER_ORANGE:
-			case DAMAGE_OTHER_WHITE:
-			case DAMAGE_OTHER_YELLOW:
-			case VENOM:
-			case POISON:
-			case HEAL:
+			case HitsplatTypeID.DAMAGE_ME:
+			case HitsplatTypeID.DAMAGE_ME_CYAN:
+			case HitsplatTypeID.DAMAGE_ME_ORANGE:
+			case HitsplatTypeID.DAMAGE_ME_WHITE:
+			case HitsplatTypeID.DAMAGE_ME_YELLOW:
+			case HitsplatTypeID.DAMAGE_OTHER:
+			case HitsplatTypeID.DAMAGE_OTHER_CYAN:
+			case HitsplatTypeID.DAMAGE_OTHER_ORANGE:
+			case HitsplatTypeID.DAMAGE_OTHER_WHITE:
+			case HitsplatTypeID.DAMAGE_OTHER_YELLOW:
+			case HitsplatTypeID.VENOM:
+			case HitsplatTypeID.POISON:
+			case HitsplatTypeID.HEAL:
+			case HitsplatTypeID.DAMAGE_MAX_ME:
+			case HitsplatTypeID.DAMAGE_MAX_ME_CYAN:
+			case HitsplatTypeID.DAMAGE_MAX_ME_ORANGE:
+			case HitsplatTypeID.DAMAGE_MAX_ME_WHITE:
+			case HitsplatTypeID.DAMAGE_MAX_ME_YELLOW:
 				statistic.registerHit(amount);
 				break;
 		}
