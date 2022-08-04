@@ -28,6 +28,7 @@ import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.items.ItemStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceProduct;
 import com.twitchliveloadout.twitch.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchThemeEntry;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -83,10 +84,22 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "twitchTheme",
+			name = "Twitch Extension Theme",
+			description = "The theme of the Twitch Extension interface for viewers",
+			position = 6,
+			section = twitchSection
+	)
+	default TwitchThemeEntry twitchTheme()
+	{
+		return TwitchThemeEntry.LIGHT;
+	}
+
+	@ConfigItem(
 			keyName = "syncDelay",
 			name = "Stream delay (seconds)",
 			description = "The amount of seconds to delay the sending of data to match your stream delay.",
-			position = 6,
+			position = 8,
 			section = twitchSection
 	)
 	default int syncDelay()
@@ -98,7 +111,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "multiLogDisplayName",
 			name = "Anti multi-log display names",
 			description = "The display names you want to sync (comma separated).",
-			position = 8,
+			position = 10,
 			section = twitchSection
 	)
 	default String multiLogDisplayName()
@@ -384,7 +397,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "marketplaceEnabled",
-			name = "Sync marketplace",
+			name = "Enable marketplace",
 			description = "Synchronize the marketplace configuration, such as enabled and featured items.",
 			position = 2,
 			hidden = false,
@@ -393,6 +406,19 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default boolean marketplaceEnabled()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+			keyName = "featuredMarketplaceProduct",
+			name = "Featured marketplace product",
+			description = "The marketplace producty you want to highlight on stream.",
+			position = 4,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default MarketplaceProduct featuredMarketplaceProduct()
+	{
+		return MarketplaceProduct.NONE;
 	}
 
 	@ConfigItem(

@@ -90,6 +90,8 @@ public class TwitchState {
 		// initialize the states that are not directly synced with events
 		setOverlayTopPosition(config.overlayTopPosition());
 		setVirtualLevelsEnabled(config.virtualLevelsEnabled());
+		setTwitchTheme(config.twitchTheme());
+		setFeaturedMarketplaceProductId(config.featuredMarketplaceProduct().name());
 
 		// set initial items as no events are triggered when they are empty
 		setInventoryItems(new Item[0], 0);
@@ -111,6 +113,12 @@ public class TwitchState {
 	public void setOverlayTopPosition(int overlayTopPosition)
 	{
 		currentState.addProperty(TwitchStateEntry.TOP_POSITION.getKey(), overlayTopPosition);
+		checkForChange();
+	}
+
+	public void setTwitchTheme(TwitchThemeEntry twitchTheme)
+	{
+		currentState.addProperty(TwitchStateEntry.THEME_TYPE.getKey(), twitchTheme.getKey());
 		checkForChange();
 	}
 
@@ -159,11 +167,30 @@ public class TwitchState {
 		setItems(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), items, totalPrice);
 	}
 
+	public void setFeaturedMarketplaceProductId(String productId)
+	{
+		setMarketplaceSetting(TwitchStateEntry.MARKETPLACE_FEATURED_PRODUCT_ID.getKey(), productId);
+	}
+
 	private void setItems(String itemsKey, String priceKey, Item[] items, long totalPrice)
 	{
 		currentState.add(itemsKey, convertToJson(items));
 		currentState.addProperty(priceKey, totalPrice);
 		checkForChange();
+	}
+
+	private void setMarketplaceSetting(String settingsKey, String settingValue)
+	{
+		String allSettingsKey = TwitchStateEntry.MARKETPLACE_SETTINGS.getKey();
+		JsonObject currentSettings = currentState.getAsJsonObject(allSettingsKey);
+
+		if (currentSettings == null)
+		{
+			currentSettings = new JsonObject();
+		}
+
+		currentSettings.addProperty(settingsKey, settingValue);
+		currentState.add(allSettingsKey, currentSettings);
 	}
 
 	public void clear()
@@ -489,6 +516,11 @@ public class TwitchState {
 		if (!config.weightEnabled())
 		{
 			state.add(TwitchStateEntry.WEIGHT.getKey(), null);
+		}
+
+		if (!config.marketplaceEnabled())
+		{
+			state.add(TwitchStateEntry.MARKETPLACE_SETTINGS.getKey(), null);
 		}
 
 		return state;

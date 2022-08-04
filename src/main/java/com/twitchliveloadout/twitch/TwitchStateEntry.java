@@ -15,9 +15,12 @@ public enum TwitchStateEntry {
 	WEIGHT("weight"),
 	ITEM_GOALS("itemGoals"),
 	TOP_POSITION("topPosition"),
+	THEME_TYPE("themeType"),
 	BANK_TABBED_ITEMS("bankTabbedItems"),
 	BANK_PRICE("bankPrice"),
-	COLLECTION_LOG("collectionLog");
+	COLLECTION_LOG("collectionLog"),
+	MARKETPLACE_SETTINGS("marketplaceSettings"),
+	MARKETPLACE_FEATURED_PRODUCT_ID("featuredProductId");
 
 	private final String key;
 

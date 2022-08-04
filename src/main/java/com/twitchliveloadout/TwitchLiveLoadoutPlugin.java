@@ -698,6 +698,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			{
 				twitchState.setVirtualLevelsEnabled(config.virtualLevelsEnabled());
 			}
+			else if (key.equals("twitchTheme"))
+			{
+				twitchState.setTwitchTheme(config.twitchTheme());
+			}
+			else if (key.equals("featuredMarketplaceProduct"))
+			{
+				twitchState.setFeaturedMarketplaceProductId(config.featuredMarketplaceProduct().name());
+			}
 
 			twitchState.forceChange();
 		} catch (Exception exception) {
