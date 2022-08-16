@@ -148,7 +148,7 @@ public class TwitchApi
 			}
 
 			// check whether there is a match
-			if (candidateDisplayName.equals(currentDisplayName))
+			if (candidateDisplayName.toLowerCase().equals(currentDisplayName.toLowerCase()))
 			{
 				return true;
 			}
