@@ -171,17 +171,17 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		super.startUp();
 
+		initializeCanvasListeners();
 		initializeTwitch();
 		initializeManagers();
 		initializePanel();
-		initializeCanvasListeners();
 	}
 
 	private void initializeTwitch()
 	{
 		try {
 			twitchState = new TwitchState(config);
-			twitchApi = new TwitchApi(this, client, config, chatMessageManager);
+			twitchApi = new TwitchApi(this, canvasListener, client, config, chatMessageManager);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}
@@ -225,7 +225,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializeCanvasListeners()
 	{
 		try {
-			canvasListener = new CanvasListener();
+			canvasListener = new CanvasListener(config);
 			client.getCanvas().addFocusListener(canvasListener);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing the canvas listeners: ", exception);
@@ -241,10 +241,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		super.shutDown();
 
-		shutDownCanvasListeners();
 		shutDownPanels();
 		shutDownManagers();
 		shutDownTwitch();
+		shutDownCanvasListeners();
 	}
 
 	private void shutDownCanvasListeners()
