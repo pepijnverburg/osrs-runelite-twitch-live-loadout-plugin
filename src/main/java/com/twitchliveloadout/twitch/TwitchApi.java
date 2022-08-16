@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.ui.CanvasListener;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -59,19 +61,31 @@ public class TwitchApi
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	private final TwitchLiveLoadoutPlugin plugin;
+	private final CanvasListener canvasListener;
 	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
 	private Instant lastScheduleStateTime = null;
+
+	@Getter
 	private String lastCompressedState = "";
+
+	@Getter
 	private int lastRateLimitRemaining = 100;
-	private String lastResponseMessage = "";
+
+	@Getter
+	private String lastResponseMessage = "Unknown status";
+
+	@Getter
 	private int lastResponseCode = 200;
+
+	@Getter
 	private long lastErrorChatMessage = 0;
 
-	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
+	public TwitchApi(TwitchLiveLoadoutPlugin plugin, CanvasListener canvasListener, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
 		this.plugin = plugin;
+		this.canvasListener = canvasListener;
 		this.client = client;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
@@ -88,6 +102,11 @@ public class TwitchApi
 		int delay = config.syncDelay() * 1000;
 
 		if (!isSelectedMultiLogDisplayName())
+		{
+			return false;
+		}
+
+		if (!canvasListener.isInFocusLongEnough())
 		{
 			return false;
 		}
@@ -142,7 +161,7 @@ public class TwitchApi
 
 		for (String candidateDisplayName : multiLogDisplayNames)
 		{
-			if (candidateDisplayName == null)
+			if (candidateDisplayName == null || currentDisplayName == null)
 			{
 				continue;
 			}
@@ -366,28 +385,8 @@ public class TwitchApi
 		return responseCode > 299 || responseCode < 200;
 	}
 
-	public String getToken()
+	private String getToken()
 	{
 		return config.twitchToken();
-	}
-
-	public String getLastCompressedState()
-	{
-		return lastCompressedState;
-	}
-
-	public String getLastResponseMessage()
-	{
-		return lastResponseMessage;
-	}
-
-	public int getLastResponseCode()
-	{
-		return lastResponseCode;
-	}
-
-	public int getLastRateLimitRemaining()
-	{
-		return lastRateLimitRemaining;
 	}
 }
