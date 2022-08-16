@@ -119,6 +119,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return "";
 	}
 
+	@ConfigItem(
+			keyName = "minWindowFocusTime",
+			name = "Active time before sync (seconds)",
+			description = "Seconds of focus on RuneLite window it takes to determine the main account",
+			position = 12,
+			section = twitchSection
+	)
+	default int minWindowFocusTime()
+	{
+		return 5;
+	}
+
 	@ConfigSection(
 			name = "Items",
 			description = "Syncing of items in inventory, equipment and bank.",
