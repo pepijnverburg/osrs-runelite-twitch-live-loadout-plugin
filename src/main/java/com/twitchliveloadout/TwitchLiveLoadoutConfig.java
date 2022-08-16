@@ -74,7 +74,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "overlayTopPosition",
 			name = "Overlay top position",
-			description = "The position of the viewer Twitch Extension overlay in % of the viewport height. '0' falls back to default of viewer.",
+			description = "The percentual position of the viewer overlay in % of the screen height. '0' falls back to default of viewer.",
 			position = 4,
 			section = twitchSection
 	)
@@ -491,18 +491,5 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String twitchEbsBaseUrl()
 	{
 		return TwitchApi.DEFAULT_TWITCH_EBS_BASE_URL;
-	}
-
-	@ConfigItem(
-			keyName = "extensionClientId",
-			name = "Twitch Extension ID",
-			description = "This is the ID of the Twitch Extension you want to sync the data to. Defaults to 'OSRS Live Loadout'.",
-			position = 4,
-			hidden = true,
-			section = advancedSection
-	)
-	default String extensionClientId()
-	{
-		return TwitchApi.DEFAULT_EXTENSION_CLIENT_ID;
 	}
 }
