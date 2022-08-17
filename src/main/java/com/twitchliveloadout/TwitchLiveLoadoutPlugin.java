@@ -191,7 +191,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			fightStateManager = new FightStateManager(this, config, client);
-			itemStateManager = new ItemStateManager(twitchState, client, itemManager, config);
+			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
 			marketplaceManager = new MarketplaceManager(this, twitchState, client, config);

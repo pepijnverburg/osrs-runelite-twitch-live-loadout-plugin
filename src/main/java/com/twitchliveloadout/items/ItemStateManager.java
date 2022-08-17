@@ -1,6 +1,9 @@
 package com.twitchliveloadout.items;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
+import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchState;
 import net.runelite.api.*;
 import net.runelite.api.events.ItemContainerChanged;
@@ -11,11 +14,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
+
 public class ItemStateManager {
 
 	public final static int MAX_BANK_ITEMS = 1500;
 	public final static int LOOTING_BAG_CONTAINER_ID = 516;
 
+	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchState twitchState;
 	private final Client client;
 	private final ItemManager itemManager;
@@ -33,8 +39,9 @@ public class ItemStateManager {
 			Varbits.BANK_TAB_NINE_COUNT
 	);
 
-	public ItemStateManager(TwitchState twitchState, Client client, ItemManager itemManager, TwitchLiveLoadoutConfig config)
+	public ItemStateManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ItemManager itemManager, TwitchLiveLoadoutConfig config)
 	{
+		this.plugin = plugin;
 		this.twitchState = twitchState;
 		this.client = client;
 		this.itemManager = itemManager;
