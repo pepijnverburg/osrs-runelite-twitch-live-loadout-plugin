@@ -36,15 +36,12 @@ public class Fight {
 	private Actor lastActor;
 	private FightSession lastSession;
 
-	public Fight(Actor actor, boolean isLocalPlayer)
+	public Fight(Actor actor, String actorName, boolean isLocalPlayer)
 	{
 		this.lastActor = actor;
+		this.actorName = actorName;
 		this.lastSession = ensureSession(actor);
 		this.actorCombatLevel = actor.getCombatLevel();
-
-		// Remove any HTML-like tags from the actor name, this is the case
-		// for example with objects getting a <col=00ffff>name</col> tag
-		this.actorName = actor.getName().replaceAll("\\<[^>]*>","");
 
 		if (actor instanceof NPC)
 		{

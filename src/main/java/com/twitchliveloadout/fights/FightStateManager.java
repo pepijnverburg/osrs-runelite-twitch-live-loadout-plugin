@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchState;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class FightStateManager
 {
+	@Getter
 	private ConcurrentHashMap<String, Fight> fights = new ConcurrentHashMap();
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
@@ -186,7 +188,7 @@ public class FightStateManager
 	public void onGraphicChanged(GraphicChanged event)
 	{
 		final Actor eventActor = event.getActor();
-		final String eventActorName = eventActor.getName();
+		final String eventActorName = getFormattedActorName(eventActor);
 		final int graphicId = eventActor.getGraphic();
 
 		// NOTE: collect this here to make sure the varbit and other things are fetched on the client thread
@@ -809,18 +811,9 @@ public class FightStateManager
 		lastSkillUpdates.put(skill, Instant.now());
 	}
 
-	public boolean hasFight(Actor actor)
-	{
-		String actorName = actor.getName();
-
-		return fights.containsKey(actorName);
-	}
-
 	public Fight ensureValidFight(Actor actor)
 	{
-		String actorName = actor.getName();
-
-		if (!fights.containsKey(actorName))
+		if (!hasFight(actor))
 		{
 			createFight(actor);
 		}
@@ -847,7 +840,7 @@ public class FightStateManager
 
 	public Fight getFight(Actor actor)
 	{
-		String actorName = actor.getName();
+		String actorName = getFormattedActorName(actor);
 
 		// guard: make sure the actor is valid
 		if (actorName == null)
@@ -858,12 +851,25 @@ public class FightStateManager
 		return fights.get(actorName);
 	}
 
+	public boolean hasFight(Actor actor)
+	{
+		String actorName = getFormattedActorName(actor);
+
+		// guard: make sure the actor is valid
+		if (actorName == null)
+		{
+			return false;
+		}
+
+		return fights.containsKey(actorName);
+	}
+
 	public void createFight(Actor actor)
 	{
 		String localPlayerName = client.getLocalPlayer().getName();
 		boolean isLocalPlayer = (actor instanceof Player) && localPlayerName.equals(actor.getName());
-		Fight fight = new Fight(actor, isLocalPlayer);
-		String actorName = fight.getActorName();
+		String actorName = getFormattedActorName(actor);
+		Fight fight = new Fight(actor, actorName, isLocalPlayer);
 
 		// Rotate fights to prevent memory leaks when the client is on for a long time
 		while (fights.size() >= MAX_FIGHT_AMOUNT_IN_MEMORY)
@@ -1097,6 +1103,19 @@ public class FightStateManager
 		return player == localPlayer;
 	}
 
+	public String getFormattedActorName(Actor actor)
+	{
+		if (actor == null)
+		{
+			return null;
+		}
+
+		// Remove any HTML-like tags from the actor name, this is the case
+		// for example with objects getting a <col=00ffff>name</col> tag
+		String formattedActorName = actor.getName().replaceAll("\\<[^>]*>","");
+		return formattedActorName;
+	}
+
 	public boolean isInMultiCombatArea()
 	{
 		int multiCombatVarBit = client.getVarbitValue(Varbits.MULTICOMBAT_AREA);
@@ -1127,7 +1146,8 @@ public class FightStateManager
 
 		for (Actor actor : actors)
 		{
-			actorNames.add(actor.getName());
+			String actorName = getFormattedActorName(actor);
+			actorNames.add(actorName);
 		}
 
 		return actorNames;
@@ -1148,10 +1168,5 @@ public class FightStateManager
 		}
 
 		return maxAmount;
-	}
-
-	public ConcurrentHashMap<String, Fight> getFights()
-	{
-		return fights;
 	}
 }
