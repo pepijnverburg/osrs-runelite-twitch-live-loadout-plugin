@@ -3,13 +3,17 @@ package com.twitchliveloadout.twitch;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
+import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
 import static com.twitchliveloadout.items.CollectionLogManager.ITEMS_KEY_NAME;
 
 /**
@@ -29,8 +33,10 @@ import static com.twitchliveloadout.items.CollectionLogManager.ITEMS_KEY_NAME;
  * Configuration Service documentation:
  * https://dev.twitch.tv/docs/extensions/reference/#set-extension-configuration-segment
  */
+@Slf4j
 public class TwitchState {
 
+	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
 
 	/**
@@ -83,8 +89,9 @@ public class TwitchState {
 	private final static int CHANGED_DEBOUNCE_TIME = 1000; // ms
 	private Instant changedAt;
 
-	public TwitchState(TwitchLiveLoadoutConfig config)
+	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config)
 	{
+		this.plugin = plugin;
 		this.config = config;
 
 		// initialize the states that are not directly synced with events
@@ -154,17 +161,22 @@ public class TwitchState {
 
 	public void setInventoryItems(Item[] items, long totalPrice)
 	{
-		setItems(TwitchStateEntry.INVENTORY_ITEMS.getKey(), TwitchStateEntry.INVENTORY_PRICE.getKey(), items, totalPrice);
+		setItems(TwitchStateEntry.INVENTORY_ITEMS.getKey(), items);
+		setItemsPrice(TwitchStateEntry.INVENTORY_PRICE.getKey(), totalPrice);
 	}
 
 	public void setEquipmentItems(Item[] items, long totalPrice)
 	{
-		setItems(TwitchStateEntry.EQUIPMENT_ITEMS.getKey(), TwitchStateEntry.EQUIPMENT_PRICE.getKey(), items, totalPrice);
+		setItems(TwitchStateEntry.EQUIPMENT_ITEMS.getKey(), items);
+		setItemsPrice(TwitchStateEntry.EQUIPMENT_PRICE.getKey(), totalPrice);
 	}
 
 	public void setLootingBagItems(Item[] items, long totalPrice)
 	{
-		setItems(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), items, totalPrice);
+		setItems(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), items);
+		setItemsPrice(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), totalPrice);
+		plugin.setConfiguration(LOOTING_BAG_ITEMS_CONFIG_KEY, items);
+		plugin.setConfiguration(LOOTING_BAG_PRICE_CONFIG_KEY, totalPrice);
 	}
 
 	public void setFeaturedMarketplaceProductId(String productId)
@@ -172,9 +184,24 @@ public class TwitchState {
 		setMarketplaceSetting(TwitchStateEntry.MARKETPLACE_FEATURED_PRODUCT_ID.getKey(), productId);
 	}
 
-	private void setItems(String itemsKey, String priceKey, Item[] items, long totalPrice)
+	private void setItems(String itemsKey, Item[] items)
 	{
-		currentState.add(itemsKey, convertToJson(items));
+		setItems(itemsKey, convertToJson(items));
+	}
+
+	private void setItems(String itemsKey, JsonArray items)
+	{
+		currentState.add(itemsKey, items);
+		checkForChange();
+	}
+
+	private void setItemsPrice(String priceKey, String totalPrice)
+	{
+		setItemsPrice(priceKey, Long.parseLong(totalPrice));
+	}
+
+	private void setItemsPrice(String priceKey, long totalPrice)
+	{
 		currentState.addProperty(priceKey, totalPrice);
 		checkForChange();
 	}
@@ -199,7 +226,7 @@ public class TwitchState {
 		checkForChange();
 	}
 
-	public void setBankItems(Item[] items, long totalPrice, int[] tabAmounts)
+	public void setBankItems(Item[] items, int[] tabAmounts)
 	{
 		JsonArray tabbedBankItems = new JsonArray();
 		int currentItemAmount = 0;
@@ -220,13 +247,25 @@ public class TwitchState {
 		prependedTabbedBankItems.add(convertToJson(zeroTabItems));
 		prependedTabbedBankItems.addAll(tabbedBankItems);
 
-		cyclicState.add(TwitchStateEntry.BANK_TABBED_ITEMS.getKey(), prependedTabbedBankItems);
+		setBankItems(prependedTabbedBankItems);
+	}
+
+	public void setBankItems(JsonArray tabbedBankItems)
+	{
+		cyclicState.add(TwitchStateEntry.BANK_TABBED_ITEMS.getKey(), tabbedBankItems);
+		plugin.setConfiguration(BANK_TABBED_ITEMS_CONFIG_KEY, tabbedBankItems);
+	}
+
+	public void setBankItemsPrice(long totalPrice)
+	{
 		cyclicState.addProperty(TwitchStateEntry.BANK_PRICE.getKey(), totalPrice);
+		plugin.setConfiguration(BANK_PRICE_CONFIG_KEY, totalPrice);
 	}
 
 	public void setCollectionLog(JsonObject collectionLog)
 	{
 		cyclicState.add(TwitchStateEntry.COLLECTION_LOG.getKey(), collectionLog);
+		plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
 	}
 
 	public JsonObject getCollectionLog()
@@ -675,5 +714,66 @@ public class TwitchState {
 		}
 
 		return amount;
+	}
+
+	public void onPlayerNameChanged(String playerName)
+	{
+		reloadCache();
+	}
+
+	private void reloadCache()
+	{
+		// when another account logs in the cache should be updated to that account
+		// first we reset the data and after that check the cache
+		cyclicState.remove(TwitchStateEntry.COLLECTION_LOG.getKey());
+		cyclicState.remove(TwitchStateEntry.BANK_TABBED_ITEMS.getKey());
+		cyclicState.remove(TwitchStateEntry.BANK_PRICE.getKey());
+		currentState.add(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), null);
+		currentState.addProperty(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), 0);
+
+		loadDataFromCache(COLLECTION_LOG_CONFIG_KEY, (String rawCollectionLog) -> {
+			JsonObject parsedCollectionLog = new JsonParser().parse(rawCollectionLog).getAsJsonObject();
+			setCollectionLog(parsedCollectionLog);
+		});
+
+		loadDataFromCache(BANK_TABBED_ITEMS_CONFIG_KEY, (String rawItems) -> {
+			JsonArray parsedTabbedItems = new JsonParser().parse(rawItems).getAsJsonArray();
+			setBankItems(parsedTabbedItems);
+		});
+
+		loadDataFromCache(BANK_PRICE_CONFIG_KEY, (String price) -> {
+			setBankItemsPrice(Long.parseLong(price));
+		});
+
+		loadDataFromCache(LOOTING_BAG_ITEMS_CONFIG_KEY, (String rawItems) -> {
+			JsonArray parsedItems = new JsonParser().parse(rawItems).getAsJsonArray();
+			setItems(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), parsedItems);
+		});
+
+		loadDataFromCache(LOOTING_BAG_PRICE_CONFIG_KEY, (String price) -> {
+			setItemsPrice(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), price);
+		});
+	}
+
+	private void loadDataFromCache(String cacheKey, CacheDataHandler handler)
+	{
+		String rawCacheData = plugin.getConfiguration(cacheKey);
+
+		// guard: check if any data was found
+		if (rawCacheData == null)
+		{
+			return;
+		}
+
+		try {
+			handler.execute(rawCacheData);
+			checkForChange();
+		} catch (Exception exception) {
+			log.warn("Could not handle cache data with from cache key '"+ cacheKey +"': ", exception);
+		}
+	}
+
+	public interface CacheDataHandler {
+		void execute(String data);
 	}
 }

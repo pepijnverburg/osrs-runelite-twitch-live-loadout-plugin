@@ -41,7 +41,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	String COLLECTION_LOG_CONFIG_KEY = "collection-log";
 	String LOOTING_BAG_ITEMS_CONFIG_KEY = "looting-bag-items";
 	String LOOTING_BAG_PRICE_CONFIG_KEY = "looting-bag-price";
-	String BANK_ITEMS_CONFIG_KEY = "bank-items";
+	String BANK_TABBED_ITEMS_CONFIG_KEY = "bank-items";
 	String BANK_PRICE_CONFIG_KEY = "bank-price";
 
 	@ConfigSection(

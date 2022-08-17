@@ -180,7 +180,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializeTwitch()
 	{
 		try {
-			twitchState = new TwitchState(config);
+			twitchState = new TwitchState(this, config);
 			twitchApi = new TwitchApi(this, canvasListener, client, config, chatMessageManager);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
@@ -381,11 +381,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncPlayerInfo()
 	{
-		if (!config.playerInfoEnabled())
-		{
-			return;
-		}
-
 		try {
 			String playerName = getPlayerName();
 
@@ -394,8 +389,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				return;
 			}
 
-			twitchState.setPlayerName(playerName);
-			collectionLogManager.onPlayerNameChanged(playerName);
+			if (config.playerInfoEnabled())
+			{
+				twitchState.setPlayerName(playerName);
+			}
+
+			twitchState.onPlayerNameChanged(playerName);
 			lastPlayerName = playerName;
 		} catch (Exception exception) {
 			log.warn("Could not sync player info to state: ", exception);

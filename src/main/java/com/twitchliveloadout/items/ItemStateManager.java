@@ -1,7 +1,5 @@
 package com.twitchliveloadout.items;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchState;
@@ -13,8 +11,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
 
 public class ItemStateManager {
 
@@ -139,7 +135,8 @@ public class ItemStateManager {
 			}
 		}
 
-		twitchState.setBankItems(selectedItems, totalPrice, selectedTabAmounts);
+		twitchState.setBankItems(selectedItems, selectedTabAmounts);
+		twitchState.setBankItemsPrice(totalPrice);
 	}
 
 	public CopyOnWriteArrayList<PricedItem> getPricedItems(Item[] items)

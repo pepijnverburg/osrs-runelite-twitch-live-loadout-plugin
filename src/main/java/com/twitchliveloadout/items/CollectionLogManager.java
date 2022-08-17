@@ -50,8 +50,6 @@ public class CollectionLogManager {
 		this.plugin = plugin;
 		this.twitchState = twitchState;
 		this.client = client;
-
-		loadCollectionLogCache();
 	}
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
@@ -72,13 +70,6 @@ public class CollectionLogManager {
 				updateCurrentCategory();
 			});
 		}
-	}
-
-	public void onPlayerNameChanged(String playerName)
-	{
-		// when another account logs in the cache should be updated to that account
-		twitchState.setCollectionLog(null);
-		loadCollectionLogCache();
 	}
 
 	private Widget getCategoryHead()
@@ -217,9 +208,6 @@ public class CollectionLogManager {
 
 			// update the twitch state
 			twitchState.setCollectionLog(collectionLog);
-
-			// save to persistent storage
-			plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
 		} catch (Exception exception) {
 			log.warn("Could not update the collection log due to the following error: ", exception);
 		}
@@ -288,25 +276,5 @@ public class CollectionLogManager {
 		}
 
 		return counters;
-	}
-
-	private void loadCollectionLogCache()
-	{
-		final String rawCollectionLog = plugin.getConfiguration(COLLECTION_LOG_CONFIG_KEY);
-		JsonObject parsedCollectionLog = null;
-
-		try {
-			parsedCollectionLog = new JsonParser().parse(rawCollectionLog).getAsJsonObject();
-		} catch (Exception error) {
-			// no error
-			return;
-		}
-
-		if (parsedCollectionLog == null)
-		{
-			return;
-		}
-
-		twitchState.setCollectionLog(parsedCollectionLog);
 	}
 }
