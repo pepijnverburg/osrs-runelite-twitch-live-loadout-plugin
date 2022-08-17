@@ -45,7 +45,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Twitch Extension",
 			description = "Authentication and extension configuration.",
-			position = 2
+			position = 0
 	)
 	String twitchSection = "twitch";
 
@@ -89,7 +89,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Data syncing",
 			description = "Syncing conditions and multi-account settings",
-			position = 3
+			position = 2
 	)
 	String syncingSection = "syncing";
 
