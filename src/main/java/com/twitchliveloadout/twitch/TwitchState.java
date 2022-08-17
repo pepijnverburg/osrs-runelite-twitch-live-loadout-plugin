@@ -175,7 +175,7 @@ public class TwitchState {
 	{
 		setItems(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), items);
 		setItemsPrice(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), totalPrice);
-		plugin.setConfiguration(LOOTING_BAG_ITEMS_CONFIG_KEY, items);
+		plugin.setConfiguration(LOOTING_BAG_ITEMS_CONFIG_KEY, convertToJson(items));
 		plugin.setConfiguration(LOOTING_BAG_PRICE_CONFIG_KEY, totalPrice);
 	}
 
