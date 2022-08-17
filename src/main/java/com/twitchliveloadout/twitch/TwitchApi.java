@@ -101,11 +101,6 @@ public class TwitchApi
 	{
 		int delay = config.syncDelay() * 1000;
 
-		if (!isSelectedMultiLogDisplayName())
-		{
-			return false;
-		}
-
 		if (!canvasListener.isInFocusLongEnough())
 		{
 			return false;
@@ -143,37 +138,6 @@ public class TwitchApi
 
 		lastScheduleStateTime = Instant.now();
 		return true;
-	}
-
-	public boolean isSelectedMultiLogDisplayName()
-	{
-		final String multiLogDisplayName = config.multiLogDisplayName();
-		final String currentDisplayName = plugin.getPlayerName();
-
-		// guard: check if the setting is valid
-		if (multiLogDisplayName == null || multiLogDisplayName.equals(""))
-		{
-			return true;
-		}
-
-		// split on comma to support multiple display names
-		String[] multiLogDisplayNames = multiLogDisplayName.split(",");
-
-		for (String candidateDisplayName : multiLogDisplayNames)
-		{
-			if (candidateDisplayName == null || currentDisplayName == null)
-			{
-				continue;
-			}
-
-			// check whether there is a match
-			if (candidateDisplayName.toLowerCase().equals(currentDisplayName.toLowerCase()))
-			{
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	public boolean canScheduleState()

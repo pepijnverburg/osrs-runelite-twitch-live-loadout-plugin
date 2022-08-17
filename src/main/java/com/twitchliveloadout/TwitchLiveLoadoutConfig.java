@@ -123,18 +123,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 	String multiLogSection = "multiLog";
 
 	@ConfigItem(
-			keyName = "multiLogDisplayName",
-			name = "Anti multi-log display names",
-			description = "The display names you want to sync (comma separated).",
-			position = 2,
-			section = multiLogSection
-	)
-	default String multiLogDisplayName()
-	{
-		return "";
-	}
-
-	@ConfigItem(
 			keyName = "minWidowFocusTimeEnabled",
 			name = "Active time check enabled",
 			description = "Toggle off to disable the active time check for anti multi-logging purposes",
