@@ -1110,9 +1110,17 @@ public class FightStateManager
 			return null;
 		}
 
+		String actorName = actor.getName();
+
+		if (actorName == null)
+		{
+			return null;
+		}
+
 		// Remove any HTML-like tags from the actor name, this is the case
 		// for example with objects getting a <col=00ffff>name</col> tag
-		String formattedActorName = actor.getName().replaceAll("\\<[^>]*>","");
+		String formattedActorName = actorName.replaceAll("\\<[^>]*>","");
+
 		return formattedActorName;
 	}
 
