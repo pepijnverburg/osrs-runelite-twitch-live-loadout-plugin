@@ -26,6 +26,11 @@ public class CanvasListener implements FocusListener {
 	@Override
 	public void focusGained(FocusEvent event)
 	{
+		if (inFocus)
+		{
+			return;
+		}
+
 		inFocus = true;
 		lastInFocusAt = Instant.now();
 	}
@@ -39,8 +44,8 @@ public class CanvasListener implements FocusListener {
 	public long getInFocusDurationMs()
 	{
 
-		// guard: check if this window was ever in focus
-		if (lastInFocusAt == null)
+		// guard: check if this window is in focus and was ever in focus
+		if (!inFocus || lastInFocusAt == null)
 		{
 			return 0;
 		}
