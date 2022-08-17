@@ -40,17 +40,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 	String PLUGIN_CONFIG_GROUP = "twitch-live-loadout";
 	String COLLECTION_LOG_CONFIG_KEY = "collection-log";
 
-	@ConfigItem(
-			keyName = "syncEnabled",
-			name = "Sync enabled",
-			description = "Toggle off to disable all syncing, hide extension to viewers and clear data.",
-			position = 0
-	)
-	default boolean syncEnabled()
-	{
-		return true;
-	}
-
 	@ConfigSection(
 			name = "Twitch Extension",
 			description = "Authentication and extension configuration.",
@@ -95,24 +84,50 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return TwitchThemeEntry.LIGHT;
 	}
 
+	@ConfigSection(
+			name = "Data syncing",
+			description = "Syncing conditions and multi-account settings",
+			position = 3
+	)
+	String syncingSection = "syncing";
+
+	@ConfigItem(
+			keyName = "syncEnabled",
+			name = "Sync enabled",
+			description = "Toggle off to disable all syncing, hide extension to viewers and clear data.",
+			position = 0,
+			section = syncingSection
+	)
+	default boolean syncEnabled()
+	{
+		return true;
+	}
+
 	@ConfigItem(
 			keyName = "syncDelay",
 			name = "Stream delay (seconds)",
 			description = "The amount of seconds to delay the sending of data to match your stream delay.",
-			position = 8,
-			section = twitchSection
+			position = 2,
+			section = syncingSection
 	)
 	default int syncDelay()
 	{
 		return 0;
 	}
 
+	@ConfigSection(
+			name = "Anti Multi Logging",
+			description = "Multi logging section to determine which account to sync",
+			position = 3
+	)
+	String multiLogSection = "multiLog";
+
 	@ConfigItem(
 			keyName = "multiLogDisplayName",
 			name = "Anti multi-log display names",
 			description = "The display names you want to sync (comma separated).",
-			position = 10,
-			section = twitchSection
+			position = 2,
+			section = multiLogSection
 	)
 	default String multiLogDisplayName()
 	{
@@ -120,11 +135,23 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "minWidowFocusTimeEnabled",
+			name = "Active time check enabled",
+			description = "Toggle off to disable the active time check for anti multi-logging purposes",
+			position = 4,
+			section = multiLogSection
+	)
+	default boolean minWidowFocusTimeEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "minWindowFocusTime",
-			name = "Active time before sync (seconds)",
-			description = "Seconds of focus on RuneLite window it takes to determine the main account",
-			position = 12,
-			section = twitchSection
+			name = "Active time to sync (seconds)",
+			description = "Seconds of focus on RuneLite window it takes to start syncing (against multi-logging)",
+			position = 6,
+			section = multiLogSection
 	)
 	default int minWindowFocusTime()
 	{
@@ -134,7 +161,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Items",
 			description = "Syncing of items in inventory, equipment and bank.",
-			position = 4
+			position = 5
 	)
 	String itemsSection = "items";
 
@@ -412,20 +439,20 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Enable marketplace",
 			description = "Synchronize the marketplace configuration, such as enabled and featured items.",
 			position = 2,
-			hidden = false,
+			hidden = true,
 			section = marketplaceSection
 	)
 	default boolean marketplaceEnabled()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
 			keyName = "featuredMarketplaceProduct",
 			name = "Featured marketplace product",
-			description = "The marketplace producty you want to highlight on stream.",
+			description = "The marketplace product you want to highlight on stream.",
 			position = 4,
-			hidden = false,
+			hidden = true,
 			section = marketplaceSection
 	)
 	default MarketplaceProduct featuredMarketplaceProduct()
@@ -438,7 +465,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Dev Player Graphic ID",
 			description = "Testing Graphic ID on player.",
 			position = 97,
-			hidden = false,
+			hidden = true,
 			section = marketplaceSection
 	)
 	default int devPlayerGraphicId()
@@ -451,7 +478,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Dev Object Spawn Model ID",
 			description = "Testing model ID when spawning objects for the marketplace.",
 			position = 97,
-			hidden = false,
+			hidden = true,
 			section = marketplaceSection
 	)
 	default int devObjectSpawnModelId()
@@ -464,7 +491,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Dev Object Spawn Animation ID",
 			description = "Testing animation ID when spawning objects for the marketplace.",
 			position = 98,
-			hidden = false,
+			hidden = true,
 			section = marketplaceSection
 	)
 	default int devObjectSpawnAnimationId()
@@ -477,7 +504,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Dev Marketplace Product Spawn",
 			description = "Testing product.",
 			position = 99,
-			hidden = false,
+			hidden = true,
 			section = marketplaceSection
 	)
 	default MarketplaceProduct devMarketplaceProductSpawn()
