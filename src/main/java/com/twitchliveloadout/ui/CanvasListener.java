@@ -38,6 +38,11 @@ public class CanvasListener implements FocusListener {
 	@Override
 	public void focusLost(FocusEvent event)
 	{
+		if (!inFocus)
+		{
+			return;
+		}
+
 		inFocus = false;
 	}
 

@@ -39,6 +39,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 {
 	String PLUGIN_CONFIG_GROUP = "twitch-live-loadout";
 	String COLLECTION_LOG_CONFIG_KEY = "collection-log";
+	String LOOTING_BAG_CONFIG_KEY = "looting-bag";
+	String BANK_CONFIG_KEY = "bank";
 
 	@ConfigSection(
 			name = "Twitch Extension",
