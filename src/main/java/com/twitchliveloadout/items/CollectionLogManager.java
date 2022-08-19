@@ -13,8 +13,6 @@ import net.runelite.api.widgets.WidgetInfo;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.twitchliveloadout.TwitchLiveLoadoutConfig.COLLECTION_LOG_CONFIG_KEY;
-
 @Slf4j
 public class CollectionLogManager {
 	private final TwitchLiveLoadoutPlugin plugin;

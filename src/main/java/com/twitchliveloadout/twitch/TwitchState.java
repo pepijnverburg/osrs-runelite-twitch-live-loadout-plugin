@@ -119,6 +119,15 @@ public class TwitchState {
 
 	public void setOverlayTopPosition(int overlayTopPosition)
 	{
+		if (overlayTopPosition < MIN_OVERLAY_TOP_POSITION)
+		{
+			overlayTopPosition = MIN_OVERLAY_TOP_POSITION;
+		}
+		else if (overlayTopPosition > MAX_OVERLAY_TOP_POSITION)
+		{
+			overlayTopPosition = MAX_OVERLAY_TOP_POSITION;
+		}
+
 		currentState.addProperty(TwitchStateEntry.TOP_POSITION.getKey(), overlayTopPosition);
 		checkForChange();
 	}

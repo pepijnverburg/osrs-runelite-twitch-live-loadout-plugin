@@ -37,12 +37,15 @@ import net.runelite.client.config.ConfigSection;
 @ConfigGroup("twitchstreamer")
 public interface TwitchLiveLoadoutConfig extends Config
 {
-	String PLUGIN_CONFIG_GROUP = "twitch-live-loadout";
-	String COLLECTION_LOG_CONFIG_KEY = "collection-log";
-	String LOOTING_BAG_ITEMS_CONFIG_KEY = "looting-bag-items";
-	String LOOTING_BAG_PRICE_CONFIG_KEY = "looting-bag-price";
-	String BANK_TABBED_ITEMS_CONFIG_KEY = "bank-items";
-	String BANK_PRICE_CONFIG_KEY = "bank-price";
+	public final static String PLUGIN_CONFIG_GROUP = "twitch-live-loadout";
+	public final static String COLLECTION_LOG_CONFIG_KEY = "collection-log";
+	public final static String LOOTING_BAG_ITEMS_CONFIG_KEY = "looting-bag-items";
+	public final static String LOOTING_BAG_PRICE_CONFIG_KEY = "looting-bag-price";
+	public final static String BANK_TABBED_ITEMS_CONFIG_KEY = "bank-items";
+	public final static String BANK_PRICE_CONFIG_KEY = "bank-price";
+
+	public final static int MIN_OVERLAY_TOP_POSITION = 25;
+	public final static int MAX_OVERLAY_TOP_POSITION = 75;
 
 	@ConfigSection(
 			name = "Twitch Extension",
@@ -67,7 +70,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "overlayTopPosition",
 			name = "Overlay top position",
-			description = "The percentual position of the viewer overlay in % of the screen height. '0' falls back to default of viewer.",
+			description = "The position from the top left of the overlay in % of the screen height. Should be between "+ MIN_OVERLAY_TOP_POSITION +" and "+ MAX_OVERLAY_TOP_POSITION +".",
 			position = 4,
 			section = twitchSection
 	)
