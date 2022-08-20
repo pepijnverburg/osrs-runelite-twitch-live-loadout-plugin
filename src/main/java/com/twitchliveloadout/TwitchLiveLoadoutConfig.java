@@ -48,7 +48,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static int MAX_OVERLAY_TOP_POSITION = 75;
 
 	@ConfigSection(
-			name = "Twitch Extension",
+			name = "Twitch Extension & Token",
 			description = "Authentication and extension configuration.",
 			position = 0
 	)
