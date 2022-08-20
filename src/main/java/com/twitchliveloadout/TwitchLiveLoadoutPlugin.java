@@ -204,7 +204,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializePanel()
 	{
 		try {
-			pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager);
+			pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager, canvasListener, config);
 			pluginPanel.rebuild();
 
 			final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
@@ -717,6 +717,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		return pluginPanel != null;
 	}
 
+	/**
+	 * Periodically update the connectivity panel to show the latest status
+	 */
+	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void updateConnectivityPanel()
 	{
 		try {

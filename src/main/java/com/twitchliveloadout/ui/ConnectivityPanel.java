@@ -26,6 +26,7 @@
 package com.twitchliveloadout.ui;
 
 import com.google.gson.JsonObject;
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.twitch.TwitchApi;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -44,6 +45,8 @@ import java.time.format.DateTimeFormatter;
 public class ConnectivityPanel extends JPanel
 {
 	private final static String DEFAULT_TEXT_COLOR = "#ffffff";
+	private final static String SUCCESS_TEXT_COLOR = "#00ff00";
+	private final static String WARNING_TEXT_COLOR = "#ffa500";
 	private final static String ERROR_TEXT_COLOR = "#ff0000";
 	private final static int WARNING_BEFORE_EXPIRY = 60 * 5; // in seconds
 	private static final ImageIcon ARROW_RIGHT_ICON;
@@ -55,13 +58,16 @@ public class ConnectivityPanel extends JPanel
 	private final GridBagConstraints constraints = new GridBagConstraints();
 	private final JPanel wrapper = new JPanel(new GridBagLayout());
 
-	private final TextPanel statusPanel = new TextPanel("Current Status", "N/A");
+	private final TextPanel syncingStatusPanel = new TextPanel("Anti Multi-logging Status", "N/A");
+	private final TextPanel twitchStatusPanel = new TextPanel("Twitch Status", "N/A");
 	private final TextPanel authPanel = new TextPanel("Twitch Token Validity", "N/A");
 	private final TextPanel rateLimitPanel = new TextPanel("Twitch API Limit", "N/A");
 	private final TextPanel statePanel = new TextPanel("Loadout State Size", "N/A");
 	private JPanel actionsContainer = new JPanel();
 
 	private final TwitchApi twitchApi;
+	private final CanvasListener canvasListener;
+	private final TwitchLiveLoadoutConfig config;
 
 	static
 	{
@@ -70,11 +76,13 @@ public class ConnectivityPanel extends JPanel
 		WIKI_ICON = new ImageIcon(ImageUtil.loadImageResource(ConnectivityPanel.class, "/wiki_icon.png"));
 	}
 
-	public ConnectivityPanel(TwitchApi twitchApi)
+	public ConnectivityPanel(TwitchApi twitchApi, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
 	{
 		super(new GridBagLayout());
 
 		this.twitchApi = twitchApi;
+		this.canvasListener = canvasListener;
+		this.config = config;
 
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -93,10 +101,12 @@ public class ConnectivityPanel extends JPanel
 		constraints.gridx = 0;
 		constraints.gridy = 0;
 
-		// add titles
+		// add all panels
 		wrapper.add(actionsContainer);
 		constraints.gridy += 2;
-		wrapper.add(statusPanel, constraints);
+		wrapper.add(syncingStatusPanel, constraints);
+		constraints.gridy++;
+		wrapper.add(twitchStatusPanel, constraints);
 		constraints.gridy++;
 		wrapper.add(authPanel, constraints);
 		constraints.gridy++;
@@ -112,14 +122,16 @@ public class ConnectivityPanel extends JPanel
 	{
 		final long unixTimestamp = System.currentTimeMillis() / 1000L;
 		final int rateLimitRemaining = twitchApi.getLastRateLimitRemaining();
+		String syncingStatusText = "This RuneLite window is currently syncing, because is has been active long enough.";
+		String syncingStatusColor = SUCCESS_TEXT_COLOR;
 
-		String statusText = twitchApi.getLastResponseMessage();
 		final int responseCode = twitchApi.getLastResponseCode();
-		String statusColor = DEFAULT_TEXT_COLOR;
+		String twitchStatusText = twitchApi.getLastResponseMessage();
+		String twitchStatusColor = SUCCESS_TEXT_COLOR;
 
+		long tokenExpiry = 0;
 		String authText = "No valid Twitch Token.";
 		String authColor = ERROR_TEXT_COLOR;
-		long tokenExpiry = 0;
 
 		String rateLimitText = "There are "+ rateLimitRemaining +" requests available before hitting the Twitch API rate limit.";
 		String rateLimitColor = DEFAULT_TEXT_COLOR;
@@ -151,10 +163,30 @@ public class ConnectivityPanel extends JPanel
 		String stateText = String.format("%.2f", stateUsagePercentage) +"% used of Twitch storage.";
 		String stateColor = DEFAULT_TEXT_COLOR;
 
+		// only have in focus messages when setting is enabled
+		if (config.minWidowFocusTimeEnabled())
+		{
+			if (!canvasListener.isInFocus())
+			{
+				syncingStatusText = "This RuneLite window is not syncing, because it's not the active window. You can disable this anti multi-logging check with the 'Active time check enabled' setting of this plugin.";
+				syncingStatusColor = ERROR_TEXT_COLOR;
+			}
+			else if (!canvasListener.isInFocusLongEnough())
+			{
+				final double inFocusTimeS = canvasListener.getInFocusDurationMs() / 1000;
+				final int inFocusRequiredTimeS = config.minWindowFocusTime();
+
+				syncingStatusText = "This RuneLite window is not syncing, because it's not yet active long enough. It is currently active for "+ inFocusTimeS +" of the required "+ inFocusRequiredTimeS +".0 seconds.";
+				syncingStatusColor = WARNING_TEXT_COLOR;
+			}
+		} else {
+			syncingStatusText = "All RuneLite windows are syncing their status, because anti-multi logging active window time is disabled.";
+		}
+
 		if (twitchApi.isErrorResponseCode(responseCode))
 		{
-			statusText += "<br/><br/>An error occurred wth code: "+ responseCode;
-			statusColor = ERROR_TEXT_COLOR;
+			twitchStatusText += "<br/><br/>An error occurred wth code: "+ responseCode;
+			twitchStatusColor = ERROR_TEXT_COLOR;
 		}
 
 		if (stateUsagePercentage >= 100)
@@ -169,7 +201,8 @@ public class ConnectivityPanel extends JPanel
 			rateLimitColor = ERROR_TEXT_COLOR;
 		}
 
-		statusPanel.setText(getTextInColor(statusText, statusColor));
+		syncingStatusPanel.setText(getTextInColor(syncingStatusText, syncingStatusColor));
+		twitchStatusPanel.setText(getTextInColor(twitchStatusText, twitchStatusColor));
 		authPanel.setText(getTextInColor(authText, authColor));
 		rateLimitPanel.setText(getTextInColor(rateLimitText, rateLimitColor));
 		statePanel.setText(getTextInColor(stateText, stateColor));

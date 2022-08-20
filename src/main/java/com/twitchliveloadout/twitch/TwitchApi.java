@@ -244,7 +244,6 @@ public class TwitchApi
 		lastResponseMessage = responseCodeMessage;
 		lastResponseCode = responseCode;
 		lastRateLimitRemaining = Integer.parseInt(response.header(RATE_LIMIT_REMAINING_HEADER, "100"));
-		plugin.updateConnectivityPanel();
 
 		if (isErrorResponseCode(responseCode))
 		{
