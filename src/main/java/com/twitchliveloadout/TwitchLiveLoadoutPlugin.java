@@ -545,6 +545,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		try {
+			// alternative method to enable focus on window if somehow the other focus listener
+			// any menu click will enable focus, this includes walking and stuff
+			canvasListener.enableFocus();
+		} catch (Exception exception) {
+			log.warn("Could not handle on focus change event: ", exception);
+		}
+	}
+
+	@Subscribe
 	public void onAnimationChanged(AnimationChanged event)
 	{
 		if (!config.fightStatisticsEnabled())
