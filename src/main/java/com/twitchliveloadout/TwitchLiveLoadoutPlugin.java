@@ -66,6 +66,8 @@ import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
  * and passed along to dedicated managers. Also you will see that this class if fairly 'polluted'
  * with try-catch statements. This helps making sure that any breaking changes to Oldschool Runescape and/or
  * RuneLite will less likely cause issues.
+ *
+ * Find events via: net.runelite.api.events
  */
 @PluginDescriptor(
 	name = "Twitch Live Loadout",
@@ -226,7 +228,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			canvasListener = new CanvasListener(config);
-			client.getCanvas().addFocusListener(canvasListener);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing the canvas listeners: ", exception);
 		}
@@ -522,6 +523,24 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			fightStateManager.onFakeXpDrop(event);
 		} catch (Exception exception) {
 			log.warn("Could not handle fake XP drop event: ", exception);
+		}
+	}
+
+	@Subscribe
+	public void onFocusChanged(FocusChanged event)
+	{
+		try {
+			final boolean isFocused = event.isFocused();
+
+			if (isFocused)
+			{
+				canvasListener.enableFocus();
+			}
+			else {
+				canvasListener.disableFocus();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not handle on focus change event: ", exception);
 		}
 	}
 

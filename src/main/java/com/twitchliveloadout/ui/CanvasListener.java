@@ -26,6 +26,17 @@ public class CanvasListener implements FocusListener {
 	@Override
 	public void focusGained(FocusEvent event)
 	{
+		enableFocus();
+	}
+
+	@Override
+	public void focusLost(FocusEvent event)
+	{
+		disableFocus();
+	}
+
+	public void enableFocus()
+	{
 		if (inFocus)
 		{
 			return;
@@ -35,8 +46,7 @@ public class CanvasListener implements FocusListener {
 		lastInFocusAt = Instant.now();
 	}
 
-	@Override
-	public void focusLost(FocusEvent event)
+	public void disableFocus()
 	{
 		if (!inFocus)
 		{
