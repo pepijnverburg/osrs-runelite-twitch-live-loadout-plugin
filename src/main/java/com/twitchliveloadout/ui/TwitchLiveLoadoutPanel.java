@@ -32,7 +32,7 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 		connectivityPanel = new ConnectivityPanel(twitchApi, canvasListener, config);
 		marketplacePanel = new MarketplacePanel(twitchApi);
 
-		connectivityTab = new MaterialTab("Twitch", tabGroup, connectivityPanel);
+		connectivityTab = new MaterialTab("Status", tabGroup, connectivityPanel);
 		combatTab = new MaterialTab("Combat", tabGroup, combatPanel);
 		marketplaceTab = new MaterialTab("Marketplace", tabGroup, marketplacePanel);
 
