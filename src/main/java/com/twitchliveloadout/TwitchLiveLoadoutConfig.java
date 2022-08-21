@@ -132,7 +132,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "minWidowFocusTimeEnabled",
 			name = "Active time check enabled",
-			description = "Toggle off to disable the active time check for anti multi-logging purposes",
+			description = "Enabled when you want to sync the RuneLite window that is in focus.",
 			position = 4,
 			section = multiLogSection
 	)
