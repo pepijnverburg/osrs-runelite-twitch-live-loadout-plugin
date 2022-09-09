@@ -239,11 +239,14 @@ public class TwitchState {
 	public void setInvocations(JsonArray invocations)
 	{
 		currentState.add(TwitchStateEntry.INVOCATIONS.getKey(), invocations);
+		plugin.setConfiguration(INVOCATIONS_CONFIG_KEY, invocations);
 	}
 
-	public void setInvocationsRaidLevel(int raidLevel)
+	public void setInvocationsRaidLevel(String raidLevel)
 	{
-		currentState.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), raidLevel);
+		int parsedRaidLevel = Integer.parseInt(raidLevel);
+		currentState.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), parsedRaidLevel);
+		plugin.setConfiguration(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, parsedRaidLevel);
 	}
 
 	public void setBankItems(Item[] items, int[] tabAmounts)
@@ -766,6 +769,8 @@ public class TwitchState {
 		cyclicState.remove(TwitchStateEntry.BANK_PRICE.getKey());
 		currentState.add(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), null);
 		currentState.addProperty(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), 0);
+		currentState.add(TwitchStateEntry.INVOCATIONS.getKey(), null);
+		currentState.add(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), null);
 
 		loadDataFromCache(COLLECTION_LOG_CONFIG_KEY, (String rawCollectionLog) -> {
 			JsonObject parsedCollectionLog = new JsonParser().parse(rawCollectionLog).getAsJsonObject();
@@ -788,6 +793,15 @@ public class TwitchState {
 
 		loadDataFromCache(LOOTING_BAG_PRICE_CONFIG_KEY, (String price) -> {
 			setItemsPrice(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), price);
+		});
+
+		loadDataFromCache(INVOCATIONS_CONFIG_KEY, (String rawInvocations) -> {
+			JsonArray parsedInvocations = new JsonParser().parse(rawInvocations).getAsJsonArray();
+			setItems(TwitchStateEntry.INVOCATIONS.getKey(), parsedInvocations);
+		});
+
+		loadDataFromCache(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, (String raidLevel) -> {
+			setInvocationsRaidLevel(raidLevel);
 		});
 	}
 

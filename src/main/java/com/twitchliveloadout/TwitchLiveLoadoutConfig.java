@@ -43,6 +43,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String LOOTING_BAG_PRICE_CONFIG_KEY = "looting-bag-price";
 	public final static String BANK_TABBED_ITEMS_CONFIG_KEY = "bank-items";
 	public final static String BANK_PRICE_CONFIG_KEY = "bank-price";
+	public final static String INVOCATIONS_CONFIG_KEY = "invocations";
+	public final static String INVOCATIONS_RAID_LEVEL_CONFIG_KEY = "invocations-raid-level";
 
 	public final static int MIN_OVERLAY_TOP_POSITION = 25;
 	public final static int MAX_OVERLAY_TOP_POSITION = 75;

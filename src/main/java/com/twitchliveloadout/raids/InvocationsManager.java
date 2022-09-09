@@ -81,9 +81,7 @@ public class InvocationsManager {
 			return;
 		}
 
-		String raidLevelString = raidLevelWidget.getText();
-		int raidLevel = Integer.parseInt(raidLevelString);
-
+		String raidLevel = raidLevelWidget.getText();
 		twitchState.setInvocationsRaidLevel(raidLevel);
 	}
 
