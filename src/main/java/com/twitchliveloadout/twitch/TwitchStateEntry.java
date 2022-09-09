@@ -19,6 +19,8 @@ public enum TwitchStateEntry {
 	BANK_TABBED_ITEMS("bankTabbedItems"),
 	BANK_PRICE("bankPrice"),
 	COLLECTION_LOG("collectionLog"),
+	INVOCATIONS("invocations"),
+	INVOCATIONS_RAID_LEVEL("invocationsRaidLevel"),
 	MARKETPLACE_SETTINGS("marketplaceSettings"),
 	MARKETPLACE_FEATURED_PRODUCT_ID("featuredProductId");
 

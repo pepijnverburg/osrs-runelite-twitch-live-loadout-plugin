@@ -30,6 +30,7 @@ import com.twitchliveloadout.items.CollectionLogManager;
 import com.twitchliveloadout.items.ItemStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.minimap.MinimapManager;
+import com.twitchliveloadout.raids.InvocationsManager;
 import com.twitchliveloadout.skills.SkillStateManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchState;
@@ -149,6 +150,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private MinimapManager minimapManager;
 
 	/**
+	 * Dedicated manager for ToA invocations raid information.
+	 */
+	private InvocationsManager invocationsManager;
+
+	/**
 	 * Cache to check for player name changes as game state is not reliable for this
 	 */
 	private String lastPlayerName = null;
@@ -198,6 +204,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
 			marketplaceManager = new MarketplaceManager(this, twitchState, client, config);
 			minimapManager = new MinimapManager(this, twitchState, client);
+			invocationsManager = new InvocationsManager(this, twitchState, client);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing the managers: ", exception);
 		}
@@ -282,6 +289,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			collectionLogManager = null;
 			marketplaceManager = null;
 			minimapManager = null;
+			invocationsManager = null;
 		} catch (Exception exception) {
 			log.warn("An error occurred when shutting down the managers: ", exception);
 		}
@@ -463,6 +471,22 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
+	 * Polling mechanism to check whether we are in ToA
+	 */
+	@Schedule(period = 4, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void checkIfInToA()
+	{
+		try {
+			if (config.invocationsEnabled() && config.autoDetectInToaRaidEnabled())
+			{
+				invocationsManager.checkIfInToA();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not check if in ToA: ", exception);
+		}
+	}
+
+	/**
 	 * Simulate game ticks when not logged in to still register for idling fight time when not logged in
 	 */
 	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
@@ -634,13 +658,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onInteractingChanged(InteractingChanged interactingChanged)
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			fightStateManager.onInteractingChanged(interactingChanged);
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onInteractingChanged(interactingChanged);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle interacting change event: ", exception);
 		}
@@ -649,13 +671,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick tick)
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			fightStateManager.onGameTick();
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onGameTick();
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle game tick event: ", exception);
 		}
@@ -684,8 +704,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			{
 				collectionLogManager.onScriptPostFired(scriptPostFired);
 			}
+
+			if (config.invocationsEnabled())
+			{
+				invocationsManager.onScriptPostFired(scriptPostFired);
+			}
 		} catch (Exception exception) {
-			log.warn("Could not collection log script execution:", exception);
+			log.warn("Could not handle script post fired event:", exception);
 		}
 	}
 

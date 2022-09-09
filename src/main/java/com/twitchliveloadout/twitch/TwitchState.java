@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 
@@ -88,6 +89,12 @@ public class TwitchState {
 	private final static boolean CONTINUOUS_SYNC = true;
 	private final static int CHANGED_DEBOUNCE_TIME = 1000; // ms
 	private Instant changedAt;
+
+	/**
+	 * Additional state variables not synced to the client but can determine syncing behaviour
+	 */
+	private final static int WAS_IN_TOA_DEBOUNCE = 20 * 1000; // ms
+	private Instant lastWasInToA;
 
 	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config)
 	{
@@ -229,10 +236,14 @@ public class TwitchState {
 		currentState.add(allSettingsKey, currentSettings);
 	}
 
-	public void clear()
+	public void setInvocations(JsonArray invocations)
 	{
-		currentState = new JsonObject();
-		checkForChange();
+		currentState.add(TwitchStateEntry.INVOCATIONS.getKey(), invocations);
+	}
+
+	public void setInvocationsRaidLevel(int raidLevel)
+	{
+		currentState.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), raidLevel);
 	}
 
 	public void setBankItems(Item[] items, int[] tabAmounts)
@@ -571,6 +582,22 @@ public class TwitchState {
 			state.add(TwitchStateEntry.MARKETPLACE_SETTINGS.getKey(), null);
 		}
 
+		if (!config.invocationsEnabled())
+		{
+			state.add(TwitchStateEntry.INVOCATIONS.getKey(), null);
+		}
+
+		if (!config.invocationsRaidLevelEnabled())
+		{
+			state.add(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), null);
+		}
+
+		if (config.autoDetectInToaRaidEnabled() && !wasInToaDebounced())
+		{
+			state.add(TwitchStateEntry.INVOCATIONS.getKey(), null);
+			state.add(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), null);
+		}
+
 		return state;
 	}
 
@@ -780,6 +807,24 @@ public class TwitchState {
 		} catch (Exception exception) {
 			log.warn("Could not handle cache data with from cache key '"+ cacheKey +"': ", exception);
 		}
+	}
+
+	public void setInToA(boolean isInToA)
+	{
+		if (isInToA)
+		{
+			lastWasInToA = Instant.now();
+		}
+	}
+
+	private boolean wasInToaDebounced()
+	{
+		if (lastWasInToA == null)
+		{
+			return false;
+		}
+
+		return Instant.now().minusMillis(WAS_IN_TOA_DEBOUNCE).isBefore(lastWasInToA);
 	}
 
 	public interface CacheDataHandler {

@@ -348,6 +348,49 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigSection(
+			name = "Raids",
+			description = "Syncing of invocations",
+			position = 7
+	)
+	String raidsSection = "raids";
+
+	@ConfigItem(
+			keyName = "invocationsEnabled",
+			name = "Sync ToA Invocations",
+			description = "Synchronize Tombs of Amascut raids invocations.",
+			position = 2,
+			section = raidsSection
+	)
+	default boolean invocationsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "invocationsRaidLevelEnabled",
+			name = "Sync ToA Raid Level",
+			description = "Synchronize Tombs of Amascut raids level.",
+			position = 4,
+			section = raidsSection
+	)
+	default boolean invocationsRaidLevelEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "autoDetectInToaRaidEnabled",
+			name = "Only sync in ToA Raid",
+			description = "Only synchronize invocations when in the ToA raid.",
+			position = 6,
+			section = raidsSection
+	)
+	default boolean autoDetectInToaRaidEnabled()
+	{
+		return true;
+	}
+
+	@ConfigSection(
 			name = "Skills",
 			description = "Syncing of skill experience, virtual levels, etc.",
 			position = 8
