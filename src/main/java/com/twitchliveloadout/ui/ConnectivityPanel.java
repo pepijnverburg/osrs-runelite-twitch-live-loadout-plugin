@@ -180,7 +180,8 @@ public class ConnectivityPanel extends JPanel
 				syncingStatusColor = WARNING_TEXT_COLOR;
 			}
 		} else {
-			syncingStatusText = "All RuneLite windows are syncing their status, because anti-multi logging active window time is disabled.";
+			syncingStatusText = "All RuneLite windows are syncing their status, because anti-multi logging measures are disabled.";
+			syncingStatusColor = WARNING_TEXT_COLOR;
 		}
 
 		if (twitchApi.isErrorResponseCode(responseCode))
