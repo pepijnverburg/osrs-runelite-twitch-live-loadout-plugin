@@ -4,7 +4,7 @@
 Join the Discord server for questions or feature requests:<br/>
 [![Support Server](https://img.shields.io/discord/968224650163273798.svg?label=Discord&logo=Discord&colorB=7289da&style=for-the-badge)](https://discord.gg/3Fjm5HTFGM)
 
-Visit the landing page for more information:
+Visit the landing page for more information:<br/>
 [http://liveloadout.com/](http://liveloadout.com/)
 
 ## Introduction
