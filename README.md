@@ -1,30 +1,25 @@
 # OSRS Twitch Live Loadout Plugin ![Plugin Installs](https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/twitch-live-loadout) ![Plugin Rank](https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/rank/plugin/twitch-live-loadout)
-![OSRS Live Loadout](./docs/banner.png?raw=true "OSRS Live Loadout")
+[![OSRS Live Loadout](./docs/banner.png?raw=true "OSRS Live Loadout")](https://liveloadout.com/)
 
 Join the Discord server for questions or feature requests:<br/>
 [![Support Server](https://img.shields.io/discord/968224650163273798.svg?label=Discord&logo=Discord&colorB=7289da&style=for-the-badge)](https://discord.gg/3Fjm5HTFGM)
+
+Visit the landing page for more information:
+[http://liveloadout.com/](http://liveloadout.com/)
 
 ## Introduction
 
 *"What is that helm you are wearing?!"*
 
-Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank` and more!
-
-Get better engagement with...
-- **New players** who are not familiar with most of the content.
-- **Existing casual players** who are not up-to-date about the latest changes.
-- **Existing frequent players** who would like to give advice on the loadout.
-
-[Twitch Extensions](https://www.twitch.tv/p/extensions/) allow this data to be displayed live to each individual player while giving them control what to see and what to interact with. The screenshots in this README are made using the compatible [OSRS Live Loadout Twitch Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6).
+Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Looting Bag`, `Tombs of Amascut Invocations` and more!
 
 ![Summary](./docs/summary.gif "Summary")
 
-## Requirements
-- [Runelite Client](https://runelite.net/) with [Plugin Hub](https://runelite.net/plugin-hub/) enabled
-- [OSRS Live Loadout Twitch Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6)
-- [Twitch Account](https://www.twitch.tv/)
-
 ## 🚀 Getting Started
+
+### Requirements
+- [Runelite Client](https://runelite.net/)
+- [Twitch Account](https://www.twitch.tv/)
 
 ### Quick guide
 - Step 1: Install [RuneLite Twitch Live Loadout Plugin](https://runelite.net/plugin-hub/Pepijn%20Verburg)
@@ -32,18 +27,17 @@ Get better engagement with...
 - Step 3: Copy token from the `Twitch Extension configuration page` and paste in the RuneLite plugin setting `Twitch Extension Token`.
 - Step 4: Verify whether data is synced by previewing it in the `Twitch Extension configuration page`.
 
-⚠️ Note that for the `collection log` and `bank` to show you need to `open them` at least once. The collection log will be saved across sessions, the bank should be opened every session.
+⚠️ Note that for the `collection log`, `bank`, `looting bag` and `ToA invocations` to show you need to **open them** at least once. They will all be stored locally so when you open RuneLite and login with the same account all will be synced again.
 
 ### Step 1: Install Runelite Plugin
-You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/Pepijn%20Verburg).
+You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/show/twitch-live-loadout).
 
-The plugin hub can be found all the way to the bottom of the RuneLite plugins:
+The Plugin Hub can be found all the way to the bottom of your RuneLite plugins:
 ![Plugin Hub](./docs/getting-started/runelite-plugin-installation.gif "Plugin Hub")
 
 ### Step 2: Install Twitch Extension
-The reviewed [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is directly compatible and has a 1-minute setup!
+The [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is available via the `Creator Dashboard` in your Twitch account. Make sure to set the extension to `Overlay 1` as well.
 
-First install the Twitch Extension via the `Creator Dashboard` and set the extension to `Overlay 1`:
 ![Twitch Extension](./docs/getting-started/twitch-extension-installation.gif "Twitch Extension")
 
 ### Step 3: Copy Twitch Extension token for authentication
@@ -56,20 +50,31 @@ Note that the token is **valid for quite a long time**, meaning it is important 
 Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can also verify whether data is now synced, for example your gear:
 ![Twitch Extension](./docs/getting-started/twitch-extension-testing.gif "Twitch Extension")
 
-## Recent updates
+## Changelog
 
-#### v1.0.3
+#### v1.1.0
+- Tombs of Amascut Invocations can now be synced automatically when at the raid lobby and in the raid itself.
+- You can now switch between dark and light theme for your viewers.
+- Added automatic detection of which RuneLite window and account should be synced to Twitch.
 - All bank items are now synced to your viewers, rather than only the 200 most valuable items.
 - The looting bag can now be synced to viewers.
 - Items can now have 'special behaviours' for example the looting bag opens a new side-panel as one of the first items for this behaviour.
+- Collection log can be filtered using keywords to chose what you want too sync.
+- Added support and documentation links to the `Status` tab in the plugin tab.
+- Added automatic detection which account should be synced when multi-logging. The plugin keeps track of which RuneLite window is focussed on for a minimum (configurable) time to determine which account to sync.
+- Expanded the `Status` tab to be more transparent in which RuneLite window is currently synchronizing data.
+- Enhanced the stability of the plugin by ignoring game events that are disabled by the streamer to sync anyways.
+
+#### v1.0.3
+- Patch to be compatible with the new RuneLite hitsplats API.
 
 #### v1.0.2
-- 🎉  Collection log is now available to be viewed live by your viewers!
+- Collection log is now available to be viewed live by your viewers!
 - Enhanced stability of plugin when there are breaking client or Twitch changes.
 - The Twitch data syncing has been updated to work again due to deprecated functionalities.
 
 ## Features
-Below you can find an overview which features are implemented. Most data is automatically synced when logged in. The `Bank` and `Collection Log` are exceptions. See the ⚠️ marks below for an explanation.
+Below you can find an overview which features are implemented. Most data is automatically synced when logged in. The `Bank` and `Collection Log`, `Looting Bag` and `ToA Invocations` are exceptions. See the ⚠️ marks below for an explanation.
 
 ![Icon](./docs/icons/combat.png "Icon") ![Icon](./docs/icons/items.png "Icon") ![Icon](./docs/icons/skills.png "Icon")
 
@@ -117,6 +122,12 @@ Below you can find an overview which features are implemented. Most data is auto
 
 ![Skills](./docs/screenshots/skills.png "Skills")
 
+#### 🛕 Raids
+⚠️ The ToA invocations screen need to be opened at least once for RuneLite to read the data.
+
+- [x] `ToA Invocations`: enabled and disabled invocations
+- [x] `ToA Raid Level`: the current raid level
+
 ### 📝 General
 - [x] `Player weight`: weight of worn and carried items including weight reducing items.
 - [x] `Display name`: the name of the player in the chat bar.
@@ -132,35 +143,43 @@ There are also some features available for the viewer in the [OSRS Live Loadout 
 
 ### ![Panel Icon](./docs/icons/panel_icon.png "Panel Icon") Panels
 
-#### Twitch Connectivity
+#### Status
 The plugin also lets you see the current status of the connection with Twitch.
 
-#### Combat Fight Management
+#### Fights
 It is also possible to reset specific or all fights to let your statistics start from scratch.
 
 ### ⚙️ Settings
 It is also possible to configure what information is being sent through the following options available in the plugin settings:
 
-#### Twitch Extension
-- `Sync enabled`: toggle off to disable all syncing and clear current data with all viewers.
+#### Twitch Extension & Token
 - `Twitch extension token`: the login token specifically for the Twitch Extension you want to send the data to. This authenticates RuneLite to change data in the extension. This token should be retrieved when configuring the extension in the online Twitch interface.
 - `Overlay top position`: The percentage from the top of the left side of the screen where the navigation should be placed.
+- `Twitch Extension Themez`: Light or dark theme for the side panel your viewers see on Twitch.
+
+#### Data Syncing
+- `Sync enabled`: toggle off to disable all syncing and clear current data with all viewers.
 - `Stream delay`: delay the synchronization with x amount of seconds to match the broadcaster video & audio delay. Also use this to tweak when the video is delayed due to general networking.
-- `Anti multi-log display name`: when multi-logging set the display name of the account you want to sync. When multiple Runelite apps are open at the same time it uses the same settings to send data to Twitch. This is to filter out only the account you want to synchronize.
+
+#### Anti Multi Logging
+There are built-in measures to prevent different accounts to be synced to twitch at the same time due to multi logging (e.g. alts). The plugin checks which RuneLite window is focussed on for a minimum required time and then sends over the data of that account.
+
+- `Active time check enabled`: enable when you want to determine which account to sync automatically based on which RuneLite window is focussed on.
+- `Active time to sync (seconds)`: the minimum amount of time in seconds the RuneLite window needs to be in focus to start syncing data.
 
 #### Items
-- `Sync inventory items`: toggle to sync inventory items.
-- `Sync equipment items`: toggle to sync equipment items.
-- `Sync bank items`: toggle to sync bank items.
+- `Sync inventory items`: enable to sync inventory items.
+- `Sync equipment items`: enable to sync equipment items.
+- `Sync bank items`: enable to sync bank items.
 - `Max bank items`: the maximum amount of bank items you would like to show (most valuable ones are prioritized).
-- `Sync bank value`: toggle to sync total bank value.
-- `Sync looting bag`: toggle to sync looting bag items.
-- `Sync looting bag value`: toggle to sync looting bag value.
-- `Sync collection log`: toggle to sync collection log.
+- `Sync bank value`: enable to sync total bank value.
+- `Sync looting bag`: enable to sync looting bag items.
+- `Sync looting bag value`: enable to sync looting bag value.
+- `Sync collection log`: enable to sync collection log.
 - `Collection log filter`: Only include entry titles that include one of the keywords separated with a comma. For example `raids, abyssal, clue` will include the whole Raids tab (with CoX and ToB), the Abyssal Sire and all clue related categories.
 
 #### Combat
-- `Sync combat statistics`: toggle to sync combat statistics.
+- `Sync combat statistics`: enable to sync combat statistics.
 - `Track magic spells`: enable tracking of freezes, entangles, blood spells and splashes.
 - `Track damage by others`: enable tracking of hitsplats of other players.
 - `Track un-attacked enemies`: enable tracking of hitsplats on enemies you have not attacked, recommended in team settings such as Cox and ToB. Note that the enemy type should be attacked at least once. So for example: once you have attacked a goblin it will be in your combat stats. If then other players attack a different goblin you haven't attacked yet it will add to the damage by others stats.
@@ -168,13 +187,18 @@ It is also possible to configure what information is being sent through the foll
 - `Fight expiry time`: reset a fight after the configured minutes of inactivity.
 - `Auto idling of fight timer`: stop fight timer when logged out or enemy is not visible.
 
+#### Raids
+- `Sync ToA Invocations`: enable to sync Tombs of Amascut invocations.
+- `Sync ToA Raid Level`: enable to sync Tombs of Amascut raid level.
+- `Only Sync in ToA Raid`: enable to only sync ToA invocations and raid level when inside the raid lobby or inside of the raid.
+
 #### Skills
-- `Sync skill levels`: toggle to sync (boosted) skills.
+- `Sync skill levels`: enable to sync (boosted) skills.
 - `Virtual levels enabled`: when enabled the maximum level shown based on experience is 126 instead of 99.
 
 #### General info
-- `Sync display name`: toggle to show basic player info.
-- `Sync weight of carried items`: toggle to sync weight.
+- `Sync display name`: enable to show basic player info.
+- `Sync weight of carried items`: enable to sync weight.
 
 ## 🔒 Security & Technical Details
 
@@ -203,22 +227,6 @@ This also works for the collection log. A thing to note here is that if you want
 
 ## 👥 Acknowledgements
 Shout-out to the RuneLite team and many streamers providing valuable feedback and suggestions 🙌
-
-## 🔮 Future
-Future features that might be added based on feedback are:
-
-### 🎯 Goals
-- [ ] `Item goals`: overview of the items that one has a goal now. The completion will automatically update when an item has been obtained.
-- [ ] `Item goals with KC`: for each item goal a boss killcount can be attached that is visible on hover.
-
-### Others
-- [ ] More in-depth statistics of PvP & PvM fights (e.g. `DPS`, `pray flicks`, etc.).
-- [ ] Interface style choice (e.g. `old` / `2007` / `2012+` menu items).
-- [ ] Add clan members to the fight stats to display the damage they are taking. They can then also be part of the 'incoming' fights group.
-- [ ] Add live gear of PvP enemies deduced from graphical models.
-- [ ] Sync data from loot tracker. Possible to have directly via API instead of via Twitch data packets?
-- [ ] Keep track of the last +/- 5 combat hits and show that in the combat stats tab (e.g. nice for KO hits).
-- [ ] Show list of current people in ToB / CoX party.
 
 ## 💡 Feedback
 If you have any questions or suggestions please join the [OSRS Live Loadout Discord](https://discord.gg/3Fjm5HTFGM) or open an issue here at Github.

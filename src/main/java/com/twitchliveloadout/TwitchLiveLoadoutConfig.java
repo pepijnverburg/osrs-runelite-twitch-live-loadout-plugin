@@ -94,7 +94,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigSection(
-			name = "Data syncing",
+			name = "Data Syncing",
 			description = "Syncing conditions and multi-account settings",
 			position = 2
 	)
@@ -382,7 +382,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "autoDetectInToaRaidEnabled",
-			name = "Only sync in ToA Raid",
+			name = "Only Sync in ToA Raid",
 			description = "Only synchronize invocations when in the ToA raid.",
 			position = 6,
 			section = raidsSection
