@@ -11,7 +11,7 @@ Visit the landing page for more information:<br/>
 
 *"What is that helm you are wearing?!"*
 
-Let your Twitch viewers be fully immersed by providing them with interactive and real-time information about `Worn Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Looting Bag`, `Tombs of Amascut Invocations` and more!
+Let your Twitch viewers be fully immersed by showing them interactive and live information about `Worn Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Looting Bag`, `Tombs of Amascut Invocations` and more!
 
 ![Summary](./docs/summary.gif "Summary")
 
