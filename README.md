@@ -230,3 +230,6 @@ Shout-out to the RuneLite team and many streamers providing valuable feedback an
 
 ## 💡 Feedback
 If you have any questions or suggestions please join the [OSRS Live Loadout Discord](https://discord.gg/3Fjm5HTFGM) or open an issue here at Github.
+
+## Copyright notice
+Created using intellectual property belonging to Jagex Limited under the terms of Jagex's Fan Content Policy. This content is not endorsed by or affiliated with Jagex.
