@@ -952,6 +952,16 @@ public class FightStateManager
 		// prepare the default included fights
 		for (Fight fight : fights.values())
 		{
+			String actorName = fight.getActorName();
+
+			// guard: check if the actor name is valid
+			// NOTE: it can somehow happen that something is attacked with an actor name of 'null'
+			// this has been seen with various streamers.
+			if (actorName == null || actorName.equals("null"))
+			{
+				continue;
+			}
+
 			includedFights.add(fight);
 		}
 
