@@ -762,7 +762,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				twitchState.setFeaturedMarketplaceProductId(config.featuredMarketplaceProduct().name());
 			}
 
+			// force a resend of the data
 			twitchState.forceChange();
+
+			// somehow when in the settings tab the focus is lost, which means
+			// that when changing configs the focus stays lost and it hard to get feedback
+			// whether a setting is changed correctly. By overriding the focus flag when
+			// changing configs the data is being synced anyways.
+			canvasListener.enableFocus();
 		} catch (Exception exception) {
 			log.warn("Could not handle config change event: ", exception);
 		}
