@@ -164,8 +164,8 @@ It is also possible to configure what information is being sent through the foll
 #### Anti Multi Logging
 There are built-in measures to prevent different accounts to be synced to twitch at the same time due to multi logging (e.g. alts). The plugin checks which RuneLite window is focussed on for a minimum required time and then sends over the data of that account.
 
-- `Active time check enabled`: enable when you want to determine which account to sync automatically based on which RuneLite window is focussed on.
-- `Active time to sync (seconds)`: the minimum amount of time in seconds the RuneLite window needs to be in focus to start syncing data.
+- `Window focus check enabled`: enable when you want to determine which account to sync automatically based on which RuneLite window is focussed on.
+- `Focus time to sync (seconds)`: the minimum amount of time in seconds the RuneLite window needs to be in focus to start syncing data.
 
 #### Items
 - `Sync inventory items`: enable to sync inventory items.

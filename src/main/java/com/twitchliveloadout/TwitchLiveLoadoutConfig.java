@@ -133,7 +133,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "minWidowFocusTimeEnabled",
-			name = "Active time check enabled",
+			name = "Window focus check enabled",
 			description = "Enabled when you want to sync the RuneLite window that is in focus.",
 			position = 4,
 			section = multiLogSection
@@ -145,7 +145,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "minWindowFocusTime",
-			name = "Active time to sync (seconds)",
+			name = "Focus time to sync (seconds)",
 			description = "Seconds of focus on RuneLite window it takes to start syncing (against multi-logging)",
 			position = 6,
 			section = multiLogSection
