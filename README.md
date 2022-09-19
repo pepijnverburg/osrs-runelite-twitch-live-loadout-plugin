@@ -55,7 +55,6 @@ Make sure you have something in your inventory or equipment to test with. Via th
 #### v1.1.0
 - Tombs of Amascut Invocations can now be synced automatically when at the raid lobby and in the raid itself.
 - You can now switch between dark and light theme for your viewers.
-- Added automatic detection of which RuneLite window and account should be synced to Twitch.
 - All bank items are now synced to your viewers, rather than only the 200 most valuable items.
 - The looting bag can now be synced to viewers.
 - Items can now have 'special behaviours' for example the looting bag opens a new side-panel as one of the first items for this behaviour.
