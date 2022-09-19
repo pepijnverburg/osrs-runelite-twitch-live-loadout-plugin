@@ -21,7 +21,7 @@ public class InvocationsManager {
 	private static final int WIDGET_RAID_OVERLAY_CHILD_ID = 40;
 	private static final int WIDGET_ID_INVOCATIONS_PARENT = 774;
 	private static final int WIDGET_ID_INVOCATIONS_LIST = 52;
-	private static final int WIDGET_ID_INVOCATIONS_RAID_LEVEL = 77;
+	private static final int WIDGET_ID_INVOCATIONS_RAID_LEVEL = 73;
 	private static final int SCRIPT_ID_BUILD_TOA_PARTY_INTERFACE = 6729;
 	private static final int SCRIPT_ID_TOA_PARTY_TOGGLE_REWARD_PANEL = 6732;
 
@@ -81,8 +81,14 @@ public class InvocationsManager {
 			return;
 		}
 
-		String raidLevel = raidLevelWidget.getText();
-		twitchState.setInvocationsRaidLevel(raidLevel);
+		try {
+			String raidLevelRaw = raidLevelWidget.getText();
+			String[] raidLevelTokens = raidLevelRaw.split(" ");
+			String raidLevel = raidLevelTokens[2];
+			twitchState.setInvocationsRaidLevel(raidLevel);
+		} catch (Exception exception) {
+			log.warn("Could not get the raid level from one of the widgets due to the following error:", exception);
+		}
 	}
 
 	private void updateCurrentActiveInvocations()
