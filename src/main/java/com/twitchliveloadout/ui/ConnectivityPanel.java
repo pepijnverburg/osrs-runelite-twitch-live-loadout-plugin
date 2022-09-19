@@ -122,7 +122,7 @@ public class ConnectivityPanel extends JPanel
 	{
 		final long unixTimestamp = System.currentTimeMillis() / 1000L;
 		final int rateLimitRemaining = twitchApi.getLastRateLimitRemaining();
-		String syncingStatusText = "This RuneLite window is currently syncing, because is has been active long enough.";
+		String syncingStatusText = "This RuneLite window is currently syncing to Twitch, because is has been active long enough.";
 		String syncingStatusColor = SUCCESS_TEXT_COLOR;
 
 		final int responseCode = twitchApi.getLastResponseCode();
@@ -168,7 +168,7 @@ public class ConnectivityPanel extends JPanel
 		{
 			if (!canvasListener.isInFocus())
 			{
-				syncingStatusText = "This RuneLite window is not syncing, because it's not the active window. You can disable this anti multi-logging check with the 'Active time check enabled' setting of this plugin.";
+				syncingStatusText = "This RuneLite window is not syncing to Twitch, because it's not the active window. You can disable this anti multi-logging check with the 'Active time check enabled' setting of this plugin.";
 				syncingStatusColor = ERROR_TEXT_COLOR;
 			}
 			else if (!canvasListener.isInFocusLongEnough())
@@ -176,11 +176,11 @@ public class ConnectivityPanel extends JPanel
 				final double inFocusTimeS = canvasListener.getInFocusDurationMs() / 1000;
 				final int inFocusRequiredTimeS = config.minWindowFocusTime();
 
-				syncingStatusText = "This RuneLite window is not syncing, because it's not yet active long enough. It is currently active for "+ inFocusTimeS +" of the required "+ inFocusRequiredTimeS +".0 seconds.";
+				syncingStatusText = "This RuneLite window is not syncing to Twitch, because it's not yet active long enough. It is currently active for "+ inFocusTimeS +" of the required "+ inFocusRequiredTimeS +".0 seconds.";
 				syncingStatusColor = WARNING_TEXT_COLOR;
 			}
 		} else {
-			syncingStatusText = "All RuneLite windows are syncing their status, because anti-multi logging measures are disabled.";
+			syncingStatusText = "All RuneLite windows are syncing to Twitch, because anti-multi logging measures are disabled in the plugin settings. When logging in with multiple account at once this can cause flickering between accounts for viewers.";
 			syncingStatusColor = WARNING_TEXT_COLOR;
 		}
 
