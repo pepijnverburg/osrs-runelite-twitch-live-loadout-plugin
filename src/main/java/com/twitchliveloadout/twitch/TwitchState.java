@@ -244,9 +244,13 @@ public class TwitchState {
 
 	public void setInvocationsRaidLevel(String raidLevel)
 	{
-		int parsedRaidLevel = Integer.parseInt(raidLevel);
-		currentState.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), parsedRaidLevel);
-		plugin.setConfiguration(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, parsedRaidLevel);
+		try {
+			int parsedRaidLevel = Integer.parseInt(raidLevel);
+			currentState.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), parsedRaidLevel);
+			plugin.setConfiguration(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, parsedRaidLevel);
+		} catch (Exception exception) {
+			log.warn("Could not set invocations raid level due to the following error:", exception);
+		}
 	}
 
 	public void setBankItems(Item[] items, int[] tabAmounts)
