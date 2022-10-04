@@ -152,7 +152,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default int minWindowFocusTime()
 	{
-		return 5;
+		return 8;
 	}
 
 	@ConfigSection(
