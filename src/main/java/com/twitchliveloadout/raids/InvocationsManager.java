@@ -19,9 +19,14 @@ public class InvocationsManager {
 	private static final int WIDGET_RAID_OVERLAY_CHILD_ID = 40;
 	private static final int WIDGET_ID_INVOCATIONS_PARENT = 774;
 	private static final int WIDGET_ID_INVOCATIONS_LIST = 52;
+	private static final int WIDGET_ID_INVOCATIONS_HEADER = 3;
+	private static final int WIDGET_ID_PARTY_MEMBERS_PARENT = 773;
+	private static final int WIDGET_ID_PARTY_MEMBERS_LIST = 5;
 	private static final int WIDGET_ID_INVOCATIONS_RAID_LEVEL = 73;
 	private static final int SCRIPT_ID_BUILD_TOA_PARTY_INTERFACE = 6729;
 	private static final int SCRIPT_ID_TOA_PARTY_TOGGLE_REWARD_PANEL = 6732;
+	private static final int INVOCATION_ACTIVE_TEXT_COLOR = 13868852;
+	private static final int INVOCATION_INACTIVE_TEXT_COLOR = 10461087;
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchState twitchState;
@@ -34,15 +39,55 @@ public class InvocationsManager {
 		this.client = client;
 	}
 
-	public void onScriptPostFired(ScriptPostFired event) {
+	public void onScriptPostFired(ScriptPostFired event)
+	{
 		// This is run when the party screen is brought up, whenever a tab is changed, and whenever an invocation is clicked
-		if (event.getScriptId() == SCRIPT_ID_BUILD_TOA_PARTY_INTERFACE || event.getScriptId() == SCRIPT_ID_TOA_PARTY_TOGGLE_REWARD_PANEL) {
-			updateCurrentActiveInvocations();
-			updateCurrentRaidLevel();
+		if (event.getScriptId() != SCRIPT_ID_BUILD_TOA_PARTY_INTERFACE && event.getScriptId() != SCRIPT_ID_TOA_PARTY_TOGGLE_REWARD_PANEL)
+		{
+			return;
 		}
+
+		// guard: make sure the invocations interface that is open is the one of the current
+		// party leader, this prevents syncing the wrong data when opening other parties you have not joined.
+		if (!isJoinedPartyInterface())
+		{
+			return;
+		}
+
+		updateCurrentActiveInvocations();
+		updateCurrentRaidLevel();
 	}
 
-	public void checkIfInToA() {
+	public boolean isJoinedPartyInterface()
+	{
+		Widget partyWidget = client.getWidget(WIDGET_ID_PARTY_MEMBERS_PARENT, WIDGET_ID_PARTY_MEMBERS_LIST);
+		Widget headerWidget = client.getWidget(WIDGET_ID_INVOCATIONS_PARENT, WIDGET_ID_INVOCATIONS_HEADER);
+		int headerWidgetTitleIndex = 1;
+
+		if (partyWidget == null || headerWidget == null || headerWidget.getChildren().length <= headerWidgetTitleIndex)
+		{
+			return false;
+		}
+
+		try {
+			String partyText = partyWidget.getText();
+			String headerText = headerWidget.getChild(headerWidgetTitleIndex).getText();
+			String[] partyTextTokens = partyText.split("<br>");
+			String[] headerTextTokens = headerText.split("Party of ");
+			String leaderInParty = partyTextTokens[0]; // index 0, because party text is like: "NAME<br>-<br>-<br>-<br>-<br>-<br>-<br>-"
+			String leaderInHeader = headerTextTokens[1]; // index 1, because header text is like: "Party of NAME"
+
+			// when the names equal we know that we are currently in the joined party interface
+			return leaderInParty.equals(leaderInHeader);
+		} catch (Exception exception) {
+			log.warn("Could not check party due the following error:", exception);
+		}
+
+		return false;
+	}
+
+	public void checkIfInToA()
+	{
 		plugin.runOnClientThread(() -> {
 			Player localPlayer = client.getLocalPlayer();
 
@@ -129,20 +174,14 @@ public class InvocationsManager {
 			}
 
 			Widget titleWidget = widgets[titleWidgetIndex];
-			Widget activeWidget = widgets[activeWidgetIndex];
 			String title = titleWidget.getText();
-			Object[] activeOps = activeWidget.getOnOpListener();
+			int titleColor = titleWidget.getTextColor();
+			boolean isActive = (titleColor == INVOCATION_ACTIVE_TEXT_COLOR);
 
-			// guard: check if operations are valid
-			if (activeOps == null || activeOps.length < 4 || !(activeOps[3] instanceof Integer))
-			{
-				continue;
-			}
-			boolean isActive = (Integer) activeOps[3] == 1;
-
-//			log.debug("Title of invocation title widget "+ titleWidgetIndex +" is:" + title);
-//			log.debug("Sprite of invocation icon widget "+ widgetIndex +" is:" +spriteId);
-//			log.debug("State of invocation active widget "+ activeWidgetIndex +" is:"+ isActive);
+			// log.info("Title of invocation title widget "+ titleWidgetIndex +" is:" + title);
+			// log.info("Title color of invocation title widget "+ titleWidgetIndex +" is:" + titleColor);
+			// log.info("Sprite of invocation icon widget "+ widgetIndex +" is:" +spriteId);
+			// log.info("State of invocation active widget "+ activeWidgetIndex +" is:"+ isActive);
 
 			JsonObject invocation = new JsonObject();
 			invocation.addProperty("title", title);
