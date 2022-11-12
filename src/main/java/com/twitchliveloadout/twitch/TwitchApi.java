@@ -61,7 +61,6 @@ public class TwitchApi
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	private final TwitchLiveLoadoutPlugin plugin;
-	private final CanvasListener canvasListener;
 	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
@@ -82,10 +81,9 @@ public class TwitchApi
 	@Getter
 	private long lastErrorChatMessage = 0;
 
-	public TwitchApi(TwitchLiveLoadoutPlugin plugin, CanvasListener canvasListener, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
+	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
 		this.plugin = plugin;
-		this.canvasListener = canvasListener;
 		this.client = client;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
@@ -100,11 +98,6 @@ public class TwitchApi
 	public boolean scheduleBroadcasterState(final JsonObject state)
 	{
 		int delay = config.syncDelay() * 1000;
-
-		if (!canvasListener.isInFocusLongEnough())
-		{
-			return false;
-		}
 
 		if (!canScheduleState())
 		{

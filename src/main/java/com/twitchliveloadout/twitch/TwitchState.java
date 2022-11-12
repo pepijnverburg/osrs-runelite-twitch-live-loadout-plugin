@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.ui.CanvasListener;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -39,6 +40,7 @@ public class TwitchState {
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
+	private final CanvasListener canvasListener;
 
 	/**
 	 * Enable this if you want to test the state with all its limits
@@ -74,38 +76,21 @@ public class TwitchState {
 	private int currentCyclicSliceIndex = 0;
 
 	/**
-	 * Flag to identify whether the state has changed after
-	 * one of the setters was invoked. This allow for more
-	 * efficient updating towards the Configuration Service.
-	 */
-	private boolean changed = false;
-
-	/**
-	 * True when the changed flag can be ignored when pushing state updates
-	 * With the current Twitch extension new viewers are expected to get the latest
-	 * state at once, because they are not using the Twitch Configuration Service data anymore.
-	 * For v0.0.5+ onwards having the flag to true is recommended, let's test with it for now.
-	 */
-	private final static boolean CONTINUOUS_SYNC = true;
-	private final static int CHANGED_DEBOUNCE_TIME = 1000; // ms
-	private Instant changedAt;
-
-	/**
 	 * Additional state variables not synced to the client but can determine syncing behaviour
 	 */
 	private final static int WAS_IN_TOA_DEBOUNCE = 20 * 1000; // ms
 	private Instant lastWasInToA;
 
-	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config)
+	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, CanvasListener canvasListener)
 	{
 		this.plugin = plugin;
 		this.config = config;
+		this.canvasListener = canvasListener;
 
 		// initialize the states that are not directly synced with events
 		setOverlayTopPosition(config.overlayTopPosition());
 		setVirtualLevelsEnabled(config.virtualLevelsEnabled());
 		setTwitchTheme(config.twitchTheme());
-		setFeaturedMarketplaceProductId(config.featuredMarketplaceProduct().name());
 
 		// set initial items as no events are triggered when they are empty
 		setInventoryItems(new Item[0], 0);
@@ -193,11 +178,6 @@ public class TwitchState {
 		setItemsPrice(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), totalPrice);
 		plugin.setConfiguration(LOOTING_BAG_ITEMS_CONFIG_KEY, convertToJson(items));
 		plugin.setConfiguration(LOOTING_BAG_PRICE_CONFIG_KEY, totalPrice);
-	}
-
-	public void setFeaturedMarketplaceProductId(String productId)
-	{
-		setMarketplaceSetting(TwitchStateEntry.MARKETPLACE_FEATURED_PRODUCT_ID.getKey(), productId);
 	}
 
 	private void setItems(String itemsKey, Item[] items)
@@ -308,7 +288,20 @@ public class TwitchState {
 	public JsonObject getFilteredState()
 	{
 		JsonObject filteredState = getState().deepCopy();
+
+		// add the state that is too big to sync at once
 		filteredState = addCyclicState(filteredState);
+
+		// verify whether we can sync this RL window, based on the
+		// anti multi-logging settings
+		filteredState = verifyClientActivityStatus(filteredState);
+
+		// always add a connection ping, even when this RL window is not syncing
+		// this gives the user proper feedback whether the client is connected in the
+		// configuration view when installing the extension
+		filteredState = addConnectionPing(filteredState);
+
+		// remove any states that are disabled in the settings
 		filteredState = removeDisabledState(filteredState);
 
 		return filteredState;
@@ -500,19 +493,30 @@ public class TwitchState {
 		}
 	}
 
-	public boolean hasCyclicState()
+	private JsonObject verifyClientActivityStatus(JsonObject state)
 	{
-		return cyclicState.size() > 0;
+		// check whether this window is actually logged in
+		// and check for window focus to prevent syncing of multiple account
+		// if not we will clear the state but still send over a message
+		// because this can help to indicate a connection is made when setting up the extension
+		if (!plugin.isLoggedIn() || !canvasListener.isInFocusLongEnough())
+		{
+			state = new JsonObject();
+		}
+
+		return state;
 	}
 
-	public boolean shouldAlwaysSync()
+	private JsonObject addConnectionPing(JsonObject state)
 	{
-		return CONTINUOUS_SYNC;
+		state.addProperty(TwitchStateEntry.CONNECTION_PING.getKey(), true);
+		return state;
 	}
 
-	public JsonObject removeDisabledState(JsonObject state)
+	private JsonObject removeDisabledState(JsonObject state)
 	{
 
+		// clear everything when sync is not enabled to clear everything for all viewers
 		if (!config.syncEnabled())
 		{
 			state = new JsonObject();
@@ -654,24 +658,6 @@ public class TwitchState {
 		return json;
 	}
 
-	public boolean isChanged()
-	{
-		return changed;
-	}
-
-	public boolean isChangedLongEnough()
-	{
-		if (!isChanged())
-		{
-			return false;
-		}
-
-		final Instant now = Instant.now();
-		final boolean longEnough = now.isAfter(changedAt.plusMillis(CHANGED_DEBOUNCE_TIME));
-
-		return longEnough;
-	}
-
 	private boolean checkForChange()
 	{
 		if (currentState.equals(previousState))
@@ -679,29 +665,12 @@ public class TwitchState {
 			return false;
 		}
 
-		forceChange();
 		return true;
-	}
-
-	public void forceChange()
-	{
-		if (isChanged())
-		{
-			return;
-		}
-
-		changedAt = Instant.now();
-		changed = true;
 	}
 
 	public void acknowledgeChange()
 	{
-		if (!isChanged()) {
-			return;
-		}
-
 		previousState = currentState.deepCopy();
-		changed = false;
 	}
 
 	private int getCollectionLogItemAmount()
@@ -821,7 +790,6 @@ public class TwitchState {
 
 		try {
 			handler.execute(rawCacheData);
-			checkForChange();
 		} catch (Exception exception) {
 			log.warn("Could not handle cache data with from cache key '"+ cacheKey +"': ", exception);
 		}

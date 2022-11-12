@@ -168,7 +168,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Temporary flags to disable features while still in staging
 	 */
 	private final static boolean ENABLE_MINIMAP = false;
-	private final static boolean ENABLE_MARKETPLACE = false;
+	private final static boolean ENABLE_MARKETPLACE = true;
 
 	/**
 	 * Initialize this plugin
@@ -188,8 +188,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializeTwitch()
 	{
 		try {
-			twitchState = new TwitchState(this, config);
-			twitchApi = new TwitchApi(this, canvasListener, client, config, chatMessageManager);
+			twitchState = new TwitchState(this, config, canvasListener);
+			twitchApi = new TwitchApi(this, client, config, chatMessageManager);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}
@@ -312,22 +312,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncState()
 	{
 		try {
-			// Base this on the fact is the state is changed for a fixed time for throttling purposes.
-			// This makes the updates more smooth when multiple changes occur fast after each other.
-			// Take for example switching gear: when the first armour piece is worn a change is directly
-			// triggered, causing the rest of the switch to come the update after (a few seconds later).
-			// This throttling behaviour makes sure that quickly succeeding changes are batched and with that
-			// let for example gear switches come through in one state update towards the viewer.
-			final boolean isChangedLongEnough = twitchState.isChangedLongEnough();
-			final boolean hasCyclicState = twitchState.hasCyclicState();
-			final boolean shouldAlwaysSync = twitchState.shouldAlwaysSync();
-
-			// Guard: check if something has changed to avoid unnecessary updates.
-			if (!shouldAlwaysSync && !isChangedLongEnough && !hasCyclicState)
-			{
-				return;
-			}
-
 			final JsonObject filteredState = twitchState.getFilteredState();
 
 			// We will not verify whether the set was successful here
@@ -370,14 +354,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncFightStatisticsState()
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
-			twitchState.setFightStatistics(fightStatistics);
+			if (config.fightStatisticsEnabled())
+			{
+				JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
+				twitchState.setFightStatistics(fightStatistics);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not update the fight statistics due to the following error: ", exception);
 		}
@@ -416,13 +398,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncMiniMap()
 	{
-		if (!ENABLE_MINIMAP || !config.marketplaceEnabled())
-		{
-			return;
-		}
-
 		try {
-			minimapManager.updateMinimap();
+			if (ENABLE_MINIMAP && config.marketplaceEnabled())
+			{
+				minimapManager.updateMinimap();
+			}
 		} catch (Exception exception) {
 			log.warn("Could not sync mini map: ", exception);
 		}
@@ -434,21 +414,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncMarketplaceTransactions()
 	{
-		if (!ENABLE_MARKETPLACE || !config.marketplaceEnabled())
-		{
-			return;
-		}
-
 		try {
-			marketplaceManager.applyNewProducts();
+			if (ENABLE_MARKETPLACE && !config.marketplaceEnabled())
+			{
+				marketplaceManager.applyNewProducts();
+				marketplaceManager.cleanProducts();
+			}
 		} catch (Exception exception) {
-			log.warn("Could not apply marketplace transactions: ", exception);
-		}
-
-		try {
-			marketplaceManager.cleanProducts();
-		} catch (Exception exception) {
-			log.warn("Could not clean marketplace products: ", exception);
+			log.warn("Could not apply or clean marketplace: ", exception);
 		}
 	}
 
@@ -458,13 +431,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncMarketplaceObjectsToScene()
 	{
-		if (!ENABLE_MARKETPLACE || !config.marketplaceEnabled())
-		{
-			return;
-		}
-
 		try {
-			marketplaceManager.syncMarketplaceObjectsToScene();
+			if (ENABLE_MARKETPLACE && config.marketplaceEnabled())
+			{
+				marketplaceManager.syncMarketplaceObjectsToScene();
+			}
 		} catch (Exception exception) {
 			log.warn("Could not sync marketplace objects to scene: ", exception);
 		}
@@ -538,13 +509,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onFakeXpDrop(FakeXpDrop event)
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			fightStateManager.onFakeXpDrop(event);
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onFakeXpDrop(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle fake XP drop event: ", exception);
 		}
@@ -576,20 +545,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			// any menu click will enable focus, this includes walking and stuff
 			canvasListener.enableFocus();
 		} catch (Exception exception) {
-			log.warn("Could not handle on focus change event: ", exception);
+			log.warn("Could not handle menu option clicked event: ", exception);
 		}
 	}
 
 	@Subscribe
 	public void onAnimationChanged(AnimationChanged event)
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			fightStateManager.onAnimationChanged(event);
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onAnimationChanged(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle animation change event: ", exception);
 		}
@@ -598,13 +565,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGraphicChanged(GraphicChanged event)
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			fightStateManager.onGraphicChanged(event);
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onGraphicChanged(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle graphic change event: ", exception);
 		}
@@ -613,13 +578,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			fightStateManager.onHitsplatApplied(event);
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onHitsplatApplied(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle hitsplat event: ", exception);
 		}
@@ -628,13 +591,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onNpcDespawned(NpcDespawned npcDespawned)
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			fightStateManager.onNpcDespawned(npcDespawned);
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onNpcDespawned(npcDespawned);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle NPC despawned event: ", exception);
 		}
@@ -643,13 +604,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onPlayerDespawned(PlayerDespawned playerDespawned)
 	{
-		if (!config.fightStatisticsEnabled())
-		{
-			return;
-		}
-
 		try {
-			fightStateManager.onPlayerDespawned(playerDespawned);
+			if (config.fightStatisticsEnabled())
+			{
+				fightStateManager.onPlayerDespawned(playerDespawned);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle player despawned event: ", exception);
 		}
@@ -684,13 +643,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (!ENABLE_MARKETPLACE || !config.marketplaceEnabled())
-		{
-			return;
-		}
-
 		try {
-			marketplaceManager.onGameStateChanged(event);
+			if (ENABLE_MARKETPLACE && config.marketplaceEnabled())
+			{
+				marketplaceManager.onGameStateChanged(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle game state event: ", exception);
 		}
@@ -757,13 +714,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			{
 				twitchState.setTwitchTheme(config.twitchTheme());
 			}
-			else if (key.equals("featuredMarketplaceProduct"))
-			{
-				twitchState.setFeaturedMarketplaceProductId(config.featuredMarketplaceProduct().name());
-			}
-
-			// force a resend of the data
-			twitchState.forceChange();
 
 			// somehow when in the settings tab the focus is lost, which means
 			// that when changing configs the focus stays lost and it hard to get feedback
@@ -866,11 +816,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		return null;
 	}
 
-	/**
-	 * Helper to get the current configuration.
-	 * @param configManager
-	 * @return
-	 */
 	@Provides
 	TwitchLiveLoadoutConfig provideConfig(ConfigManager configManager)
 	{

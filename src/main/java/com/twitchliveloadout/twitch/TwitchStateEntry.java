@@ -1,6 +1,7 @@
 package com.twitchliveloadout.twitch;
 
 public enum TwitchStateEntry {
+	CONNECTION_PING("connectionPing"),
 	PLAYER_NAME("playerName"),
 	INVENTORY_ITEMS("inventory"),
 	INVENTORY_PRICE("inventoryPrice"),
@@ -21,8 +22,7 @@ public enum TwitchStateEntry {
 	COLLECTION_LOG("collectionLog"),
 	INVOCATIONS("invocations"),
 	INVOCATIONS_RAID_LEVEL("invocationsRaidLevel"),
-	MARKETPLACE_SETTINGS("marketplaceSettings"),
-	MARKETPLACE_FEATURED_PRODUCT_ID("featuredProductId");
+	MARKETPLACE_SETTINGS("marketplaceSettings");
 
 	private final String key;
 
