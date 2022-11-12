@@ -1,7 +1,7 @@
 package com.twitchliveloadout.twitch;
 
 public enum TwitchStateEntry {
-	CONNECTION_PING("connectionPing"),
+	CONNECTION_STATUS("connectionStatus"),
 	PLAYER_NAME("playerName"),
 	INVENTORY_ITEMS("inventory"),
 	INVENTORY_PRICE("inventoryPrice"),

@@ -296,10 +296,10 @@ public class TwitchState {
 		// anti multi-logging settings
 		filteredState = verifyClientActivityStatus(filteredState);
 
-		// always add a connection ping, even when this RL window is not syncing
+		// always add a connection status, even when this RL window is not syncing
 		// this gives the user proper feedback whether the client is connected in the
 		// configuration view when installing the extension
-		filteredState = addConnectionPing(filteredState);
+		filteredState = addConnectionStatus(filteredState);
 
 		// remove any states that are disabled in the settings
 		filteredState = removeDisabledState(filteredState);
@@ -507,9 +507,14 @@ public class TwitchState {
 		return state;
 	}
 
-	private JsonObject addConnectionPing(JsonObject state)
+	private JsonObject addConnectionStatus(JsonObject state)
 	{
-		state.addProperty(TwitchStateEntry.CONNECTION_PING.getKey(), true);
+		final JsonObject connectionStatus = new JsonObject();
+
+		// for now always true?
+		connectionStatus.addProperty("status", true);
+
+		state.add(TwitchStateEntry.CONNECTION_STATUS.getKey(), connectionStatus);
 		return state;
 	}
 
