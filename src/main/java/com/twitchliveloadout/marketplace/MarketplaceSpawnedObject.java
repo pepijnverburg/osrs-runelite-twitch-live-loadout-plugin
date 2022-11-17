@@ -10,19 +10,26 @@ import net.runelite.api.coords.WorldPoint;
 import java.time.Instant;
 
 public class MarketplaceSpawnedObject {
+
 	@Getter
 	private final Instant spawnedAt;
+
 	@Getter
 	private final Client client;
+
 	@Getter
 	private final RuneLiteObject object;
+
 	@Getter
 	@Setter
 	private boolean respawnRequired = false;
+
 	@Getter
 	private final MarketplaceModel model;
+
 	@Getter
 	private final MarketplaceSpawnPoint spawnPoint;
+
 	@Getter
 	private final MarketplaceProduct product;
 

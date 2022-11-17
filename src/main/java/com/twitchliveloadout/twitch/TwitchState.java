@@ -608,10 +608,22 @@ public class TwitchState {
 			state.add(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), null);
 		}
 
-		if (config.autoDetectInToaRaidEnabled() && !wasInToaDebounced())
+		// reset the invocations for the current viewers when we are not in ToA anymore
+		// note that this should only be done for the window that is active long enough
+		// otherwise it is possible to have an alt window resetting the invocations for the main window
+		if (plugin.isLoggedIn() &&
+			canvasListener.isInFocusLongEnough() &&
+			config.autoDetectInToaRaidEnabled() &&
+			!wasInToaDebounced())
 		{
-			state.add(TwitchStateEntry.INVOCATIONS.getKey(), null);
-			state.add(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), null);
+			final JsonArray invocations = state.getAsJsonArray(TwitchStateEntry.INVOCATIONS.getKey());
+			final boolean hasInvocations = (invocations != null);
+
+			if (hasInvocations)
+			{
+				state.add(TwitchStateEntry.INVOCATIONS.getKey(), null);
+				state.add(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), null);
+			}
 		}
 
 		return state;

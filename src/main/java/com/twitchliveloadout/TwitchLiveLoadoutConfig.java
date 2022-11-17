@@ -479,7 +479,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Enable marketplace",
 			description = "Synchronize the marketplace configuration, such as enabled and featured items.",
 			position = 2,
-			hidden = true,
+			hidden = false,
 			section = marketplaceSection
 	)
 	default boolean marketplaceEnabled()
@@ -488,24 +488,11 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "featuredMarketplaceProduct",
-			name = "Featured marketplace product",
-			description = "The marketplace product you want to highlight on stream.",
-			position = 4,
-			hidden = true,
-			section = marketplaceSection
-	)
-	default MarketplaceProduct featuredMarketplaceProduct()
-	{
-		return MarketplaceProduct.NONE;
-	}
-
-	@ConfigItem(
 			keyName = "devPlayerGraphicId",
 			name = "Dev Player Graphic ID",
 			description = "Testing Graphic ID on player.",
 			position = 97,
-			hidden = true,
+			hidden = false,
 			section = marketplaceSection
 	)
 	default int devPlayerGraphicId()
@@ -518,7 +505,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Dev Object Spawn Model ID",
 			description = "Testing model ID when spawning objects for the marketplace.",
 			position = 97,
-			hidden = true,
+			hidden = false,
 			section = marketplaceSection
 	)
 	default int devObjectSpawnModelId()
@@ -531,7 +518,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Dev Object Spawn Animation ID",
 			description = "Testing animation ID when spawning objects for the marketplace.",
 			position = 98,
-			hidden = true,
+			hidden = false,
 			section = marketplaceSection
 	)
 	default int devObjectSpawnAnimationId()
@@ -544,7 +531,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Dev Marketplace Product Spawn",
 			description = "Testing product.",
 			position = 99,
-			hidden = true,
+			hidden = false,
 			section = marketplaceSection
 	)
 	default MarketplaceProduct devMarketplaceProductSpawn()

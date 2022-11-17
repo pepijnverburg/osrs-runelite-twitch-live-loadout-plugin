@@ -25,11 +25,17 @@ public class MarketplaceManager {
 	@Getter
 	private final Client client;
 	private final TwitchLiveLoadoutConfig config;
+	private final boolean ENABLE_TEST_PRODUCTS = false;
 
-	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<MarketplaceSpawnedObject>> registeredSpawnedObjects = new ConcurrentHashMap();
-	private final MarketplaceProduct spawnerProduct = MarketplaceProduct.GROUND_SPAWNING_PORTAL;
+	/**
+	 * List to keep track of all the queued products
+	 */
+	private final CopyOnWriteArrayList<MarketplaceProduct> queuedProducts = new CopyOnWriteArrayList();
 
-	private final static boolean ENABLE_TEST_PRODUCTS = false;
+	/**
+	 * List to keep track of all the active products
+	 */
+	private final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = new CopyOnWriteArrayList();
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config)
 	{
@@ -37,31 +43,35 @@ public class MarketplaceManager {
 		this.twitchState = twitchState;
 		this.client = client;
 		this.config = config;
-
-		loadMarketplaceProductCache();
 	}
 
+	/**
+	 * Handle game state changes to respawn all objects, because they are cleared
+	 * when a new scene is being loaded.
+	 */
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		GameState newGameState = event.getGameState();
 
+		// guard: only respawn on the loading event
 		if (newGameState != GameState.LOADING)
 		{
 			return;
 		}
 
-		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : registeredSpawnedObjects.values())
-		{
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
-			{
-				// set all objects to require a respawn, because after a loading of
-				// a new scene all custom objects are cleared
-				spawnedObject.setRespawnRequired(true);
-			}
-		}
+		// set all objects to require a respawn, because after a loading of
+		// a new scene all custom objects are cleared
+
+		handleAllSpawnedObjects((spawnedObject) -> {
+
+			spawnedObject.setRespawnRequired(true);
+		});
 	}
 
-	public void applyNewProducts()
+	/**
+	 * Check for new products that should be spawned
+	 */
+	public void queueNewProducts()
 	{
 
 		// guard: only apply the products when the player is logged in
@@ -72,19 +82,38 @@ public class MarketplaceManager {
 
 		if (ENABLE_TEST_PRODUCTS)
 		{
-			applyTestProducts();
+			spawnTestProducts();
 		}
 	}
 
-	public void applyTestProducts()
+	public void spawnTestProducts()
 	{
 		int graphicId = config.devPlayerGraphicId();
 
-		// guard: only apply the products when the player is logged in
-		if (!plugin.isLoggedIn())
-		{
-			return;
-		}
+		// skipping
+//		client.getLocalPlayer().setRunAnimation(1836);
+//		client.getLocalPlayer().setWalkAnimation(1836);
+
+		// 3039 - walking drunk
+		// 3040 - standing drunk
+//		client.getLocalPlayer().setWalkAnimation(3039);
+//		client.getLocalPlayer().setRunAnimation(3039);
+//		client.getLocalPlayer().setIdlePoseAnimation(3040);
+
+		// skating
+//		client.getLocalPlayer().setWalkAnimation(755);
+//		client.getLocalPlayer().setRunAnimation(755);
+//		client.getLocalPlayer().setIdlePoseAnimation(1767);
+
+		// superman
+//		client.getLocalPlayer().setWalkAnimation(1851);
+//		client.getLocalPlayer().setRunAnimation(1851);
+//		// jig
+//		client.getLocalPlayer().setIdlePoseAnimation(2106);
+
+		// drinking
+		// LOOK AT PLUGIN!
+//		client.getLocalPlayer().setIdlePoseAnimation(1327); // 1327
 
 		plugin.runOnClientThread(() -> {
 			if (graphicId > 0) {
@@ -98,7 +127,7 @@ public class MarketplaceManager {
 		});
 	}
 
-	public void syncMarketplaceObjectsToScene()
+	public void syncActiveProductsToScene()
 	{
 
 		// guard: only apply the products when the player is logged in
@@ -111,25 +140,22 @@ public class MarketplaceManager {
 		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
 		WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
 
-		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : registeredSpawnedObjects.values())
-		{
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
-			{
-				WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
-				int distanceToPlayer = worldPoint.distanceTo(playerWorldPoint);
-				boolean isInViewport = distanceToPlayer < Constants.SCENE_SIZE;
-				boolean isRespawnRequired = spawnedObject.isRespawnRequired();
+		// loop all spawned objects and check whether they should respawn
+		handleAllSpawnedObjects((spawnedObject) -> {
+			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+			int distanceToPlayer = worldPoint.distanceTo(playerWorldPoint);
+			boolean isInView = distanceToPlayer < Constants.SCENE_SIZE;
+			boolean isRespawnRequired = spawnedObject.isRespawnRequired();
 
-				// only respawn if in viewport and a respawn is required
-				// to prevent animations to be reset all the time
-				if (isInViewport && isRespawnRequired) {
-					respawnQueue.add(spawnedObject);
-					spawnedObject.setRespawnRequired(false);
-				}
+			// only respawn if in viewport and a respawn is required
+			// to prevent animations to be reset all the time
+			if (isInView && isRespawnRequired) {
+				respawnQueue.add(spawnedObject);
+				spawnedObject.setRespawnRequired(false);
 			}
-		}
+		});
 
-		// run all hides and respawns on the same action
+		// run all respawns at the same time
 		plugin.runOnClientThread(() -> {
 			for (MarketplaceSpawnedObject spawnedObject : respawnQueue)
 			{
@@ -138,33 +164,27 @@ public class MarketplaceManager {
 		});
 	}
 
-	public void cleanProducts()
+	public void cleanSpawnedObjects()
 	{
-		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : registeredSpawnedObjects.values())
-		{
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+		ArrayList<MarketplaceSpawnedObject> hideQueue = new ArrayList();
+
+		handleAllSpawnedObjects((spawnedObject) -> {
+
+			// guard: don't clean when not expired yet
+			if (!spawnedObject.isExpired())
 			{
-				if (spawnedObject.isExpired())
-				{
-					removeSpawnedObject(spawnedObject, spawnedObjects);
-				}
+				return;
 			}
-		}
-	}
 
-	private void removeSpawnedObject(MarketplaceSpawnedObject spawnedObject, CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects)
-	{
-		spawnedObjects.remove(spawnedObject);
+			removeSpawnedObject(spawnedObject, spawnedObjects);
+		});
 
-		// remove this world point if no objects are left
-		if (spawnedObjects.size() <= 0)
-		{
-			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
-			registeredSpawnedObjects.remove(worldPoint);
-		}
-
+		// run all hides at the same time
 		plugin.runOnClientThread(() -> {
-			spawnedObject.hide();
+			for (MarketplaceSpawnedObject spawnedObject : hideQueue)
+			{
+				spawnedObject.hide();
+			}
 		});
 	}
 
@@ -207,12 +227,6 @@ public class MarketplaceManager {
 	private ArrayList<MarketplaceSpawnedObject> spawnProductObjects(MarketplaceProduct product)
 	{
 		final ArrayList<MarketplaceSpawnedObject> allObjects = new ArrayList();
-		final MarketplaceProduct.CustomizeModel customizeModel = product.getCustomizeModel();
-		final MarketplaceProduct.GetSpawnPoints getSpawnPoints = product.getGetSpawnPoints();
-		final MarketplaceProduct.CustomizeSettings customizeSettings = product.getCustomizeSettings();
-		final boolean hasModelCustomizer = customizeModel != null;
-		final boolean hasSpawnPoints = getSpawnPoints != null;
-		final boolean hasCustomizeSettings = customizeSettings != null;
 		final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
 
 		// if there is no spawn point customizer we will spawn one at the player location
@@ -419,11 +433,6 @@ public class MarketplaceManager {
 			object.setShouldLoop(false);
 			object.setAnimation(null);
 		}, delayMs);
-	}
-
-	private void loadMarketplaceProductCache()
-	{
-		// TODO: later for objects that are persistent for longer periods of time across login sessions.
 	}
 
 	public MarketplaceSpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)
