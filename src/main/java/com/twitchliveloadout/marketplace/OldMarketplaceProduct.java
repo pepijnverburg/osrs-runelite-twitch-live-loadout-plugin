@@ -7,8 +7,12 @@ import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Random;
+
+import static com.twitchliveloadout.marketplace.MarketplaceModelUtilities.rotateModelsRandomly;
 
 @Slf4j
 public enum OldMarketplaceProduct {
@@ -183,3 +187,230 @@ public enum OldMarketplaceProduct {
 	// 28914; // golden gnome: 32303, scythe: 40614, gravestone: 41280 / 40493 / 38055 / 31619 /
 
 }
+
+//
+//	private ArrayList<MarketplaceSpawnedObject> spawnProductObjects(MarketplaceProduct product)
+//	{
+//		final ArrayList<MarketplaceSpawnedObject> allObjects = new ArrayList();
+//		final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
+//
+//		// if there is no spawn point customizer we will spawn one at the player location
+//		if (!hasSpawnPoints)
+//		{
+//			final MarketplaceSpawnPoint defaultSpawnPoint = getOutwardSpawnPoint(1, 2, 10, null);
+//
+//			if (defaultSpawnPoint == null)
+//			{
+//				return allObjects;
+//			}
+//
+//			spawnPoints.add(defaultSpawnPoint);
+//		} else {
+//			spawnPoints.addAll(getSpawnPoints.generate(this));
+//		}
+//
+//		// first update the settings that need to be used
+//		if (hasCustomizeSettings)
+//		{
+//			customizeSettings.execute(product);
+//		}
+//
+//		final MarketplaceModel[][] candidateMarketplaceModels = product.getMarketplaceModels();
+//		final boolean useSpawners = product.isUseSpawners();
+//		final int spawnerDurationMs = product.getSpawnerDurationMs();
+//		final int randomSpawnDelayMs = product.getRandomSpawnDelayMs();
+//
+//		// guard: check if there are any candidates
+//		// this prevents the below candidate randomizer to trigger errors
+//		if (candidateMarketplaceModels.length <= 0)
+//		{
+//			return allObjects;
+//		}
+//
+//		// loop all the requested spawn points
+//		for (MarketplaceSpawnPoint spawnPoint : spawnPoints)
+//		{
+//			final ArrayList<MarketplaceSpawnedObject> objects = new ArrayList();
+//			final ArrayList<ModelData> models = new ArrayList();
+//			final int spawnDelayMs = (int) (Math.random() * randomSpawnDelayMs);
+//			final Random marketplaceModelsSelector = new Random();
+//			final int marketplaceModelsIndex = marketplaceModelsSelector.nextInt(candidateMarketplaceModels.length);
+//			final MarketplaceModel[] marketplaceModels = candidateMarketplaceModels[marketplaceModelsIndex];
+//
+//			// guard: make sure the spawn point is valid, it can happen no valid tile
+//			// could be found resulting in a `null` spawn point
+//			if (spawnPoint == null)
+//			{
+//				continue;
+//			}
+//
+//			// loop all the models that need to be placed
+//			for (MarketplaceModel marketplaceModel : marketplaceModels)
+//			{
+//				final int modelId = marketplaceModel.getModelId();
+//				final int animationId = marketplaceModel.getAnimationId();
+//				final int animationDurationMs = marketplaceModel.getAnimationDurationMs();
+//				final boolean hasAnimation = animationId > 0;
+//				final boolean shouldResetAnimation = animationDurationMs >= 0;
+//				final int resetAnimationDelayMs = spawnDelayMs + (useSpawners ? spawnerDurationMs : 0) + animationDurationMs;
+//
+//				RuneLiteObject object = client.createRuneLiteObject();
+//				ModelData model = client.loadModelData(modelId)
+//						.cloneVertices()
+//						.cloneColors();
+//				MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(
+//						client,
+//						object,
+//						marketplaceModel,
+//						spawnPoint,
+//						product
+//				);
+//
+//				// check if the model needs further customization (e.g. recolors)
+//				// this needs to be done before applying the light to the model
+//				if (hasModelCustomizer)
+//				{
+//					customizeModel.execute(model, modelId);
+//				}
+//
+//				// set the object to the model
+//				object.setModel(model.light());
+//
+//				// move to the spawn location
+//				object.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+//
+//				// play object animations if they are set
+//				if (hasAnimation) {
+//					Animation objectAnimation = client.loadAnimation(animationId);
+//					object.setAnimation(objectAnimation);
+//					object.setShouldLoop(true);
+//
+//					if (shouldResetAnimation)
+//					{
+//						scheduleAnimationReset(object, resetAnimationDelayMs);
+//					}
+//				}
+//
+//				// add each object and model
+//				objects.add(spawnedObject);
+//				models.add(model);
+//			}
+//
+//			// random rotation for all models
+//			// NOTE: important to rotate them all the same if you have multiple models making up one object
+//			rotateModelsRandomly(models);
+//
+//			// check if the spawners cutscene applies for this product
+//			if (!useSpawners) {
+//				scheduleShowObjects(objects, spawnDelayMs);
+//			}
+//			else if (product != spawnerProduct)
+//			{
+//				ArrayList<MarketplaceSpawnedObject> spawnerObjects = spawnProductObjects(spawnerProduct);
+//
+//				// move them all to the location of the final object
+//				for (MarketplaceSpawnedObject spawnerObject : spawnerObjects)
+//				{
+//					spawnerObject.getObject().setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+//				}
+//
+//				scheduleShowObjects(spawnerObjects, spawnDelayMs);
+//				scheduleShowObjects(objects, spawnDelayMs + spawnerDurationMs);
+//				scheduleResetObjects(spawnerObjects, spawnDelayMs + spawnerDurationMs);
+//
+//				// register the spawners as well
+//				objects.addAll(spawnerObjects);
+//			}
+//
+//			// add all the objects for this spawn point
+//			allObjects.addAll(objects);
+//		}
+//
+//		registerSpawnedObjects(allObjects);
+//		return allObjects;
+//	}
+
+// skipping
+//		client.getLocalPlayer().setRunAnimation(1836);
+//		client.getLocalPlayer().setWalkAnimation(1836);
+
+// 3039 - walking drunk
+// 3040 - standing drunk
+//		client.getLocalPlayer().setWalkAnimation(3039);
+//		client.getLocalPlayer().setRunAnimation(3039);
+//		client.getLocalPlayer().setIdlePoseAnimation(3040);
+
+// skating
+//		client.getLocalPlayer().setWalkAnimation(755);
+//		client.getLocalPlayer().setRunAnimation(755);
+//		client.getLocalPlayer().setIdlePoseAnimation(1767);
+
+// superman
+//		client.getLocalPlayer().setWalkAnimation(1851);
+//		client.getLocalPlayer().setRunAnimation(1851);
+//		// jig
+//		client.getLocalPlayer().setIdlePoseAnimation(2106);
+
+// drinking
+// LOOK AT PLUGIN!
+//		client.getLocalPlayer().setIdlePoseAnimation(1327); // 1327
+
+//
+//	public void spawnTestObject(int modelId, int animationId)
+//	{
+//		if (modelId <= 0) {
+//			return;
+//		}
+//
+//		boolean hasAnimation = animationId > 0;
+//		MarketplaceSpawnPoint spawnPoint = getSpawnPoint(5);
+//		RuneLiteObject object = client.createRuneLiteObject();
+//		ModelData model = client.loadModelData(modelId)
+//				.cloneVertices()
+//				.cloneColors();
+//
+//		if (spawnPoint == null)
+//		{
+//			return;
+//		}
+//
+//		object.setModel(model.light());
+//		object.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+//		if (hasAnimation) {
+//			Animation objectAnimation = client.loadAnimation(animationId);
+//			object.setAnimation(objectAnimation);
+//			object.setShouldLoop(true);
+//		}
+//
+//		object.setActive(true);
+//	}
+
+//
+//	private void triggerProductPlayerGraphic(MarketplaceProduct product)
+//	{
+//		int graphicId = product.getPlayerGraphicId();
+//		Player player = client.getLocalPlayer();
+//
+//		// guard: make sure the graphic is valid
+//		if (graphicId < 0)
+//		{
+//			return;
+//		}
+//
+//		player.setGraphic(graphicId);
+//		player.setSpotAnimFrame(0);
+//	}
+//
+//	private void triggerProductPlayerAnimation(MarketplaceProduct product)
+//	{
+//		int animationId = product.getPlayerAnimationId();
+//		Player player = client.getLocalPlayer();
+//
+//		// guard: make sure the animation is valid
+//		if (animationId < 0)
+//		{
+//			return;
+//		}
+//
+//		player.setAnimation(animationId);
+//	}
