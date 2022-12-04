@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.coords.WorldPoint;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 @Slf4j
@@ -52,5 +53,25 @@ public class MarketplaceModelUtilities {
 
 		short faceColor = faceColors[faceColorIndex];
 		model.recolor(faceColor, JagexColor.rgbToHSL(rgb, brightness));
+	}
+
+	public static void rotateModelsRandomly(ArrayList<ModelData> models)
+	{
+		final double random = Math.random();
+		if (random < 0.25) {
+			for (ModelData model : models) {
+				model.rotateY90Ccw();
+			}
+		} else if (random < 0.5) {
+			for (ModelData model : models) {
+				model.rotateY180Ccw();
+			}
+		} else if (random < 0.75) {
+			for (ModelData model : models) {
+				model.rotateY270Ccw();
+			}
+		} else {
+			// no rotation
+		}
 	}
 }

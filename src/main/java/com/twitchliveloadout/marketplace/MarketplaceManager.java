@@ -17,6 +17,8 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.twitchliveloadout.marketplace.MarketplaceModelUtilities.rotateModelsRandomly;
+
 @Slf4j
 public class MarketplaceManager {
 	private final TwitchLiveLoadoutPlugin plugin;
@@ -36,6 +38,11 @@ public class MarketplaceManager {
 	 * List to keep track of all the active products
 	 */
 	private final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = new CopyOnWriteArrayList();
+
+	/**
+	 * Lookup to see which world points are taken for future spawns
+	 */
+	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<MarketplaceSpawnedObject>> objectPlacements = new ConcurrentHashMap();
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config)
 	{
@@ -61,9 +68,7 @@ public class MarketplaceManager {
 
 		// set all objects to require a respawn, because after a loading of
 		// a new scene all custom objects are cleared
-
 		handleAllSpawnedObjects((spawnedObject) -> {
-
 			spawnedObject.setRespawnRequired(true);
 		});
 	}
@@ -164,7 +169,7 @@ public class MarketplaceManager {
 		});
 	}
 
-	public void cleanSpawnedObjects()
+	public void cleanProducts()
 	{
 		ArrayList<MarketplaceSpawnedObject> hideQueue = new ArrayList();
 
@@ -376,36 +381,29 @@ public class MarketplaceManager {
 			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
 			// check whether this world point already has a spawned object to add to
-			if (registeredSpawnedObjects.containsKey(worldPoint)) {
-				CopyOnWriteArrayList<MarketplaceSpawnedObject> safeObjects = registeredSpawnedObjects.get(worldPoint);
+			if (objectPlacements.containsKey(worldPoint)) {
+				CopyOnWriteArrayList<MarketplaceSpawnedObject> safeObjects = objectPlacements.get(worldPoint);
 				safeObjects.add(spawnedObject);
 			} else {
 				CopyOnWriteArrayList<MarketplaceSpawnedObject> safeObjects = new CopyOnWriteArrayList();
 				safeObjects.add(spawnedObject);
-				registeredSpawnedObjects.put(worldPoint, safeObjects);
+				objectPlacements.put(worldPoint, safeObjects);
 			}
 		}
 	}
 
-	private void rotateModelsRandomly(ArrayList<ModelData> models)
-	{
-		final double random = Math.random();
-
-		if (random < 0.25) {
-			for (ModelData model : models) {
-				model.rotateY90Ccw();
+	public void handleAllSpawnedObjects(MarketplaceManager.SpawnedObjectHandler handler) {
+		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : objectPlacements.values())
+		{
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+			{
+				handler.execute(spawnedObject);
 			}
-		} else if (random < 0.5) {
-			for (ModelData model : models) {
-				model.rotateY180Ccw();
-			}
-		} else if (random < 0.75) {
-			for (ModelData model : models) {
-				model.rotateY270Ccw();
-			}
-		} else {
-			// no rotation
 		}
+	}
+
+	public interface SpawnedObjectHandler {
+		public void execute(MarketplaceSpawnedObject spawnedObject);
 	}
 
 	private void scheduleShowObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
@@ -453,7 +451,7 @@ public class MarketplaceManager {
 
 	public MarketplaceSpawnPoint getSpawnPoint(int radius)
 	{
-		return getSpawnPoint(radius);
+		return getSpawnPoint(radius, null);
 	}
 
 	public MarketplaceSpawnPoint getSpawnPoint(int radius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)
@@ -495,7 +493,7 @@ public class MarketplaceManager {
 				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
 				// guard: check if this world point is already taken by another spawned object
-				if (registeredSpawnedObjects.containsKey(worldPoint))
+				if (objectPlacements.containsKey(worldPoint))
 				{
 					continue;
 				}

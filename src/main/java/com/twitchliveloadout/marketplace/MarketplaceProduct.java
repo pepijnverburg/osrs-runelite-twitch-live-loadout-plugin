@@ -17,8 +17,8 @@ public abstract class MarketplaceProduct
 	/**
 	 * The Twitch transaction attributed to this product
 	 */
-	@Getter
-	private final MarketplaceTransaction transaction;
+//	@Getter
+//	private final MarketplaceTransaction transaction;
 
 	/**
 	 * The options of models this product can spawn, not that this is two dimensional array
@@ -114,20 +114,6 @@ public abstract class MarketplaceProduct
 			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
 			spawnedObjects.remove(worldPoint);
 		}
-	}
-
-	public void handleAllSpawnedObjects(MarketplaceManager.SpawnedObjectHandler handler) {
-		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : spawnedObjects.values())
-		{
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
-			{
-				handler.execute(spawnedObject);
-			}
-		}
-	}
-
-	public interface SpawnedObjectHandler {
-		public void execute(MarketplaceSpawnedObject spawnedObject);
 	}
 
 	/**

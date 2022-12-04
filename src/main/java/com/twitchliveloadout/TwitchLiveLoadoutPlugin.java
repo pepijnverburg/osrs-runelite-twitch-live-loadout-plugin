@@ -168,7 +168,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Temporary flags to disable features while still in staging
 	 */
 	private final static boolean ENABLE_MINIMAP = false;
-	private final static boolean ENABLE_MARKETPLACE = true;
 
 	/**
 	 * Initialize this plugin
@@ -415,9 +414,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncMarketplaceTransactions()
 	{
 		try {
-			if (ENABLE_MARKETPLACE && !config.marketplaceEnabled())
+			if (!config.marketplaceEnabled())
 			{
-				marketplaceManager.applyNewProducts();
+				marketplaceManager.queueNewProducts();
 				marketplaceManager.cleanProducts();
 			}
 		} catch (Exception exception) {
@@ -432,9 +431,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncMarketplaceObjectsToScene()
 	{
 		try {
-			if (ENABLE_MARKETPLACE && config.marketplaceEnabled())
+			if (config.marketplaceEnabled())
 			{
-				marketplaceManager.syncMarketplaceObjectsToScene();
+				marketplaceManager.syncActiveProductsToScene();
 			}
 		} catch (Exception exception) {
 			log.warn("Could not sync marketplace objects to scene: ", exception);
@@ -644,7 +643,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		try {
-			if (ENABLE_MARKETPLACE && config.marketplaceEnabled())
+			if (config.marketplaceEnabled())
 			{
 				marketplaceManager.onGameStateChanged(event);
 			}
