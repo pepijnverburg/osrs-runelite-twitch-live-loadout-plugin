@@ -9,20 +9,41 @@ import net.runelite.api.coords.WorldPoint;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
+
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.MODEL_REFERENCE_SIZE;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.RANDOM_ROTATION_TYPE;
 
 @Slf4j
 public class MarketplaceModelUtilities {
-	public static void resizeSmall(ModelData model)
+
+	public static void rotateModels(ArrayList<ModelData> models, EbsProduct.ModelSet modelSet)
 	{
-		model.scale(50, 50, 50);
+		String modelRotationType = modelSet.modelRotationType;
+
+		// check for rotation
+		switch(modelRotationType) {
+			case RANDOM_ROTATION_TYPE:
+				rotateModelsRandomly(models);
+				break;
+		}
 	}
 
-	public static void resizeRandomly(ModelData model, int minScale, int maxScale)
+	public static void scaleModels(ArrayList<ModelData> models, EbsProduct.ModelSet modelSet)
 	{
-		int deltaScale = maxScale - minScale;
-		int randomScale = minScale + ((int) (Math.random() * ((float) deltaScale)));
 
-		model.scale(randomScale, randomScale, randomScale);
+		// guard: check for scaling
+		if (modelSet.modelScale == null)
+		{
+			return;
+		}
+
+		double modelScale = MarketplaceConfigGetters.getValidRandomNumberByRange(modelSet.modelScale, 1, 1);
+		int modelSize = (int) (MODEL_REFERENCE_SIZE * modelScale);
+
+		for (ModelData model : models) {
+			model.scale(modelSize, modelSize, modelSize);
+		}
 	}
 
 	public static void recolorAllFaces(ModelData model, Color color)

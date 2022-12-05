@@ -8,7 +8,6 @@ public class MarketplaceConstants {
 	public static final String DEFAULT_RADIUS_TYPE = "radius";
 	public static final String OUTWARD_RADIUS_TYPE = "outward-radius";
 
-	public static final String NONE_ROTATION_TYPE = "none";
 	public static final String RANDOM_ROTATION_TYPE = "random";
 	public static final String PLAYER_ROTATION_TYPE = "player";
 	public static final String INTERACTING_ROTATION_TYPE = "interacting";

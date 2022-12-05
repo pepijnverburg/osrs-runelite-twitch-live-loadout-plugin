@@ -414,7 +414,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncMarketplaceTransactions()
 	{
 		try {
-			if (!config.marketplaceEnabled())
+			if (config.marketplaceEnabled())
 			{
 				marketplaceManager.queueNewProducts();
 				marketplaceManager.cleanProducts();
@@ -633,6 +633,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.fightStatisticsEnabled())
 			{
 				fightStateManager.onGameTick();
+			}
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.onGameTick();
 			}
 		} catch (Exception exception) {
 			log.warn("Could not handle game tick event: ", exception);

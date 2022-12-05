@@ -15,14 +15,15 @@ public class EbsProduct {
 		public EbsProductInterval interfaceEffectInterval;
 		public PlayerAnimation playerAnimation;
 		public PlayerEquipment playerEquipment;
-		public EbsProductInterval spawnBehaviourInterval;
-		public ArrayList<SpawnBehaviourOption> spawnBehaviourOptions;
+		public EbsProductInterval spawnInterval;
+		public ArrayList<SpawnOption> spawnOptions;
 	}
 
-	public class Model {
+	public class ModelSet {
 		public ArrayList<Integer> modelIds;
+		public EbsProductRandomRange modelScale;
 		public String modelRotationType;
-		public Double modelScale;
+		public EbsProductRandomRange modelRotation;
 	}
 
 	public class PlayerAnimation {
@@ -42,8 +43,11 @@ public class EbsProduct {
 		public Integer weaponItemId;
 	}
 
-	public class SpawnBehaviour {
-		public ArrayList<Model> models;
+	public class Spawn {
+		public ArrayList<ModelSet> modelSets;
+		public Boolean spawnerEnabled;
+		public ModelSet spawner;
+		public EbsProductRandomRange spawnerDurationMs;
 		public EbsModelPlacement modelPlacement;
 		public Animation hideAnimation;
 		public Animation showAnimation;
@@ -52,22 +56,16 @@ public class EbsProduct {
 	}
 
 	public class Animation {
-		public AnimationFrame modelAnimation;
-		public AnimationFrame playerAnimation;
-		public AnimationFrame playerGraphic;
+		public EbsProductAnimationFrame modelAnimation;
+		public EbsProductAnimationFrame playerAnimation;
+		public EbsProductAnimationFrame playerGraphic;
 	}
 
-	public class AnimationFrame {
-		public Integer id;
-		public Integer delayMs;
-		public Integer durationMs;
-	}
-
-	public class SpawnBehaviourOption {
+	public class SpawnOption {
 		public Double chance;
-		public Integer spawnAmountMin;
-		public Integer spawnAmountMax;
-		public ArrayList<SpawnBehaviour> spawnBehaviours;
+		public EbsProductRandomRange spawnAmount;
+		public EbsProductRandomRange spawnDelayMs;
+		public ArrayList<Spawn> spawns;
 	}
 }
 

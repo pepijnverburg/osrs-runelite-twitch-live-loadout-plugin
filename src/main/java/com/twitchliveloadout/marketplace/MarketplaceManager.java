@@ -11,13 +11,14 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 
-import java.security.cert.Extension;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
 public class MarketplaceManager {
+
+	@Getter
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchState twitchState;
 
@@ -49,7 +50,12 @@ public class MarketplaceManager {
 		this.client = client;
 		this.config = config;
 
-		String json = "{\"id\":\"falador-party\",\"enabled\":true,\"type\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"interfaceEffectType\":\"shake-screen\",\"interfaceEffectInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":10000},\"playerAnimation\":{\"idleAnimationId\":100,\"runAnimationId\":100,\"walkAnimationId\":100},\"playerEquipment\":{\"amuletItemId\":1,\"bootsItemId\":1,\"chestItemId\":1,\"glovesItemId\":1,\"helmItemId\":1,\"legsItemId\":1,\"shieldItemId\":1,\"weaponItemId\":1},\"spawnBehaviourInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":1000},\"spawnBehaviourOptions\":[{\"chance\":0.5,\"spawnAmountMin\":5,\"spawnAmountMax\":10,\"spawnBehaviours\":[{\"models\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\",\"modelScale\":0.5}],\"hideAnimation\":{\"modelAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerGraphic\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000}}}]}]}}";
+		// test
+		String json = "{\"id\":\"falador-party\",\"enabled\":true,\"type\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"interfaceEffectType\":\"shake-screen\",\"interfaceEffectInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":10000,\"repeatAmount\":1},\"playerAnimation\":{\"idleAnimationId\":100,\"runAnimationId\":100,\"walkAnimationId\":100},\"playerEquipment\":{\"amuletItemId\":1,\"bootsItemId\":1,\"chestItemId\":1,\"glovesItemId\":1,\"helmItemId\":1,\"legsItemId\":1,\"shieldItemId\":1,\"weaponItemId\":1},\"spawnInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":1000,\"repeatAmount\":1},\"spawnOptions\":[{\"chance\":0.5,\"spawnAmountMin\":5,\"spawnAmountMax\":10,\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\",\"modelScale\":0.9}],\"modelPlacement\":{\"locationType\":\"current-tile\",\"radiusType\":\"outward-radius\",\"radius\":10},\"hideAnimation\":{\"modelAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerGraphic\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000}}}]}]}}";
+
+		// falador party
+		json = "{\"id\":\"falador-party\",\"enabled\":true,\"type\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":5,\"max\":10},\"spawnDelayMs\":{\"min\":0,\"max\":500},\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\"},{\"modelIds\":[2227],\"modelRotationType\":\"random\"},{\"modelIds\":[2228],\"modelRotationType\":\"random\"}],\"showAnimation\":{\"modelAnimation\":{\"id\":498,\"durationMs\":2400}}}]}]}}";
+
 		tmpEbsProduct = new Gson().fromJson(json, EbsProduct.class);
 		log.warn("Loaded TMP ebs product:");
 		log.warn(tmpEbsProduct.name);
@@ -74,6 +80,18 @@ public class MarketplaceManager {
 		handleAllSpawnedObjects((spawnedObject) -> {
 			spawnedObject.setRespawnRequired(true);
 		});
+	}
+
+	/**
+	 * Handle game tick
+	 */
+	public void onGameTick()
+	{
+		// for all active products the game tick should be triggered
+		for (MarketplaceProduct product : activeProducts)
+		{
+			product.onGameTick();
+		}
 	}
 
 	/**
@@ -141,7 +159,15 @@ public class MarketplaceManager {
 
 	private void startProduct(EbsProduct ebsProduct)
 	{
-		log.info("Starting EBS product with name: "+ ebsProduct.name);
+
+		// guard: check if the product is valid and enabled
+		if (ebsProduct == null || !ebsProduct.enabled)
+		{
+			log.error("Could not start invalid or disabled EBS product.");
+			return;
+		}
+
+		log.info("Starting EBS product: "+ ebsProduct.id);
 
 		MarketplaceProduct newProduct = new MarketplaceProduct(
 			this,
@@ -157,7 +183,7 @@ public class MarketplaceManager {
 	 * Register a collection of spawned objects to the placement lookup for easy access
 	 * to all spawned objects and to keep track of which tiles are taken.
 	 */
-	private void registerSpawnedObjectPlacements(ArrayList<MarketplaceSpawnedObject> objects)
+	public void registerSpawnedObjectPlacements(ArrayList<MarketplaceSpawnedObject> objects)
 	{
 		Iterator iterator = objects.iterator();
 
@@ -191,36 +217,6 @@ public class MarketplaceManager {
 
 	public interface SpawnedObjectHandler {
 		public void execute(MarketplaceSpawnedObject spawnedObject);
-	}
-
-	private void scheduleShowObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
-	{
-		plugin.scheduleOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
-				spawnedObject.show();
-			}
-		}, delayMs);
-	}
-
-	private void scheduleHideObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
-	{
-		plugin.scheduleOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
-				spawnedObject.hide();
-				spawnedObject.getObject().setModel(null);
-			}
-		}, delayMs);
-	}
-
-	private void scheduleResetAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
-	{
-		plugin.scheduleOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
-				RuneLiteObject object = spawnedObject.getObject();
-				object.setShouldLoop(false);
-				object.setAnimation(null);
-			}
-		}, delayMs);
 	}
 
 	public MarketplaceSpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)

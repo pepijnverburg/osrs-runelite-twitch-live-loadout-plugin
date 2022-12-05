@@ -3,6 +3,7 @@ package com.twitchliveloadout.marketplace;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.Client;
+import net.runelite.api.ModelData;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
@@ -21,35 +22,32 @@ public class MarketplaceSpawnedObject {
 	private final RuneLiteObject object;
 
 	@Getter
-	@Setter
-	private boolean respawnRequired = false;
-
-	@Getter
-	private final MarketplaceModel model;
-
-	@Getter
 	private final MarketplaceSpawnPoint spawnPoint;
 
 	@Getter
 	private final MarketplaceProduct product;
 
-	public MarketplaceSpawnedObject(Client client, RuneLiteObject object, MarketplaceModel model, MarketplaceSpawnPoint spawnPoint, MarketplaceProduct product)
+	@Getter
+	@Setter
+	private boolean respawnRequired = false;
+
+	public MarketplaceSpawnedObject(Client client, RuneLiteObject object, MarketplaceSpawnPoint spawnPoint, MarketplaceProduct product)
 	{
 		this.spawnedAt = Instant.now();
 		this.client = client;
 		this.object = object;
-		this.model = model;
 		this.spawnPoint = spawnPoint;
 		this.product = product;
 	}
 
 	public boolean isExpired()
 	{
-		final Instant now = Instant.now();
-		final int expiryTimeMs = product.getExpiryTimeMs();
-		final Instant expiredAt = spawnedAt.plusMillis(expiryTimeMs);
-
-		return now.isAfter(expiredAt);
+//		final Instant now = Instant.now();
+//		final int expiryTimeMs = product.getExpiryTimeMs();
+//		final Instant expiredAt = spawnedAt.plusMillis(expiryTimeMs);
+//
+//		return now.isAfter(expiredAt);
+		return false;
 	}
 
 	public void show()

@@ -1,17 +1,19 @@
 package com.twitchliveloadout.marketplace;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Animation;
 import net.runelite.api.Client;
 import net.runelite.api.ModelData;
 import net.runelite.api.RuneLiteObject;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
+@Slf4j
 public class MarketplaceProduct
 {
 
@@ -58,13 +60,6 @@ public class MarketplaceProduct
 		this.transaction = transaction;
 		this.ebsProduct = ebsProduct;
 		this.streamerProduct = streamerProduct;
-
-		initializeProduct();
-	}
-
-	private void initializeProduct()
-	{
-
 	}
 
 	public void start()
@@ -100,81 +95,96 @@ public class MarketplaceProduct
 	private void handleSpawnBehaviour()
 	{
 		Instant now = Instant.now();
+		String productId = ebsProduct.id;
 		EbsProduct.Behaviour behaviour = ebsProduct.behaviour;
-		ArrayList<EbsProduct.SpawnBehaviourOption> spawnBehaviourOptions = behaviour.spawnBehaviourOptions;
-		EbsProductInterval spawnBehaviourInterval = behaviour.spawnBehaviourInterval;
+		ArrayList<EbsProduct.SpawnOption> spawnOptions = behaviour.spawnOptions;
+		EbsProductInterval spawnInterval = behaviour.spawnInterval;
 
 		// guard: check if objects need to be spawned
-		if (spawnBehaviourOptions == null)
+		if (spawnOptions == null)
 		{
+			log.error("Could not find valid spawn behaviour options for product: "+ productId);
 			return;
 		}
 
 		// make sure the behaviour interval is valid
-		if (spawnBehaviourInterval == null)
+		if (spawnInterval == null)
 		{
-			spawnBehaviourInterval = generateDefaultInterval();
+			spawnInterval = MarketplaceConfigGetters.generateDefaultInterval();
 		}
 
+		Integer repeatAmount = spawnInterval.repeatAmount;
+		int validatedRepeatAmount = (repeatAmount == null ? 1 : repeatAmount);
+
 		// guard: check if the amount has passed
-		if (spawnBehaviourCounter >= spawnBehaviourInterval.repeatAmount)
+		if (spawnBehaviourCounter >= validatedRepeatAmount)
 		{
 			return;
 		}
 
 		// guard: check if the interval has not passed
-		if (lastSpawnBehaviour != null && lastSpawnBehaviour.plusMillis(spawnBehaviourInterval.delayMs).isAfter(now))
+		if (lastSpawnBehaviour != null && lastSpawnBehaviour.plusMillis(spawnInterval.delayMs).isAfter(now))
 		{
 			return;
 		}
 
 		// select a random option
-		EbsProduct.SpawnBehaviourOption spawnBehaviourOption = rollSpawnBehaviour(spawnBehaviourOptions);
+		EbsProduct.SpawnOption spawnOption = getSpawnBehaviourByChance(spawnOptions);
 
 		// guard: check if a valid option was selected
-		if (spawnBehaviourOption == null)
+		if (spawnOption == null)
 		{
+			log.error("Could not find valid spawn behaviour option for product: "+ productId);
 			return;
 		}
 
 		// an option is selected so we can change the timer and count
+		log.info("Executing spawn behaviours for product, because they are valid: "+ productId);
 		lastSpawnBehaviour = now;
 		spawnBehaviourCounter += 1;
 
 		// randomize the amount of spawns
-		Integer spawnAmountMin = spawnBehaviourOption.spawnAmountMin;
-		Integer spawnAmountMax = spawnBehaviourOption.spawnAmountMax;
-		int spawnAmountMinValidated = (spawnAmountMin == null) ? 1 : spawnAmountMin;
-		int spawnAmountMaxValidated = (spawnAmountMax == null) ? 1 : spawnAmountMax;
-		int spawnAmount = spawnAmountMinValidated + ((int) (Math.random() * ((float) Math.abs(spawnAmountMaxValidated - spawnAmountMinValidated))));
-		ArrayList<EbsProduct.SpawnBehaviour> spawnBehaviours = spawnBehaviourOption.spawnBehaviours;
+		int spawnAmount = (int) MarketplaceConfigGetters.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
+		ArrayList<EbsProduct.Spawn> spawns = spawnOption.spawns;
 
 		// guard: make sure the spawn behaviours are valid
-		if (spawnBehaviours == null)
+		if (spawns == null)
 		{
+			log.error("Could not find valid spawn behaviours for product: "+ productId);
 			return;
 		}
 
 		// execute the spawn for the requested amount of times along with all spawn behaviours
 		for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
 		{
-			for (EbsProduct.SpawnBehaviour spawnBehaviour : spawnBehaviours)
+			for (EbsProduct.Spawn spawn : spawns)
 			{
-				triggerSpawnBehaviour(spawnBehaviour);
+				int spawnDelayMs = (int) MarketplaceConfigGetters.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
+				triggerSpawn(spawn, spawnDelayMs);
 			}
 		}
 	}
 
-	private void triggerSpawnBehaviour(EbsProduct.SpawnBehaviour spawnBehaviour)
+	private void triggerSpawn(EbsProduct.Spawn spawn, int spawnDelayMs)
 	{
-		EbsModelPlacement placement =  spawnBehaviour.modelPlacement;
+
+		// guard: make sure the spawn is valid
+		if (spawn == null)
+		{
+			log.error("An invalid spawn object was passed when triggering spawn!");
+			return;
+		}
+
+		EbsModelPlacement placement = spawn.modelPlacement;
+		EbsProduct.Animation showAnimation = spawn.showAnimation;
 		Client client = manager.getClient();
-		ArrayList<MarketplaceSpawnedObject> placedSpawnedObjects = new ArrayList();
-		ArrayList<ModelData> placedModels = new ArrayList();
+		ArrayList<MarketplaceSpawnedObject> spawnedObjects = new ArrayList();
+		ArrayList<ModelData> spawnedModels = new ArrayList();
 
 		// make sure there are valid placement parameters
-		if (placement == null) {
-			placement = generateDefaultModelPlacement();
+		if (placement == null)
+		{
+			placement = MarketplaceConfigGetters.generateDefaultModelPlacement();
 		}
 
 		// find an available spawn point
@@ -190,71 +200,80 @@ public class MarketplaceProduct
 		// guard: make sure the spawn point is valid
 		if (spawnPoint == null)
 		{
+			log.error("Could not find valid spawn point when triggering spawn behaviour!");
 			return;
 		}
 
 		// roll a random set of model IDs
-		EbsProduct.Model model = rollModel(spawnBehaviour.models);
+		EbsProduct.ModelSet modelSet = MarketplaceConfigGetters.getRandomModelSet(spawn.modelSets);
 
 		// guard: make sure the selected model is valid
-		if (model == null || model.modelIds == null)
+		if (modelSet == null || modelSet.modelIds == null)
 		{
+			log.error("Could not find valid model set when triggering spawn behaviour!");
 			return;
 		}
 
-		Double modelScale = model.modelScale;
-
 		// loop all the individual model IDs making up this model
-		for (int modelId : model.modelIds)
+		for (int modelId : modelSet.modelIds)
 		{
-			RuneLiteObject modelObject = client.createRuneLiteObject();
+			RuneLiteObject runeLiteObject = client.createRuneLiteObject();
 			ModelData modelData = client.loadModelData(modelId)
 				.cloneVertices()
 				.cloneColors();
 
-//			MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(
-//				client,
-//				object,
-//				marketplaceModel,
-//				spawnPoint,
-//				product
-//			);
+			MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(
+				client,
+				runeLiteObject,
+				spawnPoint,
+				this
+			);
 
-			// check if the model needs further customization (e.g. recolors)
-			// this needs to be done before applying the light to the model
-			if (modelScale != null)
-			{
-				int modelSize = (int) (MODEL_REFERENCE_SIZE * modelScale);
-				modelData.scale(modelSize, modelSize, modelSize);
-			}
+			// TODO: do any recolours here, this needs to be done before light!
 
 			// set the object to the model
-			modelObject.setModel(modelData.light());
+			runeLiteObject.setModel(modelData.light());
 
 			// move to the spawn location
-			modelObject.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+			runeLiteObject.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
 
 			// keep track of all the models and spawned objects that were placed
-			placedModels.add(modelData);
-//			placedSpawnedObjects.add(spawnedObject);
-		}
-	}
-
-	private EbsProduct.Model rollModel(ArrayList<EbsProduct.Model> models)
-	{
-		if (models == null || models.size() < 0)
-		{
-			return null;
+			spawnedModels.add(modelData);
+			spawnedObjects.add(spawnedObject);
 		}
 
-		Random modelSelector = new Random();
-		int modelIndex = modelSelector.nextInt(models.size());
-		EbsProduct.Model model = models.get(modelIndex);
+		// perform any other modifications to the models that need to be done for all
+		// the spawned models in the same way (e.g. when there is a combination of models for one entity)
+		MarketplaceModelUtilities.scaleModels(spawnedModels, modelSet);
+		MarketplaceModelUtilities.rotateModels(spawnedModels, modelSet);
 
-		return model;
+		// get all animations we might need to trigger
+		EbsProductAnimationFrame modelAnimation = MarketplaceConfigGetters.getValidAnimationFrame(showAnimation.modelAnimation);
+
+		// only set animations when found
+		if (modelAnimation.id != null) {
+			int delayMs = modelAnimation.delayMs;
+			int durationMs = modelAnimation.durationMs;
+			int startAfterMs = spawnDelayMs + delayMs;
+			int resetAfterMs = startAfterMs + durationMs;
+
+			// schedule to start the animation
+			scheduleSetAnimations(spawnedObjects, modelAnimation.id, startAfterMs);
+
+			// only reset animations when max duration
+			if (modelAnimation.durationMs != null) {
+				scheduleResetAnimations(spawnedObjects, resetAfterMs);
+			}
+		}
+
+		// schedule showing of the objects
+		scheduleShowObjects(spawnedObjects, spawnDelayMs);
+
+		// register the objects to the manager to make the spawn point unavailable
+		manager.registerSpawnedObjectPlacements(spawnedObjects);
 	}
 
-	private EbsProduct.SpawnBehaviourOption rollSpawnBehaviour(ArrayList<EbsProduct.SpawnBehaviourOption> spawnBehaviourOptions)
+	private EbsProduct.SpawnOption getSpawnBehaviourByChance(ArrayList<EbsProduct.SpawnOption> spawnBehaviourOptions)
 	{
 		int attempts = 0;
 		int maxAttempts = 50;
@@ -269,7 +288,7 @@ public class MarketplaceProduct
 		// TODO: see how this impacts the selection?
 		while (attempts++ < maxAttempts)
 		{
-			for (EbsProduct.SpawnBehaviourOption option : spawnBehaviourOptions)
+			for (EbsProduct.SpawnOption option : spawnBehaviourOptions)
 			{
 				Double roll = Math.random();
 				Double chance = option.chance;
@@ -285,29 +304,46 @@ public class MarketplaceProduct
 		return spawnBehaviourOptions.get(0);
 	}
 
-	public void onClientTick()
+	private void scheduleShowObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
 	{
-
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+				spawnedObject.show();
+			}
+		}, delayMs);
 	}
 
-	private EbsProductInterval generateDefaultInterval()
+	private void scheduleHideObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
 	{
-		EbsProductInterval interval = new EbsProductInterval();
-		interval.chance = 1.0d;
-		interval.delayMs = 0;
-		interval.durationMs = 0;
-		interval.repeatAmount = 1;
-
-		return interval;
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+				spawnedObject.hide();
+				spawnedObject.getObject().setModel(null);
+			}
+		}, delayMs);
 	}
 
-	private EbsModelPlacement generateDefaultModelPlacement()
+	private void scheduleSetAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, int animationId, long delayMs)
 	{
-		EbsModelPlacement placement = new EbsModelPlacement();
-		placement.locationType = CURRENT_TILE_LOCATION_TYPE;
-		placement.radiusType = OUTWARD_RADIUS_TYPE;
-		placement.radius = DEFAULT_RADIUS;
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			Animation objectAnimation = manager.getClient().loadAnimation(animationId);
 
-		return placement;
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+				RuneLiteObject object = spawnedObject.getObject();
+				object.setShouldLoop(true);
+				object.setAnimation(objectAnimation);
+			}
+		}, delayMs);
+	}
+
+	private void scheduleResetAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
+	{
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+				RuneLiteObject object = spawnedObject.getObject();
+				object.setShouldLoop(false);
+				object.setAnimation(null);
+			}
+		}, delayMs);
 	}
 }
