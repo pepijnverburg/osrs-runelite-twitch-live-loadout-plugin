@@ -526,19 +526,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return 0;
 	}
 
-	@ConfigItem(
-			keyName = "devMarketplaceProductSpawn",
-			name = "Dev Marketplace Product Spawn",
-			description = "Testing product.",
-			position = 99,
-			hidden = false,
-			section = marketplaceSection
-	)
-	default MarketplaceProduct devMarketplaceProductSpawn()
-	{
-		return MarketplaceProduct.NONE;
-	}
-
 	@ConfigSection(
 			name = "Advanced",
 			description = "Settings for advanced usage",

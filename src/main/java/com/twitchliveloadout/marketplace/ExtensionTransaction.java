@@ -1,4 +1,4 @@
 package com.twitchliveloadout.marketplace;
 
-public class MarketplaceTransaction {
+public class ExtensionTransaction {
 }

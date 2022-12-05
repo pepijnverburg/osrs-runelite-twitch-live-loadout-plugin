@@ -1,137 +1,313 @@
 package com.twitchliveloadout.marketplace;
 
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
+import net.runelite.api.Client;
 import net.runelite.api.ModelData;
-import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.RuneLiteObject;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public abstract class MarketplaceProduct
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
+
+public class MarketplaceProduct
 {
+
+	/**
+	 * The Marketplace manager
+	 */
+	private final MarketplaceManager manager;
 
 	/**
 	 * The Twitch transaction attributed to this product
 	 */
-//	@Getter
-//	private final MarketplaceTransaction transaction;
+	@Getter
+	private final ExtensionTransaction transaction;
 
 	/**
-	 * The options of models this product can spawn, not that this is two dimensional array
-	 * where the first index is the options it randomly selects one from and the second index
-	 * are all the models that should be spawned at the same time
+	 * The Twitch transaction attributed to this product
 	 */
 	@Getter
-	@Setter(AccessLevel.PROTECTED)
-	private MarketplaceModel[][] marketplaceModels = {};
+	private final EbsProduct ebsProduct;
 
 	/**
-	 * The amount of milliseconds before this product disappears
+	 * The Twitch transaction attributed to this product
 	 */
 	@Getter
-	@Setter(AccessLevel.PROTECTED)
-	private int expiryTimeMs = 0;
+	private final StreamerProduct streamerProduct;
 
 	/**
-	 * The graphic that is shown on the player when spawning
+	 * Long-term interval trackers
 	 */
-	@Getter
-	@Setter(AccessLevel.PROTECTED)
-	private int playerGraphicId = -1;
-
-	/**
-	 * The animation the player will perform when spawning
-	 */
-	@Getter
-	@Setter(AccessLevel.PROTECTED)
-	private int playerAnimationId = -1;
-
-	/**
-	 * Whether a spawner object should be used before showing the actual model
-	 */
-	@Getter
-	@Setter(AccessLevel.PROTECTED)
-	private boolean useSpawner = true;
-
-	/**
-	 * The duration the spawner object is there before the actual model appears
-	 */
-	@Getter
-	@Setter(AccessLevel.PROTECTED)
-	private int spawnerDurationMs = 1000;
-
-	/**
-	 * The maximum delay the randomizer will be based on to spawn the product
-	 */
-	@Getter
-	@Setter(AccessLevel.PROTECTED)
-	private int randomMaxSpawnDelayMs = 0;
+	private Instant lastSpawnBehaviour;
+	private int spawnBehaviourCounter = 0;
+	private Instant lastInterfaceEffect;
+	private int interfaceEffectCounter = 0;
 
 	/**
 	 * A list of all the spawned objects for this product
 	 */
 	@Getter
-	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<MarketplaceSpawnedObject>> spawnedObjects = new ConcurrentHashMap();
+	private final CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects = new CopyOnWriteArrayList();
 
-	public MarketplaceProduct()
+	public MarketplaceProduct(MarketplaceManager manager, ExtensionTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct)
 	{
-		onInitializeProduct();
+		this.manager = manager;
+		this.transaction = transaction;
+		this.ebsProduct = ebsProduct;
+		this.streamerProduct = streamerProduct;
+
+		initializeProduct();
 	}
 
-	public abstract void onInitializeProduct();
-
-	public void onBeforeSpawn()
+	private void initializeProduct()
 	{
-		// empty by default
+
 	}
 
-	public void onInitializeModel(ModelData model, int modelId)
+	public void start()
 	{
-		// empty by default
+
 	}
 
-	public void onAfterSpawn()
+	public void pause()
 	{
-		// empty by default
+
+	}
+
+	public void stop()
+	{
+
 	}
 
 	public void onGameTick()
 	{
 
+		// guard: make sure the EBS product is valid
+		if (ebsProduct == null)
+		{
+			return;
+		}
+
+		handleSpawnBehaviour();
+//		handlePlayerAnimation();
+//		handlePlayerEquipment();
+//		handleInterfaceEffect();
 	}
 
-	private void removeSpawnedObject(MarketplaceSpawnedObject spawnedObject)
+	private void handleSpawnBehaviour()
 	{
-		spawnedObjects.remove(spawnedObject);
+		Instant now = Instant.now();
+		EbsProduct.Behaviour behaviour = ebsProduct.behaviour;
+		ArrayList<EbsProduct.SpawnBehaviourOption> spawnBehaviourOptions = behaviour.spawnBehaviourOptions;
+		EbsProductInterval spawnBehaviourInterval = behaviour.spawnBehaviourInterval;
 
-		// remove this world point if no objects are left
-		if (spawnedObjects.size() <= 0)
+		// guard: check if objects need to be spawned
+		if (spawnBehaviourOptions == null)
 		{
-			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
-			spawnedObjects.remove(worldPoint);
+			return;
+		}
+
+		// make sure the behaviour interval is valid
+		if (spawnBehaviourInterval == null)
+		{
+			spawnBehaviourInterval = generateDefaultInterval();
+		}
+
+		// guard: check if the amount has passed
+		if (spawnBehaviourCounter >= spawnBehaviourInterval.repeatAmount)
+		{
+			return;
+		}
+
+		// guard: check if the interval has not passed
+		if (lastSpawnBehaviour != null && lastSpawnBehaviour.plusMillis(spawnBehaviourInterval.delayMs).isAfter(now))
+		{
+			return;
+		}
+
+		// select a random option
+		EbsProduct.SpawnBehaviourOption spawnBehaviourOption = rollSpawnBehaviour(spawnBehaviourOptions);
+
+		// guard: check if a valid option was selected
+		if (spawnBehaviourOption == null)
+		{
+			return;
+		}
+
+		// an option is selected so we can change the timer and count
+		lastSpawnBehaviour = now;
+		spawnBehaviourCounter += 1;
+
+		// randomize the amount of spawns
+		Integer spawnAmountMin = spawnBehaviourOption.spawnAmountMin;
+		Integer spawnAmountMax = spawnBehaviourOption.spawnAmountMax;
+		int spawnAmountMinValidated = (spawnAmountMin == null) ? 1 : spawnAmountMin;
+		int spawnAmountMaxValidated = (spawnAmountMax == null) ? 1 : spawnAmountMax;
+		int spawnAmount = spawnAmountMinValidated + ((int) (Math.random() * ((float) Math.abs(spawnAmountMaxValidated - spawnAmountMinValidated))));
+		ArrayList<EbsProduct.SpawnBehaviour> spawnBehaviours = spawnBehaviourOption.spawnBehaviours;
+
+		// guard: make sure the spawn behaviours are valid
+		if (spawnBehaviours == null)
+		{
+			return;
+		}
+
+		// execute the spawn for the requested amount of times along with all spawn behaviours
+		for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
+		{
+			for (EbsProduct.SpawnBehaviour spawnBehaviour : spawnBehaviours)
+			{
+				triggerSpawnBehaviour(spawnBehaviour);
+			}
 		}
 	}
 
-	/**
-	 * The default spawn point generator
-	 *
-	 * @param marketplaceManager
-	 * @return list of spawn points where duplicates of this product are put
-	 */
-	public static Collection<MarketplaceSpawnPoint> getSpawnPoints(MarketplaceManager marketplaceManager)
+	private void triggerSpawnBehaviour(EbsProduct.SpawnBehaviour spawnBehaviour)
 	{
-		final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
-		final MarketplaceSpawnPoint defaultSpawnPoint = marketplaceManager.getOutwardSpawnPoint(1, 2, 10, null);
+		EbsModelPlacement placement =  spawnBehaviour.modelPlacement;
+		Client client = manager.getClient();
+		ArrayList<MarketplaceSpawnedObject> placedSpawnedObjects = new ArrayList();
+		ArrayList<ModelData> placedModels = new ArrayList();
 
-		if (defaultSpawnPoint != null)
-		{
-			spawnPoints.add(defaultSpawnPoint);
+		// make sure there are valid placement parameters
+		if (placement == null) {
+			placement = generateDefaultModelPlacement();
 		}
 
-		return spawnPoints;
+		// find an available spawn point
+		MarketplaceSpawnPoint spawnPoint;
+		Integer radius = placement.radius;
+		int validatedRadius = (radius == null) ? DEFAULT_RADIUS : radius;
+		if (placement.radiusType == OUTWARD_RADIUS_TYPE) {
+			spawnPoint = manager.getOutwardSpawnPoint(validatedRadius);
+		} else {
+			spawnPoint = manager.getSpawnPoint(validatedRadius);
+		}
+
+		// guard: make sure the spawn point is valid
+		if (spawnPoint == null)
+		{
+			return;
+		}
+
+		// roll a random set of model IDs
+		EbsProduct.Model model = rollModel(spawnBehaviour.models);
+
+		// guard: make sure the selected model is valid
+		if (model == null || model.modelIds == null)
+		{
+			return;
+		}
+
+		Double modelScale = model.modelScale;
+
+		// loop all the individual model IDs making up this model
+		for (int modelId : model.modelIds)
+		{
+			RuneLiteObject modelObject = client.createRuneLiteObject();
+			ModelData modelData = client.loadModelData(modelId)
+				.cloneVertices()
+				.cloneColors();
+
+//			MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(
+//				client,
+//				object,
+//				marketplaceModel,
+//				spawnPoint,
+//				product
+//			);
+
+			// check if the model needs further customization (e.g. recolors)
+			// this needs to be done before applying the light to the model
+			if (modelScale != null)
+			{
+				int modelSize = (int) (MODEL_REFERENCE_SIZE * modelScale);
+				modelData.scale(modelSize, modelSize, modelSize);
+			}
+
+			// set the object to the model
+			modelObject.setModel(modelData.light());
+
+			// move to the spawn location
+			modelObject.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+
+			// keep track of all the models and spawned objects that were placed
+			placedModels.add(modelData);
+//			placedSpawnedObjects.add(spawnedObject);
+		}
+	}
+
+	private EbsProduct.Model rollModel(ArrayList<EbsProduct.Model> models)
+	{
+		if (models == null || models.size() < 0)
+		{
+			return null;
+		}
+
+		Random modelSelector = new Random();
+		int modelIndex = modelSelector.nextInt(models.size());
+		EbsProduct.Model model = models.get(modelIndex);
+
+		return model;
+	}
+
+	private EbsProduct.SpawnBehaviourOption rollSpawnBehaviour(ArrayList<EbsProduct.SpawnBehaviourOption> spawnBehaviourOptions)
+	{
+		int attempts = 0;
+		int maxAttempts = 50;
+
+		// guard: make sure there are any options
+		if (spawnBehaviourOptions == null || spawnBehaviourOptions.size() < 0)
+		{
+			return null;
+		}
+
+		// roll for x amount of times to select the option
+		// TODO: see how this impacts the selection?
+		while (attempts++ < maxAttempts)
+		{
+			for (EbsProduct.SpawnBehaviourOption option : spawnBehaviourOptions)
+			{
+				Double roll = Math.random();
+				Double chance = option.chance;
+
+				// choose this option when the chance is not known or when the roll landed
+				if (chance == null || roll <= chance)
+				{
+					return option;
+				}
+			}
+		}
+
+		return spawnBehaviourOptions.get(0);
+	}
+
+	public void onClientTick()
+	{
+
+	}
+
+	private EbsProductInterval generateDefaultInterval()
+	{
+		EbsProductInterval interval = new EbsProductInterval();
+		interval.chance = 1.0d;
+		interval.delayMs = 0;
+		interval.durationMs = 0;
+		interval.repeatAmount = 1;
+
+		return interval;
+	}
+
+	private EbsModelPlacement generateDefaultModelPlacement()
+	{
+		EbsModelPlacement placement = new EbsModelPlacement();
+		placement.locationType = CURRENT_TILE_LOCATION_TYPE;
+		placement.radiusType = OUTWARD_RADIUS_TYPE;
+		placement.radius = DEFAULT_RADIUS;
+
+		return placement;
 	}
 }

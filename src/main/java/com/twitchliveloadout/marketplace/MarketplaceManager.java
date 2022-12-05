@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace;
 
+import com.google.gson.Gson;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchState;
@@ -10,6 +11,7 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 
+import java.security.cert.Extension;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -33,6 +35,8 @@ public class MarketplaceManager {
 	 */
 	private final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = new CopyOnWriteArrayList();
 
+	public EbsProduct tmpEbsProduct;
+
 	/**
 	 * Lookup to see which world points are taken for future spawns
 	 */
@@ -44,6 +48,11 @@ public class MarketplaceManager {
 		this.twitchState = twitchState;
 		this.client = client;
 		this.config = config;
+
+		String json = "{\"id\":\"falador-party\",\"enabled\":true,\"type\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"interfaceEffectType\":\"shake-screen\",\"interfaceEffectInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":10000},\"playerAnimation\":{\"idleAnimationId\":100,\"runAnimationId\":100,\"walkAnimationId\":100},\"playerEquipment\":{\"amuletItemId\":1,\"bootsItemId\":1,\"chestItemId\":1,\"glovesItemId\":1,\"helmItemId\":1,\"legsItemId\":1,\"shieldItemId\":1,\"weaponItemId\":1},\"spawnBehaviourInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":1000},\"spawnBehaviourOptions\":[{\"chance\":0.5,\"spawnAmountMin\":5,\"spawnAmountMax\":10,\"spawnBehaviours\":[{\"models\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\",\"modelScale\":0.5}],\"hideAnimation\":{\"modelAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerGraphic\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000}}}]}]}}";
+		tmpEbsProduct = new Gson().fromJson(json, EbsProduct.class);
+		log.warn("Loaded TMP ebs product:");
+		log.warn(tmpEbsProduct.name);
 	}
 
 	/**
@@ -78,6 +87,8 @@ public class MarketplaceManager {
 		{
 			return;
 		}
+
+		startProduct(tmpEbsProduct);
 	}
 
 	/**
@@ -126,6 +137,20 @@ public class MarketplaceManager {
 				spawnedObject.respawn();
 			}
 		});
+	}
+
+	private void startProduct(EbsProduct ebsProduct)
+	{
+		log.info("Starting EBS product with name: "+ ebsProduct.name);
+
+		MarketplaceProduct newProduct = new MarketplaceProduct(
+			this,
+			new ExtensionTransaction(), // TODO
+			ebsProduct,
+			new StreamerProduct() // TODO
+		);
+
+		activeProducts.add(newProduct);
 	}
 
 	/**
@@ -212,6 +237,11 @@ public class MarketplaceManager {
 		}
 
 		return null;
+	}
+
+	public MarketplaceSpawnPoint getOutwardSpawnPoint(int maxRadius)
+	{
+		return getOutwardSpawnPoint(1, 2, maxRadius, null);
 	}
 
 	public Collection<MarketplaceSpawnPoint> getOutwardSpawnPoints(int spawnAmount)
