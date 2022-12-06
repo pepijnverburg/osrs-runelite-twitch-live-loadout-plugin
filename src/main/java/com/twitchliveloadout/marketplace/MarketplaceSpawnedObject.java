@@ -29,12 +29,8 @@ public class MarketplaceSpawnedObject {
 
 	@Getter
 	private final ModelData modelData;
-
 	private double currentScale = -1;
 	private double currentRotationDegrees = 0;
-	private final int[] originalVerticesX;
-	private final int[] originalVerticesY;
-	private final int[] originalVerticesZ;
 
 	@Getter
 	private final MarketplaceSpawnPoint spawnPoint;
@@ -55,18 +51,6 @@ public class MarketplaceSpawnedObject {
 		this.modelData = modelData;
 		this.spawnPoint = spawnPoint;
 		this.idleAnimationId = idleAnimationId;
-
-		// cache all the original vertices to make it easier for the rotation to be reset
-		// to its original state and always be able to rotate relative to the starting position
-		int verticesCount = modelData.getVerticesCount();
-		originalVerticesX = new int[verticesCount];
-		originalVerticesY = new int[verticesCount];
-		originalVerticesZ = new int[verticesCount];
-		for(int verticesIndex = 0; verticesIndex < verticesCount; ++verticesIndex) {
-			originalVerticesX[verticesIndex] = modelData.getVerticesX()[verticesIndex];
-			originalVerticesY[verticesIndex] = modelData.getVerticesY()[verticesIndex];
-			originalVerticesZ[verticesIndex] = modelData.getVerticesZ()[verticesIndex];
-		}
 
 		// set to initial spawn-point
 		object.setLocation(spawnPoint.getLocalPoint(client), spawnPoint.getPlane());
@@ -119,35 +103,8 @@ public class MarketplaceSpawnedObject {
 
 		currentScale = scale;
 
-		int radius = (int) (scale * MarketplaceConstants.RUNELITE_OBJECT_FULL_RADIUS);
-//		object.setRadius(radius);
-		log.info("SET SCALE "+ scale+", "+radius);
-
 		MarketplaceModelUtilities.scaleModel(modelData, scale);
 		render();
-	}
-
-	public void resetTransformations()
-	{
-//		modelData.cloneVertices();
-//
-//		for(int verticesIndex = 0; verticesIndex < modelData.getVerticesCount(); ++verticesIndex) {
-//			modelData.getVerticesX()[verticesIndex] = originalVerticesX[verticesIndex];
-//			modelData.getVerticesY()[verticesIndex] = originalVerticesY[verticesIndex];
-//			modelData.getVerticesZ()[verticesIndex] = originalVerticesZ[verticesIndex];
-//		}
-	}
-
-	private void applyTransformations()
-	{
-//		// reset all the transformations
-//		resetTransformations();
-//
-//		// rotate relative to its current position
-//		MarketplaceModelUtilities.rotateModel(modelData, currentRotationDegrees);
-//
-//		// make sure the same scale is enforced on the new vertices!
-//		MarketplaceModelUtilities.scaleModel(modelData, currentScale);
 	}
 
 	public void setAnimation(int animationId, boolean shouldLoop)
