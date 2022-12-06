@@ -96,7 +96,7 @@ public class MarketplaceSpawnedObject {
 
 		// make sure rotation is not negative
 		if (angleDegrees < 0) {
-			angleDegrees = 360 - (angleDegrees % 360);
+			angleDegrees = 360 + (angleDegrees % 360);
 		}
 
 		// make sure there are no multiple rotations
@@ -106,8 +106,6 @@ public class MarketplaceSpawnedObject {
 
 		int orientation = (int) (angleDegrees * MarketplaceConstants.RUNELITE_OBJECT_FULL_ROTATION / 360d);
 		object.setOrientation(orientation);
-		log.info("New rotation: " +angleDegrees+", "+orientation);
-
 	}
 
 	public void scale(double scale)
@@ -122,7 +120,11 @@ public class MarketplaceSpawnedObject {
 		currentScale = scale;
 
 		int radius = (int) (scale * MarketplaceConstants.RUNELITE_OBJECT_FULL_RADIUS);
-		object.setRadius(radius);
+//		object.setRadius(radius);
+		log.info("SET SCALE "+ scale+", "+radius);
+
+		MarketplaceModelUtilities.scaleModel(modelData, scale);
+		render();
 	}
 
 	public void resetTransformations()
