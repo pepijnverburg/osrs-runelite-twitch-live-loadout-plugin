@@ -410,7 +410,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Keep track of all marketplace transactions and apply them if they are not yet
 	 */
-	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
+	@Schedule(period = 5000, unit = ChronoUnit.MILLIS, asynchronous = true)
 	public void syncMarketplaceTransactions()
 	{
 		try {
@@ -640,6 +640,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 		} catch (Exception exception) {
 			log.warn("Could not handle game tick event: ", exception);
+		}
+	}
+
+	@Subscribe
+	public void onClientTick(ClientTick tick)
+	{
+		try {
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.onClientTick();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not handle client tick event: ", exception);
 		}
 	}
 

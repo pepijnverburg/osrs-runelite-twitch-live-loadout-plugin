@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class EbsProduct {
 	public String id;
 	public Boolean enabled;
-	public String type;
+	public String category;
 	public String name;
 	public String description;
 	public Behaviour behaviour;
@@ -13,7 +13,7 @@ public class EbsProduct {
 	public class Behaviour {
 		public String interfaceEffectType;
 		public EbsProductInterval interfaceEffectInterval;
-		public PlayerAnimation playerAnimation;
+		public EbsProductMovementAnimations playerAnimations;
 		public PlayerEquipment playerEquipment;
 		public EbsProductInterval spawnInterval;
 		public ArrayList<SpawnOption> spawnOptions;
@@ -24,12 +24,6 @@ public class EbsProduct {
 		public EbsProductRandomRange modelScale;
 		public String modelRotationType;
 		public EbsProductRandomRange modelRotation;
-	}
-
-	public class PlayerAnimation {
-		public Integer idleAnimationId;
-		public Integer runAnimationId;
-		public Integer walkAnimationId;
 	}
 
 	public class PlayerEquipment {
@@ -51,6 +45,7 @@ public class EbsProduct {
 		public EbsModelPlacement modelPlacement;
 		public Animation hideAnimation;
 		public Animation showAnimation;
+		public EbsProductMovementAnimations movementAnimations;
 		public ArrayList<Animation> randomAnimations;
 		public EbsProductInterval randomAnimationInterval;
 	}

@@ -24,6 +24,8 @@ public class MarketplaceManager {
 
 	@Getter
 	private final Client client;
+
+	@Getter
 	private final TwitchLiveLoadoutConfig config;
 
 	/**
@@ -55,6 +57,9 @@ public class MarketplaceManager {
 
 		// falador party
 		json = "{\"id\":\"falador-party\",\"enabled\":true,\"type\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":5,\"max\":10},\"spawnDelayMs\":{\"min\":0,\"max\":500},\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\"},{\"modelIds\":[2227],\"modelRotationType\":\"random\"},{\"modelIds\":[2228],\"modelRotationType\":\"random\"}],\"showAnimation\":{\"modelAnimation\":{\"id\":498,\"durationMs\":2400}}}]}]}}";
+
+		// jad
+		json = "{\"id\":\"mini-jad\",\"enabled\":true,\"category\":\"npc-spawn\",\"name\":\"Mini Jad\",\"description\":\"A Jad following the streamer around and attacking them.\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":1},\"spawns\":[{\"modelSets\":[{\"modelIds\":[9319],\"modelRotationType\":\"player\",\"modelScale\":{\"min\":0.5}}]}]}]}}";
 
 		tmpEbsProduct = new Gson().fromJson(json, EbsProduct.class);
 		log.warn("Loaded TMP ebs product:");
@@ -91,6 +96,18 @@ public class MarketplaceManager {
 		for (MarketplaceProduct product : activeProducts)
 		{
 			product.onGameTick();
+		}
+	}
+
+	/**
+	 * Handle client tick
+	 */
+	public void onClientTick()
+	{
+		// for all active products the tick should be triggered
+		for (MarketplaceProduct product : activeProducts)
+		{
+			product.onClientTick();
 		}
 	}
 
@@ -190,7 +207,7 @@ public class MarketplaceManager {
 		while (iterator.hasNext())
 		{
 			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
-			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint();
+			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
 			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
 			// check whether this world point already has a spawned object to add to
@@ -316,7 +333,7 @@ public class MarketplaceManager {
 				}
 
 				// we have found a walkable tile to spawn the object on
-				candidateSpawnPoints.add(new MarketplaceSpawnPoint(localPoint, worldPoint, playerPlane));
+				candidateSpawnPoints.add(new MarketplaceSpawnPoint(worldPoint, playerPlane));
 			}
 		}
 

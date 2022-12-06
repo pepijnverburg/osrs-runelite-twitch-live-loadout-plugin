@@ -21,6 +21,16 @@ public class MarketplaceConfigGetters {
 		return modelSet;
 	}
 
+	public static EbsProductMovementAnimations getValidMovementAnimations(EbsProductMovementAnimations movementAnimations)
+	{
+		EbsProductMovementAnimations validMovementAnimations = new EbsProductMovementAnimations();
+		validMovementAnimations.idleAnimationId = -1;
+		validMovementAnimations.runAnimationId = -1;
+		validMovementAnimations.walkAnimationId = -1;
+
+		return validMovementAnimations;
+	}
+
 	public static double getValidRandomNumberByRange(EbsProductRandomRange randomRange, double defaultMin, double defaultMax)
 	{
 		EbsProductRandomRange validRandomRange = new EbsProductRandomRange();

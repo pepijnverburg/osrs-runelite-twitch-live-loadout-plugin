@@ -11,39 +11,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.MODEL_REFERENCE_SIZE;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.RUNELITE_OBJECT_FULL_RADIUS;
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.RANDOM_ROTATION_TYPE;
 
 @Slf4j
 public class MarketplaceModelUtilities {
 
-	public static void rotateModels(ArrayList<ModelData> models, EbsProduct.ModelSet modelSet)
+	public static void scaleModel(ModelData model, double modelScale)
 	{
-		String modelRotationType = modelSet.modelRotationType;
+		int modelSize = (int) (RUNELITE_OBJECT_FULL_RADIUS * modelScale);
 
-		// check for rotation
-		switch(modelRotationType) {
-			case RANDOM_ROTATION_TYPE:
-				rotateModelsRandomly(models);
-				break;
-		}
-	}
-
-	public static void scaleModels(ArrayList<ModelData> models, EbsProduct.ModelSet modelSet)
-	{
-
-		// guard: check for scaling
-		if (modelSet.modelScale == null)
-		{
-			return;
-		}
-
-		double modelScale = MarketplaceConfigGetters.getValidRandomNumberByRange(modelSet.modelScale, 1, 1);
-		int modelSize = (int) (MODEL_REFERENCE_SIZE * modelScale);
-
-		for (ModelData model : models) {
-			model.scale(modelSize, modelSize, modelSize);
-		}
+		model.cloneVertices();
+		model.scale(modelSize, modelSize, modelSize);
 	}
 
 	public static void recolorAllFaces(ModelData model, Color color)
@@ -73,26 +52,26 @@ public class MarketplaceModelUtilities {
 		}
 
 		short faceColor = faceColors[faceColorIndex];
+		model.cloneVertices();
 		model.recolor(faceColor, JagexColor.rgbToHSL(rgb, brightness));
 	}
 
-	public static void rotateModelsRandomly(ArrayList<ModelData> models)
+	public static void rotateModel(ModelData modelData, double angleDegrees)
 	{
-		final double random = Math.random();
-		if (random < 0.25) {
-			for (ModelData model : models) {
-				model.rotateY90Ccw();
-			}
-		} else if (random < 0.5) {
-			for (ModelData model : models) {
-				model.rotateY180Ccw();
-			}
-		} else if (random < 0.75) {
-			for (ModelData model : models) {
-				model.rotateY270Ccw();
-			}
-		} else {
-			// no rotation
+		modelData.cloneVertices();
+
+		double angleRadians = Math.toRadians(angleDegrees);
+		for(int verticesIndex = 0; verticesIndex < modelData.getVerticesCount(); ++verticesIndex) {
+			int[] xVertices = modelData.getVerticesX();
+			int[] yVertices = modelData.getVerticesY();
+			int[] zVertices = modelData.getVerticesZ();
+			int x = xVertices[verticesIndex];
+			int y = yVertices[verticesIndex];
+			int z = zVertices[verticesIndex];
+
+			xVertices[verticesIndex] = (int) (x*Math.cos(angleRadians) + z*Math.sin(angleRadians));
+			yVertices[verticesIndex] = y;
+			zVertices[verticesIndex] = (int) (z*Math.cos(angleRadians) - x*Math.sin(angleRadians));
 		}
 	}
 }

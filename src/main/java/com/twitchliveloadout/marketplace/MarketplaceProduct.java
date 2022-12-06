@@ -2,10 +2,8 @@ package com.twitchliveloadout.marketplace;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Animation;
-import net.runelite.api.Client;
-import net.runelite.api.ModelData;
-import net.runelite.api.RuneLiteObject;
+import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -85,11 +83,29 @@ public class MarketplaceProduct
 		{
 			return;
 		}
-
 		handleSpawnBehaviour();
 //		handlePlayerAnimation();
 //		handlePlayerEquipment();
 //		handleInterfaceEffect();
+	}
+
+	public void onClientTick()
+	{
+		test();
+	}
+
+	public void test()
+	{
+		for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+			LocalPoint targetPoint = manager.getClient().getLocalPlayer().getLocalLocation();
+			spawnedObject.rotateTowards(targetPoint);
+			spawnedObject.render();
+			int animationId = manager.getConfig().devObjectSpawnAnimationId();
+
+			if (animationId > 0)  {
+				spawnedObject.setAnimation(animationId, true);
+			}
+		}
 	}
 
 	private void handleSpawnBehaviour()
@@ -175,11 +191,13 @@ public class MarketplaceProduct
 			return;
 		}
 
-		EbsModelPlacement placement = spawn.modelPlacement;
-		EbsProduct.Animation showAnimation = spawn.showAnimation;
 		Client client = manager.getClient();
-		ArrayList<MarketplaceSpawnedObject> spawnedObjects = new ArrayList();
-		ArrayList<ModelData> spawnedModels = new ArrayList();
+		ArrayList<MarketplaceSpawnedObject> newSpawnedObjects = new ArrayList();
+		ArrayList<ModelData> newSpawnedModels = new ArrayList();
+
+		EbsModelPlacement placement = spawn.modelPlacement;
+		EbsProductMovementAnimations movementAnimations = MarketplaceConfigGetters.getValidMovementAnimations(spawn.movementAnimations);
+		int idleAnimationId = movementAnimations.idleAnimationId;
 
 		// make sure there are valid placement parameters
 		if (placement == null)
@@ -214,6 +232,12 @@ public class MarketplaceProduct
 			return;
 		}
 
+		// get properties from model set
+		boolean shouldScaleModel = (modelSet.modelScale != null);
+		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.modelRotationType));
+		double modelScale = MarketplaceConfigGetters.getValidRandomNumberByRange(modelSet.modelScale, 1, 1);
+		double modelRotationDegrees = MarketplaceConfigGetters.getValidRandomNumberByRange(modelSet.modelRotation, 0, 360);
+
 		// loop all the individual model IDs making up this model
 		for (int modelId : modelSet.modelIds)
 		{
@@ -223,54 +247,80 @@ public class MarketplaceProduct
 				.cloneColors();
 
 			MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(
+			this,
 				client,
 				runeLiteObject,
+				modelData,
 				spawnPoint,
-				this
+				idleAnimationId
 			);
 
 			// TODO: do any recolours here, this needs to be done before light!
+			if  (shouldScaleModel)
+			{
+				spawnedObject.scale(modelScale);
+			}
+
+			if (shouldRotateModel)
+			{
+				spawnedObject.rotate(modelRotationDegrees);
+			}
 
 			// set the object to the model
-			runeLiteObject.setModel(modelData.light());
-
-			// move to the spawn location
-			runeLiteObject.setLocation(spawnPoint.getLocalPoint(), spawnPoint.getPlane());
+			spawnedObject.render();
 
 			// keep track of all the models and spawned objects that were placed
-			spawnedModels.add(modelData);
-			spawnedObjects.add(spawnedObject);
+			newSpawnedModels.add(modelData);
+			newSpawnedObjects.add(spawnedObject);
 		}
 
-		// perform any other modifications to the models that need to be done for all
-		// the spawned models in the same way (e.g. when there is a combination of models for one entity)
-		MarketplaceModelUtilities.scaleModels(spawnedModels, modelSet);
-		MarketplaceModelUtilities.rotateModels(spawnedModels, modelSet);
-
 		// get all animations we might need to trigger
-		EbsProductAnimationFrame modelAnimation = MarketplaceConfigGetters.getValidAnimationFrame(showAnimation.modelAnimation);
+		EbsProduct.Animation showAnimation = spawn.showAnimation;
 
-		// only set animations when found
-		if (modelAnimation.id != null) {
-			int delayMs = modelAnimation.delayMs;
-			int durationMs = modelAnimation.durationMs;
-			int startAfterMs = spawnDelayMs + delayMs;
-			int resetAfterMs = startAfterMs + durationMs;
-
-			// schedule to start the animation
-			scheduleSetAnimations(spawnedObjects, modelAnimation.id, startAfterMs);
-
-			// only reset animations when max duration
-			if (modelAnimation.durationMs != null) {
-				scheduleResetAnimations(spawnedObjects, resetAfterMs);
-			}
+		// check if there are show animations
+		if (showAnimation != null)
+		{
+			// TODO: trigger player animation and player graphics here!
+			triggerModelAnimations(newSpawnedObjects, showAnimation.modelAnimation, spawnDelayMs);
 		}
 
 		// schedule showing of the objects
-		scheduleShowObjects(spawnedObjects, spawnDelayMs);
+		scheduleShowObjects(newSpawnedObjects, spawnDelayMs);
 
-		// register the objects to the manager to make the spawn point unavailable
-		manager.registerSpawnedObjectPlacements(spawnedObjects);
+		// register the objects to the product and manager to make the spawn point unavailable
+		spawnedObjects.addAll(newSpawnedObjects);
+		manager.registerSpawnedObjectPlacements(newSpawnedObjects);
+	}
+
+	private void triggerModelAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, EbsProductAnimationFrame animation, int baseDelayMs)
+	{
+
+		// guard: make sure the animation is valid
+		if (animation == null)
+		{
+			return;
+		}
+
+		EbsProductAnimationFrame modelAnimation = MarketplaceConfigGetters.getValidAnimationFrame(animation);
+
+		// guard: make sure there is an animation ID
+		if (modelAnimation.id == null)
+		{
+			return;
+		}
+
+		int delayMs = modelAnimation.delayMs;
+		int durationMs = modelAnimation.durationMs;
+		int startAfterMs = baseDelayMs + delayMs;
+		int resetAfterMs = startAfterMs + durationMs;
+
+		// schedule to start the animation
+		scheduleSetAnimations(spawnedObjects, modelAnimation.id, startAfterMs);
+
+		// only reset animations when max duration
+		if (modelAnimation.durationMs != null) {
+			scheduleResetAnimations(spawnedObjects, resetAfterMs);
+		}
 	}
 
 	private EbsProduct.SpawnOption getSpawnBehaviourByChance(ArrayList<EbsProduct.SpawnOption> spawnBehaviourOptions)
@@ -301,6 +351,7 @@ public class MarketplaceProduct
 			}
 		}
 
+		// get the first is no valid one is found
 		return spawnBehaviourOptions.get(0);
 	}
 
@@ -326,12 +377,8 @@ public class MarketplaceProduct
 	private void scheduleSetAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, int animationId, long delayMs)
 	{
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			Animation objectAnimation = manager.getClient().loadAnimation(animationId);
-
 			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
-				RuneLiteObject object = spawnedObject.getObject();
-				object.setShouldLoop(true);
-				object.setAnimation(objectAnimation);
+				spawnedObject.setAnimation(animationId, true);
 			}
 		}, delayMs);
 	}
@@ -340,9 +387,7 @@ public class MarketplaceProduct
 	{
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
-				RuneLiteObject object = spawnedObject.getObject();
-				object.setShouldLoop(false);
-				object.setAnimation(null);
+				spawnedObject.resetAnimation();
 			}
 		}, delayMs);
 	}
