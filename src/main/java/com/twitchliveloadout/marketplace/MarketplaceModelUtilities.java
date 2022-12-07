@@ -4,15 +4,10 @@ import net.runelite.api.JagexColor;
 import net.runelite.api.ModelData;
 
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.coords.WorldPoint;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.RUNELITE_OBJECT_FULL_RADIUS;
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.RANDOM_ROTATION_TYPE;
 
 @Slf4j
 public class MarketplaceModelUtilities {

@@ -24,13 +24,16 @@ public class MarketplaceSpawnedObject {
 	@Getter
 	private final RuneLiteObject object;
 
-	private int currentAnimationId;
-	private final int idleAnimationId;
+	@Getter
+	private final EbsProduct.Spawn spawn;
+
+	@Getter
+	private final EbsProduct.ModelSet modelSet;
+
+	private final EbsProductMovementAnimations movementAnimations;
 
 	@Getter
 	private final ModelData modelData;
-	private double currentScale = -1;
-	private double currentRotationDegrees = 0;
 
 	@Getter
 	private final MarketplaceSpawnPoint spawnPoint;
@@ -42,7 +45,11 @@ public class MarketplaceSpawnedObject {
 	@Setter
 	private boolean respawnRequired = false;
 
-	public MarketplaceSpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, MarketplaceSpawnPoint spawnPoint, int idleAnimationId)
+	private double currentScale = -1;
+	private double currentRotationDegrees = 0;
+	private int currentAnimationId;
+
+	public MarketplaceSpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, MarketplaceSpawnPoint spawnPoint, EbsProduct.Spawn spawn, EbsProduct.ModelSet modelSet)
 	{
 		this.spawnedAt = Instant.now();
 		this.product = product;
@@ -50,7 +57,11 @@ public class MarketplaceSpawnedObject {
 		this.object = object;
 		this.modelData = modelData;
 		this.spawnPoint = spawnPoint;
-		this.idleAnimationId = idleAnimationId;
+		this.spawn = spawn;
+		this.modelSet = modelSet;
+
+		// get valid movement animations
+		this.movementAnimations = MarketplaceConfigGetters.getValidMovementAnimations(spawn.movementAnimations);
 
 		// set to initial spawn-point
 		object.setLocation(spawnPoint.getLocalPoint(client), spawnPoint.getPlane());
@@ -109,15 +120,10 @@ public class MarketplaceSpawnedObject {
 
 	public void setAnimation(int animationId, boolean shouldLoop)
 	{
-		setAnimation(animationId, shouldLoop, false);
-	}
-
-	private void setAnimation(int animationId, boolean shouldLoop, boolean forceSet)
-	{
 		Animation animation = null;
 
 		// guard: skip when the current animation
-		if  (animationId == currentAnimationId && !forceSet)
+		if  (animationId == currentAnimationId)
 		{
 			return;
 		}
@@ -134,6 +140,7 @@ public class MarketplaceSpawnedObject {
 
 	public void resetAnimation()
 	{
+		int idleAnimationId = movementAnimations.idleAnimationId;
 
 		// guard: set to no animation when there is no idle animation
 		if (idleAnimationId < 0)  {
@@ -147,11 +154,13 @@ public class MarketplaceSpawnedObject {
 	public void show()
 	{
 		object.setActive(true);
+		render();
 	}
 
 	public void hide()
 	{
 		object.setActive(false);
+		object.setModel(null);
 	}
 
 	public void render()

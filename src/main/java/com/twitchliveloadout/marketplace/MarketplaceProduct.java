@@ -7,6 +7,7 @@ import net.runelite.api.coords.LocalPoint;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
@@ -45,6 +46,7 @@ public class MarketplaceProduct
 	private int spawnBehaviourCounter = 0;
 	private Instant lastInterfaceEffect;
 	private int interfaceEffectCounter = 0;
+	private HashMap<MarketplaceSpawnedObject, Instant> lastRandomAnimations = new HashMap();
 
 	/**
 	 * A list of all the spawned objects for this product
@@ -83,7 +85,9 @@ public class MarketplaceProduct
 		{
 			return;
 		}
-		handleSpawnBehaviour();
+
+		handleSpawns();
+		handleSpawnRandomAnimations();
 //		handlePlayerAnimation();
 //		handlePlayerEquipment();
 //		handleInterfaceEffect();
@@ -91,24 +95,111 @@ public class MarketplaceProduct
 
 	public void onClientTick()
 	{
+		handleSpawnRotations();
 		test();
 	}
 
 	public void test()
 	{
-		for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
-			LocalPoint targetPoint = manager.getClient().getLocalPlayer().getLocalLocation();
-			spawnedObject.rotateTowards(targetPoint);
-			spawnedObject.render();
-			int animationId = manager.getConfig().devObjectSpawnAnimationId();
 
-			if (animationId > 0)  {
-				spawnedObject.setAnimation(animationId, true);
+//		for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+//			LocalPoint targetPoint = manager.getClient().getLocalPlayer().getLocalLocation();
+//			spawnedObject.rotateTowards(targetPoint);
+//			spawnedObject.render();
+//			int animationId = manager.getConfig().devObjectSpawnAnimationId();
+//
+//			if (animationId > 0)  {
+//				spawnedObject.setAnimation(animationId, true);
+//			}
+//		}
+	}
+
+	private void handleSpawnRotations()
+	{
+		for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+		{
+			EbsProduct.ModelSet modelSet = spawnedObject.getModelSet();
+			String rotationType = modelSet.modelRotationType;
+			Player player = manager.getClient().getLocalPlayer();
+
+			// guard: make sure the rotation and player are valid
+			if (rotationType == null || player == null)
+			{
+				continue;
+			}
+
+			if (rotationType.equals(PLAYER_ROTATION_TYPE))
+			{
+				LocalPoint targetPoint = player.getLocalLocation();
+				spawnedObject.rotateTowards(targetPoint);
+			}
+			else if (rotationType.equals(INTERACTING_ROTATION_TYPE))
+			{
+				Actor interacting = player.getInteracting();
+
+				if (interacting == null)
+				{
+					continue;
+				}
+
+				LocalPoint targetPoint = interacting.getLocalLocation();
+				spawnedObject.rotateTowards(targetPoint);
 			}
 		}
 	}
 
-	private void handleSpawnBehaviour()
+	private void handleSpawnRandomAnimations()
+	{
+		Instant now = Instant.now();
+
+		for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+		{
+			Instant lastRandomAnimationAt = lastRandomAnimations.get(spawnedObject);
+			EbsProduct.Spawn spawn = spawnedObject.getSpawn();
+			EbsProductInterval randomInterval = spawn.randomAnimationInterval;
+			ArrayList<EbsProduct.Animation> randomAnimations = spawn.randomAnimations;
+
+			// guard: make sure there is a valid interval and animation
+			if (randomInterval == null || randomAnimations == null || randomAnimations.size() <= 0)
+			{
+				continue;
+			}
+
+			// guard: check if enough time has passed
+			if (lastRandomAnimationAt != null && lastRandomAnimationAt.plusMillis(randomInterval.delayMs).isAfter(now))
+			{
+				continue;
+			}
+
+			// update the last time it was attempted too roll and execute a random animation
+			lastRandomAnimations.put(spawnedObject, now);
+
+			// guard: skip when this is the first time the interval is triggered!
+			// this prevents the random animation to instantly be triggered on spawn
+			if (lastRandomAnimationAt == null)
+			{
+				continue;
+			}
+
+			// guard: skip this animation when not rolled, while setting the timer before this roll
+			if (!MarketplaceConfigGetters.rollChance(randomInterval.chance))
+			{
+				continue;
+			}
+
+			// select a random entry from all the candidates
+			EbsProduct.Animation randomAnimation = MarketplaceConfigGetters.getRandomEntryFromList(randomAnimations);
+
+			// trigger the animations on this single spawned object
+			ArrayList<MarketplaceSpawnedObject> animatedSpawnedObjects = new ArrayList();
+			animatedSpawnedObjects.add(spawnedObject);
+			triggerAnimation(animatedSpawnedObjects, randomAnimation, 0);
+
+			// TODO: increase the total amount it was triggered and check against max repeat amount.
+		}
+	}
+
+	private void handleSpawns()
 	{
 		Instant now = Instant.now();
 		String productId = ebsProduct.id;
@@ -196,8 +287,6 @@ public class MarketplaceProduct
 		ArrayList<ModelData> newSpawnedModels = new ArrayList();
 
 		EbsModelPlacement placement = spawn.modelPlacement;
-		EbsProductMovementAnimations movementAnimations = MarketplaceConfigGetters.getValidMovementAnimations(spawn.movementAnimations);
-		int idleAnimationId = movementAnimations.idleAnimationId;
 
 		// make sure there are valid placement parameters
 		if (placement == null)
@@ -223,7 +312,7 @@ public class MarketplaceProduct
 		}
 
 		// roll a random set of model IDs
-		EbsProduct.ModelSet modelSet = MarketplaceConfigGetters.getRandomModelSet(spawn.modelSets);
+		EbsProduct.ModelSet modelSet = MarketplaceConfigGetters.getRandomEntryFromList(spawn.modelSets);
 
 		// guard: make sure the selected model is valid
 		if (modelSet == null || modelSet.modelIds == null)
@@ -242,20 +331,19 @@ public class MarketplaceProduct
 		for (int modelId : modelSet.modelIds)
 		{
 			RuneLiteObject runeLiteObject = client.createRuneLiteObject();
-			ModelData modelData = client.loadModelData(modelId)
-				.cloneVertices()
-				.cloneColors();
-
+			ModelData modelData = client.loadModelData(modelId);
 			MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(
 			this,
 				client,
 				runeLiteObject,
 				modelData,
 				spawnPoint,
-				idleAnimationId
+				spawn,
+				modelSet
 			);
 
-			// TODO: do any recolours here, this needs to be done before light!
+			// TODO: do any recolours here
+
 			if  (shouldScaleModel)
 			{
 				spawnedObject.scale(modelScale);
@@ -269,20 +357,16 @@ public class MarketplaceProduct
 			// set the object to the model
 			spawnedObject.render();
 
+			// reset the animations to it will immediately show the idle animation if available
+			spawnedObject.resetAnimation();
+
 			// keep track of all the models and spawned objects that were placed
 			newSpawnedModels.add(modelData);
 			newSpawnedObjects.add(spawnedObject);
 		}
 
-		// get all animations we might need to trigger
-		EbsProduct.Animation showAnimation = spawn.showAnimation;
-
-		// check if there are show animations
-		if (showAnimation != null)
-		{
-			// TODO: trigger player animation and player graphics here!
-			triggerModelAnimations(newSpawnedObjects, showAnimation.modelAnimation, spawnDelayMs);
-		}
+		// trigger any animations played on show
+		triggerAnimation(newSpawnedObjects, spawn.showAnimation, spawnDelayMs);
 
 		// schedule showing of the objects
 		scheduleShowObjects(newSpawnedObjects, spawnDelayMs);
@@ -290,6 +374,19 @@ public class MarketplaceProduct
 		// register the objects to the product and manager to make the spawn point unavailable
 		spawnedObjects.addAll(newSpawnedObjects);
 		manager.registerSpawnedObjectPlacements(newSpawnedObjects);
+	}
+
+	private void triggerAnimation(ArrayList<MarketplaceSpawnedObject> spawnedObjects, EbsProduct.Animation animation, int baseDelayMs)
+	{
+
+		// guard: make sure the animation is valid
+		if (animation == null)
+		{
+			return;
+		}
+
+		// TODO: trigger player animation and player graphics here!
+		triggerModelAnimations(spawnedObjects, animation.modelAnimation, baseDelayMs);
 	}
 
 	private void triggerModelAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, EbsProductAnimationFrame animation, int baseDelayMs)
@@ -340,11 +437,9 @@ public class MarketplaceProduct
 		{
 			for (EbsProduct.SpawnOption option : spawnBehaviourOptions)
 			{
-				Double roll = Math.random();
-				Double chance = option.chance;
 
 				// choose this option when the chance is not known or when the roll landed
-				if (chance == null || roll <= chance)
+				if (MarketplaceConfigGetters.rollChance(option.chance))
 				{
 					return option;
 				}
@@ -369,7 +464,6 @@ public class MarketplaceProduct
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
 				spawnedObject.hide();
-				spawnedObject.getObject().setModel(null);
 			}
 		}, delayMs);
 	}

@@ -7,18 +7,18 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 public class MarketplaceConfigGetters {
 
-	public static EbsProduct.ModelSet getRandomModelSet(ArrayList<EbsProduct.ModelSet> modelSets)
+	public static <T> T getRandomEntryFromList(ArrayList<T> list)
 	{
-		if (modelSets == null || modelSets.size() < 0)
+		if (list == null || list.size() < 0)
 		{
 			return null;
 		}
 
-		Random modelSelector = new Random();
-		int modelIndex = modelSelector.nextInt(modelSets.size());
-		EbsProduct.ModelSet modelSet = modelSets.get(modelIndex);
+		Random selector = new Random();
+		int randomIndex = selector.nextInt(list.size());
+		T randomEntry = list.get(randomIndex);
 
-		return modelSet;
+		return randomEntry;
 	}
 
 	public static EbsProductMovementAnimations getValidMovementAnimations(EbsProductMovementAnimations movementAnimations)
@@ -27,6 +27,18 @@ public class MarketplaceConfigGetters {
 		validMovementAnimations.idleAnimationId = -1;
 		validMovementAnimations.runAnimationId = -1;
 		validMovementAnimations.walkAnimationId = -1;
+
+		if (movementAnimations != null) {
+			if (movementAnimations.idleAnimationId != null) {
+				validMovementAnimations.idleAnimationId = movementAnimations.idleAnimationId;
+			}
+			if (movementAnimations.walkAnimationId != null) {
+				validMovementAnimations.walkAnimationId = movementAnimations.walkAnimationId;
+			}
+			if (movementAnimations.runAnimationId != null) {
+				validMovementAnimations.runAnimationId = movementAnimations.runAnimationId;
+			}
+		}
 
 		return validMovementAnimations;
 	}
@@ -81,6 +93,18 @@ public class MarketplaceConfigGetters {
 		}
 
 		return validFrame;
+	}
+
+	public static boolean rollChance(Double chance)
+	{
+		Double roll = Math.random();
+
+		if (chance == null)
+		{
+			return true;
+		}
+
+		return chance >= roll;
 	}
 
 	public static EbsProductInterval generateDefaultInterval()
