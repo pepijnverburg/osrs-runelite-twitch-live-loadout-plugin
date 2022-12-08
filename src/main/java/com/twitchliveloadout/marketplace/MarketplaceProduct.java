@@ -385,11 +385,39 @@ public class MarketplaceProduct
 			return;
 		}
 
-		// TODO: trigger player animation and player graphics here!
 		triggerModelAnimations(spawnedObjects, animation.modelAnimation, baseDelayMs);
+		triggerPlayerGraphic(animation.playerGraphic, baseDelayMs);
+		triggerPlayerAnimation(animation.playerAnimation, baseDelayMs);
 	}
 
 	private void triggerModelAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, EbsProductAnimationFrame animation, int baseDelayMs)
+	{
+		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
+			scheduleSetAnimations(spawnedObjects, animationId, startDelayMs);
+		}, (resetDelayMs) -> {
+			scheduleResetAnimations(spawnedObjects, resetDelayMs);
+		});
+	}
+
+	private void triggerPlayerGraphic(EbsProductAnimationFrame animation, int baseDelayMs)
+	{
+		handleAnimationFrame(animation, baseDelayMs, (graphicId, startDelayMs) -> {
+			schedulePlayerGraphic(graphicId, startDelayMs);
+		}, (resetDelayMs) -> {
+			// empty, no need to reset one-time graphic
+		});
+	}
+
+	private void triggerPlayerAnimation(EbsProductAnimationFrame animation, int baseDelayMs)
+	{
+		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
+			schedulePlayerAnimation(animationId, startDelayMs);
+		}, (resetDelayMs) -> {
+			// empty, no need to reset one-time animation
+		});
+	}
+
+	private void handleAnimationFrame(EbsProductAnimationFrame animation, int baseDelayMs, StartAnimationHandler startHandler, ResetAnimationHandler resetHandler)
 	{
 
 		// guard: make sure the animation is valid
@@ -398,26 +426,35 @@ public class MarketplaceProduct
 			return;
 		}
 
-		EbsProductAnimationFrame modelAnimation = MarketplaceConfigGetters.getValidAnimationFrame(animation);
+		EbsProductAnimationFrame validAnimation = MarketplaceConfigGetters.getValidAnimationFrame(animation);
 
 		// guard: make sure there is an animation ID
-		if (modelAnimation.id == null)
+		if (validAnimation.id == null)
 		{
 			return;
 		}
 
-		int delayMs = modelAnimation.delayMs;
-		int durationMs = modelAnimation.durationMs;
-		int startAfterMs = baseDelayMs + delayMs;
-		int resetAfterMs = startAfterMs + durationMs;
+		int animationId = validAnimation.id;
+		int delayMs = validAnimation.delayMs;
+		int durationMs = validAnimation.durationMs;
+		int startDelayMs = baseDelayMs + delayMs;
+		int resetDelayMs = startDelayMs + durationMs;
 
 		// schedule to start the animation
-		scheduleSetAnimations(spawnedObjects, modelAnimation.id, startAfterMs);
+		startHandler.execute(animationId, startDelayMs);
 
 		// only reset animations when max duration
-		if (modelAnimation.durationMs != null) {
-			scheduleResetAnimations(spawnedObjects, resetAfterMs);
+		if (animation.durationMs != null) {
+			resetHandler.execute(resetDelayMs);
 		}
+	}
+
+	private interface StartAnimationHandler {
+		public void execute(int animationId, int delayMs);
+	}
+
+	private interface ResetAnimationHandler {
+		public void execute(int delayMs);
 	}
 
 	private EbsProduct.SpawnOption getSpawnBehaviourByChance(ArrayList<EbsProduct.SpawnOption> spawnBehaviourOptions)
@@ -448,6 +485,40 @@ public class MarketplaceProduct
 
 		// get the first is no valid one is found
 		return spawnBehaviourOptions.get(0);
+	}
+
+	private void schedulePlayerGraphic(int graphicId, long delayMs)
+	{
+		Client client = manager.getClient();
+		Player player = client.getLocalPlayer();
+
+		// guard: make sure the player is valid
+		if (player == null)
+		{
+			return;
+		}
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			player.setGraphic(graphicId);
+			player.setSpotAnimFrame(0);
+		}, delayMs);
+	}
+
+	private void schedulePlayerAnimation(int animationId, long delayMs)
+	{
+		Client client = manager.getClient();
+		Player player = client.getLocalPlayer();
+
+		// guard: make sure the player is valid
+		if (player == null)
+		{
+			return;
+		}
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			player.setAnimation(animationId);
+			player.setAnimationFrame(0);
+		}, delayMs);
 	}
 
 	private void scheduleShowObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
