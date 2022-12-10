@@ -149,8 +149,8 @@ public class MarketplaceManager {
 			return;
 		}
 
-		animationManager.recordNaturalPlayerPoseAnimations();
-		animationManager.updateAnimations();
+		animationManager.recordOriginalPlayerMovementAnimations();
+		animationManager.setEffectPlayerMovementAnimations();
 	}
 
 	/**
@@ -192,5 +192,14 @@ public class MarketplaceManager {
 		{
 			product.onClientTick();
 		}
+	}
+
+	/**
+	 * Handle plugin shutdown / marketplace disable
+	 */
+	public void shutDown()
+	{
+		animationManager.revertAnimations();
+		transmogManager.revertEquipment();
 	}
 }

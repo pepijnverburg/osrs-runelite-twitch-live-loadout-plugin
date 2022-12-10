@@ -2,7 +2,7 @@ package com.twitchliveloadout.marketplace;
 
 import java.awt.*;
 
-public class MarketplaceModelConstants {
+public class OldMarketplaceModelConstants {
 	public static class ModelIds {
 		public static int COX_LOOT_BEAM = 43330; // 5809
 		public static int OLMLET = 32697;

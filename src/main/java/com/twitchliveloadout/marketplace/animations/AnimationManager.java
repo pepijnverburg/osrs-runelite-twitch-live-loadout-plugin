@@ -12,7 +12,7 @@ public class AnimationManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
 
-	private final HashMap<ActorAnimation, Integer> naturalPlayerPoseAnimations = new HashMap<>();
+	private final HashMap<ActorAnimation, Integer> originalPlayerMovementAnimations = new HashMap<>();
 
 	public AnimationManager(TwitchLiveLoadoutPlugin plugin, Client client)
 	{
@@ -20,10 +20,10 @@ public class AnimationManager {
 		this.client = client;
 	}
 
-	public void updateAnimations()
+	public void setEffectPlayerMovementAnimations()
 	{
 
-		// guardK skip when not logged in
+		// guard skip when not logged in
 		if (!plugin.isLoggedIn())
 		{
 			return;
@@ -39,14 +39,25 @@ public class AnimationManager {
 		}
 	}
 
-	public void recordNaturalPlayerPoseAnimations()
+	public void recordOriginalPlayerMovementAnimations()
 	{
-		naturalPlayerPoseAnimations.clear();
+		originalPlayerMovementAnimations.clear();
 		Player player = client.getLocalPlayer();
 
 		for (ActorAnimation animation : ActorAnimation.values())
 		{
-			naturalPlayerPoseAnimations.put(animation, animation.getAnimation(player));
+			originalPlayerMovementAnimations.put(animation, animation.getAnimation(player));
+		}
+	}
+
+	public void revertAnimations()
+	{
+		Player player = client.getLocalPlayer();
+
+		for (ActorAnimation animation : ActorAnimation.values())
+		{
+			int originalAnimationId = originalPlayerMovementAnimations.get(animation);
+			animation.setAnimation(player, originalAnimationId);
 		}
 	}
 }

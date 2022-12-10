@@ -281,6 +281,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			// Only the fight state manager requires dedicated shutdown
 			fightStateManager.shutDown();
+			marketplaceManager.shutDown();
 
 			fightStateManager = null;
 			itemStateManager = null;
