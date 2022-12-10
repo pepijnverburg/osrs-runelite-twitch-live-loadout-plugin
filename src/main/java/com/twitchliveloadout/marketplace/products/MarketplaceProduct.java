@@ -3,6 +3,7 @@ package com.twitchliveloadout.marketplace.products;
 import com.twitchliveloadout.marketplace.ExtensionTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceConfigGetters;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.marketplace.animations.AnimationManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
@@ -46,6 +47,12 @@ public class MarketplaceProduct
 	private final StreamerProduct streamerProduct;
 
 	/**
+	 * Current status
+	 */
+	@Getter
+	private boolean isActive = false;
+
+	/**
 	 * Long-term interval trackers
 	 */
 	private Instant lastSpawnBehaviour;
@@ -66,43 +73,75 @@ public class MarketplaceProduct
 		this.transaction = transaction;
 		this.ebsProduct = ebsProduct;
 		this.streamerProduct = streamerProduct;
-	}
 
-	public void start()
-	{
-
-	}
-
-	public void pause()
-	{
-
-	}
-
-	public void stop()
-	{
-
+		// start immediately
+		start();
 	}
 
 	public void onGameTick()
 	{
 
-		// guard: make sure the EBS product is valid
-		if (ebsProduct == null)
+		// guard: make sure the EBS product is active and valid
+		if (!isActive || ebsProduct == null)
 		{
 			return;
 		}
 
 		handleSpawns();
 		handleSpawnRandomAnimations();
-//		handlePlayerAnimation();
+		handleMovementAnimations();
 //		handlePlayerEquipment();
 //		handleInterfaceEffect();
 	}
 
 	public void onClientTick()
 	{
+
+		//guard: make sure the product is active
+		if (!isActive)
+		{
+			return;
+		}
+
 		handleSpawnRotations();
 		test();
+	}
+
+	public void start()
+	{
+		isActive = true;
+	}
+
+	public void pause()
+	{
+		isActive = false;
+	}
+
+	public void stop()
+	{
+		isActive = false;
+	}
+
+	public boolean hasMovementAnimations()
+	{
+		return ebsProduct.behaviour.playerAnimations != null;
+	}
+
+	public void handleMovementAnimations()
+	{
+		AnimationManager animationManager = manager.getAnimationManager();
+
+		// guard: skip when no movement animations
+		if (!hasMovementAnimations())
+		{
+			return;
+		}
+
+		EbsMovementAnimations movementAnimations = ebsProduct.behaviour.playerAnimations;
+
+		// update the animation manager
+		animationManager.setCurrentMovementAnimations(movementAnimations);
+		animationManager.updateEffectAnimations();
 	}
 
 	public void test()
@@ -216,7 +255,6 @@ public class MarketplaceProduct
 		// guard: check if objects need to be spawned
 		if (spawnOptions == null)
 		{
-			log.error("Could not find valid spawn behaviour options for product: "+ productId);
 			return;
 		}
 

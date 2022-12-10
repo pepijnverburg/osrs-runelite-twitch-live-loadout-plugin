@@ -71,6 +71,9 @@ public class MarketplaceManager {
 		// jad
 		//json = "{\"id\":\"mini-jad\",\"enabled\":true,\"category\":\"npc-spawn\",\"name\":\"Mini Jad\",\"description\":\"A Jad following the streamer around and attacking them.\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":1},\"spawns\":[{\"modelSets\":[{\"modelIds\":[9319],\"modelRotationType\":\"player\",\"modelScale\":{\"min\":0.5}}],\"movementAnimations\":{\"idleAnimationId\":2650,\"walkAnimationId\":2651},\"randomAnimationInterval\":{\"chance\":1,\"delayMs\":5000},\"randomAnimations\":[{\"modelAnimation\":{\"id\":2652,\"durationMs\":1000},\"playerGraphic\":{\"id\":451,\"delayMs\":1000},\"playerAnimation\":{\"id\":404,\"delayMs\":2000}}]}]}]}}";
 
+		// drunk
+		json = "{\"id\":\"drunk-walk\",\"enabled\":true,\"category\":\"animation\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"playerAnimations\":{\"idle\":3040,\"walk\":3039,\"run\":3039}}}";
+
 		tmpEbsProduct = new Gson().fromJson(json, EbsProduct.class);
 		log.warn("Loaded TMP ebs product:");
 		log.warn(tmpEbsProduct.name);
@@ -137,11 +140,23 @@ public class MarketplaceManager {
 		activeProducts.add(newProduct);
 	}
 
+	private void stopProduct(MarketplaceProduct product)
+	{
+		activeProducts.remove(product);
+		product.stop();
+	}
+
 	/**
 	 * Handle player changes
 	 */
 	public void onPlayerChanged(PlayerChanged playerChanged)
 	{
+
+		// guard: make sure we are logged in
+		if (!plugin.isLoggedIn())
+		{
+			return;
+		}
 
 		// guard: only update the local player
 		if (playerChanged.getPlayer() != client.getLocalPlayer())
@@ -149,8 +164,8 @@ public class MarketplaceManager {
 			return;
 		}
 
-		animationManager.recordOriginalPlayerMovementAnimations();
-		animationManager.setEffectPlayerMovementAnimations();
+		animationManager.recordOriginalAnimations();
+		animationManager.updateEffectAnimations();
 	}
 
 	/**

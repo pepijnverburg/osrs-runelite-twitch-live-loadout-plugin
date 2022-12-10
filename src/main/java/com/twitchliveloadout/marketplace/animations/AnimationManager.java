@@ -1,6 +1,9 @@
 package com.twitchliveloadout.marketplace.animations;
 
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.products.EbsMovementAnimations;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
@@ -12,6 +15,10 @@ public class AnimationManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
 
+	@Setter
+	@Getter
+	private EbsMovementAnimations currentMovementAnimations;
+
 	private final HashMap<ActorAnimation, Integer> originalPlayerMovementAnimations = new HashMap<>();
 
 	public AnimationManager(TwitchLiveLoadoutPlugin plugin, Client client)
@@ -20,26 +27,32 @@ public class AnimationManager {
 		this.client = client;
 	}
 
-	public void setEffectPlayerMovementAnimations()
+	public void updateEffectAnimations()
 	{
+		Player player = client.getLocalPlayer();
 
-		// guard skip when not logged in
-		if (!plugin.isLoggedIn())
+		// when no effect is active skip
+		if (currentMovementAnimations == null)
 		{
 			return;
 		}
 
-		Player player = client.getLocalPlayer();
-
 		for (ActorAnimation animation : ActorAnimation.values())
 		{
-//			Integer animationId = currentAnimationSet.getAnimation(animation.getType());
-//			if (animationId == null) animationId = naturalPlayerPoseAnimations.get(animation.ordinal());
-//			animation.setAnimation(player, animationId);
+			Integer animationId = getCurrentMovementAnimation(animation);
+
+			// fallback to the original when no animation is found
+			// NOTE: is this really needed?
+			if (animationId == null || animationId < 0)
+			{
+				animationId = originalPlayerMovementAnimations.get(animation);
+			}
+
+			animation.setAnimation(player, animationId);
 		}
 	}
 
-	public void recordOriginalPlayerMovementAnimations()
+	public void recordOriginalAnimations()
 	{
 		originalPlayerMovementAnimations.clear();
 		Player player = client.getLocalPlayer();
@@ -54,10 +67,67 @@ public class AnimationManager {
 	{
 		Player player = client.getLocalPlayer();
 
+		// reset current animations
+		currentMovementAnimations = null;
+
+		// update to originals
 		for (ActorAnimation animation : ActorAnimation.values())
 		{
 			int originalAnimationId = originalPlayerMovementAnimations.get(animation);
 			animation.setAnimation(player, originalAnimationId);
 		}
+	}
+
+	public int getCurrentMovementAnimation(ActorAnimation animation)
+	{
+		int animationId = -1;
+		int fallbackAnimationId = -1;
+
+		if (currentMovementAnimations == null)
+		{
+			return animationId;
+		}
+
+		switch(animation)
+		{
+			case RUN:
+				animationId = currentMovementAnimations.run;
+				fallbackAnimationId = currentMovementAnimations.walk;
+			 	break;
+			case IDLE:
+				animationId = currentMovementAnimations.idle;
+				break;
+			case IDLE_ROTATE_LEFT:
+				animationId = currentMovementAnimations.idleRotateLeft;
+				fallbackAnimationId = currentMovementAnimations.idle;
+				break;
+			case IDLE_ROTATE_RIGHT:
+				animationId = currentMovementAnimations.idleRotateRight;
+				fallbackAnimationId = currentMovementAnimations.idle;
+				break;
+			case WALK:
+				animationId = currentMovementAnimations.walk;
+				break;
+			case WALK_ROTATE_180:
+				animationId = currentMovementAnimations.walkRotate180;
+				fallbackAnimationId = currentMovementAnimations.walk;
+				break;
+			case WALK_ROTATE_LEFT:
+				animationId = currentMovementAnimations.walkRotateLeft;
+				fallbackAnimationId = currentMovementAnimations.walk;
+				break;
+			case WALK_ROTATE_RIGHT:
+				animationId = currentMovementAnimations.walkRotateRight;
+				fallbackAnimationId = currentMovementAnimations.walk;
+				break;
+		}
+
+		// guard: check if we need to use the fallback
+		if (animationId < 0 && fallbackAnimationId >= 0)
+		{
+			return fallbackAnimationId;
+		}
+
+		return animationId;
 	}
 }
