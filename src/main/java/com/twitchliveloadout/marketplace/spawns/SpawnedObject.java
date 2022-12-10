@@ -17,7 +17,7 @@ import net.runelite.api.coords.WorldPoint;
 import java.time.Instant;
 
 @Slf4j
-public class MarketplaceSpawnedObject {
+public class SpawnedObject {
 
 	@Getter
 	private final Instant spawnedAt;
@@ -40,7 +40,7 @@ public class MarketplaceSpawnedObject {
 	private final ModelData modelData;
 
 	@Getter
-	private final MarketplaceSpawnPoint spawnPoint;
+	private final SpawnPoint spawnPoint;
 
 	@Getter
 	private final MarketplaceProduct product;
@@ -53,7 +53,7 @@ public class MarketplaceSpawnedObject {
 	private double currentRotationDegrees = 0;
 	private int currentAnimationId;
 
-	public MarketplaceSpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, MarketplaceSpawnPoint spawnPoint, EbsProduct.Spawn spawn, EbsProduct.ModelSet modelSet)
+	public SpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, SpawnPoint spawnPoint, EbsProduct.Spawn spawn, EbsProduct.ModelSet modelSet)
 	{
 		this.spawnedAt = Instant.now();
 		this.product = product;
@@ -118,7 +118,7 @@ public class MarketplaceSpawnedObject {
 
 		currentScale = scale;
 
-		MarketplaceModelUtilities.scaleModel(modelData, scale);
+		SpawnUtilities.scaleModel(modelData, scale);
 		render();
 	}
 

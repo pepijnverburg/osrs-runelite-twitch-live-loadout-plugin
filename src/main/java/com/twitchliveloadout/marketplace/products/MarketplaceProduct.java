@@ -3,9 +3,8 @@ package com.twitchliveloadout.marketplace.products;
 import com.twitchliveloadout.marketplace.ExtensionTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceConfigGetters;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
-import com.twitchliveloadout.marketplace.products.*;
-import com.twitchliveloadout.marketplace.spawns.MarketplaceSpawnPoint;
-import com.twitchliveloadout.marketplace.spawns.MarketplaceSpawnedObject;
+import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
+import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -53,13 +52,13 @@ public class MarketplaceProduct
 	private int spawnBehaviourCounter = 0;
 	private Instant lastInterfaceEffect;
 	private int interfaceEffectCounter = 0;
-	private HashMap<MarketplaceSpawnedObject, Instant> lastRandomAnimations = new HashMap();
+	private HashMap<SpawnedObject, Instant> lastRandomAnimations = new HashMap();
 
 	/**
 	 * A list of all the spawned objects for this product
 	 */
 	@Getter
-	private final CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects = new CopyOnWriteArrayList();
+	private final CopyOnWriteArrayList<SpawnedObject> spawnedObjects = new CopyOnWriteArrayList();
 
 	public MarketplaceProduct(MarketplaceManager manager, ExtensionTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct)
 	{
@@ -123,7 +122,7 @@ public class MarketplaceProduct
 
 	private void handleSpawnRotations()
 	{
-		for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+		for (SpawnedObject spawnedObject : spawnedObjects)
 		{
 			EbsProduct.ModelSet modelSet = spawnedObject.getModelSet();
 			String rotationType = modelSet.modelRotationType;
@@ -159,7 +158,7 @@ public class MarketplaceProduct
 	{
 		Instant now = Instant.now();
 
-		for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+		for (SpawnedObject spawnedObject : spawnedObjects)
 		{
 			Instant lastRandomAnimationAt = lastRandomAnimations.get(spawnedObject);
 			EbsProduct.Spawn spawn = spawnedObject.getSpawn();
@@ -198,7 +197,7 @@ public class MarketplaceProduct
 			EbsProduct.Animation randomAnimation = MarketplaceConfigGetters.getRandomEntryFromList(randomAnimations);
 
 			// trigger the animations on this single spawned object
-			ArrayList<MarketplaceSpawnedObject> animatedSpawnedObjects = new ArrayList();
+			ArrayList<SpawnedObject> animatedSpawnedObjects = new ArrayList();
 			animatedSpawnedObjects.add(spawnedObject);
 			triggerAnimation(animatedSpawnedObjects, randomAnimation, 0);
 
@@ -291,7 +290,7 @@ public class MarketplaceProduct
 
 		Client client = manager.getClient();
 		SpawnManager spawnManager = manager.getSpawnManager();
-		ArrayList<MarketplaceSpawnedObject> newSpawnedObjects = new ArrayList();
+		ArrayList<SpawnedObject> newSpawnedObjects = new ArrayList();
 		ArrayList<ModelData> newSpawnedModels = new ArrayList();
 
 		EbsModelPlacement placement = spawn.modelPlacement;
@@ -303,7 +302,7 @@ public class MarketplaceProduct
 		}
 
 		// find an available spawn point
-		MarketplaceSpawnPoint spawnPoint;
+		SpawnPoint spawnPoint;
 		Integer radius = placement.radius;
 		int validatedRadius = (radius == null) ? DEFAULT_RADIUS : radius;
 		if (placement.radiusType == OUTWARD_RADIUS_TYPE) {
@@ -340,7 +339,7 @@ public class MarketplaceProduct
 		{
 			RuneLiteObject runeLiteObject = client.createRuneLiteObject();
 			ModelData modelData = client.loadModelData(modelId);
-			MarketplaceSpawnedObject spawnedObject = new MarketplaceSpawnedObject(
+			SpawnedObject spawnedObject = new SpawnedObject(
 			this,
 				client,
 				runeLiteObject,
@@ -384,7 +383,7 @@ public class MarketplaceProduct
 		spawnManager.registerSpawnedObjectPlacements(newSpawnedObjects);
 	}
 
-	private void triggerAnimation(ArrayList<MarketplaceSpawnedObject> spawnedObjects, EbsProduct.Animation animation, int baseDelayMs)
+	private void triggerAnimation(ArrayList<SpawnedObject> spawnedObjects, EbsProduct.Animation animation, int baseDelayMs)
 	{
 
 		// guard: make sure the animation is valid
@@ -398,7 +397,7 @@ public class MarketplaceProduct
 		triggerPlayerAnimation(animation.playerAnimation, baseDelayMs);
 	}
 
-	private void triggerModelAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, EbsProductAnimationFrame animation, int baseDelayMs)
+	private void triggerModelAnimations(ArrayList<SpawnedObject> spawnedObjects, EbsProductAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
 			scheduleSetAnimations(spawnedObjects, animationId, startDelayMs);
@@ -529,37 +528,37 @@ public class MarketplaceProduct
 		}, delayMs);
 	}
 
-	private void scheduleShowObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
+	private void scheduleShowObjects(ArrayList<SpawnedObject> spawnedObjects, long delayMs)
 	{
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+			for (SpawnedObject spawnedObject : spawnedObjects) {
 				spawnedObject.show();
 			}
 		}, delayMs);
 	}
 
-	private void scheduleHideObjects(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
+	private void scheduleHideObjects(ArrayList<SpawnedObject> spawnedObjects, long delayMs)
 	{
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+			for (SpawnedObject spawnedObject : spawnedObjects) {
 				spawnedObject.hide();
 			}
 		}, delayMs);
 	}
 
-	private void scheduleSetAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, int animationId, long delayMs)
+	private void scheduleSetAnimations(ArrayList<SpawnedObject> spawnedObjects, int animationId, long delayMs)
 	{
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+			for (SpawnedObject spawnedObject : spawnedObjects) {
 				spawnedObject.setAnimation(animationId, true);
 			}
 		}, delayMs);
 	}
 
-	private void scheduleResetAnimations(ArrayList<MarketplaceSpawnedObject> spawnedObjects, long delayMs)
+	private void scheduleResetAnimations(ArrayList<SpawnedObject> spawnedObjects, long delayMs)
 	{
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
+			for (SpawnedObject spawnedObject : spawnedObjects) {
 				spawnedObject.resetAnimation();
 			}
 		}, delayMs);

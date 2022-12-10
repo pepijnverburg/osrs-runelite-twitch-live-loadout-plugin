@@ -18,7 +18,7 @@ public class SpawnManager {
 	/**
 	 * Lookup to see which world points are taken for future spawns
 	 */
-	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<MarketplaceSpawnedObject>> objectPlacements = new ConcurrentHashMap();
+	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<SpawnedObject>> objectPlacements = new ConcurrentHashMap();
 
 	public SpawnManager(TwitchLiveLoadoutPlugin plugin, Client client)
 	{
@@ -38,7 +38,7 @@ public class SpawnManager {
 			return;
 		}
 
-		ArrayList<MarketplaceSpawnedObject> respawnQueue = new ArrayList();
+		ArrayList<SpawnedObject> respawnQueue = new ArrayList();
 		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
 		WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
 
@@ -59,7 +59,7 @@ public class SpawnManager {
 
 		// run all respawns at the same time
 		plugin.runOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : respawnQueue)
+			for (SpawnedObject spawnedObject : respawnQueue)
 			{
 				spawnedObject.respawn();
 			}
@@ -82,22 +82,22 @@ public class SpawnManager {
 	 * Register a collection of spawned objects to the placement lookup for easy access
 	 * to all spawned objects and to keep track of which tiles are taken.
 	 */
-	public void registerSpawnedObjectPlacements(ArrayList<MarketplaceSpawnedObject> objects)
+	public void registerSpawnedObjectPlacements(ArrayList<SpawnedObject> objects)
 	{
 		Iterator iterator = objects.iterator();
 
 		while (iterator.hasNext())
 		{
-			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
+			SpawnedObject spawnedObject = (SpawnedObject) iterator.next();
 			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
 			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
 			// check whether this world point already has a spawned object to add to
 			if (objectPlacements.containsKey(worldPoint)) {
-				CopyOnWriteArrayList<MarketplaceSpawnedObject> existingObjects = objectPlacements.get(worldPoint);
+				CopyOnWriteArrayList<SpawnedObject> existingObjects = objectPlacements.get(worldPoint);
 				existingObjects.add(spawnedObject);
 			} else {
-				CopyOnWriteArrayList<MarketplaceSpawnedObject> existingObjects = new CopyOnWriteArrayList();
+				CopyOnWriteArrayList<SpawnedObject> existingObjects = new CopyOnWriteArrayList();
 				existingObjects.add(spawnedObject);
 				objectPlacements.put(worldPoint, existingObjects);
 			}
@@ -108,22 +108,22 @@ public class SpawnManager {
 	 * Shortcut to loop all the spawned objects
 	 */
 	public void handleAllSpawnedObjects(SpawnedObjectHandler handler) {
-		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : objectPlacements.values())
+		for (CopyOnWriteArrayList<SpawnedObject> spawnedObjects : objectPlacements.values())
 		{
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
+			for (SpawnedObject spawnedObject : spawnedObjects)
 			{
 				handler.execute(spawnedObject);
 			}
 		}
 	}
 
-	public MarketplaceSpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)
+	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, HashMap<WorldPoint, SpawnPoint> blacklistedSpawnPoints)
 	{
 		for (int radius = startRadius; radius < maxRadius; radius += radiusStepSize)
 		{
 			int randomizedRadius = radius + ((int) (Math.random() * radiusStepSize));
 			int usedRadius = Math.min(randomizedRadius, maxRadius);
-			MarketplaceSpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, blacklistedSpawnPoints);
+			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, blacklistedSpawnPoints);
 
 			if (candidateSpawnPoint != null) {
 				return candidateSpawnPoint;
@@ -133,17 +133,17 @@ public class SpawnManager {
 		return null;
 	}
 
-	public MarketplaceSpawnPoint getOutwardSpawnPoint(int maxRadius)
+	public SpawnPoint getOutwardSpawnPoint(int maxRadius)
 	{
 		return getOutwardSpawnPoint(1, 2, maxRadius, null);
 	}
 
-	public Collection<MarketplaceSpawnPoint> getOutwardSpawnPoints(int spawnAmount)
+	public Collection<SpawnPoint> getOutwardSpawnPoints(int spawnAmount)
 	{
-		final HashMap<WorldPoint, MarketplaceSpawnPoint> spawnPoints = new HashMap();
+		final HashMap<WorldPoint, SpawnPoint> spawnPoints = new HashMap();
 
 		for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++) {
-			MarketplaceSpawnPoint spawnPoint = getOutwardSpawnPoint(2, 2, 12, spawnPoints);
+			SpawnPoint spawnPoint = getOutwardSpawnPoint(2, 2, 12, spawnPoints);
 
 			// guard: make sure the spawn point is valid
 			if (spawnPoint == null)
@@ -158,14 +158,14 @@ public class SpawnManager {
 		return spawnPoints.values();
 	}
 
-	public MarketplaceSpawnPoint getSpawnPoint(int radius)
+	public SpawnPoint getSpawnPoint(int radius)
 	{
 		return getSpawnPoint(radius, null);
 	}
 
-	public MarketplaceSpawnPoint getSpawnPoint(int radius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)
+	public SpawnPoint getSpawnPoint(int radius, HashMap<WorldPoint, SpawnPoint> blacklistedSpawnPoints)
 	{
-		final ArrayList<MarketplaceSpawnPoint> candidateSpawnPoints = new ArrayList();
+		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList();
 		final LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
 		final int playerPlane = client.getPlane();
 		final int[][] collisionFlags = getSceneCollisionFlags();
@@ -214,7 +214,7 @@ public class SpawnManager {
 				}
 
 				// we have found a walkable tile to spawn the object on
-				candidateSpawnPoints.add(new MarketplaceSpawnPoint(worldPoint, playerPlane));
+				candidateSpawnPoints.add(new SpawnPoint(worldPoint, playerPlane));
 			}
 		}
 
@@ -227,7 +227,7 @@ public class SpawnManager {
 
 		final Random spawnPointSelector = new Random();
 		final int spawnPointIndex = spawnPointSelector.nextInt(candidateSpawnPoints.size());
-		final MarketplaceSpawnPoint spawnPoint = candidateSpawnPoints.get(spawnPointIndex);
+		final SpawnPoint spawnPoint = candidateSpawnPoints.get(spawnPointIndex);
 
 		return spawnPoint;
 	}
@@ -245,6 +245,6 @@ public class SpawnManager {
 	}
 
 	public interface SpawnedObjectHandler {
-		public void execute(MarketplaceSpawnedObject spawnedObject);
+		public void execute(SpawnedObject spawnedObject);
 	}
 }

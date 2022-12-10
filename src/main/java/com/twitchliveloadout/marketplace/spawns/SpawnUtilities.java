@@ -10,7 +10,7 @@ import java.awt.*;
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.RUNELITE_OBJECT_FULL_RADIUS;
 
 @Slf4j
-public class MarketplaceModelUtilities {
+public class SpawnUtilities {
 
 	public static void scaleModel(ModelData model, double modelScale)
 	{

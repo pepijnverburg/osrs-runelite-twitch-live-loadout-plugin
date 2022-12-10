@@ -1,7 +1,5 @@
 package com.twitchliveloadout.marketplace;
 
-import com.twitchliveloadout.marketplace.spawns.MarketplaceModel;
-
 import java.awt.*;
 
 public class MarketplaceModelConstants {
@@ -11,7 +9,7 @@ public class MarketplaceModelConstants {
 	}
 
 	public static class Models {
-		public static MarketplaceModel COX_LOOT_BEAM = new MarketplaceModel(ModelIds.COX_LOOT_BEAM, AnimationIds.COX_LOOT_BEAM);
+//		public static MarketplaceModel COX_LOOT_BEAM = new MarketplaceModel(ModelIds.COX_LOOT_BEAM, AnimationIds.COX_LOOT_BEAM);
 	}
 
 	public static class AnimationIds {

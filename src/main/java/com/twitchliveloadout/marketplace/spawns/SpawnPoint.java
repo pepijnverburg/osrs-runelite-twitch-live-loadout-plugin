@@ -5,14 +5,14 @@ import net.runelite.api.Client;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
-public class MarketplaceSpawnPoint {
+public class SpawnPoint {
 	@Getter
 	private final WorldPoint worldPoint;
 
 	@Getter
 	private final int plane;
 
-	public MarketplaceSpawnPoint(WorldPoint worldPoint, int plane)
+	public SpawnPoint(WorldPoint worldPoint, int plane)
 	{
 		this.worldPoint = worldPoint;
 		this.plane = plane;
