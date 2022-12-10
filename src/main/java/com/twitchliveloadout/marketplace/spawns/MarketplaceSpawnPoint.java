@@ -1,4 +1,4 @@
-package com.twitchliveloadout.marketplace;
+package com.twitchliveloadout.marketplace.spawns;
 
 import lombok.Getter;
 import net.runelite.api.Client;

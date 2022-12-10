@@ -1,5 +1,9 @@
-package com.twitchliveloadout.marketplace;
+package com.twitchliveloadout.marketplace.spawns;
 
+import com.twitchliveloadout.marketplace.*;
+import com.twitchliveloadout.marketplace.products.EbsProduct;
+import com.twitchliveloadout.marketplace.products.EbsProductMovementAnimations;
+import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;

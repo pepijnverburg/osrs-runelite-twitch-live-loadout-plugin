@@ -1,4 +1,4 @@
-package com.twitchliveloadout.marketplace;
+package com.twitchliveloadout.marketplace.products;
 
 public class EbsProductAnimationFrame {
 	public Integer id;

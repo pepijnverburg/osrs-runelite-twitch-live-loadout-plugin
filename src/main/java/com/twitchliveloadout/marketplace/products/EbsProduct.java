@@ -1,4 +1,4 @@
-package com.twitchliveloadout.marketplace;
+package com.twitchliveloadout.marketplace.products;
 
 import java.util.ArrayList;
 

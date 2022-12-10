@@ -1,5 +1,7 @@
 package com.twitchliveloadout.marketplace;
 
+import com.twitchliveloadout.marketplace.spawns.MarketplaceModel;
+
 import java.awt.*;
 
 public class MarketplaceModelConstants {

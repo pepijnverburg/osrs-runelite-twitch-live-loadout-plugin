@@ -1,5 +1,7 @@
 package com.twitchliveloadout.marketplace;
 
+import com.twitchliveloadout.marketplace.products.*;
+
 import java.util.ArrayList;
 import java.util.Random;
 

@@ -1,4 +1,4 @@
-package com.twitchliveloadout.marketplace;
+package com.twitchliveloadout.marketplace.spawns;
 
 import net.runelite.api.JagexColor;
 import net.runelite.api.ModelData;

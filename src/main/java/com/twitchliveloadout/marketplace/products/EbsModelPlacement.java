@@ -1,4 +1,4 @@
-package com.twitchliveloadout.marketplace;
+package com.twitchliveloadout.marketplace.products;
 
 public class EbsModelPlacement {
 	public String locationType;

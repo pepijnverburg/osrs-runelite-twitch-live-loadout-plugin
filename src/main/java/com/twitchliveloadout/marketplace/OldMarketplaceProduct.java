@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Random;
 
-//import static com.twitchliveloadout.marketplace.MarketplaceModelUtilities.rotateModelsRandomly;
+//import static com.twitchliveloadout.marketplace.spawns.MarketplaceModelUtilities.rotateModelsRandomly;
 
 @Slf4j
 public enum OldMarketplaceProduct {

@@ -657,15 +657,31 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onGameStateChanged(GameStateChanged event)
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
 		try {
 			if (config.marketplaceEnabled())
 			{
-				marketplaceManager.onGameStateChanged(event);
+				marketplaceManager.onGameStateChanged(gameStateChanged);
 			}
 		} catch (Exception exception) {
 			log.warn("Could not handle game state event: ", exception);
+		}
+	}
+
+	/**
+	 * Handle player changes
+	 */
+	@Subscribe
+	public void onPlayerChanged(PlayerChanged playerChanged)
+	{
+		try {
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.onPlayerChanged(playerChanged);
+			}
+		} catch (Exception exception) {
+			log.warn("Could not handle player changed event: ", exception);
 		}
 	}
 

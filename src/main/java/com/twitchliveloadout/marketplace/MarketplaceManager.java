@@ -3,16 +3,19 @@ package com.twitchliveloadout.marketplace;
 import com.google.gson.Gson;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.animations.AnimationManager;
+import com.twitchliveloadout.marketplace.products.EbsProduct;
+import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
+import com.twitchliveloadout.marketplace.products.StreamerProduct;
+import com.twitchliveloadout.marketplace.spawns.SpawnManager;
+import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
 import com.twitchliveloadout.twitch.TwitchState;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.PlayerChanged;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -28,6 +31,15 @@ public class MarketplaceManager {
 	@Getter
 	private final TwitchLiveLoadoutConfig config;
 
+	@Getter
+	private final SpawnManager spawnManager;
+
+	@Getter
+	private final AnimationManager animationManager;
+
+	@Getter
+	private final TransmogManager transmogManager;
+
 	/**
 	 * List to keep track of all the queued products
 	 */
@@ -40,75 +52,28 @@ public class MarketplaceManager {
 
 	public EbsProduct tmpEbsProduct;
 
-	/**
-	 * Lookup to see which world points are taken for future spawns
-	 */
-	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<MarketplaceSpawnedObject>> objectPlacements = new ConcurrentHashMap();
-
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config)
 	{
 		this.plugin = plugin;
 		this.twitchState = twitchState;
 		this.client = client;
 		this.config = config;
+		this.spawnManager = new SpawnManager(plugin, client);
+		this.animationManager = new AnimationManager(plugin, client);
+		this.transmogManager = new TransmogManager();
 
 		// test
 		String json = "{\"id\":\"falador-party\",\"enabled\":true,\"type\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"interfaceEffectType\":\"shake-screen\",\"interfaceEffectInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":10000,\"repeatAmount\":1},\"playerAnimation\":{\"idleAnimationId\":100,\"runAnimationId\":100,\"walkAnimationId\":100},\"playerEquipment\":{\"amuletItemId\":1,\"bootsItemId\":1,\"chestItemId\":1,\"glovesItemId\":1,\"helmItemId\":1,\"legsItemId\":1,\"shieldItemId\":1,\"weaponItemId\":1},\"spawnInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":1000,\"repeatAmount\":1},\"spawnOptions\":[{\"chance\":0.5,\"spawnAmountMin\":5,\"spawnAmountMax\":10,\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\",\"modelScale\":0.9}],\"modelPlacement\":{\"locationType\":\"current-tile\",\"radiusType\":\"outward-radius\",\"radius\":10},\"hideAnimation\":{\"modelAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerGraphic\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000}}}]}]}}";
 
 		// falador party
-		json = "{\"id\":\"falador-party\",\"enabled\":true,\"type\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":5,\"max\":10},\"spawnDelayMs\":{\"min\":0,\"max\":500},\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\"},{\"modelIds\":[2227],\"modelRotationType\":\"random\"},{\"modelIds\":[2228],\"modelRotationType\":\"random\"}],\"showAnimation\":{\"modelAnimation\":{\"id\":498,\"durationMs\":2400}}}]}]}}";
+		json = "{\"id\":\"falador-party\",\"enabled\":true,\"category\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":5,\"max\":10},\"spawnDelayMs\":{\"min\":0,\"max\":200},\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\"},{\"modelIds\":[2227],\"modelRotationType\":\"random\"},{\"modelIds\":[2228],\"modelRotationType\":\"random\"}],\"showAnimation\":{\"modelAnimation\":{\"id\":498,\"durationMs\":2400},\"playerAnimation\":{\"id\":866,\"delayMs\":1000}}}]}]}}";
 
 		// jad
-		json = "{\"id\":\"mini-jad\",\"enabled\":true,\"category\":\"npc-spawn\",\"name\":\"Mini Jad\",\"description\":\"A Jad following the streamer around and attacking them.\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":1},\"spawns\":[{\"modelSets\":[{\"modelIds\":[9319],\"modelRotationType\":\"player\",\"modelScale\":{\"min\":0.5}}],\"movementAnimations\":{\"idleAnimationId\":2650,\"walkAnimationId\":2651},\"randomAnimationInterval\":{\"chance\":1,\"delayMs\":5000},\"randomAnimations\":[{\"modelAnimation\":{\"id\":2652,\"durationMs\":1000},\"playerGraphic\":{\"id\":451,\"delayMs\":1000},\"playerAnimation\":{\"id\":404,\"delayMs\":2000}}]}]}]}}";
+		//json = "{\"id\":\"mini-jad\",\"enabled\":true,\"category\":\"npc-spawn\",\"name\":\"Mini Jad\",\"description\":\"A Jad following the streamer around and attacking them.\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":1},\"spawns\":[{\"modelSets\":[{\"modelIds\":[9319],\"modelRotationType\":\"player\",\"modelScale\":{\"min\":0.5}}],\"movementAnimations\":{\"idleAnimationId\":2650,\"walkAnimationId\":2651},\"randomAnimationInterval\":{\"chance\":1,\"delayMs\":5000},\"randomAnimations\":[{\"modelAnimation\":{\"id\":2652,\"durationMs\":1000},\"playerGraphic\":{\"id\":451,\"delayMs\":1000},\"playerAnimation\":{\"id\":404,\"delayMs\":2000}}]}]}]}}";
 
 		tmpEbsProduct = new Gson().fromJson(json, EbsProduct.class);
 		log.warn("Loaded TMP ebs product:");
 		log.warn(tmpEbsProduct.name);
-	}
-
-	/**
-	 * Handle game state changes to respawn all objects, because they are cleared
-	 * when a new scene is being loaded.
-	 */
-	public void onGameStateChanged(GameStateChanged event)
-	{
-		GameState newGameState = event.getGameState();
-
-		// guard: only respawn on the loading event
-		if (newGameState != GameState.LOADING)
-		{
-			return;
-		}
-
-		// set all objects to require a respawn, because after a loading of
-		// a new scene all custom objects are cleared
-		handleAllSpawnedObjects((spawnedObject) -> {
-			spawnedObject.setRespawnRequired(true);
-		});
-	}
-
-	/**
-	 * Handle game tick
-	 */
-	public void onGameTick()
-	{
-		// for all active products the game tick should be triggered
-		for (MarketplaceProduct product : activeProducts)
-		{
-			product.onGameTick();
-		}
-	}
-
-	/**
-	 * Handle client tick
-	 */
-	public void onClientTick()
-	{
-		// for all active products the tick should be triggered
-		for (MarketplaceProduct product : activeProducts)
-		{
-			product.onClientTick();
-		}
 	}
 
 	/**
@@ -124,7 +89,7 @@ public class MarketplaceManager {
 		}
 
 		// TODO: link to Twitch transactions
-		if (objectPlacements.size() <= 0)
+//		if (objectPlacements.size() <= 0)
 		startProduct(tmpEbsProduct);
 
 		int playerGraphicId = config.devPlayerGraphicId();
@@ -139,7 +104,7 @@ public class MarketplaceManager {
 	 */
 	public void cleanProducts()
 	{
-
+		// TODO
 	}
 
 	/**
@@ -147,39 +112,7 @@ public class MarketplaceManager {
 	 */
 	public void syncActiveProductsToScene()
 	{
-
-		// guard: only apply the products when the player is logged in
-		if (!plugin.isLoggedIn())
-		{
-			return;
-		}
-
-		ArrayList<MarketplaceSpawnedObject> respawnQueue = new ArrayList();
-		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
-		WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
-
-		// loop all spawned objects and check whether they should respawn
-		handleAllSpawnedObjects((spawnedObject) -> {
-			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
-			int distanceToPlayer = worldPoint.distanceTo(playerWorldPoint);
-			boolean isInView = distanceToPlayer < Constants.SCENE_SIZE;
-			boolean isRespawnRequired = spawnedObject.isRespawnRequired();
-
-			// only respawn if in viewport and a respawn is required
-			// to prevent animations to be reset all the time
-			if (isInView && isRespawnRequired) {
-				respawnQueue.add(spawnedObject);
-				spawnedObject.setRespawnRequired(false);
-			}
-		});
-
-		// run all respawns at the same time
-		plugin.runOnClientThread(() -> {
-			for (MarketplaceSpawnedObject spawnedObject : respawnQueue)
-			{
-				spawnedObject.respawn();
-			}
-		});
+		spawnManager.respawnRequested();
 	}
 
 	private void startProduct(EbsProduct ebsProduct)
@@ -205,169 +138,59 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Register a collection of spawned objects to the placement lookup for easy access
-	 * to all spawned objects and to keep track of which tiles are taken.
+	 * Handle player changes
 	 */
-	public void registerSpawnedObjectPlacements(ArrayList<MarketplaceSpawnedObject> objects)
+	public void onPlayerChanged(PlayerChanged playerChanged)
 	{
-		Iterator iterator = objects.iterator();
 
-		while (iterator.hasNext())
+		// guard: only update the local player
+		if (playerChanged.getPlayer() != client.getLocalPlayer())
 		{
-			MarketplaceSpawnedObject spawnedObject = (MarketplaceSpawnedObject) iterator.next();
-			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
-			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
-
-			// check whether this world point already has a spawned object to add to
-			if (objectPlacements.containsKey(worldPoint)) {
-				CopyOnWriteArrayList<MarketplaceSpawnedObject> existingObjects = objectPlacements.get(worldPoint);
-				existingObjects.add(spawnedObject);
-			} else {
-				CopyOnWriteArrayList<MarketplaceSpawnedObject> existingObjects = new CopyOnWriteArrayList();
-				existingObjects.add(spawnedObject);
-				objectPlacements.put(worldPoint, existingObjects);
-			}
+			return;
 		}
+
+		animationManager.recordNaturalPlayerPoseAnimations();
+		animationManager.updateAnimations();
 	}
 
-	public void handleAllSpawnedObjects(MarketplaceManager.SpawnedObjectHandler handler) {
-		for (CopyOnWriteArrayList<MarketplaceSpawnedObject> spawnedObjects : objectPlacements.values())
+	/**
+	 * Handle game state changes to respawn all objects, because they are cleared
+	 * when a new scene is being loaded.
+	 */
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		GameState newGameState = event.getGameState();
+
+		// guard: only respawn on the loading event
+		// this means all spawned objects are removed from the scene
+		// and need to be queued for a respawn, this is done periodically
+		if (newGameState == GameState.LOADING)
 		{
-			for (MarketplaceSpawnedObject spawnedObject : spawnedObjects)
-			{
-				handler.execute(spawnedObject);
-			}
+			spawnManager.registerDespawn();
 		}
 	}
 
-	public interface SpawnedObjectHandler {
-		public void execute(MarketplaceSpawnedObject spawnedObject);
-	}
-
-	public MarketplaceSpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)
+	/**
+	 * Handle game tick
+	 */
+	public void onGameTick()
 	{
-		for (int radius = startRadius; radius < maxRadius; radius += radiusStepSize)
+		// for all active products the game tick should be triggered
+		for (MarketplaceProduct product : activeProducts)
 		{
-			int randomizedRadius = radius + ((int) (Math.random() * radiusStepSize));
-			int usedRadius = Math.min(randomizedRadius, maxRadius);
-			MarketplaceSpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, blacklistedSpawnPoints);
-
-			if (candidateSpawnPoint != null) {
-				return candidateSpawnPoint;
-			}
+			product.onGameTick();
 		}
-
-		return null;
 	}
 
-	public MarketplaceSpawnPoint getOutwardSpawnPoint(int maxRadius)
+	/**
+	 * Handle client tick
+	 */
+	public void onClientTick()
 	{
-		return getOutwardSpawnPoint(1, 2, maxRadius, null);
-	}
-
-	public Collection<MarketplaceSpawnPoint> getOutwardSpawnPoints(int spawnAmount)
-	{
-		final HashMap<WorldPoint, MarketplaceSpawnPoint> spawnPoints = new HashMap();
-
-		for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++) {
-			MarketplaceSpawnPoint spawnPoint = getOutwardSpawnPoint(2, 2, 12, spawnPoints);
-
-			// guard: make sure the spawn point is valid
-			if (spawnPoint == null)
-			{
-				continue;
-			}
-
-			WorldPoint worldPoint = spawnPoint.getWorldPoint();
-			spawnPoints.put(worldPoint, spawnPoint);
-		}
-
-		return spawnPoints.values();
-	}
-
-	public MarketplaceSpawnPoint getSpawnPoint(int radius)
-	{
-		return getSpawnPoint(radius, null);
-	}
-
-	public MarketplaceSpawnPoint getSpawnPoint(int radius, HashMap<WorldPoint, MarketplaceSpawnPoint> blacklistedSpawnPoints)
-	{
-		final ArrayList<MarketplaceSpawnPoint> candidateSpawnPoints = new ArrayList();
-		final LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
-		final int playerPlane = client.getPlane();
-		final int[][] collisionFlags = getSceneCollisionFlags();
-		final int sceneX = playerLocalPoint.getSceneX();
-		final int sceneY = playerLocalPoint.getSceneY();
-
-		// loop all the possible tiles for the requested radius and look for
-		// the candidate tiles to spawn the object on
-		for (int deltaX = -1 * radius; deltaX <= radius; deltaX++) {
-			for (int deltaY = -1 * radius; deltaY <= radius; deltaY++) {
-				int sceneAttemptX = sceneX + deltaX;
-				int sceneAttemptY = sceneY + deltaY;
-
-				// guard: make sure the flag can be found
-				if (
-					sceneAttemptX < 0
-					|| sceneAttemptX >= collisionFlags.length
-					|| sceneAttemptY < 0
-					|| sceneAttemptY >= collisionFlags[sceneAttemptX].length
-				) {
-					continue;
-				}
-
-				int flagData = collisionFlags[sceneAttemptX][sceneAttemptY];
-				int blockedFlags = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
-
-				// guard: check if this tile is not walkable
-				if ((flagData & blockedFlags) != 0)
-				{
-					continue;
-				}
-
-				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
-				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
-
-				// guard: check if this world point is already taken by another spawned object
-				if (objectPlacements.containsKey(worldPoint))
-				{
-					continue;
-				}
-
-				// guard: check if blacklisted manually
-				if (blacklistedSpawnPoints != null && blacklistedSpawnPoints.containsKey(worldPoint))
-				{
-					continue;
-				}
-
-				// we have found a walkable tile to spawn the object on
-				candidateSpawnPoints.add(new MarketplaceSpawnPoint(worldPoint, playerPlane));
-			}
-		}
-
-		// guard: make sure there are candidate spawn points to prevent the
-		// random selection of one to trigger errors
-		if (candidateSpawnPoints.size() <= 0)
+		// for all active products the tick should be triggered
+		for (MarketplaceProduct product : activeProducts)
 		{
-			return null;
+			product.onClientTick();
 		}
-
-		final Random spawnPointSelector = new Random();
-		final int spawnPointIndex = spawnPointSelector.nextInt(candidateSpawnPoints.size());
-		final MarketplaceSpawnPoint spawnPoint = candidateSpawnPoints.get(spawnPointIndex);
-
-		return spawnPoint;
-	}
-
-	private int[][] getSceneCollisionFlags() {
-		final CollisionData[] collisionMaps = client.getCollisionMaps();
-		int[][] collisionFlags = new int[Constants.SCENE_SIZE][Constants.SCENE_SIZE];
-
-		// if we have map collision flags we populate the starting point with them
-		if (collisionMaps != null) {
-			collisionFlags = collisionMaps[client.getPlane()].getFlags();
-		}
-
-		return collisionFlags;
 	}
 }

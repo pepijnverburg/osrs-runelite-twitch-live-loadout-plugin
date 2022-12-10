@@ -18,6 +18,6 @@ public class GroundSpawningPortal extends MarketplaceProduct
 
 	public void onInitializeModel(ModelData model, int modelId)
 	{
-		MarketplaceModelUtilities.recolorAllFaces(model, MarketplaceModelConstants.ModelColors.PURPLE);
+//		MarketplaceModelUtilities.recolorAllFaces(model, MarketplaceModelConstants.ModelColors.PURPLE);
 	}
 }

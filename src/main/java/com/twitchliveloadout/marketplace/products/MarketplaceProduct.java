@@ -1,5 +1,12 @@
-package com.twitchliveloadout.marketplace;
+package com.twitchliveloadout.marketplace.products;
 
+import com.twitchliveloadout.marketplace.ExtensionTransaction;
+import com.twitchliveloadout.marketplace.MarketplaceConfigGetters;
+import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.marketplace.products.*;
+import com.twitchliveloadout.marketplace.spawns.MarketplaceSpawnPoint;
+import com.twitchliveloadout.marketplace.spawns.MarketplaceSpawnedObject;
+import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -283,6 +290,7 @@ public class MarketplaceProduct
 		}
 
 		Client client = manager.getClient();
+		SpawnManager spawnManager = manager.getSpawnManager();
 		ArrayList<MarketplaceSpawnedObject> newSpawnedObjects = new ArrayList();
 		ArrayList<ModelData> newSpawnedModels = new ArrayList();
 
@@ -299,9 +307,9 @@ public class MarketplaceProduct
 		Integer radius = placement.radius;
 		int validatedRadius = (radius == null) ? DEFAULT_RADIUS : radius;
 		if (placement.radiusType == OUTWARD_RADIUS_TYPE) {
-			spawnPoint = manager.getOutwardSpawnPoint(validatedRadius);
+			spawnPoint = spawnManager.getOutwardSpawnPoint(validatedRadius);
 		} else {
-			spawnPoint = manager.getSpawnPoint(validatedRadius);
+			spawnPoint = spawnManager.getSpawnPoint(validatedRadius);
 		}
 
 		// guard: make sure the spawn point is valid
@@ -373,7 +381,7 @@ public class MarketplaceProduct
 
 		// register the objects to the product and manager to make the spawn point unavailable
 		spawnedObjects.addAll(newSpawnedObjects);
-		manager.registerSpawnedObjectPlacements(newSpawnedObjects);
+		spawnManager.registerSpawnedObjectPlacements(newSpawnedObjects);
 	}
 
 	private void triggerAnimation(ArrayList<MarketplaceSpawnedObject> spawnedObjects, EbsProduct.Animation animation, int baseDelayMs)
