@@ -1,7 +1,9 @@
 package com.twitchliveloadout.marketplace.products;
 
+import com.twitchliveloadout.marketplace.MarketplaceConstants;
+
 public class EbsModelPlacement {
-	public String locationType;
-	public String radiusType;
-	public Integer radius;
+	public String locationType = MarketplaceConstants.CURRENT_TILE_LOCATION_TYPE;
+	public String radiusType = MarketplaceConstants.OUTWARD_RADIUS_TYPE;
+	public Integer radius = MarketplaceConstants.DEFAULT_RADIUS;
 }

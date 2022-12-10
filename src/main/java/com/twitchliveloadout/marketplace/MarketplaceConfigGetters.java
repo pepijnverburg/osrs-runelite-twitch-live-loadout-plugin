@@ -5,8 +5,6 @@ import com.twitchliveloadout.marketplace.products.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
-
 public class MarketplaceConfigGetters {
 
 	public static <T> T getRandomEntryFromList(ArrayList<T> list)
@@ -23,31 +21,9 @@ public class MarketplaceConfigGetters {
 		return randomEntry;
 	}
 
-	public static EbsProductMovementAnimations getValidMovementAnimations(EbsProductMovementAnimations movementAnimations)
+	public static double getValidRandomNumberByRange(EbsRandomRange randomRange, double defaultMin, double defaultMax)
 	{
-		EbsProductMovementAnimations validMovementAnimations = new EbsProductMovementAnimations();
-		validMovementAnimations.idleAnimationId = -1;
-		validMovementAnimations.runAnimationId = -1;
-		validMovementAnimations.walkAnimationId = -1;
-
-		if (movementAnimations != null) {
-			if (movementAnimations.idleAnimationId != null) {
-				validMovementAnimations.idleAnimationId = movementAnimations.idleAnimationId;
-			}
-			if (movementAnimations.walkAnimationId != null) {
-				validMovementAnimations.walkAnimationId = movementAnimations.walkAnimationId;
-			}
-			if (movementAnimations.runAnimationId != null) {
-				validMovementAnimations.runAnimationId = movementAnimations.runAnimationId;
-			}
-		}
-
-		return validMovementAnimations;
-	}
-
-	public static double getValidRandomNumberByRange(EbsProductRandomRange randomRange, double defaultMin, double defaultMax)
-	{
-		EbsProductRandomRange validRandomRange = new EbsProductRandomRange();
+		EbsRandomRange validRandomRange = new EbsRandomRange();
 		validRandomRange.min = defaultMin;
 		validRandomRange.max = defaultMax;
 
@@ -74,29 +50,6 @@ public class MarketplaceConfigGetters {
 		return randomValue;
 	}
 
-	public static EbsProductAnimationFrame getValidAnimationFrame(EbsProductAnimationFrame frame)
-	{
-		EbsProductAnimationFrame validFrame = new EbsProductAnimationFrame();
-		validFrame.id = null;
-		validFrame.durationMs = 0;
-		validFrame.delayMs = 0;
-
-		// override properties that are valid
-		if (frame != null) {
-			if (frame.id != null) {
-				validFrame.id = frame.id;
-			}
-			if (frame.delayMs != null) {
-				validFrame.delayMs = frame.delayMs;
-			}
-			if (frame.durationMs != null) {
-				validFrame.durationMs = frame.durationMs;
-			}
-		}
-
-		return validFrame;
-	}
-
 	public static boolean rollChance(Double chance)
 	{
 		Double roll = Math.random();
@@ -107,26 +60,5 @@ public class MarketplaceConfigGetters {
 		}
 
 		return chance >= roll;
-	}
-
-	public static EbsProductInterval generateDefaultInterval()
-	{
-		EbsProductInterval interval = new EbsProductInterval();
-		interval.chance = 1.0d;
-		interval.delayMs = 0;
-		interval.durationMs = 0;
-		interval.repeatAmount = 1;
-
-		return interval;
-	}
-
-	public static EbsModelPlacement generateDefaultModelPlacement()
-	{
-		EbsModelPlacement placement = new EbsModelPlacement();
-		placement.locationType = CURRENT_TILE_LOCATION_TYPE;
-		placement.radiusType = OUTWARD_RADIUS_TYPE;
-		placement.radius = DEFAULT_RADIUS;
-
-		return placement;
 	}
 }

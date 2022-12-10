@@ -6,11 +6,11 @@ public class EbsSpawn {
 	public ArrayList<EbsModelSet> modelSets;
 	public Boolean spawnerEnabled;
 	public EbsModelSet spawner;
-	public EbsProductRandomRange spawnerDurationMs;
+	public EbsRandomRange spawnerDurationMs;
 	public EbsModelPlacement modelPlacement;
 	public EbsAnimation hideAnimation;
 	public EbsAnimation showAnimation;
-	public EbsProductMovementAnimations movementAnimations;
+	public EbsMovementAnimations movementAnimations;
 	public ArrayList<EbsAnimation> randomAnimations;
-	public EbsProductInterval randomAnimationInterval;
+	public EbsInterval randomAnimationInterval;
 }

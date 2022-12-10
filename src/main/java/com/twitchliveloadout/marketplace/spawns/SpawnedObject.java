@@ -1,9 +1,7 @@
 package com.twitchliveloadout.marketplace.spawns;
 
 import com.twitchliveloadout.marketplace.*;
-import com.twitchliveloadout.marketplace.products.EbsProduct;
-import com.twitchliveloadout.marketplace.products.EbsProductMovementAnimations;
-import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
+import com.twitchliveloadout.marketplace.products.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +27,10 @@ public class SpawnedObject {
 	private final RuneLiteObject object;
 
 	@Getter
-	private final EbsProduct.Spawn spawn;
+	private final EbsSpawn spawn;
 
 	@Getter
-	private final EbsProduct.ModelSet modelSet;
-
-	private final EbsProductMovementAnimations movementAnimations;
+	private final EbsModelSet modelSet;
 
 	@Getter
 	private final ModelData modelData;
@@ -53,7 +49,7 @@ public class SpawnedObject {
 	private double currentRotationDegrees = 0;
 	private int currentAnimationId;
 
-	public SpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, SpawnPoint spawnPoint, EbsProduct.Spawn spawn, EbsProduct.ModelSet modelSet)
+	public SpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
 	{
 		this.spawnedAt = Instant.now();
 		this.product = product;
@@ -63,9 +59,6 @@ public class SpawnedObject {
 		this.spawnPoint = spawnPoint;
 		this.spawn = spawn;
 		this.modelSet = modelSet;
-
-		// get valid movement animations
-		this.movementAnimations = MarketplaceConfigGetters.getValidMovementAnimations(spawn.movementAnimations);
 
 		// set to initial spawn-point
 		object.setLocation(spawnPoint.getLocalPoint(client), spawnPoint.getPlane());
@@ -144,7 +137,7 @@ public class SpawnedObject {
 
 	public void resetAnimation()
 	{
-		int idleAnimationId = movementAnimations.idleAnimationId;
+		int idleAnimationId = getMovementAnimations().idle;
 
 		// guard: set to no animation when there is no idle animation
 		if (idleAnimationId < 0)  {
@@ -153,6 +146,16 @@ public class SpawnedObject {
 		}
 
 		setAnimation(idleAnimationId, true);
+	}
+
+	public EbsMovementAnimations getMovementAnimations()
+	{
+		if (spawn.movementAnimations == null)
+		{
+			return new EbsMovementAnimations();
+		}
+
+		return spawn.movementAnimations;
 	}
 
 	public void show()

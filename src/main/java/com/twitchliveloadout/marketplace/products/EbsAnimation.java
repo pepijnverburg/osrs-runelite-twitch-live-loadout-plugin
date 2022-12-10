@@ -1,7 +1,7 @@
 package com.twitchliveloadout.marketplace.products;
 
 public class EbsAnimation {
-	public EbsProductAnimationFrame modelAnimation;
-	public EbsProductAnimationFrame playerAnimation;
-	public EbsProductAnimationFrame playerGraphic;
+	public EbsAnimationFrame modelAnimation;
+	public EbsAnimationFrame playerAnimation;
+	public EbsAnimationFrame playerGraphic;
 }

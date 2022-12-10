@@ -124,7 +124,7 @@ public class MarketplaceProduct
 	{
 		for (SpawnedObject spawnedObject : spawnedObjects)
 		{
-			EbsProduct.ModelSet modelSet = spawnedObject.getModelSet();
+			EbsModelSet modelSet = spawnedObject.getModelSet();
 			String rotationType = modelSet.modelRotationType;
 			Player player = manager.getClient().getLocalPlayer();
 
@@ -161,9 +161,9 @@ public class MarketplaceProduct
 		for (SpawnedObject spawnedObject : spawnedObjects)
 		{
 			Instant lastRandomAnimationAt = lastRandomAnimations.get(spawnedObject);
-			EbsProduct.Spawn spawn = spawnedObject.getSpawn();
-			EbsProductInterval randomInterval = spawn.randomAnimationInterval;
-			ArrayList<EbsProduct.Animation> randomAnimations = spawn.randomAnimations;
+			EbsSpawn spawn = spawnedObject.getSpawn();
+			EbsInterval randomInterval = spawn.randomAnimationInterval;
+			ArrayList<EbsAnimation> randomAnimations = spawn.randomAnimations;
 
 			// guard: make sure there is a valid interval and animation
 			if (randomInterval == null || randomAnimations == null || randomAnimations.size() <= 0)
@@ -194,7 +194,7 @@ public class MarketplaceProduct
 			}
 
 			// select a random entry from all the candidates
-			EbsProduct.Animation randomAnimation = MarketplaceConfigGetters.getRandomEntryFromList(randomAnimations);
+			EbsAnimation randomAnimation = MarketplaceConfigGetters.getRandomEntryFromList(randomAnimations);
 
 			// trigger the animations on this single spawned object
 			ArrayList<SpawnedObject> animatedSpawnedObjects = new ArrayList();
@@ -209,9 +209,9 @@ public class MarketplaceProduct
 	{
 		Instant now = Instant.now();
 		String productId = ebsProduct.id;
-		EbsProduct.Behaviour behaviour = ebsProduct.behaviour;
-		ArrayList<EbsProduct.SpawnOption> spawnOptions = behaviour.spawnOptions;
-		EbsProductInterval spawnInterval = behaviour.spawnInterval;
+		EbsBehaviour behaviour = ebsProduct.behaviour;
+		ArrayList<EbsSpawnOption> spawnOptions = behaviour.spawnOptions;
+		EbsInterval spawnInterval = behaviour.spawnInterval;
 
 		// guard: check if objects need to be spawned
 		if (spawnOptions == null)
@@ -223,7 +223,7 @@ public class MarketplaceProduct
 		// make sure the behaviour interval is valid
 		if (spawnInterval == null)
 		{
-			spawnInterval = MarketplaceConfigGetters.generateDefaultInterval();
+			spawnInterval = new EbsInterval();
 		}
 
 		Integer repeatAmount = spawnInterval.repeatAmount;
@@ -242,7 +242,7 @@ public class MarketplaceProduct
 		}
 
 		// select a random option
-		EbsProduct.SpawnOption spawnOption = getSpawnBehaviourByChance(spawnOptions);
+		EbsSpawnOption spawnOption = getSpawnBehaviourByChance(spawnOptions);
 
 		// guard: check if a valid option was selected
 		if (spawnOption == null)
@@ -258,7 +258,7 @@ public class MarketplaceProduct
 
 		// randomize the amount of spawns
 		int spawnAmount = (int) MarketplaceConfigGetters.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
-		ArrayList<EbsProduct.Spawn> spawns = spawnOption.spawns;
+		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
 
 		// guard: make sure the spawn behaviours are valid
 		if (spawns == null)
@@ -270,7 +270,7 @@ public class MarketplaceProduct
 		// execute the spawn for the requested amount of times along with all spawn behaviours
 		for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
 		{
-			for (EbsProduct.Spawn spawn : spawns)
+			for (EbsSpawn spawn : spawns)
 			{
 				int spawnDelayMs = (int) MarketplaceConfigGetters.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
 				triggerSpawn(spawn, spawnDelayMs);
@@ -278,7 +278,7 @@ public class MarketplaceProduct
 		}
 	}
 
-	private void triggerSpawn(EbsProduct.Spawn spawn, int spawnDelayMs)
+	private void triggerSpawn(EbsSpawn spawn, int spawnDelayMs)
 	{
 
 		// guard: make sure the spawn is valid
@@ -298,7 +298,7 @@ public class MarketplaceProduct
 		// make sure there are valid placement parameters
 		if (placement == null)
 		{
-			placement = MarketplaceConfigGetters.generateDefaultModelPlacement();
+			placement = new EbsModelPlacement();
 		}
 
 		// find an available spawn point
@@ -319,7 +319,7 @@ public class MarketplaceProduct
 		}
 
 		// roll a random set of model IDs
-		EbsProduct.ModelSet modelSet = MarketplaceConfigGetters.getRandomEntryFromList(spawn.modelSets);
+		EbsModelSet modelSet = MarketplaceConfigGetters.getRandomEntryFromList(spawn.modelSets);
 
 		// guard: make sure the selected model is valid
 		if (modelSet == null || modelSet.modelIds == null)
@@ -383,7 +383,7 @@ public class MarketplaceProduct
 		spawnManager.registerSpawnedObjectPlacements(newSpawnedObjects);
 	}
 
-	private void triggerAnimation(ArrayList<SpawnedObject> spawnedObjects, EbsProduct.Animation animation, int baseDelayMs)
+	private void triggerAnimation(ArrayList<SpawnedObject> spawnedObjects, EbsAnimation animation, int baseDelayMs)
 	{
 
 		// guard: make sure the animation is valid
@@ -397,7 +397,7 @@ public class MarketplaceProduct
 		triggerPlayerAnimation(animation.playerAnimation, baseDelayMs);
 	}
 
-	private void triggerModelAnimations(ArrayList<SpawnedObject> spawnedObjects, EbsProductAnimationFrame animation, int baseDelayMs)
+	private void triggerModelAnimations(ArrayList<SpawnedObject> spawnedObjects, EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
 			scheduleSetAnimations(spawnedObjects, animationId, startDelayMs);
@@ -406,7 +406,7 @@ public class MarketplaceProduct
 		});
 	}
 
-	private void triggerPlayerGraphic(EbsProductAnimationFrame animation, int baseDelayMs)
+	private void triggerPlayerGraphic(EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (graphicId, startDelayMs) -> {
 			schedulePlayerGraphic(graphicId, startDelayMs);
@@ -415,7 +415,7 @@ public class MarketplaceProduct
 		});
 	}
 
-	private void triggerPlayerAnimation(EbsProductAnimationFrame animation, int baseDelayMs)
+	private void triggerPlayerAnimation(EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
 			schedulePlayerAnimation(animationId, startDelayMs);
@@ -424,7 +424,7 @@ public class MarketplaceProduct
 		});
 	}
 
-	private void handleAnimationFrame(EbsProductAnimationFrame animation, int baseDelayMs, StartAnimationHandler startHandler, ResetAnimationHandler resetHandler)
+	private void handleAnimationFrame(EbsAnimationFrame animation, int baseDelayMs, StartAnimationHandler startHandler, ResetAnimationHandler resetHandler)
 	{
 
 		// guard: make sure the animation is valid
@@ -433,17 +433,15 @@ public class MarketplaceProduct
 			return;
 		}
 
-		EbsProductAnimationFrame validAnimation = MarketplaceConfigGetters.getValidAnimationFrame(animation);
-
 		// guard: make sure there is an animation ID
-		if (validAnimation.id == null)
+		if (animation.id < 0)
 		{
 			return;
 		}
 
-		int animationId = validAnimation.id;
-		int delayMs = validAnimation.delayMs;
-		int durationMs = validAnimation.durationMs;
+		int animationId = animation.id;
+		int delayMs = animation.delayMs;
+		int durationMs = animation.durationMs;
 		int startDelayMs = baseDelayMs + delayMs;
 		int resetDelayMs = startDelayMs + durationMs;
 
@@ -464,7 +462,7 @@ public class MarketplaceProduct
 		public void execute(int delayMs);
 	}
 
-	private EbsProduct.SpawnOption getSpawnBehaviourByChance(ArrayList<EbsProduct.SpawnOption> spawnBehaviourOptions)
+	private EbsSpawnOption getSpawnBehaviourByChance(ArrayList<EbsSpawnOption> spawnBehaviourOptions)
 	{
 		int attempts = 0;
 		int maxAttempts = 50;
@@ -479,7 +477,7 @@ public class MarketplaceProduct
 		// TODO: see how this impacts the selection?
 		while (attempts++ < maxAttempts)
 		{
-			for (EbsProduct.SpawnOption option : spawnBehaviourOptions)
+			for (EbsSpawnOption option : spawnBehaviourOptions)
 			{
 
 				// choose this option when the chance is not known or when the roll landed
