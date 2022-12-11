@@ -22,7 +22,9 @@ public enum TwitchStateEntry {
 	COLLECTION_LOG("collectionLog"),
 	INVOCATIONS("invocations"),
 	INVOCATIONS_RAID_LEVEL("invocationsRaidLevel"),
-	MARKETPLACE_SETTINGS("marketplaceSettings");
+	MARKETPLACE_SETTINGS("marketplaceSettings"),
+	STREAMER_PRODUCTS("streamerProducts"),
+	;
 
 	private final String key;
 

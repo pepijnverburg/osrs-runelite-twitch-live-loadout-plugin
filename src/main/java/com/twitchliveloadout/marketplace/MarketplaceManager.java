@@ -1,20 +1,27 @@
 package com.twitchliveloadout.marketplace;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
 import com.twitchliveloadout.marketplace.products.EbsProduct;
+import com.twitchliveloadout.marketplace.products.EbsProductDuration;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.StreamerProduct;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
-import com.twitchliveloadout.twitch.TwitchState;
+import com.twitchliveloadout.twitch.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchSegmentType;
+import com.twitchliveloadout.twitch.TwitchStateEntry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PlayerChanged;
+import okhttp3.Response;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -23,7 +30,7 @@ public class MarketplaceManager {
 
 	@Getter
 	private final TwitchLiveLoadoutPlugin plugin;
-	private final TwitchState twitchState;
+	private final TwitchApi twitchApi;
 
 	@Getter
 	private final Client client;
@@ -50,39 +57,31 @@ public class MarketplaceManager {
 	 */
 	private final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = new CopyOnWriteArrayList();
 
-	public EbsProduct tmpEbsProduct;
+	/**
+	 * List of all streamer products from the Twitch configuration segment
+	 */
+	private CopyOnWriteArrayList<StreamerProduct> streamerProducts = new CopyOnWriteArrayList();
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config)
+	/**
+	 * List of all EBS products from Twitch
+	 */
+	private CopyOnWriteArrayList<EbsProduct> ebsProducts = new CopyOnWriteArrayList();
+
+	/**
+	 * List of all the possible product durations from Twitch
+	 */
+	private CopyOnWriteArrayList<EbsProductDuration> ebsProductDurations = new CopyOnWriteArrayList();
+
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Client client, TwitchLiveLoadoutConfig config)
 	{
 		this.plugin = plugin;
-		this.twitchState = twitchState;
+		this.twitchApi = twitchApi;
 		this.client = client;
 		this.config = config;
 		this.spawnManager = new SpawnManager(plugin, client);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager();
-
-		// test
-		String json = "{\"id\":\"falador-party\",\"enabled\":true,\"type\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"interfaceEffectType\":\"shake-screen\",\"interfaceEffectInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":10000,\"repeatAmount\":1},\"playerAnimation\":{\"idleAnimationId\":100,\"runAnimationId\":100,\"walkAnimationId\":100},\"playerEquipment\":{\"amuletItemId\":1,\"bootsItemId\":1,\"chestItemId\":1,\"glovesItemId\":1,\"helmItemId\":1,\"legsItemId\":1,\"shieldItemId\":1,\"weaponItemId\":1},\"spawnInterval\":{\"chance\":0.5,\"delayMs\":1000,\"durationMs\":1000,\"repeatAmount\":1},\"spawnOptions\":[{\"chance\":0.5,\"spawnAmountMin\":5,\"spawnAmountMax\":10,\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\",\"modelScale\":0.9}],\"modelPlacement\":{\"locationType\":\"current-tile\",\"radiusType\":\"outward-radius\",\"radius\":10},\"hideAnimation\":{\"modelAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerAnimation\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000},\"playerGraphic\":{\"id\":100,\"delayMs\":1000,\"durationMs\":1000}}}]}]}}";
-
-		// falador party
-		json = "{\"id\":\"falador-party\",\"enabled\":true,\"category\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":5,\"max\":10},\"spawnDelayMs\":{\"min\":0,\"max\":200},\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\"},{\"modelIds\":[2227],\"modelRotationType\":\"random\"},{\"modelIds\":[2228],\"modelRotationType\":\"random\"}],\"showAnimation\":{\"modelAnimation\":{\"id\":498,\"durationMs\":2400},\"playerAnimation\":{\"id\":866,\"delayMs\":1000}}}]}]}}";
-
-		// jad
-		json = "{\"id\":\"mini-jad\",\"enabled\":true,\"category\":\"npc-spawn\",\"name\":\"Mini Jad\",\"description\":\"A Jad following the streamer around and attacking them.\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":1},\"spawns\":[{\"modelSets\":[{\"modelIds\":[9319],\"modelRotationType\":\"player\",\"modelScale\":{\"min\":0.5}}],\"movementAnimations\":{\"idleAnimationId\":2650,\"walkAnimationId\":2651},\"randomAnimationInterval\":{\"chance\":1,\"delayMs\":5000},\"randomAnimations\":[{\"modelAnimation\":{\"id\":2652,\"durationMs\":1000},\"playerGraphic\":{\"id\":451,\"delayMs\":1000},\"playerAnimation\":{\"id\":404,\"delayMs\":2000}}]}]}]}}";
-
-		// drunk
-		json = "{\"id\":\"drunk-walk\",\"enabled\":true,\"category\":\"animation\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"playerAnimations\":{\"idle\":3040,\"walk\":3039,\"run\":3039}}}";
-
-		// on fire
-		json = "{\"id\":\"on-fire\",\"enabled\":true,\"category\":\"animation\",\"name\":\"On FIRE!\",\"description\":\"\",\"behaviour\":{\"spawnInterval\":{\"delayMs\":100,\"chance\":1,\"repeatAmount\":-1},\"spawnOptions\":[{\"chance\":1,\"spawns\":[{\"modelPlacement\":{\"locationType\":\"previous-tile\",\"radiusType\":\"radius\",\"radius\":0},\"modelSets\":[{\"modelIds\":[26585]}],\"showAnimation\":{\"modelAnimation\":{\"id\":6853}}}]}]}}";
-
-		tmpEbsProduct = new Gson().fromJson(json, EbsProduct.class);
-		log.warn("Loaded TMP ebs product:");
-		log.warn(tmpEbsProduct.name);
 	}
-
-	boolean didTestSpawn = false;
 
 	/**
 	 * Check for new products that should be spawned
@@ -94,12 +93,6 @@ public class MarketplaceManager {
 		if (!plugin.isLoggedIn())
 		{
 			return;
-		}
-
-		// TODO: link to Twitch transactions
-		if (!didTestSpawn) {
-			startProduct(tmpEbsProduct);
-			didTestSpawn = true;
 		}
 
 		int playerGraphicId = config.devPlayerGraphicId();
@@ -187,7 +180,7 @@ public class MarketplaceManager {
 	/**
 	 * Handle all active products
 	 */
-	public void handleActiveProducts()
+	public void updateEffects()
 	{
 
 		// guard: don't do anything when not logged in
@@ -203,6 +196,74 @@ public class MarketplaceManager {
 		for (MarketplaceProduct product : activeProducts)
 		{
 			product.handleBehaviour();
+		}
+	}
+
+	public void updateStreamerProducts()
+	{
+		JsonObject segmentContent = twitchApi.getConfigurationSegmentContent(TwitchSegmentType.BROADCASTER);
+
+		if (segmentContent == null)
+		{
+			return;
+		}
+
+		JsonArray rawStreamerProducts = segmentContent.getAsJsonArray(TwitchStateEntry.STREAMER_PRODUCTS.getKey());
+
+		if (rawStreamerProducts == null)
+		{
+			return;
+		}
+
+		CopyOnWriteArrayList<StreamerProduct> newStreamerProducts = new CopyOnWriteArrayList();
+
+		rawStreamerProducts.forEach((element) -> {
+			try {
+				JsonObject rawStreamerProduct = element.getAsJsonObject();
+				StreamerProduct streamerProduct = new Gson().fromJson(rawStreamerProduct, StreamerProduct.class);
+				newStreamerProducts.add(streamerProduct);
+			} catch (Exception exception) {
+				// empty
+			}
+		});
+
+		streamerProducts = newStreamerProducts;
+	}
+
+	public void updateEbsProducts()
+	{
+		try {
+			Response response = twitchApi.getEbsProducts();
+			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
+			Boolean status = result.get("status").getAsBoolean();
+			String message = result.get("message").getAsString();
+			JsonArray products = result.getAsJsonArray("products");
+			JsonArray durations = result.getAsJsonArray("durations");
+
+			// guard: check if the status is valid
+			// if not we want to keep the old products intact
+			if (!status)
+			{
+				log.warn("Could not fetch EBS products from Twitch as the status is invalid with message: "+ message);
+				return;
+			}
+
+			CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList();
+			CopyOnWriteArrayList<EbsProductDuration> newEbsProductDurations = new CopyOnWriteArrayList();
+
+			products.forEach((element) -> {
+				EbsProduct ebsProduct = new Gson().fromJson(element, EbsProduct.class);
+				newEbsProducts.add(ebsProduct);
+			});
+			durations.forEach((element) -> {
+				EbsProductDuration ebsProductDuration = new Gson().fromJson(element, EbsProductDuration.class);
+				newEbsProductDurations.add(ebsProductDuration);
+			});
+
+			ebsProducts = newEbsProducts;
+			ebsProductDurations = newEbsProductDurations;
+		} catch (Exception exception) {
+			// empty
 		}
 	}
 

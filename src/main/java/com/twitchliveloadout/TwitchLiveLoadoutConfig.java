@@ -537,11 +537,24 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Twitch EBS Base URL",
 			description = "The base URL of the Twitch Extension Back-end Service used to switch environments during testing.",
 			position = 2,
-			hidden = true,
+			hidden = false,
 			section = advancedSection
 	)
 	default String twitchEbsBaseUrl()
 	{
 		return TwitchApi.DEFAULT_TWITCH_EBS_BASE_URL;
+	}
+
+	@ConfigItem(
+			keyName = "twitchBaseUrl",
+			name = "Twitch Base URL",
+			description = "The base URL of the Twitch Extension Helix API used to switch environments during testing.",
+			position = 2,
+			hidden = false,
+			section = advancedSection
+	)
+	default String twitchBaseUrl()
+	{
+		return TwitchApi.DEFAULT_TWITCH_BASE_URL;
 	}
 }

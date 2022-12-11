@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
@@ -42,20 +43,13 @@ public class TwitchApi
 	public final static int BASE_SYNC_DELAY = 1000; // ms
 	public final static boolean CHAT_ERRORS_ENABLED = true;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
-	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com";
+	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com/";
+	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions/";
 	private final static String RATE_LIMIT_REMAINING_HEADER = "ratelimit-ratelimitermessagesbychannel-remaining";
+	private final static int GET_CONFIGURATION_SERVICE_TIMEOUT_MS = 3 * 1000;
+	private final static int GET_EBS_PRODUCTS_TIMEOUT_MS = 10 * 1000;
 	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 15 * 60 * 1000; // in ms
 	private final static String USER_AGENT = "RuneLite";
-	private enum PubSubTarget {
-		BROADCAST("broadcast"),
-		GLOBAL("global");
-
-		private final String target;
-
-		PubSubTarget(String target) {
-			this.target = target;
-		}
-	}
 
 	private final OkHttpClient httpClient = new OkHttpClient();
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
@@ -80,6 +74,8 @@ public class TwitchApi
 
 	@Getter
 	private long lastErrorChatMessage = 0;
+
+	private HashMap<TwitchSegmentType, JsonObject> configurationSegmentContents = new HashMap();
 
 	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
@@ -158,7 +154,7 @@ public class TwitchApi
 			final JsonObject data = new JsonObject();
 			final JsonArray targets = new JsonArray();
 			final String channelId = getChannelId();
-			targets.add(PubSubTarget.BROADCAST.target);
+			targets.add(TwitchPubSubTargetType.BROADCAST.getTarget());
 			String compressedState = compressState(state);
 
 			lastCompressedState = compressedState;
@@ -167,7 +163,7 @@ public class TwitchApi
 			data.addProperty("broadcaster_id", channelId);
 			data.add("target", targets);
 
-			Response response = performPubSubRequest(data);
+			Response response = sendPubSubMessage(data);
 			verifyStateUpdateResponse("PubSub", response, state, compressedState);
 		} catch (Exception exception) {
 			log.warn("Could not send pub sub state due to the following error: ", exception);
@@ -177,11 +173,11 @@ public class TwitchApi
 		return true;
 	}
 
-	private Response performPubSubRequest(JsonObject data) throws Exception
+	private Response sendPubSubMessage(JsonObject data) throws Exception
 	{
 		final String clientId = DEFAULT_EXTENSION_CLIENT_ID;
 		final String token = config.twitchToken();
-		final String url = "https://api.twitch.tv/helix/extensions/pubsub";
+		final String url = DEFAULT_TWITCH_BASE_URL +"pubsub";
 		final String dataString = data.toString();
 
 		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
@@ -195,6 +191,71 @@ public class TwitchApi
 			.build();
 
 		Response response = httpClient.newCall(request).execute();
+		return response;
+	}
+
+	public Response getEbsProducts() throws Exception
+	{
+		final String token = config.twitchToken();
+		final String url = config.twitchEbsBaseUrl() +"api/marketplace-products";
+		final OkHttpClient timeoutHttpClient = httpClient
+			.newBuilder()
+			.callTimeout(GET_EBS_PRODUCTS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+			.build();
+
+		// Documentation: https://dev.twitch.tv/docs/api/reference
+		Request request = new Request.Builder()
+			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.get()
+			.url(url)
+			.build();
+
+		Response response = timeoutHttpClient.newCall(request).execute();
+		return response;
+	}
+
+	public Response updateConfigurationSegment(TwitchSegmentType segmentType) throws Exception
+	{
+		final String clientId = DEFAULT_EXTENSION_CLIENT_ID;
+		final String token = config.twitchToken();
+		final String channelId = getChannelId();
+		final String url = DEFAULT_TWITCH_BASE_URL +"configurations";
+		final String urlWithQuery = url +"?broadcaster_id="+ channelId +"&extension_id="+ clientId +"&segment="+ segmentType.getKey();
+		final OkHttpClient timeoutHttpClient = httpClient
+			.newBuilder()
+			.callTimeout(GET_CONFIGURATION_SERVICE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+			.build();
+
+		// Documentation: https://dev.twitch.tv/docs/api/reference#get-extension-configuration-segment
+		Request request = new Request.Builder()
+			.header("Client-ID", clientId)
+			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.get()
+			.url(urlWithQuery)
+			.build();
+
+		Response response = timeoutHttpClient.newCall(request).execute();
+
+		// immediately cache the response if valid
+		try {
+			String rawSegmentResult = response.body().string();
+			JsonObject segmentResult = parseJson(rawSegmentResult);
+			String rawSegmentContent = segmentResult
+				.getAsJsonArray("data")
+				.get(0)
+				.getAsJsonObject()
+				.get("content")
+				.getAsString();
+			JsonObject segmentContent = parseJson(rawSegmentContent);
+			configurationSegmentContents.put(segmentType, segmentContent);
+		} catch (Exception exception) {
+			// empty
+		}
+
 		return response;
 	}
 
@@ -261,7 +322,7 @@ public class TwitchApi
 				lastErrorChatMessage = now;
 			}
 
-			throw new Exception("Could not set the Twitch Configuration State due to invalid response code: "+ responseCode);
+			throw new Exception("Could not set the Twitch PubSub State due to invalid response code: "+ responseCode);
 		}
 
 		log.debug("Successfully sent state with response code: {}", responseCode);
@@ -278,9 +339,14 @@ public class TwitchApi
 		String[] parts = splitToken(getToken());
 		String payloadBase64String = parts[1];
 		String payloadString = new String(Base64.getDecoder().decode(payloadBase64String), StandardCharsets.UTF_8);;
-		JsonObject payload = new JsonParser().parse(payloadString).getAsJsonObject();
+		JsonObject payload = parseJson(payloadString);
 
 		return payload;
+	}
+
+	public JsonObject getConfigurationSegmentContent(TwitchSegmentType segmentType)
+	{
+		return configurationSegmentContents.get(segmentType);
 	}
 
 	private String[] splitToken(String token) throws Exception {
@@ -344,5 +410,10 @@ public class TwitchApi
 	private String getToken()
 	{
 		return config.twitchToken();
+	}
+
+	private JsonObject parseJson(String rawJson)
+	{
+		return (new JsonParser()).parse(rawJson).getAsJsonObject();
 	}
 }

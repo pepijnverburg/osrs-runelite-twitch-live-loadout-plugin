@@ -33,6 +33,7 @@ import com.twitchliveloadout.minimap.MinimapManager;
 import com.twitchliveloadout.raids.InvocationsManager;
 import com.twitchliveloadout.skills.SkillStateManager;
 import com.twitchliveloadout.twitch.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.ui.CanvasListener;
 import lombok.extern.slf4j.Slf4j;
@@ -182,6 +183,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		initializeTwitch();
 		initializeManagers();
 		initializePanel();
+
+		// tasks to execute immediately on boot
+		updateMarketplaceStreamerProducts();
+		updateMarketplaceEbsProducts();
 	}
 
 	private void initializeTwitch()
@@ -201,7 +206,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
-			marketplaceManager = new MarketplaceManager(this, twitchState, client, config);
+			marketplaceManager = new MarketplaceManager(this, twitchApi, client, config);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 		} catch (Exception exception) {
@@ -428,21 +433,62 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
+	 * Polling mechanism to update the configuration segment cache
+	 * Note that this request is subject to rate limits by twitch of 20 times per minute
+	 * Documentation: https://dev.twitch.tv/docs/api/reference#get-extension-configuration-segment
+	 */
+	@Schedule(period = 3, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void updateMarketplaceStreamerProducts()
+	{
+		try {
+			if (config.syncEnabled())
+			{
+				twitchApi.updateConfigurationSegment(TwitchSegmentType.BROADCASTER);
+			}
+			if (config.marketplaceEnabled())
+			{
+				// streamer products are based on the broadcaster configuration segment
+				// making it dependant on the updating of the configuration segments
+				marketplaceManager.updateStreamerProducts();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not update the configuration segments due to the following error: ", exception);
+		}
+	}
+
+	/**
+	 * Polling mechanism to update the EBS products configured in Twitch.
+	 */
+	@Schedule(period = 60, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void updateMarketplaceEbsProducts()
+	{
+		try {
+			if (config.marketplaceEnabled())
+			{
+				// update the EBS products
+				marketplaceManager.updateEbsProducts();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not update the configuration segments due to the following error: ", exception);
+		}
+	}
+
+	/**
 	 * Handle all active products periodically, note that this interval should be LOWER than a game tick
 	 * because for some things we want to be faster than 600ms (e.g. tracking player locations and spawning).
 	 */
-	@Schedule(period = 50, unit = ChronoUnit.MILLIS, asynchronous = true)
-	public void handleMarketplaceProducts()
+	@Schedule(period = 300, unit = ChronoUnit.MILLIS, asynchronous = true)
+	public void updateMarketplaceEffects()
 	{
 		try {
 			if (config.marketplaceEnabled())
 			{
 				runOnClientThread(() -> {
-					marketplaceManager.handleActiveProducts();
+					marketplaceManager.updateEffects();
 				});
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle marketplace products: ", exception);
+			log.warn("Could not update marketplace effects: ", exception);
 		}
 	}
 
