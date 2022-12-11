@@ -27,7 +27,7 @@ public class FightPanel extends JPanel
 
 	static
 	{
-		final BufferedImage deleteImg = ImageUtil.getResourceStreamFromClass(TwitchLiveLoadoutPlugin.class, "/delete_icon.png");
+		final BufferedImage deleteImg = ImageUtil.loadImageResource(TwitchLiveLoadoutPlugin.class, "/delete_icon.png");
 		DELETE_ICON = new ImageIcon(deleteImg);
 		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
 	}
