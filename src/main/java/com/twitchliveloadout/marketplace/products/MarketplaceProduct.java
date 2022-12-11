@@ -1,7 +1,7 @@
 package com.twitchliveloadout.marketplace.products;
 
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
-import com.twitchliveloadout.marketplace.MarketplaceConfigGetters;
+import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
@@ -228,13 +228,13 @@ public class MarketplaceProduct
 			}
 
 			// guard: skip this animation when not rolled, while setting the timer before this roll
-			if (!MarketplaceConfigGetters.rollChance(randomInterval.chance))
+			if (!MarketplaceRandomizers.rollChance(randomInterval.chance))
 			{
 				continue;
 			}
 
 			// select a random entry from all the candidates
-			EbsAnimation randomAnimation = MarketplaceConfigGetters.getRandomEntryFromList(randomAnimations);
+			EbsAnimation randomAnimation = MarketplaceRandomizers.getRandomEntryFromList(randomAnimations);
 
 			// trigger the animations on this single spawned object
 			ArrayList<SpawnedObject> animatedSpawnedObjects = new ArrayList();
@@ -296,7 +296,7 @@ public class MarketplaceProduct
 		spawnBehaviourCounter += 1;
 
 		// randomize the amount of spawns
-		int spawnAmount = (int) MarketplaceConfigGetters.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
+		int spawnAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
 		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
 
 		// guard: make sure the spawn behaviours are valid
@@ -311,7 +311,7 @@ public class MarketplaceProduct
 		{
 			for (EbsSpawn spawn : spawns)
 			{
-				int spawnDelayMs = (int) MarketplaceConfigGetters.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
+				int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
 				triggerSpawn(spawn, spawnDelayMs);
 			}
 		}
@@ -375,7 +375,7 @@ public class MarketplaceProduct
 		}
 
 		// roll a random set of model IDs
-		EbsModelSet modelSet = MarketplaceConfigGetters.getRandomEntryFromList(spawn.modelSets);
+		EbsModelSet modelSet = MarketplaceRandomizers.getRandomEntryFromList(spawn.modelSets);
 
 		// guard: make sure the selected model is valid
 		if (modelSet == null || modelSet.modelIds == null)
@@ -387,8 +387,8 @@ public class MarketplaceProduct
 		// get properties from model set
 		boolean shouldScaleModel = (modelSet.modelScale != null);
 		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.modelRotationType));
-		double modelScale = MarketplaceConfigGetters.getValidRandomNumberByRange(modelSet.modelScale, 1, 1);
-		double modelRotationDegrees = MarketplaceConfigGetters.getValidRandomNumberByRange(modelSet.modelRotation, 0, 360);
+		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.modelScale, 1, 1);
+		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.modelRotation, 0, 360);
 
 		// loop all the individual model IDs making up this model
 		for (int modelId : modelSet.modelIds)
@@ -537,7 +537,7 @@ public class MarketplaceProduct
 			{
 
 				// choose this option when the chance is not known or when the roll landed
-				if (MarketplaceConfigGetters.rollChance(option.chance))
+				if (MarketplaceRandomizers.rollChance(option.chance))
 				{
 					return option;
 				}

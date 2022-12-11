@@ -5,7 +5,7 @@ import com.twitchliveloadout.marketplace.products.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class MarketplaceConfigGetters {
+public class MarketplaceRandomizers {
 
 	public static <T> T getRandomEntryFromList(ArrayList<T> list)
 	{
