@@ -487,9 +487,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			if (config.marketplaceEnabled())
 			{
-				runOnClientThread(() -> {
-					marketplaceManager.updateActiveProducts();
-				});
+				marketplaceManager.updateActiveProducts();
 			}
 		} catch (Exception exception) {
 			log.warn("Could not update marketplace effects: ", exception);
@@ -853,7 +851,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void runOnClientThread(ClientThreadAction action)
 	{
 		try {
-			clientThread.invokeLater(new Runnable() {
+			clientThread.invoke(new Runnable() {
 				@Override
 				public void run() {
 					try {

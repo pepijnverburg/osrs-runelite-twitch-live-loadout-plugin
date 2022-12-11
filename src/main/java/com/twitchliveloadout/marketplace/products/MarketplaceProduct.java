@@ -112,7 +112,6 @@ public class MarketplaceProduct
 		}
 
 		handleSpawnRotations();
-		test();
 	}
 
 	public void start()
@@ -150,21 +149,6 @@ public class MarketplaceProduct
 		// update the animation manager
 		animationManager.setCurrentMovementAnimations(movementAnimations);
 		animationManager.updateEffectAnimations();
-	}
-
-	public void test()
-	{
-
-//		for (MarketplaceSpawnedObject spawnedObject : spawnedObjects) {
-//			LocalPoint targetPoint = manager.getClient().getLocalPlayer().getLocalLocation();
-//			spawnedObject.rotateTowards(targetPoint);
-//			spawnedObject.render();
-//			int animationId = manager.getConfig().devObjectSpawnAnimationId();
-//
-//			if (animationId > 0)  {
-//				spawnedObject.setAnimation(animationId, true);
-//			}
-//		}
 	}
 
 	private void handleSpawnRotations()
@@ -319,7 +303,10 @@ public class MarketplaceProduct
 			for (EbsSpawn spawn : spawns)
 			{
 				int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
-				triggerSpawn(spawn, spawnDelayMs);
+
+				manager.getPlugin().runOnClientThread(() -> {
+					triggerSpawn(spawn, spawnDelayMs);
+				});
 			}
 		}
 	}
@@ -361,7 +348,7 @@ public class MarketplaceProduct
 		if (PREVIOUS_TILE_LOCATION_TYPE.equals(validatedLocationType))
 		{
 			referenceWorldPoint = spawnManager.getPreviousPlayerLocation();
-			log.info("WORLD POOINT FOUND: "+ referenceWorldPoint);
+
 			if (referenceWorldPoint == null)
 			{
 				return;
@@ -463,8 +450,10 @@ public class MarketplaceProduct
 	private void triggerModelAnimations(ArrayList<SpawnedObject> spawnedObjects, EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
+			log.info("Schedule set model animation "+ animationId +" after "+ startDelayMs);
 			scheduleSetAnimations(spawnedObjects, animationId, startDelayMs);
 		}, (resetDelayMs) -> {
+			log.info("Schedule reset model after "+ resetDelayMs);
 			scheduleResetAnimations(spawnedObjects, resetDelayMs);
 		});
 	}
@@ -506,13 +495,13 @@ public class MarketplaceProduct
 		int delayMs = animation.delayMs;
 		int durationMs = animation.durationMs;
 		int startDelayMs = baseDelayMs + delayMs;
-		int resetDelayMs = startDelayMs + durationMs;
 
 		// schedule to start the animation
 		startHandler.execute(animationId, startDelayMs);
 
 		// only reset animations when max duration
-		if (animation.durationMs != null) {
+		if (durationMs >= 0) {
+			int resetDelayMs = startDelayMs + durationMs;
 			resetHandler.execute(resetDelayMs);
 		}
 	}
@@ -567,8 +556,8 @@ public class MarketplaceProduct
 		}
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			player.setGraphic(graphicId);
 			player.setSpotAnimFrame(0);
+			player.setGraphic(graphicId);
 		}, delayMs);
 	}
 
@@ -584,8 +573,8 @@ public class MarketplaceProduct
 		}
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			player.setAnimation(animationId);
 			player.setAnimationFrame(0);
+			player.setAnimation(animationId);
 		}, delayMs);
 	}
 
@@ -618,7 +607,10 @@ public class MarketplaceProduct
 
 	private void scheduleResetAnimations(ArrayList<SpawnedObject> spawnedObjects, long delayMs)
 	{
+		log.info("Schedule INNER reset after: "+delayMs +", time"+ Instant.now().toString());
 		manager.getPlugin().scheduleOnClientThread(() -> {
+			log.info("EXEC INNER reset after: "+delayMs +", time"+ Instant.now().toString());
+
 			for (SpawnedObject spawnedObject : spawnedObjects) {
 				spawnedObject.resetAnimation();
 			}

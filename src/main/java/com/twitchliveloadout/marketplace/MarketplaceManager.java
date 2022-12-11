@@ -85,6 +85,44 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Get new Twitch transactions where the effects should be queued for.
+	 */
+	public void fetchNewTransactions()
+	{
+		try {
+			Response response = twitchApi.getEbsTransactions(transactionsLastCheckedAt);
+			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
+			Boolean status = result.get("status").getAsBoolean();
+			String message = result.get("message").getAsString();
+			JsonArray newTransactions = result.getAsJsonArray("transactions");
+
+			// guard: check if the status is valid
+			if (!status)
+			{
+				log.warn("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
+				return;
+			}
+
+			newTransactions.forEach((element) -> {
+
+				// TMP: spawn only one product!
+				if (queuedTransactions.size() > 0 || activeProducts.size() > 0) {
+					return;
+				}
+
+				TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
+				queuedTransactions.add(twitchTransaction);
+				log.info("Queued a new Twitch transaction with ID: "+ twitchTransaction.id);
+			});
+
+			// only update the last checked at if everything is successful
+			transactionsLastCheckedAt = Instant.now();
+		} catch (Exception exception) {
+			// empty
+		}
+	}
+
+	/**
 	 * Check for new products that should be applied. This process is a little bit more complex
 	 * then you would expect at first, because we need to hook in to the Twitch product configuration and
 	 * transactions. From the transaction we can fetch the Twitch product (by SKU). Then we can check
@@ -180,10 +218,15 @@ public class MarketplaceManager {
 			return;
 		}
 
+		// respawn all spawned objects that require it
+		// due to for example the reloading of a scene
 		spawnManager.respawnRequested();
+
+		// record a history of the player location that we can use
+		// when spawning new objects that are relative in some way to the player
 		spawnManager.recordPlayerLocation();
 
-		// for all active products the game tick should be triggered
+		// handle any new behaviours for all active products
 		for (MarketplaceProduct product : activeProducts)
 		{
 			product.handleBehaviour();
@@ -259,38 +302,6 @@ public class MarketplaceManager {
 
 			ebsProducts = newEbsProducts;
 			ebsProductDurations = newEbsProductDurations;
-		} catch (Exception exception) {
-			// empty
-		}
-	}
-
-	/**
-	 * Get new Twitch transactions where the effects should be queued for.
-	 */
-	public void fetchNewTransactions()
-	{
-		try {
-			Response response = twitchApi.getEbsTransactions(transactionsLastCheckedAt);
-			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
-			Boolean status = result.get("status").getAsBoolean();
-			String message = result.get("message").getAsString();
-			JsonArray newTransactions = result.getAsJsonArray("transactions");
-
-			// guard: check if the status is valid
-			if (!status)
-			{
-				log.warn("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
-				return;
-			}
-
-			newTransactions.forEach((element) -> {
-				TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
-				queuedTransactions.add(twitchTransaction);
-				log.info("Queued a new Twitch transaction with ID: "+ twitchTransaction.id);
-			});
-
-			// only update the last checked at if everything is successful
-			transactionsLastCheckedAt = Instant.now();
 		} catch (Exception exception) {
 			// empty
 		}

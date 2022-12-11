@@ -37,19 +37,20 @@ public class AnimationManager {
 			return;
 		}
 
-		for (ActorAnimation animation : ActorAnimation.values())
-		{
-			Integer animationId = getCurrentMovementAnimation(animation);
-
-			// fallback to the original when no animation is found
-			// NOTE: is this really needed?
-			if (animationId == null || animationId < 0)
+		plugin.runOnClientThread(() -> {
+			for (ActorAnimation animation : ActorAnimation.values())
 			{
-				animationId = originalPlayerMovementAnimations.get(animation);
-			}
+				final Integer animationId = getCurrentMovementAnimation(animation);
 
-			animation.setAnimation(player, animationId);
-		}
+				// fallback to the original when no animation is found
+				if (animationId == null || animationId < 0)
+				{
+					return;
+				}
+
+				animation.setAnimation(player, animationId);
+			}
+		});
 	}
 
 	public void recordOriginalAnimations()
@@ -71,11 +72,13 @@ public class AnimationManager {
 		currentMovementAnimations = null;
 
 		// update to originals
-		for (ActorAnimation animation : ActorAnimation.values())
-		{
-			int originalAnimationId = originalPlayerMovementAnimations.get(animation);
-			animation.setAnimation(player, originalAnimationId);
-		}
+		plugin.runOnClientThread(() -> {
+			for (ActorAnimation animation : ActorAnimation.values())
+			{
+				int originalAnimationId = originalPlayerMovementAnimations.get(animation);
+				animation.setAnimation(player, originalAnimationId);
+			}
+		});
 	}
 
 	public int getCurrentMovementAnimation(ActorAnimation animation)
