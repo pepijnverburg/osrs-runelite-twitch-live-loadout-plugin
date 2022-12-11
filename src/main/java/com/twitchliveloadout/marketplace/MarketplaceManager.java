@@ -69,15 +69,20 @@ public class MarketplaceManager {
 		json = "{\"id\":\"falador-party\",\"enabled\":true,\"category\":\"object-spawn\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":5,\"max\":10},\"spawnDelayMs\":{\"min\":0,\"max\":200},\"spawns\":[{\"modelSets\":[{\"modelIds\":[2226],\"modelRotationType\":\"random\"},{\"modelIds\":[2227],\"modelRotationType\":\"random\"},{\"modelIds\":[2228],\"modelRotationType\":\"random\"}],\"showAnimation\":{\"modelAnimation\":{\"id\":498,\"durationMs\":2400},\"playerAnimation\":{\"id\":866,\"delayMs\":1000}}}]}]}}";
 
 		// jad
-		//json = "{\"id\":\"mini-jad\",\"enabled\":true,\"category\":\"npc-spawn\",\"name\":\"Mini Jad\",\"description\":\"A Jad following the streamer around and attacking them.\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":1},\"spawns\":[{\"modelSets\":[{\"modelIds\":[9319],\"modelRotationType\":\"player\",\"modelScale\":{\"min\":0.5}}],\"movementAnimations\":{\"idleAnimationId\":2650,\"walkAnimationId\":2651},\"randomAnimationInterval\":{\"chance\":1,\"delayMs\":5000},\"randomAnimations\":[{\"modelAnimation\":{\"id\":2652,\"durationMs\":1000},\"playerGraphic\":{\"id\":451,\"delayMs\":1000},\"playerAnimation\":{\"id\":404,\"delayMs\":2000}}]}]}]}}";
+		json = "{\"id\":\"mini-jad\",\"enabled\":true,\"category\":\"npc-spawn\",\"name\":\"Mini Jad\",\"description\":\"A Jad following the streamer around and attacking them.\",\"behaviour\":{\"spawnOptions\":[{\"chance\":1,\"spawnAmount\":{\"min\":1},\"spawns\":[{\"modelSets\":[{\"modelIds\":[9319],\"modelRotationType\":\"player\",\"modelScale\":{\"min\":0.5}}],\"movementAnimations\":{\"idleAnimationId\":2650,\"walkAnimationId\":2651},\"randomAnimationInterval\":{\"chance\":1,\"delayMs\":5000},\"randomAnimations\":[{\"modelAnimation\":{\"id\":2652,\"durationMs\":1000},\"playerGraphic\":{\"id\":451,\"delayMs\":1000},\"playerAnimation\":{\"id\":404,\"delayMs\":2000}}]}]}]}}";
 
 		// drunk
 		json = "{\"id\":\"drunk-walk\",\"enabled\":true,\"category\":\"animation\",\"name\":\"Falador Party\",\"description\":\"\",\"behaviour\":{\"playerAnimations\":{\"idle\":3040,\"walk\":3039,\"run\":3039}}}";
+
+		// on fire
+		json = "{\"id\":\"on-fire\",\"enabled\":true,\"category\":\"animation\",\"name\":\"On FIRE!\",\"description\":\"\",\"behaviour\":{\"spawnInterval\":{\"delayMs\":100,\"chance\":1,\"repeatAmount\":-1},\"spawnOptions\":[{\"chance\":1,\"spawns\":[{\"modelPlacement\":{\"locationType\":\"previous-tile\",\"radiusType\":\"radius\",\"radius\":0},\"modelSets\":[{\"modelIds\":[26585]}],\"showAnimation\":{\"modelAnimation\":{\"id\":6853}}}]}]}}";
 
 		tmpEbsProduct = new Gson().fromJson(json, EbsProduct.class);
 		log.warn("Loaded TMP ebs product:");
 		log.warn(tmpEbsProduct.name);
 	}
+
+	boolean didTestSpawn = false;
 
 	/**
 	 * Check for new products that should be spawned
@@ -92,8 +97,10 @@ public class MarketplaceManager {
 		}
 
 		// TODO: link to Twitch transactions
-//		if (objectPlacements.size() <= 0)
-		startProduct(tmpEbsProduct);
+		if (!didTestSpawn) {
+			startProduct(tmpEbsProduct);
+			didTestSpawn = true;
+		}
 
 		int playerGraphicId = config.devPlayerGraphicId();
 
@@ -108,14 +115,6 @@ public class MarketplaceManager {
 	public void cleanProducts()
 	{
 		// TODO
-	}
-
-	/**
-	 * Check if any active products need to be respawned in the scene
-	 */
-	public void syncActiveProductsToScene()
-	{
-		spawnManager.respawnRequested();
 	}
 
 	private void startProduct(EbsProduct ebsProduct)
@@ -186,14 +185,24 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Handle game tick
+	 * Handle all active products
 	 */
-	public void onGameTick()
+	public void handleActiveProducts()
 	{
+
+		// guard: don't do anything when not logged in
+		if (!plugin.isLoggedIn())
+		{
+			return;
+		}
+
+		spawnManager.respawnRequested();
+		spawnManager.recordPlayerLocation();
+
 		// for all active products the game tick should be triggered
 		for (MarketplaceProduct product : activeProducts)
 		{
-			product.onGameTick();
+			product.handleBehaviour();
 		}
 	}
 
@@ -202,6 +211,7 @@ public class MarketplaceManager {
 	 */
 	public void onClientTick()
 	{
+
 		// for all active products the tick should be triggered
 		for (MarketplaceProduct product : activeProducts)
 		{

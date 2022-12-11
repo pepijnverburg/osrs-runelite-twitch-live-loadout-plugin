@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -78,7 +79,7 @@ public class MarketplaceProduct
 		start();
 	}
 
-	public void onGameTick()
+	public void handleBehaviour()
 	{
 
 		// guard: make sure the EBS product is active and valid
@@ -264,11 +265,11 @@ public class MarketplaceProduct
 			spawnInterval = new EbsInterval();
 		}
 
-		Integer repeatAmount = spawnInterval.repeatAmount;
-		int validatedRepeatAmount = (repeatAmount == null ? 1 : repeatAmount);
+		int repeatAmount = spawnInterval.repeatAmount;
 
 		// guard: check if the amount has passed
-		if (spawnBehaviourCounter >= validatedRepeatAmount)
+		// NOTE: -1 repeat amount if infinity!
+		if (repeatAmount >= 0 && spawnBehaviourCounter >= repeatAmount)
 		{
 			return;
 		}
@@ -340,13 +341,30 @@ public class MarketplaceProduct
 		}
 
 		// find an available spawn point
-		SpawnPoint spawnPoint;
+		SpawnPoint spawnPoint = null;
 		Integer radius = placement.radius;
+		String radiusType = placement.radiusType;
+		String locationType = placement.locationType;
 		int validatedRadius = (radius == null) ? DEFAULT_RADIUS : radius;
-		if (placement.radiusType == OUTWARD_RADIUS_TYPE) {
-			spawnPoint = spawnManager.getOutwardSpawnPoint(validatedRadius);
+		String validatedRadiusType = (radiusType == null) ? DEFAULT_RADIUS_TYPE : radiusType;
+		String validatedLocationType = (locationType == null) ? CURRENT_TILE_LOCATION_TYPE : locationType;
+		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
+
+		// check if we should change the reference to the previous tile
+		if (PREVIOUS_TILE_LOCATION_TYPE.equals(validatedLocationType))
+		{
+			referenceWorldPoint = spawnManager.getPreviousPlayerLocation();
+			log.info("WORLD POOINT FOUND: "+ referenceWorldPoint);
+			if (referenceWorldPoint == null)
+			{
+				return;
+			}
+		}
+
+		if (OUTWARD_RADIUS_TYPE.equals(validatedRadiusType)) {
+			spawnPoint = spawnManager.getOutwardSpawnPoint(validatedRadius, referenceWorldPoint);
 		} else {
-			spawnPoint = spawnManager.getSpawnPoint(validatedRadius);
+			spawnPoint = spawnManager.getSpawnPoint(validatedRadius, referenceWorldPoint);
 		}
 
 		// guard: make sure the spawn point is valid

@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace.spawns;
 
+import com.google.common.collect.EvictingQueue;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -10,6 +11,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
+
 @Slf4j
 public class SpawnManager {
 	private final TwitchLiveLoadoutPlugin plugin;
@@ -19,6 +22,11 @@ public class SpawnManager {
 	 * Lookup to see which world points are taken for future spawns
 	 */
 	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<SpawnedObject>> objectPlacements = new ConcurrentHashMap();
+
+	/**
+	 * History of all the previous player tiles used for spawning relative to previous locations
+	 */
+	EvictingQueue<WorldPoint> playerLocationHistory = EvictingQueue.create(PLAYER_TILE_HISTORY_SIZE);
 
 	public SpawnManager(TwitchLiveLoadoutPlugin plugin, Client client)
 	{
@@ -78,6 +86,45 @@ public class SpawnManager {
 		});
 	}
 
+	public void recordPlayerLocation()
+	{
+		LocalPoint currentLocalPoint = client.getLocalPlayer().getLocalLocation();
+		WorldPoint currentWorldPoint = WorldPoint.fromLocal(client, currentLocalPoint);
+
+		// guard: check if this location is already at the end of the cyclic list
+		if (currentWorldPoint.equals(getCurrentPlayerLocation()))
+		{
+			return;
+		}
+
+		playerLocationHistory.add(currentWorldPoint);
+	}
+
+	public WorldPoint getCurrentPlayerLocation()
+	{
+		return getPlayerLocationByHistoryOffset(0);
+	}
+
+	public WorldPoint getPreviousPlayerLocation()
+	{
+		return getPlayerLocationByHistoryOffset(1);
+	}
+
+	private WorldPoint getPlayerLocationByHistoryOffset(int offset)
+	{
+		int size = playerLocationHistory.size();
+		int requestedIndex = size - 1 - offset;
+
+		// guard: make sure the index is valid
+		if (requestedIndex < 0 || requestedIndex >= size)
+		{
+			return null;
+		}
+
+		WorldPoint requestedWorldPoint = playerLocationHistory.toArray(new WorldPoint[size])[requestedIndex];
+		return requestedWorldPoint;
+	}
+
 	/**
 	 * Register a collection of spawned objects to the placement lookup for easy access
 	 * to all spawned objects and to keep track of which tiles are taken.
@@ -117,13 +164,18 @@ public class SpawnManager {
 		}
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, HashMap<WorldPoint, SpawnPoint> blacklistedSpawnPoints)
+	public SpawnPoint getOutwardSpawnPoint(int maxRadius, WorldPoint referenceWorldPoint)
+	{
+		return getOutwardSpawnPoint(1, 2, maxRadius, referenceWorldPoint);
+	}
+
+	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, WorldPoint referenceWorldPoint)
 	{
 		for (int radius = startRadius; radius < maxRadius; radius += radiusStepSize)
 		{
 			int randomizedRadius = radius + ((int) (Math.random() * radiusStepSize));
 			int usedRadius = Math.min(randomizedRadius, maxRadius);
-			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, blacklistedSpawnPoints);
+			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, referenceWorldPoint);
 
 			if (candidateSpawnPoint != null) {
 				return candidateSpawnPoint;
@@ -133,44 +185,21 @@ public class SpawnManager {
 		return null;
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int maxRadius)
-	{
-		return getOutwardSpawnPoint(1, 2, maxRadius, null);
-	}
-
-	public Collection<SpawnPoint> getOutwardSpawnPoints(int spawnAmount)
-	{
-		final HashMap<WorldPoint, SpawnPoint> spawnPoints = new HashMap();
-
-		for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++) {
-			SpawnPoint spawnPoint = getOutwardSpawnPoint(2, 2, 12, spawnPoints);
-
-			// guard: make sure the spawn point is valid
-			if (spawnPoint == null)
-			{
-				continue;
-			}
-
-			WorldPoint worldPoint = spawnPoint.getWorldPoint();
-			spawnPoints.put(worldPoint, spawnPoint);
-		}
-
-		return spawnPoints.values();
-	}
-
-	public SpawnPoint getSpawnPoint(int radius)
-	{
-		return getSpawnPoint(radius, null);
-	}
-
-	public SpawnPoint getSpawnPoint(int radius, HashMap<WorldPoint, SpawnPoint> blacklistedSpawnPoints)
+	public SpawnPoint getSpawnPoint(int radius, WorldPoint referenceWorldPoint)
 	{
 		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList();
-		final LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
 		final int playerPlane = client.getPlane();
 		final int[][] collisionFlags = getSceneCollisionFlags();
-		final int sceneX = playerLocalPoint.getSceneX();
-		final int sceneY = playerLocalPoint.getSceneY();
+
+		// make sure the reference local point is always valid
+		if (referenceWorldPoint == null)
+		{
+			referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
+		}
+
+		LocalPoint referenceLocalPoint = LocalPoint.fromWorld(client, referenceWorldPoint);
+		final int sceneX = referenceLocalPoint.getSceneX();
+		final int sceneY = referenceLocalPoint.getSceneY();
 
 		// loop all the possible tiles for the requested radius and look for
 		// the candidate tiles to spawn the object on
@@ -203,12 +232,6 @@ public class SpawnManager {
 
 				// guard: check if this world point is already taken by another spawned object
 				if (objectPlacements.containsKey(worldPoint))
-				{
-					continue;
-				}
-
-				// guard: check if blacklisted manually
-				if (blacklistedSpawnPoints != null && blacklistedSpawnPoints.containsKey(worldPoint))
 				{
 					continue;
 				}

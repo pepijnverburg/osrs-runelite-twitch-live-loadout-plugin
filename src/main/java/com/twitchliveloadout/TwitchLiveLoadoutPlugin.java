@@ -417,8 +417,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			if (config.marketplaceEnabled())
 			{
-				marketplaceManager.queueNewProducts();
-				marketplaceManager.cleanProducts();
+				runOnClientThread(() -> {
+					marketplaceManager.queueNewProducts();
+					marketplaceManager.cleanProducts();
+				});
 			}
 		} catch (Exception exception) {
 			log.warn("Could not apply or clean marketplace: ", exception);
@@ -426,18 +428,21 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
-	 * Make sure all marketplace objects are shown when chunks are loaded and viewport changes
+	 * Handle all active products periodically, note that this interval should be LOWER than a game tick
+	 * because for some things we want to be faster than 600ms (e.g. tracking player locations and spawning).
 	 */
-	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
-	public void syncMarketplaceObjectsToScene()
+	@Schedule(period = 50, unit = ChronoUnit.MILLIS, asynchronous = true)
+	public void handleMarketplaceProducts()
 	{
 		try {
 			if (config.marketplaceEnabled())
 			{
-				marketplaceManager.syncActiveProductsToScene();
+				runOnClientThread(() -> {
+					marketplaceManager.handleActiveProducts();
+				});
 			}
 		} catch (Exception exception) {
-			log.warn("Could not sync marketplace objects to scene: ", exception);
+			log.warn("Could not handle marketplace products: ", exception);
 		}
 	}
 
@@ -634,10 +639,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.fightStatisticsEnabled())
 			{
 				fightStateManager.onGameTick();
-			}
-			if (config.marketplaceEnabled())
-			{
-				marketplaceManager.onGameTick();
 			}
 		} catch (Exception exception) {
 			log.warn("Could not handle game tick event: ", exception);
