@@ -19,8 +19,6 @@ public class CollectionLogManager {
 	private final TwitchState twitchState;
 	private final Client client;
 
-	private static final boolean DEBUG_WIDGETS = false;
-	private static final boolean DEBUG_CURRENT_CATEGORY = false;
 	private static final int COLLECTION_LOG_TITLE = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
 	private static final int COLLECTION_LOG_RAIDS_TAB = 5;
@@ -32,7 +30,7 @@ public class CollectionLogManager {
 	private static final int COLLECTION_LOG_OTHER_TAB = 8;
 	private static final int COLLECTION_LOG_CATEGORY_LIST = 12;
 	private static final int COLLECTION_LOG_DRAW_LIST_SCRIPT_ID = 2730;
-	private static final int COLLECTION_LOG_CATEGORY_VARBIT_INDEX = 2049;
+	private static final int[] COLLECTION_LOG_CATEGORY_VARBIT_IDS = {6905, 6906};
 	private static final int[] COLLECTION_LOG_TABS = {
 		COLLECTION_LOG_BOSSES_TAB,
 		COLLECTION_LOG_RAIDS_TAB,
@@ -62,7 +60,18 @@ public class CollectionLogManager {
 
 	public void onVarbitChanged(VarbitChanged varbitChanged)
 	{
-		if (varbitChanged.getIndex() == COLLECTION_LOG_CATEGORY_VARBIT_INDEX)
+		int varbitId = varbitChanged.getVarbitId();
+		boolean matchFound = false;
+
+		for (int candidateVarbitId : COLLECTION_LOG_CATEGORY_VARBIT_IDS)
+		{
+			if (candidateVarbitId == varbitId)
+			{
+				matchFound = true;
+			}
+		}
+		
+		if (matchFound)
 		{
 			plugin.runOnClientThread(() -> {
 				updateCurrentCategory();
@@ -176,33 +185,6 @@ public class CollectionLogManager {
 			categoryLog.add(COUNTERS_KEY_NAME, counters);
 			categoryLog.add(ITEMS_KEY_NAME, serializedItems);
 			tabLog.add(categoryTitle, categoryLog);
-
-			if (DEBUG_WIDGETS) {
-				for (int i = 0; i < 40; i++) {
-					log.debug("---------------- Widget with ID: " + i);
-					Widget testWidget = client.getWidget(WidgetID.COLLECTION_LOG_ID, i);
-
-					if (testWidget == null) {
-						continue;
-					}
-					int j = 0;
-					for (Widget text : testWidget.getDynamicChildren()) {
-						log.debug("Widget text on index " + j + ": " + text.getText());
-						log.debug("Widget text on index " + j + ": " + text.getTextColor());
-						j++;
-					}
-				}
-			}
-
-			if (DEBUG_CURRENT_CATEGORY) {
-				log.debug("-------------------");
-				log.debug("Category title: " + categoryTitle);
-				log.debug("Tab title: " + tabTitle);
-				log.debug("Counters: " + counters.toString());
-				log.debug("Item count: " + items.size());
-				log.debug("New collection log is:");
-				log.debug(collectionLog.toString());
-			}
 
 			// update the twitch state
 			twitchState.setCollectionLog(collectionLog);
