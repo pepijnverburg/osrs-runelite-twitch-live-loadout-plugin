@@ -1,6 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
-import com.twitchliveloadout.marketplace.ExtensionTransaction;
+import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceConfigGetters;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
@@ -33,7 +33,7 @@ public class MarketplaceProduct
 	 * The Twitch transaction attributed to this product
 	 */
 	@Getter
-	private final ExtensionTransaction transaction;
+	private final TwitchTransaction transaction;
 
 	/**
 	 * The Twitch transaction attributed to this product
@@ -68,7 +68,7 @@ public class MarketplaceProduct
 	@Getter
 	private final CopyOnWriteArrayList<SpawnedObject> spawnedObjects = new CopyOnWriteArrayList();
 
-	public MarketplaceProduct(MarketplaceManager manager, ExtensionTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct)
+	public MarketplaceProduct(MarketplaceManager manager, TwitchTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct)
 	{
 		this.manager = manager;
 		this.transaction = transaction;

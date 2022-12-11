@@ -48,6 +48,7 @@ public class TwitchApi
 	private final static String RATE_LIMIT_REMAINING_HEADER = "ratelimit-ratelimitermessagesbychannel-remaining";
 	private final static int GET_CONFIGURATION_SERVICE_TIMEOUT_MS = 3 * 1000;
 	private final static int GET_EBS_PRODUCTS_TIMEOUT_MS = 10 * 1000;
+	private final static int GET_EBS_TRANSACTIONS_TIMEOUT_MS = 10 * 1000;
 	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 15 * 60 * 1000; // in ms
 	private final static String USER_AGENT = "RuneLite";
 
@@ -197,7 +198,7 @@ public class TwitchApi
 	public Response getEbsProducts() throws Exception
 	{
 		final String token = config.twitchToken();
-		final String url = config.twitchEbsBaseUrl() +"api/marketplace-products";
+		final String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
 		final OkHttpClient timeoutHttpClient = httpClient
 			.newBuilder()
 			.callTimeout(GET_EBS_PRODUCTS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
@@ -209,6 +210,36 @@ public class TwitchApi
 			.header("User-Agent", USER_AGENT)
 			.header("Content-Type", "application/json")
 			.get()
+			.url(url)
+			.build();
+
+		Response response = timeoutHttpClient.newCall(request).execute();
+		return response;
+	}
+
+	public Response getEbsTransactions(Instant lastCheckedAt) throws Exception
+	{
+		final String token = config.twitchToken();
+//		final String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-transactions";
+		final String url = "http://localhost:3010/api/marketplace-transactions";
+		final JsonObject data = new JsonObject();
+		final OkHttpClient timeoutHttpClient = httpClient
+			.newBuilder()
+			.callTimeout(GET_EBS_TRANSACTIONS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+			.build();
+
+		// only add last checked at when it is valid
+		if (lastCheckedAt != null)
+		{
+			data.addProperty("lastCheckedAt", lastCheckedAt.toString());
+		}
+
+		// Documentation: https://dev.twitch.tv/docs/api/reference
+		Request request = new Request.Builder()
+			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.post(RequestBody.create(JSON, data.toString()))
 			.url(url)
 			.build();
 

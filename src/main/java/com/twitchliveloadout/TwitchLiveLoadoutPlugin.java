@@ -469,7 +469,24 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.updateEbsProducts();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not update the configuration segments due to the following error: ", exception);
+			log.warn("Could not update the EBS products due to the following error: ", exception);
+		}
+	}
+
+	/**
+	 * Polling mechanism to get new Twitch transactions
+	 */
+	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void updateMarketplaceTransactions()
+	{
+		try {
+			if (config.marketplaceEnabled())
+			{
+				// get new transactions from Twitch
+				marketplaceManager.updateTransactions();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not update the extension transactions due to the following error: ", exception);
 		}
 	}
 

@@ -12,6 +12,7 @@ import com.twitchliveloadout.marketplace.products.EbsProductDuration;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.StreamerProduct;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
+import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
@@ -23,6 +24,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PlayerChanged;
 import okhttp3.Response;
 
+import java.time.Instant;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -48,11 +50,6 @@ public class MarketplaceManager {
 	private final TransmogManager transmogManager;
 
 	/**
-	 * List to keep track of all the queued products
-	 */
-	private final CopyOnWriteArrayList<MarketplaceProduct> queuedProducts = new CopyOnWriteArrayList();
-
-	/**
 	 * List to keep track of all the active products
 	 */
 	private final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = new CopyOnWriteArrayList();
@@ -71,6 +68,12 @@ public class MarketplaceManager {
 	 * List of all the possible product durations from Twitch
 	 */
 	private CopyOnWriteArrayList<EbsProductDuration> ebsProductDurations = new CopyOnWriteArrayList();
+
+	/**
+	 * List of all extension transactions that should be handled
+	 */
+	private CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList();
+	private Instant transactionsLastCheckedAt = null;
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Client client, TwitchLiveLoadoutConfig config)
 	{
@@ -124,7 +127,7 @@ public class MarketplaceManager {
 
 		MarketplaceProduct newProduct = new MarketplaceProduct(
 			this,
-			new ExtensionTransaction(), // TODO
+			new TwitchTransaction(), // TODO
 			ebsProduct,
 			new StreamerProduct() // TODO
 		);
@@ -262,6 +265,36 @@ public class MarketplaceManager {
 
 			ebsProducts = newEbsProducts;
 			ebsProductDurations = newEbsProductDurations;
+		} catch (Exception exception) {
+			// empty
+		}
+	}
+
+	public void updateTransactions()
+	{
+		try {
+			Response response = twitchApi.getEbsTransactions(transactionsLastCheckedAt);
+			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
+			Boolean status = result.get("status").getAsBoolean();
+			String message = result.get("message").getAsString();
+			JsonArray newTransactions = result.getAsJsonArray("transactions");
+
+			// guard: check if the status is valid
+			if (!status)
+			{
+				log.warn("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
+				return;
+			}
+
+			log.info("Amount of new transactions: "+ newTransactions.size());
+
+			newTransactions.forEach((element) -> {
+				TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
+				queuedTransactions.add(twitchTransaction);
+			});
+
+			// only update the last checked at if everything is successful
+			transactionsLastCheckedAt = Instant.now();
 		} catch (Exception exception) {
 			// empty
 		}
