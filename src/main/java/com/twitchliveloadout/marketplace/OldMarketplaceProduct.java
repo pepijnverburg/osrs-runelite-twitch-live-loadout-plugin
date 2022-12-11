@@ -1,5 +1,9 @@
 package com.twitchliveloadout.marketplace;
 
+import com.twitchliveloadout.marketplace.products.EbsProduct;
+import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
+import com.twitchliveloadout.marketplace.products.StreamerProduct;
+import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -414,3 +418,22 @@ public enum OldMarketplaceProduct {
 //
 //		player.setAnimation(animationId);
 //	}
+//
+//public class GroundSpawningPortal extends MarketplaceProduct
+//{
+//	public GroundSpawningPortal(MarketplaceManager manager, TwitchTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct) {
+//		super(manager, transaction, ebsProduct, streamerProduct);
+//	}
+//
+//	public void onInitializeProduct()
+//	{
+////		setMarketplaceModels(new MarketplaceModel[][] {{
+////			new MarketplaceModel(42302, 9040)
+////		}});
+//	}
+//
+//	public void onInitializeModel(ModelData model, int modelId)
+//	{
+////		MarketplaceModelUtilities.recolorAllFaces(model, MarketplaceModelConstants.ModelColors.PURPLE);
+//	}
+//}
