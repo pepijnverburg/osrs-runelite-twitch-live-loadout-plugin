@@ -496,10 +496,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+	public interface ClientThreadAction {
+		public void execute();
+	}
+
 	/**
 	 * Polling mechanism to check whether we are in ToA
 	 */
-	@Schedule(period = 4, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 5, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void checkIfInToA()
 	{
 		try {
@@ -809,11 +813,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
-	public boolean hasValidPanels()
-	{
-		return pluginPanel != null;
-	}
-
 	/**
 	 * Periodically update the connectivity panel to show the latest status
 	 */
@@ -844,6 +843,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		} catch (Exception exception) {
 			log.warn("Could not update the combat panel due to the following error: ", exception);
 		}
+	}
+
+	public boolean hasValidPanels()
+	{
+		return pluginPanel != null;
 	}
 
 	public void runOnClientThread(ClientThreadAction action)
@@ -898,12 +902,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return null;
-	}
-
-	@Provides
-	TwitchLiveLoadoutConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(TwitchLiveLoadoutConfig.class);
 	}
 
 	private String getScopedConfigKey(String configKey)
@@ -966,7 +964,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		return false;
 	}
 
-	public interface ClientThreadAction {
-		public void execute();
+	@Provides
+	TwitchLiveLoadoutConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(TwitchLiveLoadoutConfig.class);
 	}
 }

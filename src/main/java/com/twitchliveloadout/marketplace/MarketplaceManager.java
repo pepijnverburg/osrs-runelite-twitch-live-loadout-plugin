@@ -138,6 +138,9 @@ public class MarketplaceManager {
 			log.info("Streamer product name: "+ streamerProduct.name);
 			log.info("Ebs product ID: "+ ebsProduct.id);
 
+			// remove the transaction, now it is going to be handled
+			queuedTransactions.remove(transaction);
+
 			// create a new marketplace product where all the other products
 			// are merged together in one instance for reference
 			MarketplaceProduct newProduct = new MarketplaceProduct(
@@ -160,38 +163,13 @@ public class MarketplaceManager {
 	public void cleanExpiredProducts()
 	{
 		// TODO
-	}
-
-	private void stopProduct(MarketplaceProduct product)
-	{
-		activeProducts.remove(product);
-		product.stop();
+//		activeProducts.remove(product);
+//		product.stop();
 	}
 
 	/**
-	 * Handle player changes
-	 */
-	public void onPlayerChanged(PlayerChanged playerChanged)
-	{
-
-		// guard: make sure we are logged in
-		if (!plugin.isLoggedIn())
-		{
-			return;
-		}
-
-		// guard: only update the local player
-		if (playerChanged.getPlayer() != client.getLocalPlayer())
-		{
-			return;
-		}
-
-		animationManager.recordOriginalAnimations();
-		animationManager.updateEffectAnimations();
-	}
-
-	/**
-	 * Handle all active products
+	 * Handle HEAVY periodic effects of the active products,
+	 * such as spawning or random animations.
 	 */
 	public void updateActiveProducts()
 	{
@@ -212,6 +190,9 @@ public class MarketplaceManager {
 		}
 	}
 
+	/**
+	 * Update the products the streamer has configured in the Twitch Extension.
+	 */
 	public void updateStreamerProducts()
 	{
 		JsonObject segmentContent = twitchApi.getConfigurationSegmentContent(TwitchSegmentType.BROADCASTER);
@@ -243,6 +224,9 @@ public class MarketplaceManager {
 		streamerProducts = newStreamerProducts;
 	}
 
+	/**
+	 * Update the available effects and their configuration from the Twitch EBS.
+	 */
 	public void updateEbsProducts()
 	{
 		try {
@@ -280,6 +264,9 @@ public class MarketplaceManager {
 		}
 	}
 
+	/**
+	 * Get new Twitch transactions where the effects should be queued for.
+	 */
 	public void fetchNewTransactions()
 	{
 		try {
@@ -310,6 +297,28 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Handle player changes to update current animations or equipment transmogs.
+	 */
+	public void onPlayerChanged(PlayerChanged playerChanged)
+	{
+
+		// guard: make sure we are logged in
+		if (!plugin.isLoggedIn())
+		{
+			return;
+		}
+
+		// guard: only update the local player
+		if (playerChanged.getPlayer() != client.getLocalPlayer())
+		{
+			return;
+		}
+
+		animationManager.recordOriginalAnimations();
+		animationManager.updateEffectAnimations();
+	}
+
+	/**
 	 * Handle game state changes to respawn all objects, because they are cleared
 	 * when a new scene is being loaded.
 	 */
@@ -327,7 +336,8 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Handle client tick
+	 * Handle a client tick for all active products for changes
+	 * that need to happen really fast and are lightweight.
 	 */
 	public void onClientTick()
 	{
