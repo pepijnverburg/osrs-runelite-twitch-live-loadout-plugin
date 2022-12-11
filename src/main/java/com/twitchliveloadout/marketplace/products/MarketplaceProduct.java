@@ -48,6 +48,12 @@ public class MarketplaceProduct
 	private final StreamerProduct streamerProduct;
 
 	/**
+	 * The Twitch product attributed to this product
+	 */
+	@Getter
+	private final TwitchProduct twitchProduct;
+
+	/**
 	 * Current status
 	 */
 	@Getter
@@ -68,12 +74,13 @@ public class MarketplaceProduct
 	@Getter
 	private final CopyOnWriteArrayList<SpawnedObject> spawnedObjects = new CopyOnWriteArrayList();
 
-	public MarketplaceProduct(MarketplaceManager manager, TwitchTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct)
+	public MarketplaceProduct(MarketplaceManager manager, TwitchTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct, TwitchProduct twitchProduct)
 	{
 		this.manager = manager;
 		this.transaction = transaction;
 		this.ebsProduct = ebsProduct;
 		this.streamerProduct = streamerProduct;
+		this.twitchProduct = twitchProduct;
 
 		// start immediately
 		start();

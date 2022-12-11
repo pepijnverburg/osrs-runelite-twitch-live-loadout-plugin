@@ -414,25 +414,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
-	 * Keep track of all marketplace transactions and apply them if they are not yet
-	 */
-	@Schedule(period = 5000, unit = ChronoUnit.MILLIS, asynchronous = true)
-	public void syncMarketplaceTransactions()
-	{
-		try {
-			if (config.marketplaceEnabled())
-			{
-				runOnClientThread(() -> {
-					marketplaceManager.queueNewProducts();
-					marketplaceManager.cleanProducts();
-				});
-			}
-		} catch (Exception exception) {
-			log.warn("Could not apply or clean marketplace: ", exception);
-		}
-	}
-
-	/**
 	 * Polling mechanism to update the configuration segment cache
 	 * Note that this request is subject to rate limits by twitch of 20 times per minute
 	 * Documentation: https://dev.twitch.tv/docs/api/reference#get-extension-configuration-segment
@@ -474,7 +455,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
-	 * Polling mechanism to get new Twitch transactions
+	 * Polling mechanism to get new Twitch transactions and manage activation and de-activation of products
 	 */
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void updateMarketplaceTransactions()
@@ -483,7 +464,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.marketplaceEnabled())
 			{
 				// get new transactions from Twitch
-				marketplaceManager.updateTransactions();
+				marketplaceManager.fetchNewTransactions();
+
+				// apply new products and clean expired ones
+				runOnClientThread(() -> {
+					marketplaceManager.applyQueuedTransactions();
+					marketplaceManager.cleanExpiredProducts();
+				});
 			}
 		} catch (Exception exception) {
 			log.warn("Could not update the extension transactions due to the following error: ", exception);
@@ -495,13 +482,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * because for some things we want to be faster than 600ms (e.g. tracking player locations and spawning).
 	 */
 	@Schedule(period = 300, unit = ChronoUnit.MILLIS, asynchronous = true)
-	public void updateMarketplaceEffects()
+	public void updateMarketplaceActiveProducts()
 	{
 		try {
 			if (config.marketplaceEnabled())
 			{
 				runOnClientThread(() -> {
-					marketplaceManager.updateEffects();
+					marketplaceManager.updateActiveProducts();
 				});
 			}
 		} catch (Exception exception) {

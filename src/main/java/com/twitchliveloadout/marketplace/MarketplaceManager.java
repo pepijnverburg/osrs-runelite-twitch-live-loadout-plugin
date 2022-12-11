@@ -7,10 +7,7 @@ import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
-import com.twitchliveloadout.marketplace.products.EbsProduct;
-import com.twitchliveloadout.marketplace.products.EbsProductDuration;
-import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
-import com.twitchliveloadout.marketplace.products.StreamerProduct;
+import com.twitchliveloadout.marketplace.products.*;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
@@ -25,6 +22,7 @@ import net.runelite.api.events.PlayerChanged;
 import okhttp3.Response;
 
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -87,9 +85,15 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Check for new products that should be spawned
+	 * Check for new products that should be applied. This process is a little bit more complex
+	 * then you would expect at first, because we need to hook in to the Twitch product configuration and
+	 * transactions. From the transaction we can fetch the Twitch product (by SKU). Then we can check
+	 * whether the streamer really configured this product to have a specific effect (done in the configuration service).
+	 * If yes, we have a Streamer product containing a reference to the Ebs Product, which contains the effect information.
+	 * When applying new transactions we will check whether all of these steps are valid to prevent viewers
+	 * triggering any effects that were never configured by the streamer.
 	 */
-	public void queueNewProducts()
+	public void applyQueuedTransactions()
 	{
 
 		// guard: only apply the products when the player is logged in
@@ -98,41 +102,64 @@ public class MarketplaceManager {
 			return;
 		}
 
-		int playerGraphicId = config.devPlayerGraphicId();
+		Iterator iterator = queuedTransactions.iterator();
 
-		if (playerGraphicId > 0) {
-			client.getLocalPlayer().setGraphic(playerGraphicId);
+		while (iterator.hasNext())
+		{
+			TwitchTransaction transaction = (TwitchTransaction) iterator.next();
+			TwitchProduct twitchProduct = transaction.product_data;
+
+			// guard: make sure the twitch product is valid
+			if (twitchProduct == null)
+			{
+				continue;
+			}
+
+			String twitchProductSku = twitchProduct.sku;
+			StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
+
+			// guard: make sure a streamer product is configured for this SKU
+			if (streamerProduct == null)
+			{
+				continue;
+			}
+
+			String ebsProductId = streamerProduct.ebsProductId;
+			EbsProduct ebsProduct = getEbsProductById(ebsProductId);
+
+			// guard: make sure an EBS product is configured for this streamer product
+			if (ebsProduct == null || !ebsProduct.enabled)
+			{
+				continue;
+			}
+
+			log.info("Found a valid transaction that we can start: "+ transaction.id);
+			log.info("Twitch product SKU: "+ twitchProduct.sku);
+			log.info("Streamer product name: "+ streamerProduct.name);
+			log.info("Ebs product ID: "+ ebsProduct.id);
+
+			// create a new marketplace product where all the other products
+			// are merged together in one instance for reference
+			MarketplaceProduct newProduct = new MarketplaceProduct(
+				this,
+				transaction,
+				ebsProduct,
+				streamerProduct,
+				twitchProduct
+			);
+
+			// register this product to be active, which is needed to check
+			// for any periodic effects that might need to trigger
+			activeProducts.add(newProduct);
 		}
 	}
 
 	/**
 	 * Check to clean any existing products that are expired
 	 */
-	public void cleanProducts()
+	public void cleanExpiredProducts()
 	{
 		// TODO
-	}
-
-	private void startProduct(EbsProduct ebsProduct)
-	{
-
-		// guard: check if the product is valid and enabled
-		if (ebsProduct == null || !ebsProduct.enabled)
-		{
-			log.error("Could not start invalid or disabled EBS product.");
-			return;
-		}
-
-		log.info("Starting EBS product: "+ ebsProduct.id);
-
-		MarketplaceProduct newProduct = new MarketplaceProduct(
-			this,
-			new TwitchTransaction(), // TODO
-			ebsProduct,
-			new StreamerProduct() // TODO
-		);
-
-		activeProducts.add(newProduct);
 	}
 
 	private void stopProduct(MarketplaceProduct product)
@@ -164,26 +191,9 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Handle game state changes to respawn all objects, because they are cleared
-	 * when a new scene is being loaded.
-	 */
-	public void onGameStateChanged(GameStateChanged event)
-	{
-		GameState newGameState = event.getGameState();
-
-		// guard: only respawn on the loading event
-		// this means all spawned objects are removed from the scene
-		// and need to be queued for a respawn, this is done periodically
-		if (newGameState == GameState.LOADING)
-		{
-			spawnManager.registerDespawn();
-		}
-	}
-
-	/**
 	 * Handle all active products
 	 */
-	public void updateEffects()
+	public void updateActiveProducts()
 	{
 
 		// guard: don't do anything when not logged in
@@ -270,7 +280,7 @@ public class MarketplaceManager {
 		}
 	}
 
-	public void updateTransactions()
+	public void fetchNewTransactions()
 	{
 		try {
 			Response response = twitchApi.getEbsTransactions(transactionsLastCheckedAt);
@@ -300,6 +310,23 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Handle game state changes to respawn all objects, because they are cleared
+	 * when a new scene is being loaded.
+	 */
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		GameState newGameState = event.getGameState();
+
+		// guard: only respawn on the loading event
+		// this means all spawned objects are removed from the scene
+		// and need to be queued for a respawn, this is done periodically
+		if (newGameState == GameState.LOADING)
+		{
+			spawnManager.registerDespawn();
+		}
+	}
+
+	/**
 	 * Handle client tick
 	 */
 	public void onClientTick()
@@ -310,6 +337,42 @@ public class MarketplaceManager {
 		{
 			product.onClientTick();
 		}
+	}
+
+	private StreamerProduct getStreamerProductBySku(String twitchProductSku)
+	{
+		Iterator iterator = streamerProducts.iterator();
+
+		while(iterator.hasNext())
+		{
+			StreamerProduct candidateStreamerProduct = (StreamerProduct) iterator.next();
+
+			// guard: check if a match is found
+			if (twitchProductSku.equals(candidateStreamerProduct.twitchProductSku))
+			{
+				return candidateStreamerProduct;
+			}
+		}
+
+		return null;
+	}
+
+	private EbsProduct getEbsProductById(String ebsProductId)
+	{
+		Iterator iterator = ebsProducts.iterator();
+
+		while(iterator.hasNext())
+		{
+			EbsProduct candidateEbsProduct = (EbsProduct) iterator.next();
+
+			// guard: check if a match is found
+			if (ebsProductId.equals(candidateEbsProduct.id))
+			{
+				return candidateEbsProduct;
+			}
+		}
+
+		return null;
 	}
 
 	/**
