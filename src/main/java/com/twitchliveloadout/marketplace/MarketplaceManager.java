@@ -286,11 +286,10 @@ public class MarketplaceManager {
 				return;
 			}
 
-			log.info("Amount of new transactions: "+ newTransactions.size());
-
 			newTransactions.forEach((element) -> {
 				TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
 				queuedTransactions.add(twitchTransaction);
+				log.info("Queued a new Twitch transaction with ID: "+ twitchTransaction.id);
 			});
 
 			// only update the last checked at if everything is successful

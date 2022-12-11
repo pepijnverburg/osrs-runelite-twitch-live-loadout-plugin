@@ -198,7 +198,8 @@ public class TwitchApi
 	public Response getEbsProducts() throws Exception
 	{
 		final String token = config.twitchToken();
-		final String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
+//		final String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
+		final String url = "http://localhost:3010/api/marketplace-products";
 		final OkHttpClient timeoutHttpClient = httpClient
 			.newBuilder()
 			.callTimeout(GET_EBS_PRODUCTS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
