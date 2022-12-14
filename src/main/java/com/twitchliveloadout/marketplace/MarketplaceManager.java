@@ -9,6 +9,7 @@ import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
 import com.twitchliveloadout.marketplace.products.*;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
+import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
 import com.twitchliveloadout.twitch.TwitchApi;
@@ -397,11 +398,30 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Stop all active products
+	 */
+	public void stopActiveProducts()
+	{
+		Iterator iterator = activeProducts.iterator();
+
+		while (iterator.hasNext())
+		{
+			MarketplaceProduct marketplaceProduct = (MarketplaceProduct) iterator.next();
+			marketplaceProduct.stop();
+		}
+	}
+
+	/**
 	 * Handle plugin shutdown / marketplace disable
 	 */
 	public void shutDown()
 	{
 		animationManager.revertAnimations();
 		transmogManager.revertEquipment();
+		stopActiveProducts();
+	}
+
+	public interface SpawnedObjectHandler {
+		public void execute(SpawnedObject spawnedObject);
 	}
 }

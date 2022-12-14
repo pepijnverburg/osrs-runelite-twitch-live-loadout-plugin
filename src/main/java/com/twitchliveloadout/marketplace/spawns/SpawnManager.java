@@ -2,6 +2,7 @@ package com.twitchliveloadout.marketplace.spawns;
 
 import com.google.common.collect.EvictingQueue;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.MarketplaceManager;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -129,13 +130,13 @@ public class SpawnManager {
 	 * Register a collection of spawned objects to the placement lookup for easy access
 	 * to all spawned objects and to keep track of which tiles are taken.
 	 */
-	public void registerSpawnedObjectPlacements(ArrayList<SpawnedObject> objects)
+	public void registerSpawnedObjectPlacements(ArrayList<SpawnedObject> spawnedObjects)
 	{
-		Iterator iterator = objects.iterator();
+		Iterator spawnedObjectIterator = spawnedObjects.iterator();
 
-		while (iterator.hasNext())
+		while (spawnedObjectIterator.hasNext())
 		{
-			SpawnedObject spawnedObject = (SpawnedObject) iterator.next();
+			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
 			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
 			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
@@ -154,11 +155,15 @@ public class SpawnManager {
 	/**
 	 * Shortcut to loop all the spawned objects
 	 */
-	public void handleAllSpawnedObjects(SpawnedObjectHandler handler) {
+	public void handleAllSpawnedObjects(MarketplaceManager.SpawnedObjectHandler handler) {
 		for (CopyOnWriteArrayList<SpawnedObject> spawnedObjects : objectPlacements.values())
 		{
-			for (SpawnedObject spawnedObject : spawnedObjects)
+			Iterator spawnedObjectIterator = spawnedObjects.iterator();
+
+			while (spawnedObjectIterator.hasNext())
 			{
+				SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
+
 				handler.execute(spawnedObject);
 			}
 		}
@@ -265,9 +270,5 @@ public class SpawnManager {
 		}
 
 		return collisionFlags;
-	}
-
-	public interface SpawnedObjectHandler {
-		public void execute(SpawnedObject spawnedObject);
 	}
 }

@@ -258,6 +258,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		shutDownManagers();
 		shutDownTwitch();
 		shutDownCanvasListeners();
+		shuwDownSchedulers();
 	}
 
 	private void shutDownCanvasListeners()
@@ -309,6 +310,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		} catch (Exception exception) {
 			log.warn("An error occurred when shutting down the UI panels: ", exception);
 		}
+	}
+
+	private void shuwDownSchedulers()
+	{
+		scheduledExecutor.getQueue().clear();
+		scheduledExecutor.shutdown();
 	}
 
 	/**
