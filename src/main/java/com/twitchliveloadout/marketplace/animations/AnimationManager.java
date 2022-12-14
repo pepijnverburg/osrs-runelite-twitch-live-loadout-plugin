@@ -75,6 +75,13 @@ public class AnimationManager {
 		plugin.runOnClientThread(() -> {
 			for (ActorAnimation animation : ActorAnimation.values())
 			{
+
+				// guard: make sure the animation is known
+				if (!originalPlayerMovementAnimations.containsKey(animation))
+				{
+					continue;
+				}
+
 				int originalAnimationId = originalPlayerMovementAnimations.get(animation);
 				animation.setAnimation(player, originalAnimationId);
 			}
