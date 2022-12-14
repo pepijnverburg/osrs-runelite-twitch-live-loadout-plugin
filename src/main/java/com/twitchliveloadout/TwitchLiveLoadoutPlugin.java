@@ -56,8 +56,10 @@ import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
@@ -100,8 +102,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
-	@Inject
-	private ScheduledExecutorService executor;
+	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 
 	/**
 	 * The plugin panel to manage data such as combat fights.
@@ -869,7 +870,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void scheduleOnClientThread(ClientThreadAction action, long delayMs)
 	{
 		try {
-			executor.schedule(new Runnable() {
+			scheduledExecutor.schedule(new Runnable() {
 				@Override
 				public void run() {
 					runOnClientThread(action);

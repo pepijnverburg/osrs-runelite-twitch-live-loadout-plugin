@@ -607,10 +607,7 @@ public class MarketplaceProduct
 
 	private void scheduleResetAnimations(ArrayList<SpawnedObject> spawnedObjects, long delayMs)
 	{
-		log.info("Schedule INNER reset after: "+delayMs +", time"+ Instant.now().toString());
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			log.info("EXEC INNER reset after: "+delayMs +", time"+ Instant.now().toString());
-
 			for (SpawnedObject spawnedObject : spawnedObjects) {
 				spawnedObject.resetAnimation();
 			}
