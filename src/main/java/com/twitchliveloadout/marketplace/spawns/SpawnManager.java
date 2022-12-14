@@ -153,6 +153,31 @@ public class SpawnManager {
 	}
 
 	/**
+	 * Remove a collection of spawned objects from the placement lookup.
+	 */
+	public void deregisterSpawnedObjectPlacements(CopyOnWriteArrayList<SpawnedObject> spawnedObjects)
+	{
+		Iterator spawnedObjectIterator = spawnedObjects.iterator();
+
+		while (spawnedObjectIterator.hasNext())
+		{
+			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
+			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
+			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+
+			// guard: check if the placements are known
+			if (!objectPlacements.containsKey(worldPoint))
+			{
+				return;
+			}
+
+			// remove from the existing spawned objects
+			CopyOnWriteArrayList<SpawnedObject> existingObjects = objectPlacements.get(worldPoint);
+			existingObjects.remove(spawnedObject);
+		}
+	}
+
+	/**
 	 * Shortcut to loop all the spawned objects
 	 */
 	public void handleAllSpawnedObjects(MarketplaceManager.SpawnedObjectHandler handler) {

@@ -1,6 +1,5 @@
 package com.twitchliveloadout.marketplace.products;
 
-import com.twitchliveloadout.marketplace.MarketplaceDates;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -145,6 +144,8 @@ public class MarketplaceProduct
 	{
 		isActive = false;
 		hideSpawnedObjects(spawnedObjects, 0);
+		manager.getSpawnManager().deregisterSpawnedObjectPlacements(spawnedObjects);
+		spawnedObjects.clear();
 	}
 
 	public boolean isExpired()
