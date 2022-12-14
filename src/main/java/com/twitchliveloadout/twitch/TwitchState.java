@@ -614,10 +614,10 @@ public class TwitchState {
 		if (plugin.isLoggedIn() &&
 			canvasListener.isInFocusLongEnough() &&
 			config.autoDetectInToaRaidEnabled() &&
-			!wasInToaDebounced())
+			!wasInToaDebounced() &&
+			state.has(TwitchStateEntry.INVOCATIONS.getKey()))
 		{
-			final JsonArray invocations = state.getAsJsonArray(TwitchStateEntry.INVOCATIONS.getKey());
-			final boolean hasInvocations = (invocations != null);
+			final boolean hasInvocations = state.get(TwitchStateEntry.INVOCATIONS.getKey()).isJsonArray();
 
 			if (hasInvocations)
 			{
