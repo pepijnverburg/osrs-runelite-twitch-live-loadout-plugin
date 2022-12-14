@@ -19,6 +19,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.TRANSACTION_CHECKED_AT_OFFSET_MS;
 import static net.runelite.http.api.RuneLiteAPI.JSON;
 
 import java.io.ByteArrayOutputStream;
@@ -231,7 +232,8 @@ public class TwitchApi
 		// only add last checked at when it is valid
 		if (lastCheckedAt != null)
 		{
-			data.addProperty("lastCheckedAt", lastCheckedAt.toString());
+			Instant lastCheckedAtOffset = lastCheckedAt.minusMillis(TRANSACTION_CHECKED_AT_OFFSET_MS);
+			data.addProperty("lastCheckedAt", lastCheckedAtOffset.toString());
 		}
 
 		// Documentation: https://dev.twitch.tv/docs/api/reference

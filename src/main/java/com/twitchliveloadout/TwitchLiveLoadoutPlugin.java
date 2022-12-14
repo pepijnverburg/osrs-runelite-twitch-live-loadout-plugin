@@ -102,7 +102,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
-	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+	private ScheduledThreadPoolExecutor scheduledExecutor;
 
 	/**
 	 * The plugin panel to manage data such as combat fights.
@@ -180,6 +180,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		super.startUp();
 
+		initializeExecutors();
 		initializeCanvasListeners();
 		initializeTwitch();
 		initializeManagers();
@@ -188,6 +189,15 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// tasks to execute immediately on boot
 		updateMarketplaceStreamerProducts();
 		updateMarketplaceEbsProducts();
+	}
+
+	private void initializeExecutors()
+	{
+		try {
+			scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+		} catch (Exception exception) {
+			log.warn("An error occurred when initializing the executors: ", exception);
+		}
 	}
 
 	private void initializeTwitch()
@@ -258,7 +268,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		shutDownManagers();
 		shutDownTwitch();
 		shutDownCanvasListeners();
-		shuwDownSchedulers();
+		shutDownSchedulers();
 	}
 
 	private void shutDownCanvasListeners()
@@ -273,11 +283,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void shutDownTwitch()
 	{
 		try {
-			// Only the API requires dedicated shutdown
+			// only the API requires dedicated shutdown
 			twitchApi.shutDown();
-
-			twitchState = null;
-			twitchApi = null;
 		} catch (Exception exception) {
 			log.warn("An error occurred when shutting down Twitch: ", exception);
 		}
@@ -286,17 +293,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void shutDownManagers()
 	{
 		try {
-			// Only the fight state manager requires dedicated shutdown
+			// Only some managers require a shutdown as well
 			fightStateManager.shutDown();
 			marketplaceManager.shutDown();
-
-			fightStateManager = null;
-			itemStateManager = null;
-			skillStateManager = null;
-			collectionLogManager = null;
-			marketplaceManager = null;
-			minimapManager = null;
-			invocationsManager = null;
 		} catch (Exception exception) {
 			log.warn("An error occurred when shutting down the managers: ", exception);
 		}
@@ -305,14 +304,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void shutDownPanels()
 	{
 		try {
-			pluginPanel = null;
 			clientToolbar.removeNavigation(navigationButton);
 		} catch (Exception exception) {
 			log.warn("An error occurred when shutting down the UI panels: ", exception);
 		}
 	}
 
-	private void shuwDownSchedulers()
+	private void shutDownSchedulers()
 	{
 		scheduledExecutor.getQueue().clear();
 		scheduledExecutor.shutdown();

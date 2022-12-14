@@ -26,6 +26,8 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.TRANSACTION_CHECKED_AT_OFFSET_MS;
+
 @Slf4j
 public class MarketplaceManager {
 
@@ -190,6 +192,10 @@ public class MarketplaceManager {
 				twitchProduct
 			);
 
+			log.info("The marketplace product is configured for the time-frame:");
+			log.info("It starts at: "+ newProduct.getStartedAt());
+			log.info("It expires at: "+ newProduct.getExpiredAt() +", which is in "+ newProduct.getExpiresInMs() +"ms");
+
 			// register this product to be active, which is needed to check
 			// for any periodic effects that might need to trigger
 			activeProducts.add(newProduct);
@@ -201,9 +207,20 @@ public class MarketplaceManager {
 	 */
 	public void cleanExpiredProducts()
 	{
-		// TODO
-//		activeProducts.remove(product);
-//		product.stop();
+		handleActiveProducts((marketplaceProduct) -> {
+
+			// guard: check if the product is not expired yet
+			if (!marketplaceProduct.isExpired())
+			{
+				return;
+			}
+
+			String transactionId = marketplaceProduct.getTransaction().id;
+			log.info("Cleaning an expired marketplace product for transaction: "+ transactionId);
+
+			marketplaceProduct.stop();
+			activeProducts.remove(marketplaceProduct);
+		});
 	}
 
 	/**
@@ -228,10 +245,9 @@ public class MarketplaceManager {
 		spawnManager.recordPlayerLocation();
 
 		// handle any new behaviours for all active products
-		for (MarketplaceProduct product : activeProducts)
-		{
-			product.handleBehaviour();
-		}
+		handleActiveProducts((marketplaceProduct) -> {
+			marketplaceProduct.handleBehaviour();
+		});
 	}
 
 	/**
@@ -353,12 +369,9 @@ public class MarketplaceManager {
 	 */
 	public void onClientTick()
 	{
-
-		// for all active products the tick should be triggered
-		for (MarketplaceProduct product : activeProducts)
-		{
-			product.onClientTick();
-		}
+		handleActiveProducts((marketplaceProduct) -> {
+			marketplaceProduct.onClientTick();
+		});
 	}
 
 	private StreamerProduct getStreamerProductBySku(String twitchProductSku)
@@ -412,6 +425,20 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Handle all active products using an iterator
+	 */
+	public void handleActiveProducts(MarketplaceProductHandler handler)
+	{
+		Iterator iterator = activeProducts.iterator();
+
+		while (iterator.hasNext())
+		{
+			MarketplaceProduct marketplaceProduct = (MarketplaceProduct) iterator.next();
+			handler.execute(marketplaceProduct);
+		}
+	}
+
+	/**
 	 * Handle plugin shutdown / marketplace disable
 	 */
 	public void shutDown()
@@ -423,5 +450,9 @@ public class MarketplaceManager {
 
 	public interface SpawnedObjectHandler {
 		public void execute(SpawnedObject spawnedObject);
+	}
+
+	public interface MarketplaceProductHandler {
+		public void execute(MarketplaceProduct marketplaceProduct);
 	}
 }

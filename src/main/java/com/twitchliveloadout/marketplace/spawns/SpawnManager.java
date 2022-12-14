@@ -130,7 +130,7 @@ public class SpawnManager {
 	 * Register a collection of spawned objects to the placement lookup for easy access
 	 * to all spawned objects and to keep track of which tiles are taken.
 	 */
-	public void registerSpawnedObjectPlacements(ArrayList<SpawnedObject> spawnedObjects)
+	public void registerSpawnedObjectPlacements(CopyOnWriteArrayList<SpawnedObject> spawnedObjects)
 	{
 		Iterator spawnedObjectIterator = spawnedObjects.iterator();
 

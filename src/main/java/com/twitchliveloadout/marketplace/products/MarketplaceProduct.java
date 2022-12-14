@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
+import com.twitchliveloadout.marketplace.MarketplaceDates;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -14,10 +15,7 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
@@ -71,6 +69,14 @@ public class MarketplaceProduct
 	private HashMap<SpawnedObject, Instant> lastRandomAnimations = new HashMap();
 
 	/**
+	 * Expiration trackers
+	 */
+	@Getter
+	private final Instant startedAt;
+	@Getter
+	private final Instant expiredAt;
+
+	/**
 	 * A list of all the spawned objects for this product
 	 */
 	@Getter
@@ -86,6 +92,15 @@ public class MarketplaceProduct
 
 		// start immediately
 		start();
+
+		// determine when this product should expire which is
+		// based on the moment the transaction is executed with a correction
+		// added along with the actual duration. A correction is added because
+		// it takes a few seconds before the transaction is added.
+		log.info("TIMESTAMP IS: "+ transaction.timestamp);
+		int duration = streamerProduct.duration;
+		this.startedAt = Instant.parse(transaction.timestamp);
+		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
 	}
 
 	public void handleBehaviour()
@@ -130,15 +145,26 @@ public class MarketplaceProduct
 	public void stop()
 	{
 		isActive = false;
-		removeAllSpawnedObjects();
+		hideSpawnedObjects(spawnedObjects, 0);
 	}
 
-	public boolean hasMovementAnimations()
+	public boolean isExpired()
+	{
+		return expiredAt == null || Instant.now().isAfter(expiredAt);
+	}
+
+
+	public long getExpiresInMs()
+	{
+		return expiredAt.toEpochMilli() - Instant.now().toEpochMilli();
+	}
+
+	private boolean hasMovementAnimations()
 	{
 		return ebsProduct.behaviour.playerAnimations != null;
 	}
 
-	public void handleMovementAnimations()
+	private void handleMovementAnimations()
 	{
 		AnimationManager animationManager = manager.getAnimationManager();
 
@@ -232,7 +258,7 @@ public class MarketplaceProduct
 			EbsAnimation randomAnimation = MarketplaceRandomizers.getRandomEntryFromList(randomAnimations);
 
 			// trigger the animations on this single spawned object
-			ArrayList<SpawnedObject> animatedSpawnedObjects = new ArrayList();
+			CopyOnWriteArrayList<SpawnedObject> animatedSpawnedObjects = new CopyOnWriteArrayList();
 			animatedSpawnedObjects.add(spawnedObject);
 			triggerAnimation(animatedSpawnedObjects, randomAnimation, 0);
 
@@ -327,8 +353,8 @@ public class MarketplaceProduct
 
 		Client client = manager.getClient();
 		SpawnManager spawnManager = manager.getSpawnManager();
-		ArrayList<SpawnedObject> newSpawnedObjects = new ArrayList();
-		ArrayList<ModelData> newSpawnedModels = new ArrayList();
+		CopyOnWriteArrayList<SpawnedObject> newSpawnedObjects = new CopyOnWriteArrayList();
+		CopyOnWriteArrayList<ModelData> newSpawnedModels = new CopyOnWriteArrayList();
 
 		EbsModelPlacement placement = spawn.modelPlacement;
 
@@ -437,7 +463,7 @@ public class MarketplaceProduct
 		spawnManager.registerSpawnedObjectPlacements(newSpawnedObjects);
 	}
 
-	private void triggerAnimation(ArrayList<SpawnedObject> spawnedObjects, EbsAnimation animation, int baseDelayMs)
+	private void triggerAnimation(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, EbsAnimation animation, int baseDelayMs)
 	{
 
 		// guard: make sure the animation is valid
@@ -451,7 +477,7 @@ public class MarketplaceProduct
 		triggerPlayerAnimation(animation.playerAnimation, baseDelayMs);
 	}
 
-	private void triggerModelAnimations(ArrayList<SpawnedObject> spawnedObjects, EbsAnimationFrame animation, int baseDelayMs)
+	private void triggerModelAnimations(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
 			setAnimations(spawnedObjects, animationId, startDelayMs);
@@ -580,28 +606,28 @@ public class MarketplaceProduct
 		}, delayMs);
 	}
 
-	private void showSpawnedObjects(Collection<SpawnedObject> spawnedObjects, long delayMs)
+	private void showSpawnedObjects(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, long delayMs)
 	{
 		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
 			spawnedObject.show();
 		});
 	}
 
-	private void hideSpawnedObjects(Collection<SpawnedObject> spawnedObjects, long delayMs)
+	private void hideSpawnedObjects(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, long delayMs)
 	{
 		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
 			spawnedObject.hide();
 		});
 	}
 
-	private void setAnimations(Collection<SpawnedObject> spawnedObjects, int animationId, long delayMs)
+	private void setAnimations(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, int animationId, long delayMs)
 	{
 		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
 			spawnedObject.setAnimation(animationId, true);
 		});
 	}
 
-	private void resetAnimations(Collection<SpawnedObject> spawnedObjects, long delayMs)
+	private void resetAnimations(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, long delayMs)
 	{
 		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
 			spawnedObject.resetAnimation();
@@ -611,10 +637,19 @@ public class MarketplaceProduct
 	/**
 	 * Shortcut to loop all the spawned objects
 	 */
-	public void handleSpawnedObjects(Collection<SpawnedObject> spawnedObjects, long delayMs, MarketplaceManager.SpawnedObjectHandler handler)
+	private void handleSpawnedObjects(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, long delayMs, MarketplaceManager.SpawnedObjectHandler handler)
 	{
+		// guard: check if the collection  is valid
+		if (spawnedObjects == null)
+		{
+			return;
+		}
+
+		// make the iterator before the delay to make sure any modifications
+		// after calling this handlers are ignored, because a snapshot is made
+		Iterator iterator = spawnedObjects.iterator();
+
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			Iterator iterator = spawnedObjects.iterator();
 
 			while(iterator.hasNext())
 			{
@@ -622,16 +657,5 @@ public class MarketplaceProduct
 				handler.execute(spawnedObject);
 			}
 		}, delayMs);
-	}
-
-	/**
-	 * Removes all spawned objects, this is done after hiding all objects first.
-	 */
-	private void removeAllSpawnedObjects()
-	{
-		// copy to a sublist because we are clearing the original right away after,
-		// causing the delayed hide (of 0ms in this case) to not do anything
-		hideSpawnedObjects(spawnedObjects.subList(0, spawnedObjects.size() - 1), 0);
-		spawnedObjects.clear();
 	}
 }
