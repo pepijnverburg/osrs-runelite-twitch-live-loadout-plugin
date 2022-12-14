@@ -235,6 +235,12 @@ public class SpawnManager {
 				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
 				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
+				// guard: skip if this is the reference point (e.g. current player location
+				if (worldPoint.equals(referenceWorldPoint))
+				{
+					continue;
+				}
+
 				// guard: check if this world point is already taken by another spawned object
 				if (objectPlacements.containsKey(worldPoint))
 				{
