@@ -97,7 +97,6 @@ public class MarketplaceProduct
 		// based on the moment the transaction is executed with a correction
 		// added along with the actual duration. A correction is added because
 		// it takes a few seconds before the transaction is added.
-		log.info("TIMESTAMP IS: "+ transaction.timestamp);
 		int duration = streamerProduct.duration;
 		this.startedAt = Instant.parse(transaction.timestamp);
 		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
@@ -269,6 +268,7 @@ public class MarketplaceProduct
 	private void handleSpawns()
 	{
 		Instant now = Instant.now();
+		String transactionId = transaction.id;
 		String productId = ebsProduct.id;
 		EbsBehaviour behaviour = ebsProduct.behaviour;
 		ArrayList<EbsSpawnOption> spawnOptions = behaviour.spawnOptions;
@@ -307,12 +307,12 @@ public class MarketplaceProduct
 		// guard: check if a valid option was selected
 		if (spawnOption == null)
 		{
-			log.error("Could not find valid spawn behaviour option for product: "+ productId);
+			log.error("Could not find valid spawn behaviour option for product ("+ productId +")");
 			return;
 		}
 
 		// an option is selected so we can change the timer and count
-		log.info("Executing spawn behaviours for product, because they are valid: "+ productId);
+		log.info("Executing spawn behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
 		lastSpawnBehaviour = now;
 		spawnBehaviourCounter += 1;
 
@@ -323,7 +323,7 @@ public class MarketplaceProduct
 		// guard: make sure the spawn behaviours are valid
 		if (spawns == null)
 		{
-			log.error("Could not find valid spawn behaviours for product: "+ productId);
+			log.error("Could not find valid spawn behaviours for product ("+ productId +")");
 			return;
 		}
 

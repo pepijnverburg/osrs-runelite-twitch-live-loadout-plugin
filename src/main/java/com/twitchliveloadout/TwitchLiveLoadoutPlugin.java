@@ -470,7 +470,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.marketplaceEnabled())
 			{
 				// get new transactions from Twitch
-				marketplaceManager.fetchNewTransactions();
+				marketplaceManager.handleNewTwitchTransactions();
 
 				// apply new products and clean expired ones
 				runOnClientThread(() -> {

@@ -1,8 +1,8 @@
 package com.twitchliveloadout.marketplace;
 
 public class MarketplaceConstants {
-	public static final int TRANSACTION_CHECKED_AT_OFFSET_MS = 5000;
-	public static final int TRANSACTION_DELAY_CORRECTION_MS = 2000;
+	public static final int TRANSACTION_CHECKED_AT_OFFSET_MS = 10 * 1000;
+	public static final int TRANSACTION_DELAY_CORRECTION_MS = 2 * 1000;
 
 	public static final String CURRENT_TILE_LOCATION_TYPE = "current-tile";
 	public static final String PREVIOUS_TILE_LOCATION_TYPE = "previous-tile";

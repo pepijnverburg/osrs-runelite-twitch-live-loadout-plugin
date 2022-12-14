@@ -74,6 +74,7 @@ public class MarketplaceManager {
 	 * List of all extension transactions that should be handled
 	 */
 	private CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList();
+	private CopyOnWriteArrayList<String> handledTransactionIds = new CopyOnWriteArrayList();
 	private Instant transactionsLastCheckedAt = null;
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Client client, TwitchLiveLoadoutConfig config)
@@ -90,7 +91,7 @@ public class MarketplaceManager {
 	/**
 	 * Get new Twitch transactions where the effects should be queued for.
 	 */
-	public void fetchNewTransactions()
+	public void handleNewTwitchTransactions()
 	{
 		try {
 			Response response = twitchApi.getEbsTransactions(transactionsLastCheckedAt);
@@ -109,13 +110,25 @@ public class MarketplaceManager {
 			newTransactions.forEach((element) -> {
 
 				// TMP: spawn only one product!
-				if (queuedTransactions.size() > 0 || activeProducts.size() > 0) {
+//				if (queuedTransactions.size() > 0 || activeProducts.size() > 0) {
+//					return;
+//				}
+
+				TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
+				String transactionId = twitchTransaction.id;
+
+				// guard: check if this transaction is already handled
+				// this is required because we have an offset on the last checked at date
+				// because with the HTTP request delays it is possible to miss a transaction
+				if (handledTransactionIds.contains(transactionId))
+				{
+					log.info("Skipping Twitch transaction because it was already handled: "+ transactionId);
 					return;
 				}
 
-				TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
 				queuedTransactions.add(twitchTransaction);
-				log.info("Queued a new Twitch transaction with ID: "+ twitchTransaction.id);
+				handledTransactionIds.add(transactionId);
+				log.info("Queued a new Twitch transaction with ID: "+ transactionId);
 			});
 
 			// only update the last checked at if everything is successful
