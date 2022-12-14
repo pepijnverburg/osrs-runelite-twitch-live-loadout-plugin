@@ -15,7 +15,9 @@ import net.runelite.api.coords.WorldPoint;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
@@ -116,6 +118,7 @@ public class MarketplaceProduct
 
 	public void start()
 	{
+		showSpawnedObjects(spawnedObjects, 0);
 		isActive = true;
 	}
 
@@ -127,6 +130,7 @@ public class MarketplaceProduct
 	public void stop()
 	{
 		isActive = false;
+		removeAllSpawnedObjects();
 	}
 
 	public boolean hasMovementAnimations()
@@ -426,7 +430,7 @@ public class MarketplaceProduct
 		triggerAnimation(newSpawnedObjects, spawn.showAnimation, spawnDelayMs);
 
 		// schedule showing of the objects
-		scheduleShowObjects(newSpawnedObjects, spawnDelayMs);
+		showSpawnedObjects(newSpawnedObjects, spawnDelayMs);
 
 		// register the objects to the product and manager to make the spawn point unavailable
 		spawnedObjects.addAll(newSpawnedObjects);
@@ -450,11 +454,9 @@ public class MarketplaceProduct
 	private void triggerModelAnimations(ArrayList<SpawnedObject> spawnedObjects, EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
-			log.info("Schedule set model animation "+ animationId +" after "+ startDelayMs);
-			scheduleSetAnimations(spawnedObjects, animationId, startDelayMs);
+			setAnimations(spawnedObjects, animationId, startDelayMs);
 		}, (resetDelayMs) -> {
-			log.info("Schedule reset model after "+ resetDelayMs);
-			scheduleResetAnimations(spawnedObjects, resetDelayMs);
+			resetAnimations(spawnedObjects, resetDelayMs);
 		});
 	}
 
@@ -578,39 +580,58 @@ public class MarketplaceProduct
 		}, delayMs);
 	}
 
-	private void scheduleShowObjects(ArrayList<SpawnedObject> spawnedObjects, long delayMs)
+	private void showSpawnedObjects(Collection<SpawnedObject> spawnedObjects, long delayMs)
+	{
+		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
+			spawnedObject.show();
+		});
+	}
+
+	private void hideSpawnedObjects(Collection<SpawnedObject> spawnedObjects, long delayMs)
+	{
+		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
+			spawnedObject.hide();
+		});
+	}
+
+	private void setAnimations(Collection<SpawnedObject> spawnedObjects, int animationId, long delayMs)
+	{
+		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
+			spawnedObject.setAnimation(animationId, true);
+		});
+	}
+
+	private void resetAnimations(Collection<SpawnedObject> spawnedObjects, long delayMs)
+	{
+		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
+			spawnedObject.resetAnimation();
+		});
+	}
+
+	/**
+	 * Shortcut to loop all the spawned objects
+	 */
+	public void handleSpawnedObjects(Collection<SpawnedObject> spawnedObjects, long delayMs, MarketplaceManager.SpawnedObjectHandler handler)
 	{
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			for (SpawnedObject spawnedObject : spawnedObjects) {
-				spawnedObject.show();
+			Iterator iterator = spawnedObjects.iterator();
+
+			while(iterator.hasNext())
+			{
+				SpawnedObject spawnedObject = (SpawnedObject) iterator.next();
+				handler.execute(spawnedObject);
 			}
 		}, delayMs);
 	}
 
-	private void scheduleHideObjects(ArrayList<SpawnedObject> spawnedObjects, long delayMs)
+	/**
+	 * Removes all spawned objects, this is done after hiding all objects first.
+	 */
+	private void removeAllSpawnedObjects()
 	{
-		manager.getPlugin().scheduleOnClientThread(() -> {
-			for (SpawnedObject spawnedObject : spawnedObjects) {
-				spawnedObject.hide();
-			}
-		}, delayMs);
-	}
-
-	private void scheduleSetAnimations(ArrayList<SpawnedObject> spawnedObjects, int animationId, long delayMs)
-	{
-		manager.getPlugin().scheduleOnClientThread(() -> {
-			for (SpawnedObject spawnedObject : spawnedObjects) {
-				spawnedObject.setAnimation(animationId, true);
-			}
-		}, delayMs);
-	}
-
-	private void scheduleResetAnimations(ArrayList<SpawnedObject> spawnedObjects, long delayMs)
-	{
-		manager.getPlugin().scheduleOnClientThread(() -> {
-			for (SpawnedObject spawnedObject : spawnedObjects) {
-				spawnedObject.resetAnimation();
-			}
-		}, delayMs);
+		// copy to a sublist because we are clearing the original right away after,
+		// causing the delayed hide (of 0ms in this case) to not do anything
+		hideSpawnedObjects(spawnedObjects.subList(0, spawnedObjects.size() - 1), 0);
+		spawnedObjects.clear();
 	}
 }
