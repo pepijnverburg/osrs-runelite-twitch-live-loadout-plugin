@@ -130,56 +130,44 @@ public class SpawnManager {
 	 * Register a collection of spawned objects to the placement lookup for easy access
 	 * to all spawned objects and to keep track of which tiles are taken.
 	 */
-	public void registerSpawnedObjectPlacements(CopyOnWriteArrayList<SpawnedObject> spawnedObjects)
+	public void registerSpawnedObjectPlacement(SpawnedObject spawnedObject)
 	{
-		Iterator spawnedObjectIterator = spawnedObjects.iterator();
+		LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
+		WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
-		while (spawnedObjectIterator.hasNext())
-		{
-			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
-			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
-			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
-
-			// check whether this world point already has a spawned object to add to
-			if (objectPlacements.containsKey(worldPoint)) {
-				CopyOnWriteArrayList<SpawnedObject> existingObjects = objectPlacements.get(worldPoint);
-				existingObjects.add(spawnedObject);
-			} else {
-				CopyOnWriteArrayList<SpawnedObject> existingObjects = new CopyOnWriteArrayList();
-				existingObjects.add(spawnedObject);
-				objectPlacements.put(worldPoint, existingObjects);
-			}
+		// check whether this world point already has a spawned object to add to
+		if (objectPlacements.containsKey(worldPoint)) {
+			CopyOnWriteArrayList<SpawnedObject> existingObjects = objectPlacements.get(worldPoint);
+			existingObjects.add(spawnedObject);
+		} else {
+			CopyOnWriteArrayList<SpawnedObject> existingObjects = new CopyOnWriteArrayList();
+			existingObjects.add(spawnedObject);
+			objectPlacements.put(worldPoint, existingObjects);
 		}
 	}
 
 	/**
 	 * Remove a collection of spawned objects from the placement lookup.
 	 */
-	public void deregisterSpawnedObjectPlacements(CopyOnWriteArrayList<SpawnedObject> spawnedObjects)
+	public void deregisterSpawnedObjectPlacement(SpawnedObject spawnedObject)
 	{
-		Iterator spawnedObjectIterator = spawnedObjects.iterator();
+		LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
+		WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
-		while (spawnedObjectIterator.hasNext())
+		// guard: check if the placements are known
+		if (!objectPlacements.containsKey(worldPoint))
 		{
-			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
-			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
-			WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+			return;
+		}
 
-			// guard: check if the placements are known
-			if (!objectPlacements.containsKey(worldPoint))
-			{
-				return;
-			}
+		// remove from the existing spawned objects
+		CopyOnWriteArrayList<SpawnedObject> existingObjects = objectPlacements.get(worldPoint);
+		existingObjects.remove(spawnedObject);
 
-			// remove from the existing spawned objects
-			CopyOnWriteArrayList<SpawnedObject> existingObjects = objectPlacements.get(worldPoint);
-			existingObjects.remove(spawnedObject);
-
-			// remove the placement if empty so this world point is free again
-			if (existingObjects.size() <= 0)
-			{
-				objectPlacements.remove(worldPoint);
-			}
+		// remove the placement if empty so this world point is free again
+		if (existingObjects.size() <= 0)
+		{
+			objectPlacements.remove(worldPoint);
 		}
 	}
 
@@ -226,11 +214,12 @@ public class SpawnManager {
 		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList();
 		final int playerPlane = client.getPlane();
 		final int[][] collisionFlags = getSceneCollisionFlags();
+		final WorldPoint playerWorldPoint = client.getLocalPlayer().getWorldLocation();
 
 		// make sure the reference local point is always valid
 		if (referenceWorldPoint == null)
 		{
-			referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
+			referenceWorldPoint = playerWorldPoint;
 		}
 
 		LocalPoint referenceLocalPoint = LocalPoint.fromWorld(client, referenceWorldPoint);
@@ -246,10 +235,10 @@ public class SpawnManager {
 
 				// guard: make sure the flag can be found
 				if (
-						sceneAttemptX < 0
-								|| sceneAttemptX >= collisionFlags.length
-								|| sceneAttemptY < 0
-								|| sceneAttemptY >= collisionFlags[sceneAttemptX].length
+					sceneAttemptX < 0
+					|| sceneAttemptX >= collisionFlags.length
+					|| sceneAttemptY < 0
+					|| sceneAttemptY >= collisionFlags[sceneAttemptX].length
 				) {
 					continue;
 				}
@@ -266,8 +255,10 @@ public class SpawnManager {
 				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
 				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
-				// guard: skip if this is the reference point (e.g. current player location
-				if (worldPoint.equals(referenceWorldPoint))
+				// guard: skip candidates that are the current player location
+				// because when rendering the model it is always on top of the player
+				// which is almost always not looking very nice
+				if (worldPoint.equals(playerWorldPoint))
 				{
 					continue;
 				}

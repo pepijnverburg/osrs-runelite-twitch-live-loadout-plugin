@@ -13,4 +13,5 @@ public class EbsSpawn {
 	public EbsMovementAnimations movementAnimations;
 	public ArrayList<EbsAnimation> randomAnimations;
 	public EbsInterval randomAnimationInterval;
+	public EbsRandomRange durationMs;
 }

@@ -26,6 +26,8 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.UPDATE_ACTIVE_PRODUCTS_DELAY_MS;
+
 @Slf4j
 public class MarketplaceManager {
 
@@ -74,6 +76,12 @@ public class MarketplaceManager {
 	private CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList();
 	private CopyOnWriteArrayList<String> handledTransactionIds = new CopyOnWriteArrayList();
 	private Instant transactionsLastCheckedAt = null;
+
+
+	/**
+	 * Track when the active products were updated for the last time
+	 */
+	private Instant lastUpdateActiveProductsAt = null;
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Client client, TwitchLiveLoadoutConfig config)
 	{
@@ -250,7 +258,7 @@ public class MarketplaceManager {
 	 * Handle HEAVY periodic effects of the active products,
 	 * such as spawning or random animations.
 	 */
-	public void updateActiveProducts()
+	private void updateActiveProducts()
 	{
 
 		// guard: don't do anything when not logged in
@@ -267,9 +275,10 @@ public class MarketplaceManager {
 		// when spawning new objects that are relative in some way to the player
 		spawnManager.recordPlayerLocation();
 
-		// handle any new behaviours for all active products
+		// handle each active product individually
 		handleActiveProducts((marketplaceProduct) -> {
 			marketplaceProduct.handleBehaviour();
+			marketplaceProduct.cleanExpiredSpawnedObjects();
 		});
 	}
 
@@ -392,9 +401,21 @@ public class MarketplaceManager {
 	 */
 	public void onClientTick()
 	{
+		Instant now = Instant.now();
+
+		// trigger client tick for all active products
 		handleActiveProducts((marketplaceProduct) -> {
 			marketplaceProduct.onClientTick();
 		});
+
+		// custom timer running on client ticks every x ms for more heavy things to be executed
+		// this is because the @Schedule is delaying now and then and some of the processes in here
+		// are time-sensitive
+		if (lastUpdateActiveProductsAt == null || now.isAfter(lastUpdateActiveProductsAt.plusMillis((UPDATE_ACTIVE_PRODUCTS_DELAY_MS))))
+		{
+			updateActiveProducts();
+			lastUpdateActiveProductsAt = now;
+		}
 	}
 
 	private StreamerProduct getStreamerProductBySku(String twitchProductSku)
@@ -471,11 +492,19 @@ public class MarketplaceManager {
 		stopActiveProducts();
 	}
 
+	public interface EmptyHandler {
+		public void execute();
+	}
+
 	public interface SpawnedObjectHandler {
 		public void execute(SpawnedObject spawnedObject);
 	}
 
 	public interface MarketplaceProductHandler {
 		public void execute(MarketplaceProduct marketplaceProduct);
+	}
+
+	public interface PlayerHandler {
+		public void execute(Player player);
 	}
 }

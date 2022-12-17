@@ -484,27 +484,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
-	 * Handle all active products periodically, note that this interval should be LOWER than a game tick
-	 * because for some things we want to be faster than 600ms (e.g. tracking player locations and spawning).
-	 */
-	@Schedule(period = 300, unit = ChronoUnit.MILLIS, asynchronous = true)
-	public void updateMarketplaceActiveProducts()
-	{
-		try {
-			if (config.marketplaceEnabled())
-			{
-				marketplaceManager.updateActiveProducts();
-			}
-		} catch (Exception exception) {
-			log.warn("Could not update marketplace effects: ", exception);
-		}
-	}
-
-	public interface ClientThreadAction {
-		public void execute();
-	}
-
-	/**
 	 * Polling mechanism to check whether we are in ToA
 	 */
 	@Schedule(period = 5, unit = ChronoUnit.SECONDS, asynchronous = true)
@@ -820,7 +799,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Periodically update the connectivity panel to show the latest status
 	 */
-	@Schedule(period = 1000, unit = ChronoUnit.MILLIS, asynchronous = true)
+	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void updateConnectivityPanel()
 	{
 		try {
@@ -874,6 +853,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public void scheduleOnClientThread(ClientThreadAction action, long delayMs)
 	{
+
+		// guard: check if we should execute immediately
+		if (delayMs <= 0)
+		{
+			runOnClientThread(action);
+			return;
+		}
+
 		try {
 			scheduledExecutor.schedule(new Runnable() {
 				@Override
@@ -884,6 +871,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		} catch (Exception exception) {
 			log.warn("Could not schedule an action on the client thread (delay: "+ delayMs +"): ", exception);
 		}
+	}
+
+	public interface ClientThreadAction {
+		public void execute();
 	}
 
 	public void setConfiguration(String configKey, Object payload)

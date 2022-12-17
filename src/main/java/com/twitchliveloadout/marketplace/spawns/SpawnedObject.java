@@ -45,9 +45,18 @@ public class SpawnedObject {
 	@Setter
 	private boolean respawnRequired = false;
 
+	@Getter
+	private Instant expiredAt;
+
 	private double currentScale = -1;
 	private double currentRotationDegrees = 0;
 	private int currentAnimationId;
+
+	@Getter
+	private int randomAnimationCounter = 0;
+
+	@Getter
+	private Instant lastRandomAnimationAt;
 
 	public SpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
 	{
@@ -62,6 +71,17 @@ public class SpawnedObject {
 
 		// set to initial spawn-point
 		object.setLocation(spawnPoint.getLocalPoint(client), spawnPoint.getPlane());
+
+		// initialize expiry if set via spawn properties
+		EbsRandomRange durationMs = spawn.durationMs;
+		if (durationMs != null)
+		{
+			int randomDurationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(durationMs, 0,0);
+			expiredAt = Instant.now().plusMillis(randomDurationMs);
+		}
+
+		// reset the animations to it will immediately show the idle animation if available
+		resetAnimation();
 	}
 
 	public void rotateTowards(LocalPoint targetPoint)
@@ -194,5 +214,21 @@ public class SpawnedObject {
 		// de-activate and re-activate again to force re-render
 		hide();
 		show();
+	}
+
+	public void updateLastRandomAnimationAt()
+	{
+		lastRandomAnimationAt = Instant.now();
+	}
+
+	public void registerRandomAnimation()
+	{
+		randomAnimationCounter += 1;
+		updateLastRandomAnimationAt();
+	}
+
+	public boolean isExpired()
+	{
+		return expiredAt != null && Instant.now().isAfter(expiredAt);
 	}
 }

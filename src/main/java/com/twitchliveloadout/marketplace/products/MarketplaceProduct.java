@@ -65,7 +65,6 @@ public class MarketplaceProduct
 	private int spawnBehaviourCounter = 0;
 	private Instant lastInterfaceEffect;
 	private int interfaceEffectCounter = 0;
-	private HashMap<SpawnedObject, Instant> lastRandomAnimations = new HashMap();
 
 	/**
 	 * Expiration trackers
@@ -120,7 +119,7 @@ public class MarketplaceProduct
 	public void onClientTick()
 	{
 
-		//guard: make sure the product is active
+		// guard: make sure the product is active
 		if (!isActive)
 		{
 			return;
@@ -131,28 +130,66 @@ public class MarketplaceProduct
 
 	public void start()
 	{
-		showSpawnedObjects(spawnedObjects, 0);
+
+		// guard: skip when already active
+		if (isActive)
+		{
+			return;
+		}
+
+		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
+			spawnedObject.show();
+		});
 		isActive = true;
 	}
 
 	public void pause()
 	{
+
+		// guard: skip when already inactive
+		if (!isActive)
+		{
+			return;
+		}
+
 		isActive = false;
 	}
 
 	public void stop()
 	{
 		isActive = false;
-		hideSpawnedObjects(spawnedObjects, 0);
-		manager.getSpawnManager().deregisterSpawnedObjectPlacements(spawnedObjects);
+		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
+			hideSpawnedObject(spawnedObject, 0);
+			manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
+		});
 		spawnedObjects.clear();
+	}
+
+	/**
+	 * Spawns of this product can expire by itself as well, without the whole product
+	 * being expired. This handled removing those expired spawns while the product is active
+	 */
+	public void cleanExpiredSpawnedObjects()
+	{
+		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
+
+			// guard: check if the spawned object is not expired yet
+			if (!spawnedObject.isExpired())
+			{
+				return;
+			}
+
+			// hide and free up the spawn point for future spawns
+			hideSpawnedObject(spawnedObject, 0);
+			manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
+			spawnedObjects.remove(spawnedObject);
+		});
 	}
 
 	public boolean isExpired()
 	{
 		return expiredAt == null || Instant.now().isAfter(expiredAt);
 	}
-
 
 	public long getExpiresInMs()
 	{
@@ -221,13 +258,20 @@ public class MarketplaceProduct
 
 		for (SpawnedObject spawnedObject : spawnedObjects)
 		{
-			Instant lastRandomAnimationAt = lastRandomAnimations.get(spawnedObject);
+			Instant lastRandomAnimationAt = spawnedObject.getLastRandomAnimationAt();
 			EbsSpawn spawn = spawnedObject.getSpawn();
 			EbsInterval randomInterval = spawn.randomAnimationInterval;
 			ArrayList<EbsAnimation> randomAnimations = spawn.randomAnimations;
 
 			// guard: make sure there is a valid interval and animation
 			if (randomInterval == null || randomAnimations == null || randomAnimations.size() <= 0)
+			{
+				continue;
+			}
+
+			// guard: check if the max repeat amount is exceeded
+			// NOTE: -1 repeat amount if infinity!
+			if (randomInterval.repeatAmount >= 0 && spawnedObject.getRandomAnimationCounter() >= randomInterval.repeatAmount)
 			{
 				continue;
 			}
@@ -239,7 +283,7 @@ public class MarketplaceProduct
 			}
 
 			// update the last time it was attempted too roll and execute a random animation
-			lastRandomAnimations.put(spawnedObject, now);
+			spawnedObject.updateLastRandomAnimationAt();
 
 			// guard: skip when this is the first time the interval is triggered!
 			// this prevents the random animation to instantly be triggered on spawn
@@ -258,11 +302,15 @@ public class MarketplaceProduct
 			EbsAnimation randomAnimation = MarketplaceRandomizers.getRandomEntryFromList(randomAnimations);
 
 			// trigger the animations on this single spawned object
-			CopyOnWriteArrayList<SpawnedObject> animatedSpawnedObjects = new CopyOnWriteArrayList();
-			animatedSpawnedObjects.add(spawnedObject);
-			triggerAnimation(animatedSpawnedObjects, randomAnimation, 0);
+			triggerAnimation(
+				spawnedObject,
+				randomAnimation,
+				0,
+				null
+			);
 
-			// TODO: increase the total amount it was triggered and check against max repeat amount.
+			// increase the counter that will be used to check if the max repeat count is reached
+			spawnedObject.registerRandomAnimation();
 		}
 	}
 
@@ -285,6 +333,11 @@ public class MarketplaceProduct
 		if (spawnInterval == null)
 		{
 			spawnInterval = new EbsInterval();
+
+			// when the spawn interval is not set it can only trigger once
+			// this makes the most sense in the JSON configuration of the product
+			// if no interval is set -> no repetition
+			spawnInterval.repeatAmount = 1;
 		}
 
 		int repeatAmount = spawnInterval.repeatAmount;
@@ -335,6 +388,7 @@ public class MarketplaceProduct
 			{
 				int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
 
+				// make sure spawning is on client thread for e.g. using client instance
 				manager.getPlugin().runOnClientThread(() -> {
 					triggerSpawn(spawn, spawnDelayMs);
 				});
@@ -354,9 +408,6 @@ public class MarketplaceProduct
 
 		Client client = manager.getClient();
 		SpawnManager spawnManager = manager.getSpawnManager();
-		CopyOnWriteArrayList<SpawnedObject> newSpawnedObjects = new CopyOnWriteArrayList();
-		CopyOnWriteArrayList<ModelData> newSpawnedModels = new CopyOnWriteArrayList();
-
 		EbsModelPlacement placement = spawn.modelPlacement;
 
 		// make sure there are valid placement parameters
@@ -442,29 +493,19 @@ public class MarketplaceProduct
 				spawnedObject.rotate(modelRotationDegrees);
 			}
 
-			// set the object to the model
+			// re-render after changes
 			spawnedObject.render();
 
-			// reset the animations to it will immediately show the idle animation if available
-			spawnedObject.resetAnimation();
+			// schedule showing of the object as it is initially hidden
+			showSpawnedObject(spawnedObject, spawnDelayMs);
 
-			// keep track of all the models and spawned objects that were placed
-			newSpawnedModels.add(modelData);
-			newSpawnedObjects.add(spawnedObject);
+			// register the objects to the product and manager to make the spawn point unavailable
+			spawnedObjects.add(spawnedObject);
+			spawnManager.registerSpawnedObjectPlacement(spawnedObject);
 		}
-
-		// trigger any animations played on show
-		triggerAnimation(newSpawnedObjects, spawn.showAnimation, spawnDelayMs);
-
-		// schedule showing of the objects
-		showSpawnedObjects(newSpawnedObjects, spawnDelayMs);
-
-		// register the objects to the product and manager to make the spawn point unavailable
-		spawnedObjects.addAll(newSpawnedObjects);
-		spawnManager.registerSpawnedObjectPlacements(newSpawnedObjects);
 	}
 
-	private void triggerAnimation(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, EbsAnimation animation, int baseDelayMs)
+	private void triggerAnimation(SpawnedObject spawnedObject, EbsAnimation animation, int baseDelayMs, ResetAnimationHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the animation is valid
@@ -473,24 +514,31 @@ public class MarketplaceProduct
 			return;
 		}
 
-		triggerModelAnimations(spawnedObjects, animation.modelAnimation, baseDelayMs);
+		triggerModelAnimation(spawnedObject, animation.modelAnimation, baseDelayMs, resetModelAnimationHandler);
 		triggerPlayerGraphic(animation.playerGraphic, baseDelayMs);
 		triggerPlayerAnimation(animation.playerAnimation, baseDelayMs);
 	}
 
-	private void triggerModelAnimations(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, EbsAnimationFrame animation, int baseDelayMs)
+	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, ResetAnimationHandler resetAnimationHandler)
 	{
+
+		// add default reset handler
+		if (resetAnimationHandler == null)
+		{
+			resetAnimationHandler = (resetDelayMs) -> {
+				resetAnimation(spawnedObject, resetDelayMs);
+			};
+		}
+
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
-			setAnimations(spawnedObjects, animationId, startDelayMs);
-		}, (resetDelayMs) -> {
-			resetAnimations(spawnedObjects, resetDelayMs);
-		});
+			setAnimation(spawnedObject, animationId, startDelayMs);
+		}, resetAnimationHandler);
 	}
 
 	private void triggerPlayerGraphic(EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (graphicId, startDelayMs) -> {
-			schedulePlayerGraphic(graphicId, startDelayMs);
+			setPlayerGraphic(graphicId, startDelayMs);
 		}, (resetDelayMs) -> {
 			// empty, no need to reset one-time graphic
 		});
@@ -499,7 +547,7 @@ public class MarketplaceProduct
 	private void triggerPlayerAnimation(EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
-			schedulePlayerAnimation(animationId, startDelayMs);
+			setPlayerAnimation(animationId, startDelayMs);
 		}, (resetDelayMs) -> {
 			// empty, no need to reset one-time animation
 		});
@@ -573,24 +621,23 @@ public class MarketplaceProduct
 		return spawnBehaviourOptions.get(0);
 	}
 
-	private void schedulePlayerGraphic(int graphicId, long delayMs)
+	private void setPlayerGraphic(int graphicId, long delayMs)
 	{
-		Client client = manager.getClient();
-		Player player = client.getLocalPlayer();
-
-		// guard: make sure the player is valid
-		if (player == null)
-		{
-			return;
-		}
-
-		manager.getPlugin().scheduleOnClientThread(() -> {
+		handlePlayer(delayMs, (player) -> {
 			player.setSpotAnimFrame(0);
 			player.setGraphic(graphicId);
-		}, delayMs);
+		});
 	}
 
-	private void schedulePlayerAnimation(int animationId, long delayMs)
+	private void setPlayerAnimation(int animationId, long delayMs)
+	{
+		handlePlayer(delayMs, (player) -> {
+			player.setAnimationFrame(0);
+			player.setAnimation(animationId);
+		});
+	}
+
+	private void handlePlayer(long delayMs, MarketplaceManager.PlayerHandler playerHandler)
 	{
 		Client client = manager.getClient();
 		Player player = client.getLocalPlayer();
@@ -602,46 +649,87 @@ public class MarketplaceProduct
 		}
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			player.setAnimationFrame(0);
-			player.setAnimation(animationId);
+			playerHandler.execute(player);
 		}, delayMs);
 	}
 
-	private void showSpawnedObjects(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, long delayMs)
+	/**
+	 * Schedule showing of a spawned object where it will trigger the show animation if available
+	 */
+	private void showSpawnedObject(SpawnedObject spawnedObject, long delayMs)
 	{
-		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
+		handleSpawnedObject(spawnedObject, delayMs, () -> {
+			EbsAnimation showAnimation = spawnedObject.getSpawn().showAnimation;
+
+			// trigger animations and graphics on show
+			triggerAnimation(
+				spawnedObject,
+				showAnimation,
+				0,
+				null
+			);
+
 			spawnedObject.show();
 		});
 	}
 
-	private void hideSpawnedObjects(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, long delayMs)
+	/**
+	 * Schedule hiding of a spawned object where it will trigger the hide animation if available
+	 */
+	private void hideSpawnedObject(SpawnedObject spawnedObject, long delayMs)
 	{
-		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
-			spawnedObject.hide();
+		handleSpawnedObject(spawnedObject, delayMs, () -> {
+			EbsAnimation hideAnimation = spawnedObject.getSpawn().hideAnimation;
+
+			// guard: check if the hide animation is set
+			if (hideAnimation == null)
+			{
+				spawnedObject.hide();
+				return;
+			}
+
+			// trigger the animation and at the end of the animation
+			// hide the object
+			triggerAnimation(
+				spawnedObject,
+				hideAnimation,
+				0,
+				(resetDelayMs) -> {
+					handleSpawnedObject(spawnedObject, resetDelayMs, () -> {
+						spawnedObject.hide();
+					});
+				}
+			);
 		});
 	}
 
-	private void setAnimations(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, int animationId, long delayMs)
+	/**
+	 * Schedule a set animation for a spawned object
+	 */
+	private void setAnimation(SpawnedObject spawnedObject, int animationId, long delayMs)
 	{
-		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
+		handleSpawnedObject(spawnedObject, delayMs, () -> {
 			spawnedObject.setAnimation(animationId, true);
 		});
 	}
 
-	private void resetAnimations(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, long delayMs)
+	/**
+	 * Schedule a reset of animation for a spawned object
+	 */
+	private void resetAnimation(SpawnedObject spawnedObject, long delayMs)
 	{
-		handleSpawnedObjects(spawnedObjects, delayMs, (SpawnedObject spawnedObject) -> {
+		handleSpawnedObject(spawnedObject, delayMs, () -> {
 			spawnedObject.resetAnimation();
 		});
 	}
 
 	/**
-	 * Shortcut to loop all the spawned objects
+	 * Shortcut to loop all the spawned objects and handle thhem with a delay on the client thread.
 	 */
 	private void handleSpawnedObjects(CopyOnWriteArrayList<SpawnedObject> spawnedObjects, long delayMs, MarketplaceManager.SpawnedObjectHandler handler)
 	{
-		// guard: check if the collection  is valid
-		if (spawnedObjects == null)
+		// guard: check if the collection is valid
+		if (spawnedObjects == null || spawnedObjects.size() <= 0)
 		{
 			return;
 		}
@@ -657,6 +745,22 @@ public class MarketplaceProduct
 				SpawnedObject spawnedObject = (SpawnedObject) iterator.next();
 				handler.execute(spawnedObject);
 			}
+		}, delayMs);
+	}
+
+	/**
+	 * Shortcut to handle a spawned object on the client thread with a delay
+	 */
+	private void handleSpawnedObject(SpawnedObject spawnedObject, long delayMs, MarketplaceManager.EmptyHandler handler)
+	{
+		// guard: check if the collection is valid
+		if (spawnedObject == null)
+		{
+			return;
+		}
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			handler.execute();
 		}, delayMs);
 	}
 }

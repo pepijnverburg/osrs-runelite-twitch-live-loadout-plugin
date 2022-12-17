@@ -1,6 +1,7 @@
 package com.twitchliveloadout.marketplace;
 
 public class MarketplaceConstants {
+	public static final int UPDATE_ACTIVE_PRODUCTS_DELAY_MS = 200;
 	public static final int TRANSACTION_CHECKED_AT_OFFSET_MS = 10 * 1000;
 	public static final int TRANSACTION_DELAY_CORRECTION_MS = 2 * 1000;
 
