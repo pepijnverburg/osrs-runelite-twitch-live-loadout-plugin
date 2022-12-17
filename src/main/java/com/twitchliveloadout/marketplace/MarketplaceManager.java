@@ -26,8 +26,6 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.TRANSACTION_CHECKED_AT_OFFSET_MS;
-
 @Slf4j
 public class MarketplaceManager {
 
@@ -192,7 +190,9 @@ public class MarketplaceManager {
 			log.info("Streamer product name: "+ streamerProduct.name);
 			log.info("Ebs product ID: "+ ebsProduct.id);
 
-			// remove the transaction, now it is going to be handled
+			// remove the transaction now it is going to be handled
+			// we do this after the validation of all products
+			// to queue transactions that might receive valid product data later
 			queuedTransactions.remove(transaction);
 
 			// create a new marketplace product where all the other products
@@ -207,6 +207,16 @@ public class MarketplaceManager {
 
 			log.info("The marketplace product is configured for the time-frame:");
 			log.info("It starts at: "+ newProduct.getStartedAt());
+
+			// guard: check if the product is already expired
+			// skipping it here is a bit more efficient, because there is a chance
+			// some of the behaviours are triggered right before removing it immediately.
+			if (newProduct.isExpired())
+			{
+				log.info("It is skipped, because it has already expired at: "+ newProduct.getExpiredAt());
+				continue;
+			}
+
 			log.info("It expires at: "+ newProduct.getExpiredAt() +", which is in "+ newProduct.getExpiresInMs() +"ms");
 
 			// register this product to be active, which is needed to check
