@@ -51,6 +51,7 @@ public class SpawnedObject {
 	private double currentScale = -1;
 	private double currentRotationDegrees = 0;
 	private int currentAnimationId;
+	private Instant lockAnimationUntil;
 
 	@Getter
 	private int randomAnimationCounter = 0;
@@ -153,6 +154,16 @@ public class SpawnedObject {
 		object.setShouldLoop(shouldLoop);
 		object.setAnimation(animation);
 		currentAnimationId = animationId;
+	}
+
+	public boolean isAnimationLocked()
+	{
+		return (lockAnimationUntil != null && Instant.now().isBefore(lockAnimationUntil));
+	}
+
+	public void lockAnimationUntil(long durationMs)
+	{
+		lockAnimationUntil = Instant.now().plusMillis(durationMs);
 	}
 
 	public void resetAnimation()

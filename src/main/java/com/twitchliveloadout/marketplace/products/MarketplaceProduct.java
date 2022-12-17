@@ -318,6 +318,7 @@ public class MarketplaceProduct
 				spawnedObject,
 				randomAnimation,
 				0,
+				false,
 				null
 			);
 
@@ -517,7 +518,7 @@ public class MarketplaceProduct
 		}
 	}
 
-	private void triggerAnimation(SpawnedObject spawnedObject, EbsAnimation animation, int baseDelayMs, ResetAnimationHandler resetModelAnimationHandler)
+	private void triggerAnimation(SpawnedObject spawnedObject, EbsAnimation animation, int baseDelayMs, boolean forceModelAnimation, ResetAnimationHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the animation is valid
@@ -526,12 +527,12 @@ public class MarketplaceProduct
 			return;
 		}
 
-		triggerModelAnimation(spawnedObject, animation.modelAnimation, baseDelayMs, resetModelAnimationHandler);
+		triggerModelAnimation(spawnedObject, animation.modelAnimation, baseDelayMs, forceModelAnimation, resetModelAnimationHandler);
 		triggerPlayerGraphic(animation.playerGraphic, baseDelayMs);
 		triggerPlayerAnimation(animation.playerAnimation, baseDelayMs);
 	}
 
-	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, ResetAnimationHandler resetAnimationHandler)
+	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetAnimationHandler resetAnimationHandler)
 	{
 
 		// add default reset handler
@@ -542,6 +543,17 @@ public class MarketplaceProduct
 			};
 		}
 
+		// guard: skip when the animation is locked
+		// NOTE: some animations we want to force, such as hide animations
+		if (!force && spawnedObject.isAnimationLocked())
+		{
+			return;
+		}
+
+		// add an animation lock to prevent animations to override each other
+		spawnedObject.lockAnimationUntil(animation.durationMs);
+
+		// perform the actual animation along with a possible reset after it is done
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
 			setAnimation(spawnedObject, animationId, startDelayMs);
 		}, resetAnimationHandler);
@@ -646,6 +658,7 @@ public class MarketplaceProduct
 				spawnedObject,
 				showAnimation,
 				0,
+				true,
 				null
 			);
 
@@ -674,6 +687,7 @@ public class MarketplaceProduct
 				spawnedObject,
 				hideAnimation,
 				0,
+				true,
 				(resetDelayMs) -> {
 					handleSpawnedObject(spawnedObject, resetDelayMs, () -> {
 						spawnedObject.hide();
