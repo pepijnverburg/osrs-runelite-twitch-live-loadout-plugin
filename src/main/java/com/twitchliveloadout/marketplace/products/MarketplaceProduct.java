@@ -157,12 +157,24 @@ public class MarketplaceProduct
 
 	public void stop()
 	{
+		AnimationManager animationManager = manager.getAnimationManager();
+
+		// start with disabling all behaviours
 		isActive = false;
+
+		// clean up all the spawned objects
 		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
 			hideSpawnedObject(spawnedObject, 0);
 			manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
 		});
 		spawnedObjects.clear();
+
+		// revert to the original player animations if these are the movement
+		// animations that are currently active, because other products could've taken over
+		if (animationManager.isCurrentMovementAnimations(ebsProduct.behaviour.playerAnimations))
+		{
+			animationManager.revertAnimations();
+		}
 	}
 
 	/**

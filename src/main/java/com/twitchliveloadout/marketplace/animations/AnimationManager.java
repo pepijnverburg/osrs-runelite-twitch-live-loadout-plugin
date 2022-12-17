@@ -31,7 +31,7 @@ public class AnimationManager {
 	{
 		Player player = client.getLocalPlayer();
 
-		// when no effect is active skip
+		// guard: when no effect is active skip
 		if (currentMovementAnimations == null)
 		{
 			return;
@@ -86,6 +86,16 @@ public class AnimationManager {
 				animation.setAnimation(player, originalAnimationId);
 			}
 		});
+	}
+
+	public boolean isCurrentMovementAnimations(EbsMovementAnimations movementAnimations)
+	{
+		if (movementAnimations == null)
+		{
+			return false;
+		}
+
+		return movementAnimations.equals(currentMovementAnimations);
 	}
 
 	public int getCurrentMovementAnimation(ActorAnimation animation)
