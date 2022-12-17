@@ -174,6 +174,12 @@ public class SpawnManager {
 			// remove from the existing spawned objects
 			CopyOnWriteArrayList<SpawnedObject> existingObjects = objectPlacements.get(worldPoint);
 			existingObjects.remove(spawnedObject);
+
+			// remove the placement if empty so this world point is free again
+			if (existingObjects.size() <= 0)
+			{
+				objectPlacements.remove(worldPoint);
+			}
 		}
 	}
 
