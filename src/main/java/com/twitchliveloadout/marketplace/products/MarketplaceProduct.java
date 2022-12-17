@@ -550,7 +550,7 @@ public class MarketplaceProduct
 	private void triggerPlayerGraphic(EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (graphicId, startDelayMs) -> {
-			setPlayerGraphic(graphicId, startDelayMs);
+			manager.getAnimationManager().setPlayerGraphic(graphicId, startDelayMs, animation.durationMs);
 		}, (resetDelayMs) -> {
 			// empty, no need to reset one-time graphic
 		});
@@ -559,7 +559,7 @@ public class MarketplaceProduct
 	private void triggerPlayerAnimation(EbsAnimationFrame animation, int baseDelayMs)
 	{
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
-			setPlayerAnimation(animationId, startDelayMs);
+			manager.getAnimationManager().setPlayerAnimation(animationId, startDelayMs, animation.durationMs);
 		}, (resetDelayMs) -> {
 			// empty, no need to reset one-time animation
 		});
@@ -631,38 +631,6 @@ public class MarketplaceProduct
 
 		// get the first is no valid one is found
 		return spawnBehaviourOptions.get(0);
-	}
-
-	private void setPlayerGraphic(int graphicId, long delayMs)
-	{
-		handlePlayer(delayMs, (player) -> {
-			player.setSpotAnimFrame(0);
-			player.setGraphic(graphicId);
-		});
-	}
-
-	private void setPlayerAnimation(int animationId, long delayMs)
-	{
-		handlePlayer(delayMs, (player) -> {
-			player.setAnimationFrame(0);
-			player.setAnimation(animationId);
-		});
-	}
-
-	private void handlePlayer(long delayMs, MarketplaceManager.PlayerHandler playerHandler)
-	{
-		Client client = manager.getClient();
-		Player player = client.getLocalPlayer();
-
-		// guard: make sure the player is valid
-		if (player == null)
-		{
-			return;
-		}
-
-		manager.getPlugin().scheduleOnClientThread(() -> {
-			playerHandler.execute(player);
-		}, delayMs);
 	}
 
 	/**

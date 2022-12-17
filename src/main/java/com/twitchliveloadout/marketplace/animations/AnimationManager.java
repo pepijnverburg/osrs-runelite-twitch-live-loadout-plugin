@@ -1,6 +1,7 @@
 package com.twitchliveloadout.marketplace.animations;
 
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.products.EbsMovementAnimations;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 
+import java.time.Instant;
 import java.util.HashMap;
 
 @Slf4j
@@ -20,6 +22,9 @@ public class AnimationManager {
 	private EbsMovementAnimations currentMovementAnimations;
 
 	private final HashMap<ActorAnimation, Integer> originalPlayerMovementAnimations = new HashMap<>();
+
+	private Instant animationLockedUntil;
+	private Instant graphicLockedUntil;
 
 	public AnimationManager(TwitchLiveLoadoutPlugin plugin, Client client)
 	{
@@ -62,6 +67,62 @@ public class AnimationManager {
 		{
 			originalPlayerMovementAnimations.put(animation, animation.getAnimation(player));
 		}
+	}
+
+	public void setPlayerGraphic(int graphicId, long delayMs, long durationMs)
+	{
+		handleLockedPlayerEffect(
+			delayMs,
+			durationMs,
+			graphicLockedUntil,
+			() -> {
+				graphicLockedUntil = Instant.now().plusMillis(delayMs + durationMs);
+			},
+			(player) -> {
+				player.setSpotAnimFrame(0);
+				player.setGraphic(graphicId);
+			}
+		);
+	}
+
+	public void setPlayerAnimation(int animationId, long delayMs, long durationMs)
+	{
+		handleLockedPlayerEffect(
+			delayMs,
+			durationMs,
+			animationLockedUntil,
+			() -> {
+				animationLockedUntil = Instant.now().plusMillis(delayMs + durationMs);
+			},
+			(player) -> {
+				player.setAnimationFrame(0);
+				player.setAnimation(animationId);
+			}
+		);
+	}
+
+	private void handleLockedPlayerEffect(long delayMs, long durationMs, Instant lockedUntil, MarketplaceManager.EmptyHandler updateLockHandler, MarketplaceManager.PlayerHandler playerHandler)
+	{
+		Player player = client.getLocalPlayer();
+
+		// guard: make sure the player is valid
+		if (player == null)
+		{
+			return;
+		}
+
+		boolean isLocked = (lockedUntil != null && Instant.now().isBefore(lockedUntil));
+
+		// guard: skip the animation request if we are not yet done with animating the previous one
+		if (isLocked)
+		{
+			return;
+		}
+
+		updateLockHandler.execute();
+		plugin.scheduleOnClientThread(() -> {
+			playerHandler.execute(player);
+		}, delayMs);
 	}
 
 	public void revertAnimations()
