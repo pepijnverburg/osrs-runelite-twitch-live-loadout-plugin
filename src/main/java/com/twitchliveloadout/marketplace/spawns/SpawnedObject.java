@@ -52,10 +52,10 @@ public class SpawnedObject {
 	private Instant lockAnimationUntil;
 
 	@Getter
-	private int randomAnimationCounter = 0;
+	private int randomVisualEffectCounter = 0;
 
 	@Getter
-	private Instant lastRandomAnimationAt;
+	private Instant lastRandomVisualEffectAt;
 
 	public SpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
 	{
@@ -246,15 +246,15 @@ public class SpawnedObject {
 		object.setLocation(localPoint, plane);
 	}
 
-	public void updateLastRandomAnimationAt()
+	public void upateLastRandomVisualEffectAt()
 	{
-		lastRandomAnimationAt = Instant.now();
+		lastRandomVisualEffectAt = Instant.now();
 	}
 
-	public void registerRandomAnimation()
+	public void registerRandomVisualEffect()
 	{
-		randomAnimationCounter += 1;
-		updateLastRandomAnimationAt();
+		randomVisualEffectCounter += 1;
+		upateLastRandomVisualEffectAt();
 	}
 
 	public boolean isExpired()

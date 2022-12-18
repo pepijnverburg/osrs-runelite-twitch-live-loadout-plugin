@@ -1,6 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
-import com.twitchliveloadout.marketplace.MarketplaceConstants;
+import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -62,10 +62,12 @@ public class MarketplaceProduct
 	/**
 	 * Long-term interval trackers
 	 */
-	private Instant lastSpawnBehaviour;
+	private Instant lastSpawnBehaviourAt;
 	private int spawnBehaviourCounter = 0;
-	private Instant lastInterfaceEffect;
+	private Instant lastInterfaceEffectAt;
 	private int interfaceEffectCounter = 0;
+	private Instant lastNotificationAt;
+	private int notificationCounter = 0;
 
 	/**
 	 * Expiration trackers
@@ -110,9 +112,10 @@ public class MarketplaceProduct
 			return;
 		}
 
+		handleNotifications();
 		handleNewSpawns();
 		handleSpawnLocations();
-		handleSpawnRandomAnimations();
+		handleSpawnRandomVisualEffects();
 		handleMovementAnimations();
 //		handlePlayerEquipment();
 //		handleInterfaceEffect();
@@ -299,10 +302,11 @@ public class MarketplaceProduct
 
 			String followType = modelPlacement.followType;
 			String validFollowType = (followType == null ? NONE_FOLLOW_TYPE : followType);
-			int maxRadius = modelPlacement.radius;
+			EbsRandomRange radiusRange = modelPlacement.radiusRange;
+			int maxRadius = radiusRange.max.intValue();
 
 			// this follow type makes sure that the spawned object is always in view
-			if (validFollowType.equals(IN_SCENE_FOLLOW_TYPE)) {
+			if (validFollowType.equals(IN_RADIUS_FOLLOW_TYPE)) {
 
 				// guard: skip this behaviour if it is already in the scene
 				if (spawnedObject.isInView(maxRadius))
@@ -351,7 +355,7 @@ public class MarketplaceProduct
 		}
 	}
 
-	private void handleSpawnRandomAnimations()
+	private void handleSpawnRandomVisualEffects()
 	{
 		Instant now = Instant.now();
 		Iterator spawnedObjectIterator = spawnedObjects.iterator();
@@ -359,41 +363,41 @@ public class MarketplaceProduct
 		while (spawnedObjectIterator.hasNext())
 		{
 			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
-			Instant lastRandomAnimationAt = spawnedObject.getLastRandomAnimationAt();
+			Instant lastRandomVisualEffectAt = spawnedObject.getLastRandomVisualEffectAt();
 			EbsSpawn spawn = spawnedObject.getSpawn();
-			EbsInterval randomInterval = spawn.randomAnimationInterval;
-			ArrayList<EbsAnimation> randomAnimations = spawn.randomAnimations;
+			EbsInterval randomInterval = spawn.randomVisualEffectsInterval;
+			ArrayList<EbsVisualEffects> randomVisualEffectsOptions = spawn.randomVisualEffectsOptions;
 
 			// guard: make sure there is a valid interval and animation
-			if (randomInterval == null || randomAnimations == null || randomAnimations.size() <= 0)
+			if (randomInterval == null || randomVisualEffectsOptions == null || randomVisualEffectsOptions.size() <= 0)
 			{
 				continue;
 			}
 
 			// guard: check if the max repeat amount is exceeded
 			// NOTE: -1 repeat amount if infinity!
-			if (randomInterval.repeatAmount >= 0 && spawnedObject.getRandomAnimationCounter() >= randomInterval.repeatAmount)
+			if (randomInterval.repeatAmount >= 0 && spawnedObject.getRandomVisualEffectCounter() >= randomInterval.repeatAmount)
 			{
 				continue;
 			}
 
 			// guard: check if enough time has passed
-			if (lastRandomAnimationAt != null && lastRandomAnimationAt.plusMillis(randomInterval.delayMs).isAfter(now))
+			if (lastRandomVisualEffectAt != null && lastRandomVisualEffectAt.plusMillis(randomInterval.delayMs).isAfter(now))
 			{
 				continue;
 			}
 
-			// update the last time it was attempted too roll and execute a random animation
-			spawnedObject.updateLastRandomAnimationAt();
+			// update the last time it was attempted too roll and execute a random visual effect
+			spawnedObject.upateLastRandomVisualEffectAt();
 
 			// guard: skip when this is the first time the interval is triggered!
-			// this prevents the random animation to instantly be triggered on spawn
-			if (lastRandomAnimationAt == null)
+			// this prevents the random visual effect to instantly be triggered on spawn
+			if (lastRandomVisualEffectAt == null)
 			{
 				continue;
 			}
 
-			// guard: skip this animation when not rolled, while setting the timer before this roll
+			// guard: skip this visual effect when not rolled, while setting the timer before this roll
 			if (!MarketplaceRandomizers.rollChance(randomInterval.chance))
 			{
 				continue;
@@ -408,20 +412,59 @@ public class MarketplaceProduct
 			}
 
 			// select a random entry from all the candidates
-			EbsAnimation randomAnimation = MarketplaceRandomizers.getRandomEntryFromList(randomAnimations);
+			EbsVisualEffects randomVisualEffects = MarketplaceRandomizers.getRandomEntryFromList(randomVisualEffectsOptions);
 
 			// trigger the animations on this single spawned object
-			triggerAnimation(
+			triggerVisualEffects(
 				spawnedObject,
-				randomAnimation,
+					randomVisualEffects,
 				0,
 				false,
 				null
 			);
 
 			// increase the counter that will be used to check if the max repeat count is reached
-			spawnedObject.registerRandomAnimation();
+			spawnedObject.registerRandomVisualEffect();
 		}
+	}
+
+	private void handleNotifications()
+	{
+		ArrayList<EbsNotification> notifications = ebsProduct.behaviour.notifications;
+		NotificationManager notificationManager = manager.getNotificationManager();
+
+		// guard: only handle notifications if valid
+		if (notifications == null)
+		{
+			return;
+		}
+
+		// guard: check if notifications are not send out yet
+		if (lastNotificationAt != null)
+		{
+			return;
+		}
+
+		if (!notificationManager.canSendNotification())
+		{
+			return;
+		}
+
+		for (EbsNotification notification: notifications)
+		{
+			String messageType = notification.messageType;
+
+			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+			{
+				notificationManager.sendChatNotification(this);
+			}
+			else if (OVERHEAD_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+			{
+				notificationManager.sendOverheadNotification(this);
+			}
+		}
+
+		lastNotificationAt = Instant.now();
 	}
 
 	private void handleNewSpawns()
@@ -460,7 +503,7 @@ public class MarketplaceProduct
 		}
 
 		// guard: check if the interval has not passed
-		if (lastSpawnBehaviour != null && lastSpawnBehaviour.plusMillis(spawnInterval.delayMs).isAfter(now))
+		if (lastSpawnBehaviourAt != null && lastSpawnBehaviourAt.plusMillis(spawnInterval.delayMs).isAfter(now))
 		{
 			return;
 		}
@@ -477,7 +520,7 @@ public class MarketplaceProduct
 
 		// an option is selected so we can change the timer and count
 		log.info("Executing spawn behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
-		lastSpawnBehaviour = now;
+		lastSpawnBehaviourAt = now;
 		spawnBehaviourCounter += 1;
 
 		// randomize the amount of spawns
@@ -528,7 +571,7 @@ public class MarketplaceProduct
 		}
 
 		// roll a random set of model IDs
-		EbsModelSet modelSet = MarketplaceRandomizers.getRandomEntryFromList(spawn.modelSets);
+		EbsModelSet modelSet = MarketplaceRandomizers.getRandomEntryFromList(spawn.modelSetOptions);
 
 		// guard: make sure the selected model is valid
 		if (modelSet == null || modelSet.modelIds == null)
@@ -595,10 +638,10 @@ public class MarketplaceProduct
 		}
 
 		SpawnPoint spawnPoint = null;
-		Integer radius = placement.radius;
+		EbsRandomRange radiusRange = placement.radiusRange;
+		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, 0d, DEFAULT_RADIUS);
 		String radiusType = placement.radiusType;
 		String locationType = placement.locationType;
-		int validatedRadius = (radius == null) ? DEFAULT_RADIUS : radius;
 		String validatedRadiusType = (radiusType == null) ? DEFAULT_RADIUS_TYPE : radiusType;
 		String validatedLocationType = (locationType == null) ? CURRENT_TILE_LOCATION_TYPE : locationType;
 		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
@@ -615,29 +658,29 @@ public class MarketplaceProduct
 		}
 
 		if (OUTWARD_RADIUS_TYPE.equals(validatedRadiusType)) {
-			spawnPoint = spawnManager.getOutwardSpawnPoint(validatedRadius, referenceWorldPoint);
+			spawnPoint = spawnManager.getOutwardSpawnPoint(radius, referenceWorldPoint);
 		} else {
-			spawnPoint = spawnManager.getSpawnPoint(validatedRadius, referenceWorldPoint);
+			spawnPoint = spawnManager.getSpawnPoint(radius, referenceWorldPoint);
 		}
 
 		return spawnPoint;
 	}
 
-	private void triggerAnimation(SpawnedObject spawnedObject, EbsAnimation animation, int baseDelayMs, boolean forceModelAnimation, ResetAnimationHandler resetModelAnimationHandler)
+	private void triggerVisualEffects(SpawnedObject spawnedObject, EbsVisualEffects visualEffects, int baseDelayMs, boolean forceModelAnimation, ResetVisualEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the animation is valid
-		if (animation == null)
+		if (visualEffects == null)
 		{
 			return;
 		}
 
-		triggerModelAnimation(spawnedObject, animation.modelAnimation, baseDelayMs, forceModelAnimation, resetModelAnimationHandler);
-		triggerPlayerGraphic(animation.playerGraphic, baseDelayMs);
-		triggerPlayerAnimation(animation.playerAnimation, baseDelayMs);
+		triggerModelAnimation(spawnedObject, visualEffects.modelAnimation, baseDelayMs, forceModelAnimation, resetModelAnimationHandler);
+		triggerPlayerGraphic(visualEffects.playerGraphic, baseDelayMs);
+		triggerPlayerAnimation(visualEffects.playerAnimation, baseDelayMs);
 	}
 
-	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetAnimationHandler resetAnimationHandler)
+	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetVisualEffectHandler resetAnimationHandler)
 	{
 
 		// add default reset handler
@@ -659,20 +702,15 @@ public class MarketplaceProduct
 		spawnedObject.lockAnimationUntil(animation.durationMs);
 
 		// perform the actual animation along with a possible reset after it is done
-		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
-			if (manager.getConfig().devObjectSpawnAnimationId() > 0)
-			{
-				animationId = manager.getConfig().devObjectSpawnAnimationId();
-			}
-
-			setAnimation(spawnedObject, animationId, startDelayMs);
+		handleVisualEffectFrame(animation, baseDelayMs, (startDelayMs) -> {
+			setAnimation(spawnedObject, animation.id, startDelayMs);
 		}, resetAnimationHandler);
 	}
 
-	private void triggerPlayerGraphic(EbsAnimationFrame animation, int baseDelayMs)
+	private void triggerPlayerGraphic(EbsGraphicFrame graphic, int baseDelayMs)
 	{
-		handleAnimationFrame(animation, baseDelayMs, (graphicId, startDelayMs) -> {
-			manager.getAnimationManager().setPlayerGraphic(graphicId, startDelayMs, animation.durationMs);
+		handleVisualEffectFrame(graphic, baseDelayMs, (startDelayMs) -> {
+			manager.getAnimationManager().setPlayerGraphic(graphic.id, graphic.height, startDelayMs, graphic.durationMs);
 		}, (resetDelayMs) -> {
 			// empty, no need to reset one-time graphic
 		});
@@ -680,48 +718,49 @@ public class MarketplaceProduct
 
 	private void triggerPlayerAnimation(EbsAnimationFrame animation, int baseDelayMs)
 	{
-		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
-			manager.getAnimationManager().setPlayerAnimation(animationId, startDelayMs, animation.durationMs);
+		handleVisualEffectFrame(animation, baseDelayMs, (startDelayMs) -> {
+			manager.getAnimationManager().setPlayerAnimation(animation.id, startDelayMs, animation.durationMs);
 		}, (resetDelayMs) -> {
 			// empty, no need to reset one-time animation
 		});
 	}
 
-	private void handleAnimationFrame(EbsAnimationFrame animation, int baseDelayMs, StartAnimationHandler startHandler, ResetAnimationHandler resetHandler)
+	private void handleVisualEffectFrame(EbsVisualEffectFrame visualEffect, int baseDelayMs, StartVisualEffectHandler startHandler, ResetVisualEffectHandler resetHandler)
 	{
 
 		// guard: make sure the animation is valid
-		if (animation == null)
+		if (visualEffect == null)
 		{
 			return;
 		}
 
-		// guard: make sure there is an animation ID
-		if (animation.id < 0)
+		int visualEffectId = visualEffect.id;
+
+		// guard: make sure there is an visual effect ID
+		if (visualEffectId < 0)
 		{
 			return;
 		}
 
-		int animationId = animation.id;
-		int delayMs = animation.delayMs;
-		int durationMs = animation.durationMs;
+		int delayMs = visualEffect.delayMs;
+		int durationMs = visualEffect.durationMs;
 		int startDelayMs = baseDelayMs + delayMs;
 
-		// schedule to start the animation
-		startHandler.execute(animationId, startDelayMs);
+		// schedule to start the visual effect
+		startHandler.execute(startDelayMs);
 
-		// only reset animations when max duration
+		// only reset visual effects when there is a max duration
 		if (durationMs >= 0) {
 			int resetDelayMs = startDelayMs + durationMs;
 			resetHandler.execute(resetDelayMs);
 		}
 	}
 
-	private interface StartAnimationHandler {
-		public void execute(int animationId, int delayMs);
+	private interface StartVisualEffectHandler {
+		public void execute(int delayMs);
 	}
 
-	private interface ResetAnimationHandler {
+	private interface ResetVisualEffectHandler {
 		public void execute(int delayMs);
 	}
 
@@ -756,17 +795,17 @@ public class MarketplaceProduct
 	}
 
 	/**
-	 * Schedule showing of a spawned object where it will trigger the show animation if available
+	 * Schedule showing of a spawned object where it will trigger the show visual effects if available
 	 */
 	private void showSpawnedObject(SpawnedObject spawnedObject, long delayMs)
 	{
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
-			EbsAnimation showAnimation = spawnedObject.getSpawn().showAnimation;
+			EbsVisualEffects showVisualEffects = spawnedObject.getSpawn().showVisualEffects;
 
-			// trigger animations and graphics on show
-			triggerAnimation(
+			// trigger visual effects and graphics on show
+			triggerVisualEffects(
 				spawnedObject,
-				showAnimation,
+				showVisualEffects,
 				0,
 				true,
 				null
@@ -777,25 +816,24 @@ public class MarketplaceProduct
 	}
 
 	/**
-	 * Schedule hiding of a spawned object where it will trigger the hide animation if available
+	 * Schedule hiding of a spawned object where it will trigger the hide visual effects if available
 	 */
 	private void hideSpawnedObject(SpawnedObject spawnedObject, long delayMs)
 	{
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
-			EbsAnimation hideAnimation = spawnedObject.getSpawn().hideAnimation;
+			EbsVisualEffects hideVisualEffects = spawnedObject.getSpawn().hideVisualEffects;
 
 			// guard: check if the hide animation is set
-			if (hideAnimation == null)
+			if (hideVisualEffects == null)
 			{
 				spawnedObject.hide();
 				return;
 			}
 
-			// trigger the animation and at the end of the animation
-			// hide the object
-			triggerAnimation(
+			// trigger the visual effects and at the end hide the object
+			triggerVisualEffects(
 				spawnedObject,
-				hideAnimation,
+				hideVisualEffects,
 				0,
 				true,
 				(resetDelayMs) -> {

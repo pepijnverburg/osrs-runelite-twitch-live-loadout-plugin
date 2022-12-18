@@ -23,9 +23,7 @@ public class MarketplaceRandomizers {
 
 	public static double getValidRandomNumberByRange(EbsRandomRange randomRange, double defaultMin, double defaultMax)
 	{
-		EbsRandomRange validRandomRange = new EbsRandomRange();
-		validRandomRange.min = defaultMin;
-		validRandomRange.max = defaultMax;
+		EbsRandomRange validRandomRange = new EbsRandomRange(defaultMin, defaultMax);
 
 		if (randomRange != null) {
 			if (randomRange.min != null) {

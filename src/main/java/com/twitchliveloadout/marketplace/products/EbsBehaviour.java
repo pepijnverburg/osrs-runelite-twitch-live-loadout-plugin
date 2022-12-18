@@ -9,4 +9,5 @@ public class EbsBehaviour {
 	public EbsPlayerEquipment playerEquipment;
 	public EbsInterval spawnInterval;
 	public ArrayList<EbsSpawnOption> spawnOptions;
+	public ArrayList<EbsNotification> notifications;
 }

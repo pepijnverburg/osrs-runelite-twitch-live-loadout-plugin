@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
+import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.products.*;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PlayerChanged;
+import net.runelite.client.chat.ChatMessageManager;
 import okhttp3.Response;
 
 import java.time.Instant;
@@ -50,6 +52,9 @@ public class MarketplaceManager {
 	@Getter
 	private final TransmogManager transmogManager;
 
+	@Getter
+	private final NotificationManager notificationManager;
+
 	/**
 	 * List to keep track of all the active products
 	 */
@@ -77,13 +82,12 @@ public class MarketplaceManager {
 	private CopyOnWriteArrayList<String> handledTransactionIds = new CopyOnWriteArrayList();
 	private Instant transactionsLastCheckedAt = null;
 
-
 	/**
 	 * Track when the active products were updated for the last time
 	 */
 	private Instant lastUpdateActiveProductsAt = null;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Client client, TwitchLiveLoadoutConfig config)
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
@@ -92,6 +96,7 @@ public class MarketplaceManager {
 		this.spawnManager = new SpawnManager(plugin, client);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager();
+		this.notificationManager = new NotificationManager(plugin, chatMessageManager, client);
 	}
 
 	/**

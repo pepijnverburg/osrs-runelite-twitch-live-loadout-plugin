@@ -69,7 +69,7 @@ public class AnimationManager {
 		}
 	}
 
-	public void setPlayerGraphic(int graphicId, long delayMs, long durationMs)
+	public void setPlayerGraphic(int graphicId, int graphicHeight, long delayMs, long durationMs)
 	{
 		handleLockedPlayerEffect(
 			delayMs,
@@ -81,6 +81,7 @@ public class AnimationManager {
 			(player) -> {
 				player.setSpotAnimFrame(0);
 				player.setGraphic(graphicId);
+				player.setGraphicHeight(graphicHeight);
 			}
 		);
 	}

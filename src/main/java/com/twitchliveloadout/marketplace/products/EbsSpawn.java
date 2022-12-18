@@ -3,15 +3,15 @@ package com.twitchliveloadout.marketplace.products;
 import java.util.ArrayList;
 
 public class EbsSpawn {
-	public ArrayList<EbsModelSet> modelSets;
+	public ArrayList<EbsModelSet> modelSetOptions;
 	public Boolean spawnerEnabled;
 	public EbsModelSet spawner;
 	public EbsRandomRange spawnerDurationMs;
 	public EbsModelPlacement modelPlacement;
-	public EbsAnimation hideAnimation;
-	public EbsAnimation showAnimation;
 	public EbsMovementAnimations movementAnimations;
-	public ArrayList<EbsAnimation> randomAnimations;
-	public EbsInterval randomAnimationInterval;
+	public EbsVisualEffects hideVisualEffects;
+	public EbsVisualEffects showVisualEffects;
+	public ArrayList<EbsVisualEffects> randomVisualEffectsOptions;
+	public EbsInterval randomVisualEffectsInterval;
 	public EbsRandomRange durationMs;
 }
