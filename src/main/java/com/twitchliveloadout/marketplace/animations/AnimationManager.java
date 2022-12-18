@@ -10,7 +10,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Player;
 
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class AnimationManager {
@@ -21,7 +21,7 @@ public class AnimationManager {
 	@Getter
 	private EbsMovementAnimations currentMovementAnimations;
 
-	private final HashMap<ActorAnimation, Integer> originalPlayerMovementAnimations = new HashMap<>();
+	private final ConcurrentHashMap<ActorAnimation, Integer> originalPlayerMovementAnimations = new ConcurrentHashMap<>();
 
 	private Instant animationLockedUntil;
 	private Instant graphicLockedUntil;

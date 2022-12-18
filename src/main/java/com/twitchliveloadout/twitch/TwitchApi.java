@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
@@ -76,7 +77,7 @@ public class TwitchApi
 	@Getter
 	private long lastErrorChatMessage = 0;
 
-	private HashMap<TwitchSegmentType, JsonObject> configurationSegmentContents = new HashMap();
+	private ConcurrentHashMap<TwitchSegmentType, JsonObject> configurationSegmentContents = new ConcurrentHashMap();
 
 	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
