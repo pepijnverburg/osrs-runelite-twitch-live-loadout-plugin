@@ -5,10 +5,7 @@ import com.twitchliveloadout.marketplace.products.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Animation;
-import net.runelite.api.Client;
-import net.runelite.api.ModelData;
-import net.runelite.api.RuneLiteObject;
+import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
@@ -36,7 +33,8 @@ public class SpawnedObject {
 	private final ModelData modelData;
 
 	@Getter
-	private final SpawnPoint spawnPoint;
+	@Setter
+	private SpawnPoint spawnPoint;
 
 	@Getter
 	private final MarketplaceProduct product;
@@ -70,9 +68,6 @@ public class SpawnedObject {
 		this.spawn = spawn;
 		this.modelSet = modelSet;
 
-		// set to initial spawn-point
-		object.setLocation(spawnPoint.getLocalPoint(client), spawnPoint.getPlane());
-
 		// initialize expiry if set via spawn properties
 		EbsRandomRange durationMs = spawn.durationMs;
 		if (durationMs != null)
@@ -83,6 +78,9 @@ public class SpawnedObject {
 
 		// reset the animations to it will immediately show the idle animation if available
 		resetAnimation();
+
+		// set to initial spawn-point
+		updateLocation();
 	}
 
 	public void rotateTowards(LocalPoint targetPoint)
@@ -201,6 +199,22 @@ public class SpawnedObject {
 		object.setModel(null);
 	}
 
+	public boolean isInView()
+	{
+		return isInView(Constants.REGION_SIZE);
+	}
+
+	public boolean isInView(int radius)
+	{
+		final WorldPoint worldPoint = spawnPoint.getWorldPoint();
+		final LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
+		final WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
+		final int distanceToPlayer = worldPoint.distanceTo(playerWorldPoint);
+		final boolean isInView = (distanceToPlayer <= radius);
+
+		return isInView;
+	}
+
 	public void render()
 	{
 		object.setModel(modelData.light());
@@ -208,23 +222,28 @@ public class SpawnedObject {
 
 	public void respawn()
 	{
-		final int plane = spawnPoint.getPlane();
-		final WorldPoint worldPoint = spawnPoint.getWorldPoint();
-		final LocalPoint localPoint = spawnPoint.getLocalPoint(client);
-		final boolean isInScene = worldPoint.isInScene(client);
 
 		// guard: location cannot be set to local point if not in scene
-		if (!isInScene)
+		if (!isInView())
 		{
 			return;
 		}
 
-		// move the object to the new relative local point as the scene offset might be changed
-		object.setLocation(localPoint, plane);
+		// the location might've changed, so update
+		updateLocation();
 
 		// de-activate and re-activate again to force re-render
 		hide();
 		show();
+	}
+
+	public void updateLocation()
+	{
+		final LocalPoint localPoint = spawnPoint.getLocalPoint(client);
+		final int plane = spawnPoint.getPlane();
+
+		// move the object to the new relative local point as the scene offset might be changed
+		object.setLocation(localPoint, plane);
 	}
 
 	public void updateLastRandomAnimationAt()

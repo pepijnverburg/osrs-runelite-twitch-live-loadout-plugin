@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
+import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -109,7 +110,8 @@ public class MarketplaceProduct
 			return;
 		}
 
-		handleSpawns();
+		handleNewSpawns();
+		handleSpawnLocations();
 		handleSpawnRandomAnimations();
 		handleMovementAnimations();
 //		handlePlayerEquipment();
@@ -232,8 +234,11 @@ public class MarketplaceProduct
 
 	private void handleSpawnRotations()
 	{
-		for (SpawnedObject spawnedObject : spawnedObjects)
+		Iterator spawnedObjectIterator = spawnedObjects.iterator();
+
+		while (spawnedObjectIterator.hasNext())
 		{
+			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
 			EbsModelSet modelSet = spawnedObject.getModelSet();
 			String rotationType = modelSet.modelRotationType;
 			Player player = manager.getClient().getLocalPlayer();
@@ -264,12 +269,96 @@ public class MarketplaceProduct
 		}
 	}
 
+	private void handleSpawnLocations()
+	{
+		SpawnManager spawnManager = manager.getSpawnManager();
+		Iterator spawnedObjectIterator = spawnedObjects.iterator();
+
+		// lookup table to change the spawn points consistently across objects
+		// this is needed, because we want objects that are on the same location
+		// to move to the new same location
+		HashMap<WorldPoint, SpawnPoint> newSpawnPoints = new HashMap();
+
+		while (spawnedObjectIterator.hasNext())
+		{
+			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
+			EbsSpawn spawn = spawnedObject.getSpawn();
+			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+
+			if (spawn == null)
+			{
+				continue;
+			}
+
+			EbsModelPlacement modelPlacement = spawn.modelPlacement;
+
+			if (modelPlacement  == null)
+			{
+				modelPlacement = new EbsModelPlacement();
+			}
+
+			String followType = modelPlacement.followType;
+			String validFollowType = (followType == null ? NONE_FOLLOW_TYPE : followType);
+			int maxRadius = modelPlacement.radius;
+
+			// this follow type makes sure that the spawned object is always in view
+			if (validFollowType.equals(IN_SCENE_FOLLOW_TYPE)) {
+
+				// guard: skip this behaviour if it is already in the scene
+				if (spawnedObject.isInView(maxRadius))
+				{
+					continue;
+				}
+
+				// use lookup to get new spawn point candidate
+				SpawnPoint newInSceneSpawnPoint = null;
+
+				if (newSpawnPoints.containsKey(worldPoint)) {
+					newInSceneSpawnPoint = newSpawnPoints.get(worldPoint);
+				} else {
+					newInSceneSpawnPoint = getSpawnPoint(spawn);
+					newSpawnPoints.put(worldPoint, newInSceneSpawnPoint);
+				}
+
+				// guard: skip if no new spawn point could be found
+				if (newInSceneSpawnPoint == null)
+				{
+					continue;
+				}
+
+				// move to the the in scene location and make sure the tile registration is updated
+				spawnManager.moveSpawnedObject(spawnedObject, newInSceneSpawnPoint);
+			}
+
+			// this follow type moves the spawned object to be on the previous location of the player
+			if (validFollowType.equals(PREVIOUS_TILE_FOLLOW_TYPE))
+			{
+				WorldPoint previousPlayerWorldPoint = spawnManager.getPreviousPlayerLocation();
+
+				// guard: skip when already on the previous player location
+				if (worldPoint.equals(previousPlayerWorldPoint))
+				{
+					continue;
+				}
+
+				// create a new spawn point without checking the already taken locations
+				// TODO: check if this is what we really want as behaviour
+				SpawnPoint previousPlayerSpawnPoint = new SpawnPoint(previousPlayerWorldPoint);
+
+				// move to the previous player tile to follow and make sure the tile registration is updated
+				spawnManager.moveSpawnedObject(spawnedObject, previousPlayerSpawnPoint);
+			}
+		}
+	}
+
 	private void handleSpawnRandomAnimations()
 	{
 		Instant now = Instant.now();
+		Iterator spawnedObjectIterator = spawnedObjects.iterator();
 
-		for (SpawnedObject spawnedObject : spawnedObjects)
+		while (spawnedObjectIterator.hasNext())
 		{
+			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
 			Instant lastRandomAnimationAt = spawnedObject.getLastRandomAnimationAt();
 			EbsSpawn spawn = spawnedObject.getSpawn();
 			EbsInterval randomInterval = spawn.randomAnimationInterval;
@@ -310,6 +399,14 @@ public class MarketplaceProduct
 				continue;
 			}
 
+			// guard: skip when this spawned object is not in the scene,
+			// because this can feel random when graphics/animations are triggered
+			// without the spawned object in view
+			if (!spawnedObject.isInView())
+			{
+				continue;
+			}
+
 			// select a random entry from all the candidates
 			EbsAnimation randomAnimation = MarketplaceRandomizers.getRandomEntryFromList(randomAnimations);
 
@@ -327,7 +424,7 @@ public class MarketplaceProduct
 		}
 	}
 
-	private void handleSpawns()
+	private void handleNewSpawns()
 	{
 		Instant now = Instant.now();
 		String transactionId = transaction.id;
@@ -421,40 +518,7 @@ public class MarketplaceProduct
 
 		Client client = manager.getClient();
 		SpawnManager spawnManager = manager.getSpawnManager();
-		EbsModelPlacement placement = spawn.modelPlacement;
-
-		// make sure there are valid placement parameters
-		if (placement == null)
-		{
-			placement = new EbsModelPlacement();
-		}
-
-		// find an available spawn point
-		SpawnPoint spawnPoint = null;
-		Integer radius = placement.radius;
-		String radiusType = placement.radiusType;
-		String locationType = placement.locationType;
-		int validatedRadius = (radius == null) ? DEFAULT_RADIUS : radius;
-		String validatedRadiusType = (radiusType == null) ? DEFAULT_RADIUS_TYPE : radiusType;
-		String validatedLocationType = (locationType == null) ? CURRENT_TILE_LOCATION_TYPE : locationType;
-		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
-
-		// check if we should change the reference to the previous tile
-		if (PREVIOUS_TILE_LOCATION_TYPE.equals(validatedLocationType))
-		{
-			referenceWorldPoint = spawnManager.getPreviousPlayerLocation();
-
-			if (referenceWorldPoint == null)
-			{
-				return;
-			}
-		}
-
-		if (OUTWARD_RADIUS_TYPE.equals(validatedRadiusType)) {
-			spawnPoint = spawnManager.getOutwardSpawnPoint(validatedRadius, referenceWorldPoint);
-		} else {
-			spawnPoint = spawnManager.getSpawnPoint(validatedRadius, referenceWorldPoint);
-		}
+		SpawnPoint spawnPoint = getSpawnPoint(spawn);
 
 		// guard: make sure the spawn point is valid
 		if (spawnPoint == null)
@@ -518,6 +582,47 @@ public class MarketplaceProduct
 		}
 	}
 
+	private SpawnPoint getSpawnPoint(EbsSpawn spawn)
+	{
+		Client client = manager.getClient();
+		SpawnManager spawnManager = manager.getSpawnManager();
+		EbsModelPlacement placement = spawn.modelPlacement;
+
+		// make sure there are valid placement parameters
+		if (placement == null)
+		{
+			placement = new EbsModelPlacement();
+		}
+
+		SpawnPoint spawnPoint = null;
+		Integer radius = placement.radius;
+		String radiusType = placement.radiusType;
+		String locationType = placement.locationType;
+		int validatedRadius = (radius == null) ? DEFAULT_RADIUS : radius;
+		String validatedRadiusType = (radiusType == null) ? DEFAULT_RADIUS_TYPE : radiusType;
+		String validatedLocationType = (locationType == null) ? CURRENT_TILE_LOCATION_TYPE : locationType;
+		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
+
+		// check if we should change the reference to the previous tile
+		if (PREVIOUS_TILE_LOCATION_TYPE.equals(validatedLocationType))
+		{
+			referenceWorldPoint = spawnManager.getPreviousPlayerLocation();
+
+			if (referenceWorldPoint == null)
+			{
+				return null;
+			}
+		}
+
+		if (OUTWARD_RADIUS_TYPE.equals(validatedRadiusType)) {
+			spawnPoint = spawnManager.getOutwardSpawnPoint(validatedRadius, referenceWorldPoint);
+		} else {
+			spawnPoint = spawnManager.getSpawnPoint(validatedRadius, referenceWorldPoint);
+		}
+
+		return spawnPoint;
+	}
+
 	private void triggerAnimation(SpawnedObject spawnedObject, EbsAnimation animation, int baseDelayMs, boolean forceModelAnimation, ResetAnimationHandler resetModelAnimationHandler)
 	{
 
@@ -555,6 +660,11 @@ public class MarketplaceProduct
 
 		// perform the actual animation along with a possible reset after it is done
 		handleAnimationFrame(animation, baseDelayMs, (animationId, startDelayMs) -> {
+			if (manager.getConfig().devObjectSpawnAnimationId() > 0)
+			{
+				animationId = manager.getConfig().devObjectSpawnAnimationId();
+			}
+
 			setAnimation(spawnedObject, animationId, startDelayMs);
 		}, resetAnimationHandler);
 	}

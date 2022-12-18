@@ -48,19 +48,13 @@ public class SpawnManager {
 		}
 
 		ArrayList<SpawnedObject> respawnQueue = new ArrayList();
-		LocalPoint playerLocalPoint = client.getLocalPlayer().getLocalLocation();
-		WorldPoint playerWorldPoint = WorldPoint.fromLocal(client, playerLocalPoint);
 
 		// loop all spawned objects and check whether they should respawn
 		handleAllSpawnedObjects((spawnedObject) -> {
-			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
-			int distanceToPlayer = worldPoint.distanceTo(playerWorldPoint);
-			boolean isInView = distanceToPlayer < Constants.SCENE_SIZE;
-			boolean isRespawnRequired = spawnedObject.isRespawnRequired();
 
 			// only respawn if in viewport and a respawn is required
 			// to prevent animations to be reset all the time
-			if (isInView && isRespawnRequired) {
+			if (spawnedObject.isInView() && spawnedObject.isRespawnRequired()) {
 				respawnQueue.add(spawnedObject);
 				spawnedObject.setRespawnRequired(false);
 			}
@@ -171,10 +165,34 @@ public class SpawnManager {
 		}
 	}
 
+	public void moveSpawnedObject(SpawnedObject spawnedObject, SpawnPoint newSpawnPoint)
+	{
+		SpawnPoint previousSpawnPoint = spawnedObject.getSpawnPoint();
+
+		// guard: make sure the spawn point really changed
+		if (previousSpawnPoint.getWorldPoint().equals(newSpawnPoint.getWorldPoint()))
+		{
+			return;
+		}
+
+		// first deregister BEFORE changing the spawn point
+		deregisterSpawnedObjectPlacement(spawnedObject);
+
+		// update the spawn point
+		spawnedObject.setSpawnPoint(newSpawnPoint);
+
+		// (re)register to the updated one
+		registerSpawnedObjectPlacement(spawnedObject);
+
+		// finally re-render the object
+		spawnedObject.respawn();
+	}
+
 	/**
 	 * Shortcut to loop all the spawned objects
 	 */
-	public void handleAllSpawnedObjects(MarketplaceManager.SpawnedObjectHandler handler) {
+	public void handleAllSpawnedObjects(MarketplaceManager.SpawnedObjectHandler handler)
+	{
 		for (CopyOnWriteArrayList<SpawnedObject> spawnedObjects : objectPlacements.values())
 		{
 			Iterator spawnedObjectIterator = spawnedObjects.iterator();
@@ -270,7 +288,7 @@ public class SpawnManager {
 				}
 
 				// we have found a walkable tile to spawn the object on
-				candidateSpawnPoints.add(new SpawnPoint(worldPoint, playerPlane));
+				candidateSpawnPoints.add(new SpawnPoint(worldPoint));
 			}
 		}
 

@@ -8,6 +8,10 @@ public class MarketplaceConstants {
 	public static final String CURRENT_TILE_LOCATION_TYPE = "current-tile";
 	public static final String PREVIOUS_TILE_LOCATION_TYPE = "previous-tile";
 
+	public static final String NONE_FOLLOW_TYPE = "none";
+	public static final String IN_SCENE_FOLLOW_TYPE = "in-scene";
+	public static final String PREVIOUS_TILE_FOLLOW_TYPE = "behind-player";
+
 	public static final int DEFAULT_RADIUS = 10;
 	public static final String DEFAULT_RADIUS_TYPE = "radius";
 	public static final String OUTWARD_RADIUS_TYPE = "outward-radius";

@@ -246,11 +246,12 @@ public class MarketplaceManager {
 				return;
 			}
 
-			String transactionId = marketplaceProduct.getTransaction().id;
-			log.info("Cleaning an expired marketplace product for transaction: "+ transactionId);
-
 			marketplaceProduct.stop();
 			activeProducts.remove(marketplaceProduct);
+
+			String transactionId = marketplaceProduct.getTransaction().id;
+			String ebsProductId = marketplaceProduct.getEbsProduct().id;
+			log.info("Cleaned an expired marketplace product ("+ ebsProductId +") for transaction: "+ transactionId);
 		});
 	}
 
