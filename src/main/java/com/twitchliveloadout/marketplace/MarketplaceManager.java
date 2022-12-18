@@ -375,6 +375,8 @@ public class MarketplaceManager {
 			return;
 		}
 
+		transmogManager.recordOriginalEquipment();
+		transmogManager.updateEffectEquipment();
 		animationManager.recordOriginalAnimations();
 		animationManager.updateEffectAnimations();
 	}
