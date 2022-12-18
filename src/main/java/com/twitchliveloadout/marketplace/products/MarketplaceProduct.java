@@ -585,44 +585,48 @@ public class MarketplaceProduct
 		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.modelRotationType));
 		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.modelScale, 1, 1);
 		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.modelRotation, 0, 360);
+		ArrayList<ModelData> modelDataChunks = new ArrayList();
 
-		// loop all the individual model IDs making up this model
-		for (int modelId : modelSet.modelIds)
+		// load all the models
+		modelSet.modelIds.forEach((modelId) -> {
+			modelDataChunks.add(client.loadModelData(modelId));
+		});
+
+		// merge all models into one
+		ModelData mergedModelData = client.mergeModels(modelDataChunks.toArray(new ModelData[modelDataChunks.size()]), modelDataChunks.size());
+
+		RuneLiteObject runeLiteObject = client.createRuneLiteObject();
+		SpawnedObject spawnedObject = new SpawnedObject(
+		this,
+			client,
+			runeLiteObject,
+			mergedModelData,
+			spawnPoint,
+			spawn,
+			modelSet
+		);
+
+		// TODO: do any recolours here
+
+		if  (shouldScaleModel)
 		{
-			RuneLiteObject runeLiteObject = client.createRuneLiteObject();
-			ModelData modelData = client.loadModelData(modelId);
-			SpawnedObject spawnedObject = new SpawnedObject(
-			this,
-				client,
-				runeLiteObject,
-				modelData,
-				spawnPoint,
-				spawn,
-				modelSet
-			);
-
-			// TODO: do any recolours here
-
-			if  (shouldScaleModel)
-			{
-				spawnedObject.scale(modelScale);
-			}
-
-			if (shouldRotateModel)
-			{
-				spawnedObject.rotate(modelRotationDegrees);
-			}
-
-			// re-render after changes
-			spawnedObject.render();
-
-			// schedule showing of the object as it is initially hidden
-			showSpawnedObject(spawnedObject, spawnDelayMs);
-
-			// register the objects to the product and manager to make the spawn point unavailable
-			spawnedObjects.add(spawnedObject);
-			spawnManager.registerSpawnedObjectPlacement(spawnedObject);
+			spawnedObject.scale(modelScale);
 		}
+
+		if (shouldRotateModel)
+		{
+			spawnedObject.rotate(modelRotationDegrees);
+		}
+
+		// re-render after changes
+		spawnedObject.render();
+
+		// schedule showing of the object as it is initially hidden
+		showSpawnedObject(spawnedObject, spawnDelayMs);
+
+		// register the objects to the product and manager to make the spawn point unavailable
+		spawnedObjects.add(spawnedObject);
+		spawnManager.registerSpawnedObjectPlacement(spawnedObject);
 	}
 
 	private SpawnPoint getSpawnPoint(EbsSpawn spawn)
