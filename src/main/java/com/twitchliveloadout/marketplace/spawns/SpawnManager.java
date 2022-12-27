@@ -27,7 +27,7 @@ public class SpawnManager {
 	/**
 	 * History of all the previous player tiles used for spawning relative to previous locations
 	 */
-	EvictingQueue<WorldPoint> playerLocationHistory = EvictingQueue.create(PLAYER_TILE_HISTORY_SIZE);
+	private EvictingQueue<WorldPoint> playerLocationHistory = EvictingQueue.create(PLAYER_TILE_HISTORY_SIZE);
 
 	public SpawnManager(TwitchLiveLoadoutPlugin plugin, Client client)
 	{

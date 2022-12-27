@@ -46,16 +46,16 @@ public class SpawnedObject {
 	@Getter
 	private Instant expiredAt;
 
-	private double currentScale = -1;
-	private double currentRotationDegrees = 0;
-	private int currentAnimationId;
-	private Instant lockAnimationUntil;
-
 	@Getter
 	private int randomVisualEffectCounter = 0;
 
 	@Getter
 	private Instant lastRandomVisualEffectAt;
+
+	private double currentScale = -1;
+	private double currentRotationDegrees = 0;
+	private int currentAnimationId;
+	private Instant lockAnimationUntil;
 
 	public SpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
 	{
