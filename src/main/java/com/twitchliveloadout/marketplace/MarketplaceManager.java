@@ -404,6 +404,14 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Handle game ticks
+	 */
+	public void onGameTick()
+	{
+		notificationManager.onGameTick();
+	}
+
+	/**
 	 * Handle a client tick for all active products for changes
 	 * that need to happen really fast and are lightweight.
 	 */

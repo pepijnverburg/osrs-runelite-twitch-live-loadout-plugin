@@ -25,6 +25,7 @@ public class MarketplaceConstants {
 
 	public static final int PLAYER_TILE_HISTORY_SIZE = 10;
 
+	public static final int NOTIFICATION_QUEUE_MAX_SIZE = 200;
 	public static final String NONE_NOTIFICATION_MESSAGE_TYPE = "none";
 	public static final String CHAT_NOTIFICATION_MESSAGE_TYPE = "chat";
 	public static final String OVERHEAD_NOTIFICATION_MESSAGE_TYPE = "overhead";

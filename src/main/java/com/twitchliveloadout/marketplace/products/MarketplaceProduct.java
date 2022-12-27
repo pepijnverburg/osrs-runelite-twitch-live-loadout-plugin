@@ -1,6 +1,5 @@
 package com.twitchliveloadout.marketplace.products;
 
-import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -66,8 +65,6 @@ public class MarketplaceProduct
 	private int spawnBehaviourCounter = 0;
 	private Instant lastInterfaceEffectAt;
 	private int interfaceEffectCounter = 0;
-	private Instant lastNotificationAt;
-	private int notificationCounter = 0;
 
 	/**
 	 * Expiration trackers
@@ -91,9 +88,6 @@ public class MarketplaceProduct
 		this.streamerProduct = streamerProduct;
 		this.twitchProduct = twitchProduct;
 
-		// start immediately
-		start();
-
 		// determine when this product should expire which is
 		// based on the moment the transaction is executed with a correction
 		// added along with the actual duration. A correction is added because
@@ -101,6 +95,12 @@ public class MarketplaceProduct
 		int duration = streamerProduct.duration;
 		this.startedAt = Instant.parse(transaction.timestamp);
 		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
+
+		// start immediately
+		start();
+
+		// only queue the start notifications on instancing
+		queueNotificationsByTimingType(START_NOTIFICATION_TIMING_TYPE);
 	}
 
 	public void handleBehaviour()
@@ -112,7 +112,6 @@ public class MarketplaceProduct
 			return;
 		}
 
-		handleNotifications();
 		handleNewSpawns();
 		handleSpawnLocations();
 		handleSpawnRandomVisualEffects();
@@ -180,6 +179,34 @@ public class MarketplaceProduct
 		{
 			animationManager.revertAnimations();
 		}
+
+		// finally queue any notifications that should be triggered at the end
+		queueNotificationsByTimingType(END_NOTIFICATION_TIMING_TYPE);
+	}
+
+	private void queueNotificationsByTimingType(String timingType)
+	{
+		ArrayList<EbsNotification> notifications = ebsProduct.behaviour.notifications;
+		ArrayList<EbsNotification> filteredNotifications = new ArrayList();
+
+		// guard: make sure there are any notifications
+		if (notifications == null)
+		{
+			return;
+		}
+
+		for (EbsNotification notification : notifications)
+		{
+			// make sure the type matches
+			if (timingType.equals(notification.timingType))
+			{
+				filteredNotifications.add(notification);
+			}
+		}
+
+		// now queue them in the manager, so we also safely remove this product anywhere else
+		// while making sure the notifications ARE going to be triggered
+		manager.getNotificationManager().queueEbsNotifications(this, filteredNotifications);
 	}
 
 	/**
@@ -426,45 +453,6 @@ public class MarketplaceProduct
 			// increase the counter that will be used to check if the max repeat count is reached
 			spawnedObject.registerRandomVisualEffect();
 		}
-	}
-
-	private void handleNotifications()
-	{
-		ArrayList<EbsNotification> notifications = ebsProduct.behaviour.notifications;
-		NotificationManager notificationManager = manager.getNotificationManager();
-
-		// guard: only handle notifications if valid
-		if (notifications == null)
-		{
-			return;
-		}
-
-		// guard: check if notifications are not send out yet
-		if (lastNotificationAt != null)
-		{
-			return;
-		}
-
-		if (!notificationManager.canSendNotification())
-		{
-			return;
-		}
-
-		for (EbsNotification notification: notifications)
-		{
-			String messageType = notification.messageType;
-
-			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
-			{
-				notificationManager.sendChatNotification(this);
-			}
-			else if (OVERHEAD_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
-			{
-				notificationManager.sendOverheadNotification(this);
-			}
-		}
-
-		lastNotificationAt = Instant.now();
 	}
 
 	private void handleNewSpawns()
