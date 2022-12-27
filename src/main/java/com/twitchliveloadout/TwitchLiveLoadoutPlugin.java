@@ -217,7 +217,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
-			marketplaceManager = new MarketplaceManager(this, twitchApi, client, config);
+			marketplaceManager = new MarketplaceManager(this, twitchApi, client, config, chatMessageManager);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 		} catch (Exception exception) {
@@ -323,6 +323,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncState()
 	{
 		try {
+
+			// guard: skip syncing state when not logged in
+			if (!isLoggedIn())
+			{
+				return;
+			}
+
 			final JsonObject filteredState = twitchState.getFilteredState();
 
 			// We will not verify whether the set was successful here
@@ -446,7 +453,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to update the EBS products configured in Twitch.
 	 */
-	@Schedule(period = 60, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 60, unit = ChronoUnit.SECONDS, asynchronous = true) // TODO: change BACK
 	public void updateMarketplaceEbsProducts()
 	{
 		try {
@@ -673,6 +680,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onGameTick(GameTick tick)
 	{
 		try {
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.onGameTick();
+			}
+
 			if (config.fightStatisticsEnabled())
 			{
 				fightStateManager.onGameTick();
