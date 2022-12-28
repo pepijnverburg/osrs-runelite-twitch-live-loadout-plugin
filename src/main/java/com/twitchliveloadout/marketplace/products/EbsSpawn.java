@@ -7,6 +7,7 @@ public class EbsSpawn {
 	public Boolean spawnerEnabled;
 	public EbsModelSet spawner;
 	public EbsRandomRange spawnerDurationMs;
+	public EbsRandomRange spawnAmount;
 	public EbsModelPlacement modelPlacement;
 	public EbsMovementAnimations movementAnimations;
 	public EbsVisualEffects hideVisualEffects;

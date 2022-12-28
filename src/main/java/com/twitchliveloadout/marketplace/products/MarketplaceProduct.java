@@ -512,7 +512,7 @@ public class MarketplaceProduct
 		spawnBehaviourCounter += 1;
 
 		// randomize the amount of spawns
-		int spawnAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
+		int spawnGroupAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
 		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
 
 		// guard: make sure the spawn behaviours are valid
@@ -523,16 +523,21 @@ public class MarketplaceProduct
 		}
 
 		// execute the spawn for the requested amount of times along with all spawn behaviours
-		for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
+		for (int spawnGroupIndex = 0; spawnGroupIndex < spawnGroupAmount; spawnGroupIndex++)
 		{
 			for (EbsSpawn spawn : spawns)
 			{
-				int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
+				int spawnAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawn.spawnAmount, 1, 1);
 
-				// make sure spawning is on client thread for e.g. using client instance
-				manager.getPlugin().runOnClientThread(() -> {
-					triggerSpawn(spawn, spawnDelayMs);
-				});
+				for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
+				{
+					int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
+
+					// make sure spawning is on client thread for e.g. using client instance
+					manager.getPlugin().runOnClientThread(() -> {
+						triggerSpawn(spawn, spawnDelayMs);
+					});
+				}
 			}
 		}
 	}

@@ -102,6 +102,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
+	/**
+	 * Scheduled executor that does not run on the client thread.
+	 */
 	private ScheduledThreadPoolExecutor scheduledExecutor;
 
 	/**
