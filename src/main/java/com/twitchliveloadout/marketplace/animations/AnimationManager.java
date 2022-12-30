@@ -86,6 +86,16 @@ public class AnimationManager {
 		);
 	}
 
+	public void resetPlayerGraphic(int delayMs)
+	{
+		handleLocalPlayer((player) -> {
+			plugin.scheduleOnClientThread(() -> {
+				player.setGraphic(-1);
+				player.setGraphicHeight(0);
+			}, delayMs);
+		});
+	}
+
 	public void setPlayerAnimation(int animationId, long delayMs, long durationMs)
 	{
 		handleLockedPlayerEffect(
@@ -102,7 +112,35 @@ public class AnimationManager {
 		);
 	}
 
+	public void resetPlayerAnimation(int delayMs)
+	{
+		handleLocalPlayer((player) -> {
+			plugin.scheduleOnClientThread(() -> {
+				player.setAnimation(-1);
+				player.setAnimationFrame(0);
+			}, delayMs);
+		});
+	}
+
 	private void handleLockedPlayerEffect(long delayMs, long durationMs, Instant lockedUntil, MarketplaceManager.EmptyHandler updateLockHandler, MarketplaceManager.PlayerHandler playerHandler)
+	{
+		handleLocalPlayer((player) -> {
+			boolean isLocked = (lockedUntil != null && Instant.now().isBefore(lockedUntil));
+
+			// guard: skip the animation request if we are not yet done with animating the previous one
+			if (isLocked)
+			{
+				return;
+			}
+
+			updateLockHandler.execute();
+			plugin.scheduleOnClientThread(() -> {
+				playerHandler.execute(player);
+			}, delayMs);
+		});
+	}
+
+	private void handleLocalPlayer(MarketplaceManager.PlayerHandler playerHandler)
 	{
 		Player player = client.getLocalPlayer();
 
@@ -112,18 +150,7 @@ public class AnimationManager {
 			return;
 		}
 
-		boolean isLocked = (lockedUntil != null && Instant.now().isBefore(lockedUntil));
-
-		// guard: skip the animation request if we are not yet done with animating the previous one
-		if (isLocked)
-		{
-			return;
-		}
-
-		updateLockHandler.execute();
-		plugin.scheduleOnClientThread(() -> {
-			playerHandler.execute(player);
-		}, delayMs);
+		playerHandler.execute(player);
 	}
 
 	public void revertAnimations()
