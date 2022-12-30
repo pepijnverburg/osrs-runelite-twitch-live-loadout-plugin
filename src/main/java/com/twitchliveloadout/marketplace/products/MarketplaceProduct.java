@@ -188,9 +188,12 @@ public class MarketplaceProduct
 	{
 		ArrayList<EbsNotification> notifications = ebsProduct.behaviour.notifications;
 		ArrayList<EbsNotification> filteredNotifications = new ArrayList();
+		boolean isEndTimingType = (END_NOTIFICATION_TIMING_TYPE.equals(timingType));
+		boolean hasValidNotifications = (notifications != null);
+		boolean isRunning = (!isActive || !isExpired());
 
-		// guard: make sure there are any notifications
-		if (notifications == null)
+		// guard: make sure there are any notifications and the product is active
+		if (!hasValidNotifications || (!isEndTimingType && !isRunning))
 		{
 			return;
 		}
@@ -706,19 +709,23 @@ public class MarketplaceProduct
 
 	private void triggerPlayerGraphic(EbsGraphicFrame graphic, int baseDelayMs)
 	{
+		AnimationManager animationManager = manager.getAnimationManager();
+
 		handleVisualEffectFrame(graphic, baseDelayMs, (startDelayMs) -> {
-			manager.getAnimationManager().setPlayerGraphic(graphic.id, graphic.height, startDelayMs, graphic.durationMs);
+			animationManager.setPlayerGraphic(graphic.id, graphic.height, startDelayMs, graphic.durationMs);
 		}, (resetDelayMs) -> {
-			// empty, no need to reset one-time graphic
+			animationManager.resetPlayerGraphic(resetDelayMs);
 		});
 	}
 
 	private void triggerPlayerAnimation(EbsAnimationFrame animation, int baseDelayMs)
 	{
+		AnimationManager animationManager = manager.getAnimationManager();
+
 		handleVisualEffectFrame(animation, baseDelayMs, (startDelayMs) -> {
-			manager.getAnimationManager().setPlayerAnimation(animation.id, startDelayMs, animation.durationMs);
+			animationManager.setPlayerAnimation(animation.id, startDelayMs, animation.durationMs);
 		}, (resetDelayMs) -> {
-			// empty, no need to reset one-time animation
+			animationManager.resetPlayerAnimation(resetDelayMs);
 		});
 	}
 
@@ -739,7 +746,8 @@ public class MarketplaceProduct
 			return;
 		}
 
-		int delayMs = visualEffect.delayMs;
+		EbsRandomRange delayMsRange = visualEffect.delayMs;
+		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(delayMsRange, 0, 0);
 		int durationMs = visualEffect.durationMs;
 		int startDelayMs = baseDelayMs + delayMs;
 
