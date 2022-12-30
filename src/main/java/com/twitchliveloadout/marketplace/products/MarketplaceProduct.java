@@ -163,6 +163,10 @@ public class MarketplaceProduct
 	{
 		AnimationManager animationManager = manager.getAnimationManager();
 
+		// queue any notifications that should be triggered at the end
+		// NOTE: do this before toggling!
+		queueNotificationsByTimingType(END_NOTIFICATION_TIMING_TYPE);
+
 		// start with disabling all behaviours
 		isActive = false;
 
@@ -179,21 +183,17 @@ public class MarketplaceProduct
 		{
 			animationManager.revertAnimations();
 		}
-
-		// finally queue any notifications that should be triggered at the end
-		queueNotificationsByTimingType(END_NOTIFICATION_TIMING_TYPE);
 	}
 
 	private void queueNotificationsByTimingType(String timingType)
 	{
 		ArrayList<EbsNotification> notifications = ebsProduct.behaviour.notifications;
 		ArrayList<EbsNotification> filteredNotifications = new ArrayList();
-		boolean isEndTimingType = (END_NOTIFICATION_TIMING_TYPE.equals(timingType));
 		boolean hasValidNotifications = (notifications != null);
-		boolean isRunning = (!isActive || !isExpired());
+		boolean isRunning = (!isActive || !isExpired(-2000));
 
 		// guard: make sure there are any notifications and the product is active
-		if (!hasValidNotifications || (!isEndTimingType && !isRunning))
+		if (!hasValidNotifications || !isRunning)
 		{
 			return;
 		}
@@ -233,9 +233,14 @@ public class MarketplaceProduct
 		});
 	}
 
+	public boolean isExpired(int nowDeltaMs)
+	{
+		return expiredAt == null || Instant.now().plusMillis(nowDeltaMs).isAfter(expiredAt);
+	}
+
 	public boolean isExpired()
 	{
-		return expiredAt == null || Instant.now().isAfter(expiredAt);
+		return isExpired(0);
 	}
 
 	public long getExpiresInMs()
