@@ -10,9 +10,9 @@ public class EbsSpawn {
 	public EbsRandomRange spawnAmount;
 	public EbsModelPlacement modelPlacement;
 	public EbsMovementAnimations movementAnimations;
-	public EbsVisualEffects hideVisualEffects;
-	public EbsVisualEffects showVisualEffects;
-	public ArrayList<EbsVisualEffects> randomVisualEffectsOptions;
+	public ArrayList<EbsVisualEffect> hideVisualEffects;
+	public ArrayList<EbsVisualEffect> showVisualEffects;
+	public ArrayList<ArrayList<EbsVisualEffect>> randomVisualEffectsOptions;
 	public EbsInterval randomVisualEffectsInterval;
 	public EbsRandomRange durationMs;
 }
