@@ -210,13 +210,13 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "bankItemAmount",
+			keyName = "bankItemsAmount",
 			name = "Max bank items",
 			description = "Maximum amount of items chosen by stack value.",
 			position = 10,
 			section = itemsSection
 	)
-	default int bankItemAmount()
+	default int bankItemsAmount()
 	{
 		return ItemStateManager.MAX_BANK_ITEMS;
 	}
