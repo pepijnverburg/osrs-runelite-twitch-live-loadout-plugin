@@ -401,7 +401,7 @@ public class MarketplaceProduct
 			Instant lastRandomVisualEffectAt = spawnedObject.getLastRandomVisualEffectAt();
 			EbsSpawn spawn = spawnedObject.getSpawn();
 			EbsInterval randomInterval = spawn.randomVisualEffectsInterval;
-			ArrayList<EbsVisualEffects> randomVisualEffectsOptions = spawn.randomVisualEffectsOptions;
+			ArrayList<ArrayList<EbsVisualEffect>> randomVisualEffectsOptions = spawn.randomVisualEffectsOptions;
 
 			// guard: make sure there is a valid interval and animation
 			if (randomInterval == null || randomVisualEffectsOptions == null || randomVisualEffectsOptions.size() <= 0)
@@ -447,12 +447,12 @@ public class MarketplaceProduct
 			}
 
 			// select a random entry from all the candidates
-			EbsVisualEffects randomVisualEffects = MarketplaceRandomizers.getRandomEntryFromList(randomVisualEffectsOptions);
+			ArrayList<EbsVisualEffect> randomVisualEffects = MarketplaceRandomizers.getRandomEntryFromList(randomVisualEffectsOptions);
 
 			// trigger the animations on this single spawned object
 			triggerVisualEffects(
 				spawnedObject,
-					randomVisualEffects,
+				randomVisualEffects,
 				0,
 				false,
 				null
@@ -671,7 +671,7 @@ public class MarketplaceProduct
 		return spawnPoint;
 	}
 
-	private void triggerVisualEffects(SpawnedObject spawnedObject, EbsVisualEffects visualEffects, int baseDelayMs, boolean forceModelAnimation, ResetVisualEffectHandler resetModelAnimationHandler)
+	private void triggerVisualEffects(SpawnedObject spawnedObject, ArrayList<EbsVisualEffect> visualEffects, int baseDelayMs, boolean forceModelAnimation, ResetVisualEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the animation is valid
@@ -680,9 +680,27 @@ public class MarketplaceProduct
 			return;
 		}
 
-		triggerModelAnimation(spawnedObject, visualEffects.modelAnimation, baseDelayMs, forceModelAnimation, resetModelAnimationHandler);
-		triggerPlayerGraphic(visualEffects.playerGraphic, baseDelayMs);
-		triggerPlayerAnimation(visualEffects.playerAnimation, baseDelayMs);
+		int previousDurationDelayMs = 0;
+		Iterator visualEffectIterator = visualEffects.iterator();
+
+		while (visualEffectIterator.hasNext())
+		{
+			EbsVisualEffect visualEffect = (EbsVisualEffect) visualEffectIterator.next();
+			boolean isLast = !visualEffectIterator.hasNext();
+			int delayMs = baseDelayMs + previousDurationDelayMs;
+
+			triggerModelAnimation(
+				spawnedObject,
+				visualEffect.modelAnimation,
+				delayMs,
+				forceModelAnimation,
+				isLast ? resetModelAnimationHandler : null
+			);
+			triggerPlayerGraphic(visualEffect.playerGraphic, delayMs);
+			triggerPlayerAnimation(visualEffect.playerAnimation, delayMs);
+
+			previousDurationDelayMs += visualEffect.durationMs;
+		}
 	}
 
 	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetVisualEffectHandler resetAnimationHandler)
@@ -810,7 +828,7 @@ public class MarketplaceProduct
 	private void showSpawnedObject(SpawnedObject spawnedObject, long delayMs)
 	{
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
-			EbsVisualEffects showVisualEffects = spawnedObject.getSpawn().showVisualEffects;
+			ArrayList<EbsVisualEffect> showVisualEffects = spawnedObject.getSpawn().showVisualEffects;
 
 			// trigger visual effects and graphics on show
 			triggerVisualEffects(
@@ -831,7 +849,7 @@ public class MarketplaceProduct
 	private void hideSpawnedObject(SpawnedObject spawnedObject, long delayMs)
 	{
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
-			EbsVisualEffects hideVisualEffects = spawnedObject.getSpawn().hideVisualEffects;
+			ArrayList<EbsVisualEffect> hideVisualEffects = spawnedObject.getSpawn().hideVisualEffects;
 
 			// guard: check if the hide animation is set
 			if (hideVisualEffects == null)
