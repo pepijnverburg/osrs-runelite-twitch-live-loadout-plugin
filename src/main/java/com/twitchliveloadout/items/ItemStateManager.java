@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ItemStateManager {
 
-	public final static int MAX_BANK_ITEMS = 1500;
+	public final static int MAX_BANK_ITEMS = 5000;
 	public final static int LOOTING_BAG_CONTAINER_ID = 516;
 
 	private final TwitchLiveLoadoutPlugin plugin;
@@ -227,7 +227,7 @@ public class ItemStateManager {
 
 	public int getMaxBankItemAmount()
 	{
-		int maxAmount = config.bankItemAmount();
+		int maxAmount = config.bankItemsAmount();
 
 		if (maxAmount > MAX_BANK_ITEMS)
 		{
