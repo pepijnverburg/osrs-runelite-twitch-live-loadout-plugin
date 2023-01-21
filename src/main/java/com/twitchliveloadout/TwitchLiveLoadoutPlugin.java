@@ -192,6 +192,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// tasks to execute immediately on boot
 		updateMarketplaceStreamerProducts();
 		updateMarketplaceEbsProducts();
+		skillStateManager.updateSkills();
 	}
 
 	private void initializeExecutors()
@@ -546,7 +547,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			if (config.skillsEnabled())
 			{
-				skillStateManager.onStatChanged(event);
+				skillStateManager.updateSkills();
 			}
 
 			if (config.fightStatisticsEnabled())
