@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
+import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.products.*;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
@@ -53,6 +54,9 @@ public class MarketplaceManager {
 	private final TransmogManager transmogManager;
 
 	@Getter
+	private final WidgetManager widgetManager;
+
+	@Getter
 	private final NotificationManager notificationManager;
 
 	/**
@@ -97,6 +101,7 @@ public class MarketplaceManager {
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager();
 		this.notificationManager = new NotificationManager(plugin, chatMessageManager, client);
+		this.widgetManager = new WidgetManager(plugin, client);
 	}
 
 	/**
@@ -409,6 +414,7 @@ public class MarketplaceManager {
 	public void onGameTick()
 	{
 		notificationManager.onGameTick();
+		widgetManager.onGameTick();
 	}
 
 	/**

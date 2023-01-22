@@ -31,8 +31,14 @@ public class MarketplaceConstants {
 	public static final String OVERHEAD_NOTIFICATION_MESSAGE_TYPE = "overhead";
 	public static final String TILE_MARKER_NOTIFICATION_MESSAGE_TYPE = "tile-marker";
 
+	public static final String NOW_NOTIFICATION_TIMING_TYPE = "now";
 	public static final String START_NOTIFICATION_TIMING_TYPE = "start";
 	public static final String END_NOTIFICATION_TIMING_TYPE = "end";
+
+	public static final int WIDGET_EFFECT_MAX_SIZE = 100;
+	public static final String DISABLE_MENU_OPTION_TYPE = "disable";
+	public static final String DISABLE_INTERFACE_WIDGET_TYPE = "disable";
+	public static final String ALTER_INTERFACE_WIDGET_TYPE = "alter";
 
 	public static final int CHAT_NOTIFICATION_LOCKED_MS = 3 * 1000;
 	public static final int OVERHEAD_NOTIFICATION_LOCKED_MS = 6 * 1000;

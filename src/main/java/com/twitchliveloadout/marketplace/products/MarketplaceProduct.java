@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
+import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -698,6 +699,7 @@ public class MarketplaceProduct
 			);
 			triggerPlayerGraphic(visualEffect.playerGraphic, delayMs);
 			triggerPlayerAnimation(visualEffect.playerAnimation, delayMs);
+			triggerInterfaceWidgets(visualEffect.interfaceWidgets, delayMs);
 
 			previousDurationDelayMs += visualEffect.durationMs;
 		}
@@ -755,6 +757,27 @@ public class MarketplaceProduct
 		}, (resetDelayMs) -> {
 			animationManager.resetPlayerAnimation(resetDelayMs);
 		});
+	}
+
+	private void triggerInterfaceWidgets(ArrayList<EbsInterfaceWidgetFrame> interfaceWidgetFrames, int delayMs)
+	{
+		WidgetManager widgetManager = manager.getWidgetManager();
+
+		// guard: make sure there are valid widget frames
+		if (interfaceWidgetFrames == null)
+		{
+			return;
+		}
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			Iterator interfaceWidgetFrameIterator = interfaceWidgetFrames.iterator();
+
+			while (interfaceWidgetFrameIterator.hasNext())
+			{
+				EbsInterfaceWidgetFrame interfaceWidgetFrame = (EbsInterfaceWidgetFrame) interfaceWidgetFrameIterator.next();
+				widgetManager.addWidgetEffect(this, interfaceWidgetFrame);
+			}
+		}, delayMs);
 	}
 
 	private void handleVisualEffectFrame(EbsVisualEffectFrame visualEffect, int baseDelayMs, StartVisualEffectHandler startHandler, ResetVisualEffectHandler resetHandler)
