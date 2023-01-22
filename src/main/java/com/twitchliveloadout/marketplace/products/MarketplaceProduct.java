@@ -101,7 +101,14 @@ public class MarketplaceProduct
 		start();
 
 		// only queue the start notifications on instancing
-		queueNotificationsByTimingType(START_NOTIFICATION_TIMING_TYPE);
+		handleNotificationsByTimingType(
+			ebsProduct.behaviour.notifications,
+			START_NOTIFICATION_TIMING_TYPE
+		);
+		handleNotificationsByTimingType(
+			ebsProduct.behaviour.notifications,
+			NOW_NOTIFICATION_TIMING_TYPE
+		);
 	}
 
 	public void handleBehaviour()
@@ -165,8 +172,11 @@ public class MarketplaceProduct
 		AnimationManager animationManager = manager.getAnimationManager();
 
 		// queue any notifications that should be triggered at the end
-		// NOTE: do this before toggling!
-		queueNotificationsByTimingType(END_NOTIFICATION_TIMING_TYPE);
+		// NOTE: do this before toggling to off!
+		handleNotificationsByTimingType(
+			ebsProduct.behaviour.notifications,
+			END_NOTIFICATION_TIMING_TYPE
+		);
 
 		// start with disabling all behaviours
 		isActive = false;
@@ -186,9 +196,8 @@ public class MarketplaceProduct
 		}
 	}
 
-	private void queueNotificationsByTimingType(String timingType)
+	private void handleNotificationsByTimingType(ArrayList<EbsNotification> notifications, String timingType)
 	{
-		ArrayList<EbsNotification> notifications = ebsProduct.behaviour.notifications;
 		ArrayList<EbsNotification> filteredNotifications = new ArrayList();
 		boolean hasValidNotifications = (notifications != null);
 		boolean isRunning = (!isActive || !isExpired(-2000));
@@ -210,7 +219,7 @@ public class MarketplaceProduct
 
 		// now queue them in the manager, so we also safely remove this product anywhere else
 		// while making sure the notifications ARE going to be triggered
-		manager.getNotificationManager().queueEbsNotifications(this, filteredNotifications);
+		manager.getNotificationManager().handleEbsNotifications(this, filteredNotifications);
 	}
 
 	/**
@@ -753,6 +762,7 @@ public class MarketplaceProduct
 			EbsVisualEffect visualEffect = (EbsVisualEffect) visualEffectIterator.next();
 			boolean isLast = !visualEffectIterator.hasNext();
 			int delayMs = baseDelayMs + previousDurationDelayMs;
+			int durationMs = visualEffect.durationMs;
 
 			triggerModelAnimation(
 				spawnedObject,
@@ -764,9 +774,10 @@ public class MarketplaceProduct
 			triggerPlayerGraphic(visualEffect.playerGraphic, delayMs);
 			triggerPlayerAnimation(visualEffect.playerAnimation, delayMs);
 			triggerInterfaceWidgets(visualEffect.interfaceWidgets, delayMs);
-			triggerSoundEffect(visualEffect.soundEffectId, delayMs);
+			triggerSoundEffect(visualEffect.soundEffect, delayMs);
+			triggerNotifications(visualEffect.notifications, delayMs, durationMs);
 
-			previousDurationDelayMs += visualEffect.durationMs;
+			previousDurationDelayMs += durationMs;
 		}
 	}
 
@@ -845,18 +856,57 @@ public class MarketplaceProduct
 		}, delayMs);
 	}
 
-	private void triggerSoundEffect(Integer soundEffectId, int delayMs)
+	private void triggerSoundEffect(EbsSoundEffectFrame soundEffect, int baseDelayMs)
 	{
 
 		// guard: make sure the sound is valid
-		if (soundEffectId == null || soundEffectId < 0)
+		if (soundEffect == null)
+		{
+			return;
+		}
+
+		Integer soundEffectId = soundEffect.id;
+		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(soundEffect.delayMs, 0, 0);
+
+		if (soundEffectId <= 0)
 		{
 			return;
 		}
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			manager.getClient().playSoundEffect(soundEffectId);
+		}, baseDelayMs + delayMs);
+	}
+
+	private void triggerNotifications(ArrayList<EbsNotification> notifications, int delayMs, long durationMs)
+	{
+
+		// replace the duration with the product duration to make sure it is triggered at the end
+		if (durationMs <= 0)
+		{
+			durationMs = getExpiresInMs() - delayMs;
+		}
+
+		// queue at the start of the effect
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			handleNotificationsByTimingType(
+				notifications,
+				START_NOTIFICATION_TIMING_TYPE
+			);
+			handleNotificationsByTimingType(
+				notifications,
+				NOW_NOTIFICATION_TIMING_TYPE
+			);
 		}, delayMs);
+
+		// queue at the end of the effect
+		// TODO: fix queueing at the end as well, not working atm?
+//		manager.getPlugin().scheduleOnClientThread(() -> {
+//			handleNotificationsByTimingType(
+//				notifications,
+//				END_NOTIFICATION_TIMING_TYPE
+//			);
+//		}, delayMs + durationMs);
 	}
 
 	private void handleVisualEffectFrame(EbsVisualEffectFrame visualEffect, int baseDelayMs, StartVisualEffectHandler startHandler, ResetVisualEffectHandler resetHandler)

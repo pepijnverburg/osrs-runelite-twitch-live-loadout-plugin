@@ -44,7 +44,7 @@ public class NotificationManager {
 		handleNotificationsQueue();
 	}
 
-	public void queueEbsNotifications(MarketplaceProduct marketplaceProduct, ArrayList<EbsNotification> ebsNotifications)
+	public void handleEbsNotifications(MarketplaceProduct marketplaceProduct, ArrayList<EbsNotification> ebsNotifications)
 	{
 		if (ebsNotifications == null)
 		{
@@ -55,7 +55,23 @@ public class NotificationManager {
 
 		for (EbsNotification ebsNotification : ebsNotifications)
 		{
-			notificationGroup.add(new Notification(marketplaceProduct, ebsNotification));
+			Notification notification = new Notification(marketplaceProduct, ebsNotification);
+
+			// guard: check if this is a notification that should be send immediately
+			if (NOW_NOTIFICATION_TIMING_TYPE.equals(ebsNotification.timingType))
+			{
+				sendNotification(notification);
+				return;
+			}
+
+			// otherwise add to the queued group
+			notificationGroup.add(notification);
+		}
+
+		// guard: only add if the group is valid
+		if (notificationGroup.size() <= 0)
+		{
+			return;
 		}
 
 		notificationGroupQueue.add(notificationGroup);
@@ -82,37 +98,50 @@ public class NotificationManager {
 		// handle all notifications
 		for (Notification notification: notificationGroup)
 		{
-			EbsNotification ebsNotification = notification.ebsNotification;
-			String messageType = ebsNotification.messageType;
-
-			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
-			{
-				sendChatNotification(notification);
-			}
-			else if (OVERHEAD_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
-			{
-				sendOverheadNotification(notification);
-			}
+			sendNotification(notification);
 		}
 	}
 
-	private boolean canSendNotification()
+	private void sendNotification(Notification notification)
 	{
-		return notificationsLockedUntil == null || Instant.now().isAfter(notificationsLockedUntil);
+		EbsNotification ebsNotification = notification.ebsNotification;
+		MarketplaceProduct marketplaceProduct = notification.marketplaceProduct;
+		String messageType = ebsNotification.messageType;
+
+		// guard: skip the notification is the marketplace product is not valid anymore
+		if (marketplaceProduct.isExpired(2000) || !marketplaceProduct.isActive())
+		{
+			return;
+		}
+
+		if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+		{
+			sendChatNotification(notification);
+		}
+		else if (OVERHEAD_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+		{
+			sendOverheadNotification(notification);
+		}
 	}
 
 	private void sendChatNotification(Notification notification)
 	{
-		String message = getDefaultMessage(notification);
+		String message = notification.ebsNotification.message;
+
+		if (message == null)
+		{
+			message = getDefaultMessage(notification);
+		}
+
 		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
-				.append(ChatColorType.HIGHLIGHT)
-				.append(message)
-				.append(ChatColorType.NORMAL);
+			.append(ChatColorType.HIGHLIGHT)
+			.append(message)
+			.append(ChatColorType.NORMAL);
 
 		chatMessageManager.queue(QueuedMessage.builder()
-				.type(ChatMessageType.ITEM_EXAMINE)
-				.runeLiteFormattedMessage(chatMessage.build())
-				.build());
+			.type(ChatMessageType.GAMEMESSAGE)
+			.runeLiteFormattedMessage(chatMessage.build())
+			.build());
 
 		lockNotificationsUntil(CHAT_NOTIFICATION_LOCKED_MS);
 	}
@@ -120,15 +149,22 @@ public class NotificationManager {
 	private void sendOverheadNotification(Notification notification)
 	{
 		Player player = client.getLocalPlayer();
-		String message = getDefaultMessage(notification);
+		String message = notification.ebsNotification.message;
 
+		if (message == null)
+		{
+			message = getDefaultMessage(notification);
+		}
+
+		// guard: skip on invalid player
 		if (player == null)
 		{
 			return;
 		}
 
+		String finalMessage = message;
 		plugin.runOnClientThread(() -> {
-			player.setOverheadText(message);
+			player.setOverheadText(finalMessage);
 		});
 		plugin.scheduleOnClientThread(() -> {
 			player.setOverheadText("");
@@ -166,6 +202,11 @@ public class NotificationManager {
 		String message = "Thank you "+ username +" for "+ donationName +"!";
 
 		return message;
+	}
+
+	private boolean canSendNotification()
+	{
+		return notificationsLockedUntil == null || Instant.now().isAfter(notificationsLockedUntil);
 	}
 
 	private void lockNotificationsUntil(int durationMs)

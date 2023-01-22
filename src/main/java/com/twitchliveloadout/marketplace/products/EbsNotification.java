@@ -5,4 +5,5 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 public class EbsNotification {
 	public String messageType = NONE_NOTIFICATION_MESSAGE_TYPE;
 	public String timingType = START_NOTIFICATION_TIMING_TYPE;
+	public String message;
 }

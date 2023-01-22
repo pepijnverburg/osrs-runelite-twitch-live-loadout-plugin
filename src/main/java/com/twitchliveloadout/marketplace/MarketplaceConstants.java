@@ -40,8 +40,8 @@ public class MarketplaceConstants {
 	public static final String DISABLE_INTERFACE_WIDGET_TYPE = "disable";
 	public static final String ALTER_INTERFACE_WIDGET_TYPE = "alter";
 
-	public static final int CHAT_NOTIFICATION_LOCKED_MS = 3 * 1000;
-	public static final int OVERHEAD_NOTIFICATION_LOCKED_MS = 6 * 1000;
+	public static final int CHAT_NOTIFICATION_LOCKED_MS = 1 * 1000;
+	public static final int OVERHEAD_NOTIFICATION_LOCKED_MS = 3 * 1000;
 	public static final int OVERHEAD_NOTIFICATION_DURATION_MS = OVERHEAD_NOTIFICATION_LOCKED_MS - 1 * 1000;
 	public static final int TILE_MARKER_NOTIFICATION_DURATION_MS = 0 * 1000;
 }
