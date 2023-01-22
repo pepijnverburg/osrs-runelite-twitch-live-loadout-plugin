@@ -147,7 +147,7 @@ public class WidgetManager {
 		}
 
 		OriginalWidget originalWidget = originalWidgets.get(widget);
-		SoundEffectID.
+
 		// restore the properties of the widget
 		widget.setHidden(originalWidget.getHidden());
 		widget.setText(originalWidget.getText());
