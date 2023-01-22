@@ -126,8 +126,7 @@ public class SpawnManager {
 	 */
 	public void registerSpawnedObjectPlacement(SpawnedObject spawnedObject)
 	{
-		LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
-		WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+		WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
 
 		// check whether this world point already has a spawned object to add to
 		if (objectPlacements.containsKey(worldPoint)) {
@@ -145,8 +144,7 @@ public class SpawnManager {
 	 */
 	public void deregisterSpawnedObjectPlacement(SpawnedObject spawnedObject)
 	{
-		LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
-		WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+		WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
 
 		// guard: check if the placements are known
 		if (!objectPlacements.containsKey(worldPoint))
