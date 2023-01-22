@@ -109,7 +109,8 @@ public class NotificationManager {
 		String messageType = ebsNotification.messageType;
 
 		// guard: skip the notification is the marketplace product is not valid anymore
-		if (marketplaceProduct.isExpired(2000) || !marketplaceProduct.isActive())
+		// NOTE: three second grace period for when after the product is expired
+		if (marketplaceProduct.isExpired(-3000) || (!marketplaceProduct.isActive() && !marketplaceProduct.isExpired()))
 		{
 			return;
 		}
