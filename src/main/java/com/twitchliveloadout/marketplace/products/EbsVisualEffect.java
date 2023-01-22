@@ -9,4 +9,5 @@ public class EbsVisualEffect {
 	public EbsGraphicFrame playerGraphic;
 	public ArrayList<EbsMenuOptionFrame> menuOptions;
 	public ArrayList<EbsInterfaceWidgetFrame> interfaceWidgets;
+	public Integer soundEffectId = -1;
 }

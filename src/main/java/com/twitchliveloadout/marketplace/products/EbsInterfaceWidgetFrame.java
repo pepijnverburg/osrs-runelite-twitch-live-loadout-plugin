@@ -9,5 +9,7 @@ public class EbsInterfaceWidgetFrame {
 	public Integer textColor;
 	public Integer itemId;
 	public Integer itemQuantity;
+	public String name;
+	public Integer spriteId;
 	public Integer durationMs = -1;
 }

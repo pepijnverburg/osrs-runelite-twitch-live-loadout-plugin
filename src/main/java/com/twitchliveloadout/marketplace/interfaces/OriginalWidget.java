@@ -7,23 +7,31 @@ public class OriginalWidget {
 	@Getter
 	private final Widget widget;
 	@Getter
-	private final Boolean originalHidden;
+	private final Boolean hidden;
 	@Getter
-	private final String originalText;
+	private final String text;
 	@Getter
-	private final Integer originalTextColor;
+	private final Integer textColor;
 	@Getter
-	private final Integer originalItemId;
+	private final Integer itemId;
 	@Getter
-	private final Integer originalItemQuantity;
+	private final Integer itemQuantity;
+	@Getter
+	private final String name;
+	@Getter
+	private final Integer spriteId;
 
 	public OriginalWidget(Widget widget)
 	{
 		this.widget = widget;
-		this.originalHidden = widget.isSelfHidden();
-		this.originalText = widget.getText();
-		this.originalTextColor = widget.getTextColor();
-		this.originalItemId = widget.getItemId();
-		this.originalItemQuantity = widget.getItemQuantity();
+
+		// initialize all originals
+		this.hidden = widget.isSelfHidden();
+		this.text = widget.getText();
+		this.textColor = widget.getTextColor();
+		this.itemId = widget.getItemId();
+		this.itemQuantity = widget.getItemQuantity();
+		this.name = widget.getName();
+		this.spriteId = widget.getSpriteId();
 	}
 }

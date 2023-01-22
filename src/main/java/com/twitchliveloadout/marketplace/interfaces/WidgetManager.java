@@ -4,7 +4,9 @@ import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.products.EbsInterfaceWidgetFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.AnimationID;
 import net.runelite.api.Client;
+import net.runelite.api.SoundEffectID;
 import net.runelite.api.widgets.Widget;
 
 import java.time.Instant;
@@ -145,13 +147,15 @@ public class WidgetManager {
 		}
 
 		OriginalWidget originalWidget = originalWidgets.get(widget);
-
+		SoundEffectID.
 		// restore the properties of the widget
-		widget.setHidden(originalWidget.getOriginalHidden());
-		widget.setText(originalWidget.getOriginalText());
-		widget.setTextColor(originalWidget.getOriginalTextColor());
-		widget.setItemId(originalWidget.getOriginalItemId());
-		widget.setItemQuantity(originalWidget.getOriginalItemQuantity());
+		widget.setHidden(originalWidget.getHidden());
+		widget.setText(originalWidget.getText());
+		widget.setTextColor(originalWidget.getTextColor());
+		widget.setItemId(originalWidget.getItemId());
+		widget.setItemQuantity(originalWidget.getItemQuantity());
+		widget.setName(originalWidget.getName());
+		widget.setSpriteId(originalWidget.getSpriteId());
 	}
 
 	private void applyWidgetFrame(EbsInterfaceWidgetFrame widgetFrame)
@@ -161,7 +165,6 @@ public class WidgetManager {
 		// guard: make sure the widget is valid
 		if (widget == null)
 		{
-			log.warn("COULD NOT FIND WIDGET!"+ widgetFrame.parentId);
 			return;
 		}
 
@@ -170,12 +173,13 @@ public class WidgetManager {
 		Integer textColor = widgetFrame.textColor;
 		Integer itemId = widgetFrame.itemId;
 		Integer itemQuantity = widgetFrame.itemQuantity;
+		String name = widgetFrame.name;
+		Integer spriteId = widgetFrame.spriteId;
 
 		plugin.runOnClientThread(() -> {
 			// hide widget when disable is requested
 			if (DISABLE_INTERFACE_WIDGET_TYPE.equals(type))
 			{
-				log.info("SETTING TO HIDE!");
 				widget.setHidden(true);
 			}
 
@@ -200,6 +204,16 @@ public class WidgetManager {
 				if (itemQuantity != null)
 				{
 					widget.setItemQuantity(itemQuantity);
+				}
+
+				if (name != null)
+				{
+					widget.setName(name);
+				}
+
+				if (spriteId != null)
+				{
+					widget.setSpriteId(spriteId);
 				}
 			}
 		});

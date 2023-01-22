@@ -764,6 +764,7 @@ public class MarketplaceProduct
 			triggerPlayerGraphic(visualEffect.playerGraphic, delayMs);
 			triggerPlayerAnimation(visualEffect.playerAnimation, delayMs);
 			triggerInterfaceWidgets(visualEffect.interfaceWidgets, delayMs);
+			triggerSoundEffect(visualEffect.soundEffectId, delayMs);
 
 			previousDurationDelayMs += visualEffect.durationMs;
 		}
@@ -841,6 +842,20 @@ public class MarketplaceProduct
 				EbsInterfaceWidgetFrame interfaceWidgetFrame = (EbsInterfaceWidgetFrame) interfaceWidgetFrameIterator.next();
 				widgetManager.addWidgetEffect(this, interfaceWidgetFrame);
 			}
+		}, delayMs);
+	}
+
+	private void triggerSoundEffect(Integer soundEffectId, int delayMs)
+	{
+
+		// guard: make sure the sound is valid
+		if (soundEffectId == null || soundEffectId < 0)
+		{
+			return;
+		}
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			manager.getClient().playSoundEffect(soundEffectId);
 		}, delayMs);
 	}
 
