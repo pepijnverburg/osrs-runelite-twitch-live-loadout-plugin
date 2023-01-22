@@ -64,8 +64,8 @@ public class MarketplaceProduct
 	 */
 	private Instant lastSpawnBehaviourAt;
 	private int spawnBehaviourCounter = 0;
-	private Instant lastInterfaceEffectAt;
-	private int interfaceEffectCounter = 0;
+	private Instant lastVisualEffectBehaviourAt;
+	private int visualEffectBehaviourCounter = 0;
 
 	/**
 	 * Expiration trackers
@@ -113,12 +113,12 @@ public class MarketplaceProduct
 			return;
 		}
 
+		handleNewVisualEffects();
 		handleNewSpawns();
 		handleSpawnLocations();
 		handleSpawnRandomVisualEffects();
 		handleMovementAnimations();
 //		handlePlayerEquipment();
-//		handleInterfaceEffect();
 	}
 
 	public void onClientTick()
@@ -452,9 +452,9 @@ public class MarketplaceProduct
 
 			// trigger the animations on this single spawned object
 			triggerVisualEffects(
-				spawnedObject,
 				randomVisualEffects,
 				0,
+				spawnedObject,
 				false,
 				null
 			);
@@ -462,6 +462,70 @@ public class MarketplaceProduct
 			// increase the counter that will be used to check if the max repeat count is reached
 			spawnedObject.registerRandomVisualEffect();
 		}
+	}
+
+	private void handleNewVisualEffects()
+	{
+		Instant now = Instant.now();
+		String transactionId = transaction.id;
+		String productId = ebsProduct.id;
+		EbsBehaviour behaviour = ebsProduct.behaviour;
+		ArrayList<ArrayList<EbsVisualEffect>> visualEffectOptions = behaviour.visualEffectsOptions;
+		EbsInterval visualEffectsInterval = behaviour.visualEffectsInterval;
+
+		// guard: check if there are any visual effect options
+		if (visualEffectOptions == null)
+		{
+			return;
+		}
+
+		// make sure the behaviour interval is valid
+		if (visualEffectsInterval == null)
+		{
+			visualEffectsInterval = new EbsInterval();
+
+			// when the spawn interval is not set it can only trigger once
+			// this makes the most sense in the JSON configuration of the product
+			// if no interval is set -> no repetition
+			visualEffectsInterval.repeatAmount = 1;
+		}
+
+		int repeatAmount = visualEffectsInterval.repeatAmount;
+
+		// guard: check if the amount has passed
+		// NOTE: -1 repeat amount if infinity!
+		if (repeatAmount >= 0 && visualEffectBehaviourCounter >= repeatAmount)
+		{
+			return;
+		}
+
+		// guard: check if the interval has not passed
+		if (lastVisualEffectBehaviourAt != null && lastVisualEffectBehaviourAt.plusMillis(visualEffectsInterval.delayMs).isAfter(now))
+		{
+			return;
+		}
+
+		// select a random option
+		ArrayList<EbsVisualEffect> visualEffectsOption = MarketplaceRandomizers.getRandomEntryFromList(visualEffectOptions);
+
+		// guard: check if a valid option was selected
+		if (visualEffectsOption == null)
+		{
+			log.error("Could not find valid visual effect behaviour option for product ("+ productId +")");
+			return;
+		}
+
+		log.info("Executing visual effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
+		lastVisualEffectBehaviourAt = Instant.now();
+		visualEffectBehaviourCounter += 1;
+
+		triggerVisualEffects(
+			visualEffectsOption,
+			0,
+			null,
+			false,
+			null
+		);
 	}
 
 	private void handleNewSpawns()
@@ -506,7 +570,7 @@ public class MarketplaceProduct
 		}
 
 		// select a random option
-		EbsSpawnOption spawnOption = getSpawnBehaviourByChance(spawnOptions);
+		EbsSpawnOption spawnOption = MarketplaceRandomizers.getSpawnBehaviourByChance(spawnOptions);
 
 		// guard: check if a valid option was selected
 		if (spawnOption == null)
@@ -672,7 +736,7 @@ public class MarketplaceProduct
 		return spawnPoint;
 	}
 
-	private void triggerVisualEffects(SpawnedObject spawnedObject, ArrayList<EbsVisualEffect> visualEffects, int baseDelayMs, boolean forceModelAnimation, ResetVisualEffectHandler resetModelAnimationHandler)
+	private void triggerVisualEffects(ArrayList<EbsVisualEffect> visualEffects, int baseDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetVisualEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the animation is valid
@@ -820,36 +884,6 @@ public class MarketplaceProduct
 		public void execute(int delayMs);
 	}
 
-	private EbsSpawnOption getSpawnBehaviourByChance(ArrayList<EbsSpawnOption> spawnBehaviourOptions)
-	{
-		int attempts = 0;
-		int maxAttempts = 50;
-
-		// guard: make sure there are any options
-		if (spawnBehaviourOptions == null || spawnBehaviourOptions.size() < 0)
-		{
-			return null;
-		}
-
-		// roll for x amount of times to select the option
-		// TODO: see how this impacts the selection?
-		while (attempts++ < maxAttempts)
-		{
-			for (EbsSpawnOption option : spawnBehaviourOptions)
-			{
-
-				// choose this option when the chance is not known or when the roll landed
-				if (MarketplaceRandomizers.rollChance(option.chance))
-				{
-					return option;
-				}
-			}
-		}
-
-		// get the first is no valid one is found
-		return spawnBehaviourOptions.get(0);
-	}
-
 	/**
 	 * Schedule showing of a spawned object where it will trigger the show visual effects if available
 	 */
@@ -860,10 +894,10 @@ public class MarketplaceProduct
 
 			// trigger visual effects and graphics on show
 			triggerVisualEffects(
-				spawnedObject,
 				showVisualEffects,
 				0,
-				true,
+				spawnedObject,
+					true,
 				null
 			);
 
@@ -888,9 +922,9 @@ public class MarketplaceProduct
 
 			// trigger the visual effects and at the end hide the object
 			triggerVisualEffects(
-				spawnedObject,
 				hideVisualEffects,
 				0,
+				spawnedObject,
 				true,
 				(resetDelayMs) -> {
 					handleSpawnedObject(spawnedObject, resetDelayMs, () -> {

@@ -2,11 +2,12 @@ package com.twitchliveloadout.marketplace.products;
 
 public class EbsInterfaceWidgetFrame {
 	public String type;
-	public Integer parentId;
-	public Integer childId;
-	public Integer listIndex;
+	public Integer parentId = -1;
+	public Integer childId = -1;
+	public Integer listIndex = -1;
 	public String text;
 	public Integer textColor;
 	public Integer itemId;
+	public Integer itemQuantity;
 	public Integer durationMs = -1;
 }

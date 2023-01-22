@@ -1,10 +1,7 @@
 package com.twitchliveloadout.marketplace.interfaces;
 
-import com.twitchliveloadout.marketplace.products.EbsInterfaceWidgetFrame;
 import lombok.Getter;
 import net.runelite.api.widgets.Widget;
-
-import java.time.Instant;
 
 public class OriginalWidget {
 	@Getter
@@ -15,6 +12,10 @@ public class OriginalWidget {
 	private final String originalText;
 	@Getter
 	private final Integer originalTextColor;
+	@Getter
+	private final Integer originalItemId;
+	@Getter
+	private final Integer originalItemQuantity;
 
 	public OriginalWidget(Widget widget)
 	{
@@ -22,5 +23,7 @@ public class OriginalWidget {
 		this.originalHidden = widget.isSelfHidden();
 		this.originalText = widget.getText();
 		this.originalTextColor = widget.getTextColor();
+		this.originalItemId = widget.getItemId();
+		this.originalItemQuantity = widget.getItemQuantity();
 	}
 }

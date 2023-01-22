@@ -71,6 +71,8 @@ public class WidgetManager {
 			expiresAt = Instant.now().plusMillis(durationMs);
 		}
 
+		log.info("Adding new widget effect for widget frame parent "+ widgetFrame.parentId +" and child "+ widgetFrame.childId);
+
 		// register the new widget effect
 		WidgetEffect widgetEffect = new WidgetEffect(product, widgetFrame, expiresAt);
 		widgetEffects.add(widgetEffect);
@@ -148,6 +150,8 @@ public class WidgetManager {
 		widget.setHidden(originalWidget.getOriginalHidden());
 		widget.setText(originalWidget.getOriginalText());
 		widget.setTextColor(originalWidget.getOriginalTextColor());
+		widget.setItemId(originalWidget.getOriginalItemId());
+		widget.setItemQuantity(originalWidget.getOriginalItemQuantity());
 	}
 
 	private void applyWidgetFrame(EbsInterfaceWidgetFrame widgetFrame)
@@ -157,17 +161,21 @@ public class WidgetManager {
 		// guard: make sure the widget is valid
 		if (widget == null)
 		{
+			log.warn("COULD NOT FIND WIDGET!"+ widgetFrame.parentId);
 			return;
 		}
 
 		String type = widgetFrame.type;
 		String text = widgetFrame.text;
 		Integer textColor = widgetFrame.textColor;
+		Integer itemId = widgetFrame.itemId;
+		Integer itemQuantity = widgetFrame.itemQuantity;
 
 		plugin.runOnClientThread(() -> {
 			// hide widget when disable is requested
 			if (DISABLE_INTERFACE_WIDGET_TYPE.equals(type))
 			{
+				log.info("SETTING TO HIDE!");
 				widget.setHidden(true);
 			}
 
@@ -182,6 +190,16 @@ public class WidgetManager {
 				if (textColor != null)
 				{
 					widget.setTextColor(textColor);
+				}
+
+				if (itemId != null)
+				{
+					widget.setItemId(itemId);
+				}
+
+				if (itemQuantity != null)
+				{
+					widget.setItemQuantity(itemQuantity);
 				}
 			}
 		});
@@ -203,9 +221,15 @@ public class WidgetManager {
 	private Widget getWidget(EbsInterfaceWidgetFrame widgetFrame)
 	{
 		try {
-			final int parentId = widgetFrame.parentId;
-			final int childId = widgetFrame.childId;
-			final int listIndex = widgetFrame.listIndex;
+			final Integer parentId = widgetFrame.parentId;
+			final Integer childId = widgetFrame.childId;
+			final Integer listIndex = widgetFrame.listIndex;
+
+			// guard: make sure the parent and child selectors are valid
+			if (parentId < 0 || childId < 0)
+			{
+				return null;
+			}
 
 			Widget widget = client.getWidget(parentId, childId);
 

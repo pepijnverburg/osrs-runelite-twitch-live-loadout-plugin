@@ -59,4 +59,34 @@ public class MarketplaceRandomizers {
 
 		return chance >= roll;
 	}
+
+	public static EbsSpawnOption getSpawnBehaviourByChance(ArrayList<EbsSpawnOption> spawnBehaviourOptions)
+	{
+		int attempts = 0;
+		int maxAttempts = 50;
+
+		// guard: make sure there are any options
+		if (spawnBehaviourOptions == null || spawnBehaviourOptions.size() < 0)
+		{
+			return null;
+		}
+
+		// roll for x amount of times to select the option
+		// TODO: see how this impacts the selection?
+		while (attempts++ < maxAttempts)
+		{
+			for (EbsSpawnOption option : spawnBehaviourOptions)
+			{
+
+				// choose this option when the chance is not known or when the roll landed
+				if (MarketplaceRandomizers.rollChance(option.chance))
+				{
+					return option;
+				}
+			}
+		}
+
+		// get the first is no valid one is found
+		return spawnBehaviourOptions.get(0);
+	}
 }
