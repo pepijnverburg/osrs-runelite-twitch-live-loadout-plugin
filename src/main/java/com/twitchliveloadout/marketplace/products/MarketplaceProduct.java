@@ -762,7 +762,7 @@ public class MarketplaceProduct
 			EbsVisualEffect visualEffect = (EbsVisualEffect) visualEffectIterator.next();
 			boolean isLast = !visualEffectIterator.hasNext();
 			int delayMs = baseDelayMs + previousDurationDelayMs;
-			int durationMs = visualEffect.durationMs;
+			int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(visualEffect.durationMs, 0, 0);
 
 			triggerModelAnimation(
 				spawnedObject,

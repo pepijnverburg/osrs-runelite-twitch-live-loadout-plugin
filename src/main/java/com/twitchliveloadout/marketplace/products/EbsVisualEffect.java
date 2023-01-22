@@ -3,7 +3,7 @@ package com.twitchliveloadout.marketplace.products;
 import java.util.ArrayList;
 
 public class EbsVisualEffect {
-	public Integer durationMs = 0;
+	public EbsRandomRange durationMs;
 	public EbsAnimationFrame modelAnimation;
 	public EbsAnimationFrame playerAnimation;
 	public EbsGraphicFrame playerGraphic;

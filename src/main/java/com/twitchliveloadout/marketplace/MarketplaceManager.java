@@ -363,7 +363,7 @@ public class MarketplaceManager {
 			ebsProducts = newEbsProducts;
 			ebsProductDurations = newEbsProductDurations;
 		} catch (Exception exception) {
-			// empty
+			log.warn("Could not fetch the new EBS products due to the following error: ", exception);
 		}
 	}
 
