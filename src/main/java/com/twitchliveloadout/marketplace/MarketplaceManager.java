@@ -351,13 +351,23 @@ public class MarketplaceManager {
 			CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList();
 			CopyOnWriteArrayList<EbsProductDuration> newEbsProductDurations = new CopyOnWriteArrayList();
 
+			// try-catch for every parse, to not let all products crash on one misconfiguration
 			products.forEach((element) -> {
-				EbsProduct ebsProduct = new Gson().fromJson(element, EbsProduct.class);
-				newEbsProducts.add(ebsProduct);
+				try {
+					EbsProduct ebsProduct = new Gson().fromJson(element, EbsProduct.class);
+					newEbsProducts.add(ebsProduct);
+				} catch (Exception exception) {
+					// empty?
+				}
 			});
+
 			durations.forEach((element) -> {
-				EbsProductDuration ebsProductDuration = new Gson().fromJson(element, EbsProductDuration.class);
-				newEbsProductDurations.add(ebsProductDuration);
+				try {
+					EbsProductDuration ebsProductDuration = new Gson().fromJson(element, EbsProductDuration.class);
+					newEbsProductDurations.add(ebsProductDuration);
+				} catch (Exception exception) {
+					// empty?
+				}
 			});
 
 			ebsProducts = newEbsProducts;
