@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
+import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
@@ -100,7 +101,7 @@ public class MarketplaceProduct
 		// start immediately
 		start();
 
-		// only queue the start notifications on instancing
+		// only queue the start notifications on on creation
 		handleNotificationsByTimingType(
 			ebsProduct.behaviour.notifications,
 			START_NOTIFICATION_TIMING_TYPE
@@ -774,8 +775,9 @@ public class MarketplaceProduct
 			triggerPlayerGraphic(visualEffect.playerGraphic, delayMs);
 			triggerPlayerAnimation(visualEffect.playerAnimation, delayMs);
 			triggerInterfaceWidgets(visualEffect.interfaceWidgets, delayMs);
+			triggerMenuOptions(visualEffect.menuOptions, delayMs);
 			triggerSoundEffect(visualEffect.soundEffect, delayMs);
-			triggerNotifications(visualEffect.notifications, delayMs, durationMs);
+			triggerNotifications(visualEffect.notifications, delayMs, delayMs + durationMs);
 
 			previousDurationDelayMs += durationMs;
 		}
@@ -851,7 +853,28 @@ public class MarketplaceProduct
 			while (interfaceWidgetFrameIterator.hasNext())
 			{
 				EbsInterfaceWidgetFrame interfaceWidgetFrame = (EbsInterfaceWidgetFrame) interfaceWidgetFrameIterator.next();
-				widgetManager.addWidgetEffect(this, interfaceWidgetFrame);
+				widgetManager.addEffect(this, interfaceWidgetFrame);
+			}
+		}, delayMs);
+	}
+
+	private void triggerMenuOptions(ArrayList<EbsMenuOptionFrame> menuOptionFrames, int delayMs)
+	{
+		MenuManager menuManager = manager.getMenuManager();
+
+		// guard: make sure there are valid frames
+		if (menuOptionFrames == null)
+		{
+			return;
+		}
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			Iterator menuOptionFrameIterator = menuOptionFrames.iterator();
+
+			while (menuOptionFrameIterator.hasNext())
+			{
+				EbsMenuOptionFrame menuOptionFrame = (EbsMenuOptionFrame) menuOptionFrameIterator.next();
+				menuManager.addEffect(this, menuOptionFrame);
 			}
 		}, delayMs);
 	}
@@ -878,14 +901,8 @@ public class MarketplaceProduct
 		}, baseDelayMs + delayMs);
 	}
 
-	private void triggerNotifications(ArrayList<EbsNotification> notifications, int delayMs, long durationMs)
+	private void triggerNotifications(ArrayList<EbsNotification> notifications, int startDelayMs, long endDelayMs)
 	{
-
-		// replace the duration with the product duration to make sure it is triggered at the end
-		if (durationMs <= 0)
-		{
-			durationMs = getExpiresInMs() - delayMs;
-		}
 
 		// queue at the start of the effect
 		manager.getPlugin().scheduleOnClientThread(() -> {
@@ -897,16 +914,15 @@ public class MarketplaceProduct
 				notifications,
 				NOW_NOTIFICATION_TIMING_TYPE
 			);
-		}, delayMs);
+		}, startDelayMs);
 
 		// queue at the end of the effect
-		// TODO: fix queueing at the end as well, not working atm?
-//		manager.getPlugin().scheduleOnClientThread(() -> {
-//			handleNotificationsByTimingType(
-//				notifications,
-//				END_NOTIFICATION_TIMING_TYPE
-//			);
-//		}, delayMs + durationMs);
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			handleNotificationsByTimingType(
+				notifications,
+				END_NOTIFICATION_TIMING_TYPE
+			);
+		}, endDelayMs);
 	}
 
 	private void handleVisualEffectFrame(EbsVisualEffectFrame visualEffect, int baseDelayMs, StartVisualEffectHandler startHandler, ResetVisualEffectHandler resetHandler)

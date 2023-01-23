@@ -1,22 +1,22 @@
 package com.twitchliveloadout.marketplace.interfaces;
 
-import com.twitchliveloadout.marketplace.products.EbsInterfaceWidgetFrame;
+import com.twitchliveloadout.marketplace.products.EbsInterfaceFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.Getter;
 
 import java.time.Instant;
 
-public class WidgetEffect {
+public class InterfaceEffect<K extends EbsInterfaceFrame> {
 	@Getter
 	private final MarketplaceProduct marketplaceProduct;
 	@Getter
-	private final EbsInterfaceWidgetFrame interfaceWidgetFrame;
+	private final K frame;
 	private final Instant expiresAt;
 
-	public WidgetEffect(MarketplaceProduct marketplaceProduct, EbsInterfaceWidgetFrame interfaceWidgetFrame, Instant expiresAt)
+	public InterfaceEffect(MarketplaceProduct marketplaceProduct, K frame, Instant expiresAt)
 	{
 		this.marketplaceProduct = marketplaceProduct;
-		this.interfaceWidgetFrame = interfaceWidgetFrame;
+		this.frame = frame;
 		this.expiresAt = expiresAt;
 	}
 

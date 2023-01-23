@@ -1,6 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
-public class EbsInterfaceWidgetFrame {
+public class EbsInterfaceWidgetFrame extends EbsInterfaceFrame {
 	public String type;
 	public Integer parentId = -1;
 	public Integer childId = -1;
@@ -11,5 +11,4 @@ public class EbsInterfaceWidgetFrame {
 	public Integer itemQuantity;
 	public String name;
 	public Integer spriteId;
-	public Integer durationMs = -1;
 }
