@@ -127,12 +127,7 @@ public class NotificationManager {
 
 	private void sendChatNotification(Notification notification)
 	{
-		String message = notification.ebsNotification.message;
-
-		if (message == null)
-		{
-			message = getDefaultMessage(notification);
-		}
+		String message = getMessage(notification);
 
 		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
 			.append(ChatColorType.HIGHLIGHT)
@@ -150,12 +145,7 @@ public class NotificationManager {
 	private void sendOverheadNotification(Notification notification)
 	{
 		Player player = client.getLocalPlayer();
-		String message = notification.ebsNotification.message;
-
-		if (message == null)
-		{
-			message = getDefaultMessage(notification);
-		}
+		String message = getMessage(notification);
 
 		// guard: skip on invalid player
 		if (player == null)
@@ -173,34 +163,50 @@ public class NotificationManager {
 		lockNotificationsUntil(OVERHEAD_NOTIFICATION_LOCKED_MS);
 	}
 
-	private String getDefaultMessage(Notification notification)
+	private String getMessage(Notification notification)
 	{
+		String message = notification.ebsNotification.message;
 		final MarketplaceProduct marketplaceProduct = notification.marketplaceProduct;
 
 		// guard: make sure the product is valid
 		if (marketplaceProduct == null)
 		{
-			return "Thanks for the donation!";
+			return (message == null ? "Thank you for the donation!" : message);
 		}
 
 		final TwitchTransaction transaction = marketplaceProduct.getTransaction();
 		final TwitchProduct twitchProduct = marketplaceProduct.getTwitchProduct();
-		String username = "viewer";
-		String donationName = "your donation";
+
+		if (message == null)
+		{
+			if (twitchProduct == null) {
+				message = "Thank you {viewerName} for your donation!";
+			} else {
+				message = "Thank you {viewerName} for donating {currencyAmount} {currencyType}!";
+			}
+		}
+
+		String viewerName = "viewer";
+		String channelName = "broadcaster";
+		String currencyAmount = "";
+		String currencyType = "";
 
 		if (transaction != null)
 		{
-			username = transaction.user_name;
+			viewerName = transaction.user_name;
+			channelName = transaction.broadcaster_name;
 		}
 
 		if (twitchProduct != null)
 		{
-			final int costAmount = twitchProduct.cost.amount;
-			final String costType = twitchProduct.cost.type;
-			donationName = "donating "+ costAmount +" "+ costType;
+			currencyAmount = twitchProduct.cost.amount.toString();
+			currencyType = twitchProduct.cost.type;
 		}
 
-		String message = "Thank you "+ username +" for "+ donationName +"!";
+		message = message.replaceAll("\\{viewerName\\}", viewerName);
+		message = message.replaceAll("\\{channelName\\}", channelName);
+		message = message.replaceAll("\\{currencyAmount\\}", currencyAmount);
+		message = message.replaceAll("\\{currencyType\\}", currencyType);
 
 		return message;
 	}
