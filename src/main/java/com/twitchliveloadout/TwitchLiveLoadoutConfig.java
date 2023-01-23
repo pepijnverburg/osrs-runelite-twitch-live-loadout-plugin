@@ -28,10 +28,7 @@ import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.items.ItemStateManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchThemeEntry;
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.*;
 
 @ConfigGroup("twitchstreamer")
 public interface TwitchLiveLoadoutConfig extends Config
@@ -68,6 +65,10 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return "";
 	}
 
+	@Range(
+			min = MIN_OVERLAY_TOP_POSITION,
+			max = MAX_OVERLAY_TOP_POSITION
+	)
 	@ConfigItem(
 			keyName = "overlayTopPosition",
 			name = "Overlay top position",
@@ -142,6 +143,10 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return true;
 	}
 
+	@Range(
+			min = 0,
+			max = 60
+	)
 	@ConfigItem(
 			keyName = "minWindowFocusTime",
 			name = "Focus time to sync (seconds)",
@@ -209,6 +214,10 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return true;
 	}
 
+	@Range(
+			min = 0,
+			max = ItemStateManager.MAX_BANK_ITEMS
+	)
 	@ConfigItem(
 			keyName = "bankItemsAmount",
 			name = "Max bank items",
@@ -312,6 +321,10 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return false;
 	}
 
+	@Range(
+			min = 0,
+			max = FightStateManager.MAX_FIGHT_AMOUNT
+	)
 	@ConfigItem(
 			keyName = "fightStatisticsMaxFightAmount",
 			name = "Max combat fights",
@@ -324,6 +337,10 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return FightStateManager.MAX_FIGHT_AMOUNT;
 	}
 
+	@Range(
+			min = 0,
+			max = 24 * 60
+	)
 	@ConfigItem(
 			keyName = "fightStatisticsExpiryTime",
 			name = "Fight expiry time (minutes)",
@@ -467,16 +484,16 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigSection(
-			name = "Marketplace",
-			description = "Settings for the marketplace",
+			name = "Donations",
+			description = "Settings for the donations",
 			position = 12
 	)
-	String marketplaceSection = "marketplace";
+	String marketplaceSection = "donations";
 
 	@ConfigItem(
 			keyName = "marketplaceEnabled",
-			name = "Enable marketplace",
-			description = "Synchronize the marketplace configuration, such as enabled and featured items.",
+			name = "Enable donations",
+			description = "Synchronize the donations configuration.",
 			position = 2,
 			hidden = false,
 			section = marketplaceSection
@@ -484,45 +501,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default boolean marketplaceEnabled()
 	{
 		return false;
-	}
-
-	@ConfigItem(
-			keyName = "devPlayerGraphicId",
-			name = "Dev Player Graphic ID",
-			description = "Testing Graphic ID on player.",
-			position = 97,
-			hidden = false,
-			section = marketplaceSection
-	)
-	default int devPlayerGraphicId()
-	{
-		return 1160;
-	}
-
-	@ConfigItem(
-			keyName = "devObjectSpawnModelId",
-			name = "Dev Object Spawn Model ID",
-			description = "Testing model ID when spawning objects for the marketplace.",
-			position = 97,
-			hidden = false,
-			section = marketplaceSection
-	)
-	default int devObjectSpawnModelId()
-	{
-		return 0;
-	}
-
-	@ConfigItem(
-			keyName = "devObjectSpawnAnimationId",
-			name = "Dev Object Spawn Animation ID",
-			description = "Testing animation ID when spawning objects for the marketplace.",
-			position = 98,
-			hidden = false,
-			section = marketplaceSection
-	)
-	default int devObjectSpawnAnimationId()
-	{
-		return 0;
 	}
 
 	@ConfigSection(
