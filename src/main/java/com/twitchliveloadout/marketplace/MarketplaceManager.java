@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
+import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.products.*;
@@ -21,6 +22,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.PlayerChanged;
 import net.runelite.client.chat.ChatMessageManager;
 import okhttp3.Response;
@@ -55,6 +57,9 @@ public class MarketplaceManager {
 
 	@Getter
 	private final WidgetManager widgetManager;
+
+	@Getter
+	private final MenuManager menuManager;
 
 	@Getter
 	private final NotificationManager notificationManager;
@@ -102,6 +107,7 @@ public class MarketplaceManager {
 		this.transmogManager = new TransmogManager();
 		this.notificationManager = new NotificationManager(plugin, chatMessageManager, client);
 		this.widgetManager = new WidgetManager(plugin, client);
+		this.menuManager = new MenuManager(this);
 	}
 
 	/**
@@ -425,6 +431,15 @@ public class MarketplaceManager {
 	{
 		notificationManager.onGameTick();
 		widgetManager.onGameTick();
+		menuManager.onGameTick();
+	}
+
+	/**
+	 * Handle on menu option clicks
+	 */
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		menuManager.onMenuOptionClicked(event);
 	}
 
 	/**
