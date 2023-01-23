@@ -6,6 +6,7 @@ import com.twitchliveloadout.marketplace.MarketplaceManager;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 
 import java.util.*;
@@ -204,18 +205,18 @@ public class SpawnManager {
 		}
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int maxRadius, WorldPoint referenceWorldPoint)
+	public SpawnPoint getOutwardSpawnPoint(int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
-		return getOutwardSpawnPoint(1, 2, maxRadius, referenceWorldPoint);
+		return getOutwardSpawnPoint(1, 2, maxRadius, inLineOfSight, referenceWorldPoint);
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, WorldPoint referenceWorldPoint)
+	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
 		for (int radius = startRadius; radius < maxRadius; radius += radiusStepSize)
 		{
 			int randomizedRadius = radius + ((int) (Math.random() * radiusStepSize));
 			int usedRadius = Math.min(randomizedRadius, maxRadius);
-			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, referenceWorldPoint);
+			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, inLineOfSight, referenceWorldPoint);
 
 			if (candidateSpawnPoint != null) {
 				return candidateSpawnPoint;
@@ -225,12 +226,13 @@ public class SpawnManager {
 		return null;
 	}
 
-	public SpawnPoint getSpawnPoint(int radius, WorldPoint referenceWorldPoint)
+	public SpawnPoint getSpawnPoint(int radius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
 		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList();
-		final int playerPlane = client.getPlane();
 		final int[][] collisionFlags = getSceneCollisionFlags();
-		final WorldPoint playerWorldPoint = client.getLocalPlayer().getWorldLocation();
+		final Player player = client.getLocalPlayer();
+		final WorldArea playerArea = player.getWorldArea();
+		final WorldPoint playerWorldPoint = player.getWorldLocation();
 
 		// make sure the reference local point is always valid
 		if (referenceWorldPoint == null)
@@ -249,7 +251,7 @@ public class SpawnManager {
 				int sceneAttemptX = sceneX + deltaX;
 				int sceneAttemptY = sceneY + deltaY;
 
-				// guard: make sure the flag can be found
+				// guard: make sure the tile has collision flags
 				if (
 					sceneAttemptX < 0
 					|| sceneAttemptX >= collisionFlags.length
@@ -270,6 +272,12 @@ public class SpawnManager {
 
 				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
 				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
+
+				// guard: make sure the tile is in line of sight
+				if (inLineOfSight && !playerArea.hasLineOfSightTo(client, worldPoint))
+				{
+					continue;
+				}
 
 				// guard: skip candidates that are the current player location
 				// because when rendering the model it is always on top of the player
