@@ -6,6 +6,8 @@ import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
+import jdk.internal.jline.internal.Log;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
@@ -16,14 +18,17 @@ import net.runelite.client.chat.QueuedMessage;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.concurrent.ScheduledFuture;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
+@Slf4j
 public class NotificationManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final ChatMessageManager chatMessageManager;
 	private final Client client;
 	private Instant notificationsLockedUntil;
+	private ScheduledFuture overheadResetTask;
 
 	/**
 	 * Queue of all the notifications that should be shown to the player
@@ -58,11 +63,14 @@ public class NotificationManager {
 			Notification notification = new Notification(marketplaceProduct, ebsNotification);
 
 			// guard: check if this is a notification that should be send immediately
-			if (NOW_NOTIFICATION_TIMING_TYPE.equals(ebsNotification.timingType))
+			if (!ebsNotification.queue)
 			{
+				log.debug("Sending a notification instantly: "+ notification.ebsNotification.message);
 				sendNotification(notification);
 				return;
 			}
+
+			log.debug("Queueing a notification: "+ notification.ebsNotification.message);
 
 			// otherwise add to the queued group
 			notificationGroup.add(notification);
@@ -105,15 +113,9 @@ public class NotificationManager {
 	private void sendNotification(Notification notification)
 	{
 		EbsNotification ebsNotification = notification.ebsNotification;
-		MarketplaceProduct marketplaceProduct = notification.marketplaceProduct;
 		String messageType = ebsNotification.messageType;
 
-		// guard: skip the notification is the marketplace product is not valid anymore
-		// NOTE: three second grace period for when after the product is expired
-		if (marketplaceProduct.isExpired(-3000) || (!marketplaceProduct.isActive() && !marketplaceProduct.isExpired()))
-		{
-			return;
-		}
+		log.debug("Sending notification: "+ notification.ebsNotification.message);
 
 		if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
 		{
@@ -153,11 +155,17 @@ public class NotificationManager {
 			return;
 		}
 
+		// make sure there is only one overhead reset task!
+		if (overheadResetTask != null && !overheadResetTask.isDone())
+		{
+			overheadResetTask.cancel(false);
+		}
+
 		String finalMessage = message;
 		plugin.runOnClientThread(() -> {
 			player.setOverheadText(finalMessage);
 		});
-		plugin.scheduleOnClientThread(() -> {
+		overheadResetTask = plugin.scheduleOnClientThread(() -> {
 			player.setOverheadText("");
 		}, OVERHEAD_NOTIFICATION_DURATION_MS);
 		lockNotificationsUntil(OVERHEAD_NOTIFICATION_LOCKED_MS);

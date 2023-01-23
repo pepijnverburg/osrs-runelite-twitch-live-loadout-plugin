@@ -26,12 +26,12 @@ public class MarketplaceConstants {
 	public static final int PLAYER_TILE_HISTORY_SIZE = 10;
 
 	public static final int NOTIFICATION_QUEUE_MAX_SIZE = 200;
+	public static final int END_NOTIFICATION_GRACE_PERIOD_MS = 7000; // keep it high due to internal delays
 	public static final String NONE_NOTIFICATION_MESSAGE_TYPE = "none";
 	public static final String CHAT_NOTIFICATION_MESSAGE_TYPE = "chat";
 	public static final String OVERHEAD_NOTIFICATION_MESSAGE_TYPE = "overhead";
 	public static final String TILE_MARKER_NOTIFICATION_MESSAGE_TYPE = "tile-marker";
 
-	public static final String NOW_NOTIFICATION_TIMING_TYPE = "now";
 	public static final String START_NOTIFICATION_TIMING_TYPE = "start";
 	public static final String END_NOTIFICATION_TIMING_TYPE = "end";
 

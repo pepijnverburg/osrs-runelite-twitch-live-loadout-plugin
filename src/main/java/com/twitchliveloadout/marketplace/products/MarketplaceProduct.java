@@ -106,10 +106,6 @@ public class MarketplaceProduct
 			ebsProduct.behaviour.notifications,
 			START_NOTIFICATION_TIMING_TYPE
 		);
-		handleNotificationsByTimingType(
-			ebsProduct.behaviour.notifications,
-			NOW_NOTIFICATION_TIMING_TYPE
-		);
 	}
 
 	public void handleBehaviour()
@@ -200,12 +196,12 @@ public class MarketplaceProduct
 	private void handleNotificationsByTimingType(ArrayList<EbsNotification> notifications, String timingType)
 	{
 		ArrayList<EbsNotification> filteredNotifications = new ArrayList();
-		boolean hasValidNotifications = (notifications != null);
-		boolean isRunning = (!isActive || !isExpired(-2000));
+		boolean isExpired = ((!isActive && !isExpired()) || isExpired(-1 * END_NOTIFICATION_GRACE_PERIOD_MS));
 
 		// guard: make sure there are any notifications and the product is active
-		if (!hasValidNotifications || !isRunning)
+		if (notifications == null || isExpired)
 		{
+			log.debug("Skipping notifications because product is expired by time: "+ getExpiresInMs());
 			return;
 		}
 
@@ -590,7 +586,7 @@ public class MarketplaceProduct
 		}
 
 		// an option is selected so we can change the timer and count
-		log.info("Executing spawn behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
+		log.debug("Executing spawn behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
 		lastSpawnBehaviourAt = now;
 		spawnBehaviourCounter += 1;
 
@@ -642,7 +638,7 @@ public class MarketplaceProduct
 		// guard: make sure the spawn point is valid
 		if (spawnPoint == null)
 		{
-			log.error("Could not find valid spawn point when triggering spawn behaviour!");
+			log.debug("Could not find valid spawn point when triggering spawn behaviour!");
 			return;
 		}
 
@@ -722,6 +718,7 @@ public class MarketplaceProduct
 		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, 0d, DEFAULT_RADIUS);
 		String radiusType = placement.radiusType;
 		String locationType = placement.locationType;
+		Boolean inLineOfSight = placement.inLineOfSight;
 		String validatedRadiusType = (radiusType == null) ? DEFAULT_RADIUS_TYPE : radiusType;
 		String validatedLocationType = (locationType == null) ? CURRENT_TILE_LOCATION_TYPE : locationType;
 		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
@@ -738,9 +735,9 @@ public class MarketplaceProduct
 		}
 
 		if (OUTWARD_RADIUS_TYPE.equals(validatedRadiusType)) {
-			spawnPoint = spawnManager.getOutwardSpawnPoint(radius, referenceWorldPoint);
+			spawnPoint = spawnManager.getOutwardSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
 		} else {
-			spawnPoint = spawnManager.getSpawnPoint(radius, referenceWorldPoint);
+			spawnPoint = spawnManager.getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
 		}
 
 		return spawnPoint;
@@ -910,10 +907,6 @@ public class MarketplaceProduct
 				notifications,
 				START_NOTIFICATION_TIMING_TYPE
 			);
-			handleNotificationsByTimingType(
-				notifications,
-				NOW_NOTIFICATION_TIMING_TYPE
-			);
 		}, startDelayMs);
 
 		// queue at the end of the effect
@@ -978,7 +971,7 @@ public class MarketplaceProduct
 				showVisualEffects,
 				0,
 				spawnedObject,
-					true,
+				true,
 				null
 			);
 
