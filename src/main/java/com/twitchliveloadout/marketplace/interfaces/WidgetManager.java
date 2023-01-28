@@ -4,6 +4,7 @@ import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.products.EbsInterfaceWidgetFrame;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.JagexColor;
 import net.runelite.api.widgets.Widget;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,10 +51,13 @@ public class WidgetManager extends InterfaceManager {
 		String type = widgetFrame.type;
 		String text = widgetFrame.text;
 		Integer textColor = widgetFrame.textColor;
+		Integer opacity = widgetFrame.opacity;
 		Integer itemId = widgetFrame.itemId;
 		Integer itemQuantity = widgetFrame.itemQuantity;
 		String name = widgetFrame.name;
 		Integer spriteId = widgetFrame.spriteId;
+		Integer modelId = widgetFrame.modelId;
+		Integer animationId = widgetFrame.animationId;
 
 		plugin.runOnClientThread(() -> {
 			// hide widget when disable is requested
@@ -75,6 +79,11 @@ public class WidgetManager extends InterfaceManager {
 					widget.setTextColor(textColor);
 				}
 
+				if (opacity != null)
+				{
+					widget.setOpacity(opacity);
+				}
+
 				if (itemId != null)
 				{
 					widget.setItemId(itemId);
@@ -93,6 +102,16 @@ public class WidgetManager extends InterfaceManager {
 				if (spriteId != null)
 				{
 					widget.setSpriteId(spriteId);
+				}
+
+				if (modelId != null)
+				{
+					widget.setModelId(modelId);
+				}
+
+				if (animationId != null)
+				{
+					widget.setAnimationId(animationId);
 				}
 			}
 		});
@@ -116,10 +135,13 @@ public class WidgetManager extends InterfaceManager {
 		widget.setHidden(originalWidget.getHidden());
 		widget.setText(originalWidget.getText());
 		widget.setTextColor(originalWidget.getTextColor());
+		widget.setOpacity(originalWidget.getOpacity());
 		widget.setItemId(originalWidget.getItemId());
 		widget.setItemQuantity(originalWidget.getItemQuantity());
 		widget.setName(originalWidget.getName());
 		widget.setSpriteId(originalWidget.getSpriteId());
+		widget.setModelId(originalWidget.getModelId());
+		widget.setAnimationId(originalWidget.getAnimationId());
 	}
 
 	private void registerOriginalWidget(Widget widget)

@@ -13,6 +13,8 @@ public class OriginalWidget {
 	@Getter
 	private final Integer textColor;
 	@Getter
+	private final Integer opacity;
+	@Getter
 	private final Integer itemId;
 	@Getter
 	private final Integer itemQuantity;
@@ -20,6 +22,10 @@ public class OriginalWidget {
 	private final String name;
 	@Getter
 	private final Integer spriteId;
+	@Getter
+	private final Integer modelId;
+	@Getter
+	private final Integer animationId;
 
 	public OriginalWidget(Widget widget)
 	{
@@ -29,9 +35,12 @@ public class OriginalWidget {
 		this.hidden = widget.isSelfHidden();
 		this.text = widget.getText();
 		this.textColor = widget.getTextColor();
+		this.opacity = widget.getOpacity();
 		this.itemId = widget.getItemId();
 		this.itemQuantity = widget.getItemQuantity();
 		this.name = widget.getName();
 		this.spriteId = widget.getSpriteId();
+		this.modelId = widget.getModelId();
+		this.animationId = widget.getAnimationId();
 	}
 }
