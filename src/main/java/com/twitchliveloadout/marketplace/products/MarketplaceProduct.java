@@ -274,7 +274,7 @@ public class MarketplaceProduct
 
 		// update the animation manager
 		animationManager.setCurrentMovementAnimations(movementAnimations);
-		animationManager.updateEffectAnimations();
+		animationManager.setCurrentMovementAnimations();
 	}
 
 	private void handleSpawnRotations()
@@ -894,7 +894,7 @@ public class MarketplaceProduct
 		}
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			manager.getClient().playSoundEffect(soundEffectId);
+			manager.getSoundManager().playSound(soundEffectId);
 		}, baseDelayMs + delayMs);
 	}
 
