@@ -11,6 +11,7 @@ import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.products.*;
+import com.twitchliveloadout.marketplace.sounds.SoundManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -64,6 +65,9 @@ public class MarketplaceManager {
 	@Getter
 	private final NotificationManager notificationManager;
 
+	@Getter
+	private final SoundManager soundManager;
+
 	/**
 	 * List to keep track of all the active products
 	 */
@@ -108,6 +112,7 @@ public class MarketplaceManager {
 		this.notificationManager = new NotificationManager(plugin, chatMessageManager, client);
 		this.widgetManager = new WidgetManager(plugin, client);
 		this.menuManager = new MenuManager(this);
+		this.soundManager = new SoundManager(client);
 	}
 
 	/**
@@ -131,26 +136,26 @@ public class MarketplaceManager {
 
 			newTransactions.forEach((element) -> {
 
-				// TMP: spawn only one product!
-//				if (queuedTransactions.size() > 0 || activeProducts.size() > 0) {
-//					return;
-//				}
+				// try catch for each individual transaction to not have one invalid transaction
+				// cancel all others with the top-level try-catch in this function
+				try {
+					TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
+					String transactionId = twitchTransaction.id;
 
-				TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
-				String transactionId = twitchTransaction.id;
+					// guard: check if this transaction is already handled
+					// this is required because we have an offset on the last checked at date
+					// because with the HTTP request delays it is possible to miss a transaction
+					if (handledTransactionIds.contains(transactionId)) {
+						log.info("Skipping Twitch transaction because it was already handled: " + transactionId);
+						return;
+					}
 
-				// guard: check if this transaction is already handled
-				// this is required because we have an offset on the last checked at date
-				// because with the HTTP request delays it is possible to miss a transaction
-				if (handledTransactionIds.contains(transactionId))
-				{
-					log.info("Skipping Twitch transaction because it was already handled: "+ transactionId);
-					return;
+					queuedTransactions.add(twitchTransaction);
+					handledTransactionIds.add(transactionId);
+					log.info("Queued a new Twitch transaction with ID: " + transactionId);
+				} catch (Exception exception) {
+					log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
 				}
-
-				queuedTransactions.add(twitchTransaction);
-				handledTransactionIds.add(transactionId);
-				log.info("Queued a new Twitch transaction with ID: "+ transactionId);
 			});
 
 			// only update the last checked at if everything is successful
@@ -183,69 +188,74 @@ public class MarketplaceManager {
 		while (iterator.hasNext())
 		{
 			TwitchTransaction transaction = (TwitchTransaction) iterator.next();
-			TwitchProduct twitchProduct = transaction.product_data;
 
-			// guard: make sure the twitch product is valid
-			if (twitchProduct == null)
-			{
-				continue;
+			// try to handle each individual transaction to prevent one invalid transaction in the queue
+			// to cancel all other transactions and with that all their effects
+			try {
+				TwitchProduct twitchProduct = transaction.product_data;
+
+				// guard: make sure the twitch product is valid
+				if (twitchProduct == null) {
+					continue;
+				}
+
+				String twitchProductSku = twitchProduct.sku;
+				StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
+
+				// guard: make sure a streamer product is configured for this SKU
+				if (streamerProduct == null) {
+					continue;
+				}
+
+				String ebsProductId = streamerProduct.ebsProductId;
+				EbsProduct ebsProduct = getEbsProductById(ebsProductId);
+
+				// guard: make sure an EBS product is configured for this streamer product
+				if (ebsProduct == null || !ebsProduct.enabled) {
+					continue;
+				}
+
+				log.info("Found a valid transaction that we can start: " + transaction.id);
+				log.info("Twitch product SKU: " + twitchProduct.sku);
+				log.info("Streamer product name: " + streamerProduct.name);
+				log.info("Ebs product ID: " + ebsProduct.id);
+
+				// remove the transaction now it is going to be handled
+				// we do this after the validation of all products
+				// to queue transactions that might receive valid product data later
+				queuedTransactions.remove(transaction);
+
+				// create a new marketplace product where all the other products
+				// are merged together in one instance for reference
+				MarketplaceProduct newProduct = new MarketplaceProduct(
+						this,
+						transaction,
+						ebsProduct,
+						streamerProduct,
+						twitchProduct
+				);
+
+				log.info("The marketplace product is configured for the time-frame:");
+				log.info("It starts at: " + newProduct.getStartedAt());
+
+				// guard: check if the product is already expired
+				// skipping it here is a bit more efficient, because there is a chance
+				// some of the behaviours are triggered right before removing it immediately.
+				if (newProduct.isExpired()) {
+					log.info("It is skipped, because it has already expired at: " + newProduct.getExpiredAt());
+					continue;
+				}
+
+				log.info("It expires at: " + newProduct.getExpiredAt() + ", which is in " + newProduct.getExpiresInMs() + "ms");
+
+				// register this product to be active, which is needed to check
+				// for any periodic effects that might need to trigger
+				activeProducts.add(newProduct);
+			} catch (Exception exception) {
+				log.error("Could not handle transaction due to the following error, it is being skipped: ", exception);
+				queuedTransactions.remove(transaction);
+				log.error("The ID of the skipped transaction was: "+ transaction.id);
 			}
-
-			String twitchProductSku = twitchProduct.sku;
-			StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
-
-			// guard: make sure a streamer product is configured for this SKU
-			if (streamerProduct == null)
-			{
-				continue;
-			}
-
-			String ebsProductId = streamerProduct.ebsProductId;
-			EbsProduct ebsProduct = getEbsProductById(ebsProductId);
-
-			// guard: make sure an EBS product is configured for this streamer product
-			if (ebsProduct == null || !ebsProduct.enabled)
-			{
-				continue;
-			}
-
-			log.info("Found a valid transaction that we can start: "+ transaction.id);
-			log.info("Twitch product SKU: "+ twitchProduct.sku);
-			log.info("Streamer product name: "+ streamerProduct.name);
-			log.info("Ebs product ID: "+ ebsProduct.id);
-
-			// remove the transaction now it is going to be handled
-			// we do this after the validation of all products
-			// to queue transactions that might receive valid product data later
-			queuedTransactions.remove(transaction);
-
-			// create a new marketplace product where all the other products
-			// are merged together in one instance for reference
-			MarketplaceProduct newProduct = new MarketplaceProduct(
-				this,
-				transaction,
-				ebsProduct,
-				streamerProduct,
-				twitchProduct
-			);
-
-			log.info("The marketplace product is configured for the time-frame:");
-			log.info("It starts at: "+ newProduct.getStartedAt());
-
-			// guard: check if the product is already expired
-			// skipping it here is a bit more efficient, because there is a chance
-			// some of the behaviours are triggered right before removing it immediately.
-			if (newProduct.isExpired())
-			{
-				log.info("It is skipped, because it has already expired at: "+ newProduct.getExpiredAt());
-				continue;
-			}
-
-			log.info("It expires at: "+ newProduct.getExpiredAt() +", which is in "+ newProduct.getExpiresInMs() +"ms");
-
-			// register this product to be active, which is needed to check
-			// for any periodic effects that might need to trigger
-			activeProducts.add(newProduct);
 		}
 	}
 
@@ -403,8 +413,8 @@ public class MarketplaceManager {
 
 		transmogManager.recordOriginalEquipment();
 		transmogManager.updateEffectEquipment();
-		animationManager.recordOriginalAnimations();
-		animationManager.updateEffectAnimations();
+		animationManager.recordOriginalMovementAnimations();
+		animationManager.setCurrentMovementAnimations();
 	}
 
 	/**
@@ -541,6 +551,10 @@ public class MarketplaceManager {
 
 	public interface EmptyHandler {
 		public void execute();
+	}
+
+	public interface GetTimeHandler {
+		public Instant execute();
 	}
 
 	public interface SpawnedObjectHandler {

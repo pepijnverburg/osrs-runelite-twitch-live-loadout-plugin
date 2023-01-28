@@ -45,4 +45,7 @@ public class MarketplaceConstants {
 	public static final int OVERHEAD_NOTIFICATION_LOCKED_MS = 3 * 1000;
 	public static final int OVERHEAD_NOTIFICATION_DURATION_MS = OVERHEAD_NOTIFICATION_LOCKED_MS - 1 * 1000;
 	public static final int TILE_MARKER_NOTIFICATION_DURATION_MS = 0 * 1000;
+
+	public static final int GLOBAL_PLAY_SOUND_THROTTLE_MS = 0;
+	public static final int UNIQUE_PLAY_SOUND_THROTTLE_MS = 250;
 }
