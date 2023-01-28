@@ -7,8 +7,11 @@ public class EbsInterfaceWidgetFrame extends EbsInterfaceFrame {
 	public Integer listIndex = -1;
 	public String text;
 	public Integer textColor;
+	public Integer opacity;
 	public Integer itemId;
 	public Integer itemQuantity;
 	public String name;
 	public Integer spriteId;
+	public Integer modelId;
+	public Integer animationId;
 }
