@@ -329,13 +329,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncState()
 	{
 		try {
-
-			// guard: skip syncing state when not logged in
-			if (!isLoggedIn())
-			{
-				return;
-			}
-
 			final JsonObject filteredState = twitchState.getFilteredState();
 
 			// We will not verify whether the set was successful here
