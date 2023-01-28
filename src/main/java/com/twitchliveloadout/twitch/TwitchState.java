@@ -68,8 +68,8 @@ public class TwitchState {
 	 * due to Twitch limitations, currently the bank and the collection log
 	 * are sent in smaller parts via this state
 	 */
-	private final static int MAX_BANK_ITEMS_PER_SLICE = 200;
-	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 200;
+	private final static int MAX_BANK_ITEMS_PER_SLICE = 400;
+	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 400;
 	private final static String COLLECTION_LOG_FILTER_SEPARATOR = ",";
 	private JsonObject cyclicState = new JsonObject();
 	private TwitchStateEntry currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
