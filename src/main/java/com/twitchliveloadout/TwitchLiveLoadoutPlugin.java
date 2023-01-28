@@ -43,6 +43,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.NpcLootReceived;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.plugins.Plugin;
@@ -59,6 +60,7 @@ import java.awt.image.BufferedImage;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -343,7 +345,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			// guard: check if the scheduling was successful due to for example rate limiting
 			// if not we will not acknowledge the change
-			if (!isScheduled) {
+			if (!isScheduled)
+			{
 				return;
 			}
 
@@ -572,6 +575,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+	//@Subscribe
+	public void onNpcLootReceived(NpcLootReceived event)
+	{
+		try {
+			if (config.collectionLogEnabled())
+			{
+				collectionLogManager.onNpcLootReceived(event);
+			}
+		} catch (Exception exception) {
+			log.warn("Could not handle on NPC loot received event: ", exception);
+		}
+	}
+
 	@Subscribe
 	public void onFocusChanged(FocusChanged event)
 	{
@@ -597,6 +613,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			// alternative method to enable focus on window if somehow the other focus listener
 			// any menu click will enable focus, this includes walking and stuff
 			canvasListener.enableFocus();
+
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.onMenuOptionClicked(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle menu option clicked event: ", exception);
 		}
@@ -867,18 +888,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
-	public void scheduleOnClientThread(ClientThreadAction action, long delayMs)
+	public ScheduledFuture scheduleOnClientThread(ClientThreadAction action, long delayMs)
 	{
 
 		// guard: check if we should execute immediately
 		if (delayMs <= 0)
 		{
 			runOnClientThread(action);
-			return;
+			return null;
 		}
 
 		try {
-			scheduledExecutor.schedule(new Runnable() {
+			return scheduledExecutor.schedule(new Runnable() {
 				@Override
 				public void run() {
 					runOnClientThread(action);
@@ -887,6 +908,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		} catch (Exception exception) {
 			log.warn("Could not schedule an action on the client thread (delay: "+ delayMs +"): ", exception);
 		}
+
+		return null;
 	}
 
 	public interface ClientThreadAction {

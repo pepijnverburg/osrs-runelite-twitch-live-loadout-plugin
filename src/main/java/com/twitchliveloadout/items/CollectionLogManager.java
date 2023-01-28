@@ -10,6 +10,7 @@ import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.client.events.NpcLootReceived;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -70,13 +71,19 @@ public class CollectionLogManager {
 				matchFound = true;
 			}
 		}
-		
+
 		if (matchFound)
 		{
 			plugin.runOnClientThread(() -> {
 				updateCurrentCategory();
 			});
 		}
+	}
+
+	public void onNpcLootReceived(NpcLootReceived event)
+	{
+		//JsonObject collectionLog = twitchState.getCollectionLog();
+		// TODO: implement updating of log
 	}
 
 	private Widget getCategoryHead()
