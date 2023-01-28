@@ -32,7 +32,7 @@ public class AnimationManager {
 		this.client = client;
 	}
 
-	public void updateEffectAnimations()
+	public void setCurrentMovementAnimations()
 	{
 		Player player = client.getLocalPlayer();
 
@@ -58,7 +58,7 @@ public class AnimationManager {
 		});
 	}
 
-	public void recordOriginalAnimations()
+	public void recordOriginalMovementAnimations()
 	{
 		originalPlayerMovementAnimations.clear();
 		Player player = client.getLocalPlayer();
@@ -74,7 +74,7 @@ public class AnimationManager {
 		handleLockedPlayerEffect(
 			delayMs,
 			durationMs,
-			graphicLockedUntil,
+			() -> graphicLockedUntil,
 			() -> {
 				graphicLockedUntil = Instant.now().plusMillis(durationMs);
 			},
@@ -101,7 +101,7 @@ public class AnimationManager {
 		handleLockedPlayerEffect(
 			delayMs,
 			durationMs,
-			animationLockedUntil,
+			() -> animationLockedUntil,
 			() -> {
 				animationLockedUntil = Instant.now().plusMillis(durationMs);
 			},
@@ -122,10 +122,11 @@ public class AnimationManager {
 		});
 	}
 
-	private void handleLockedPlayerEffect(long delayMs, long durationMs, Instant lockedUntil, MarketplaceManager.EmptyHandler updateLockHandler, MarketplaceManager.PlayerHandler playerHandler)
+	private void handleLockedPlayerEffect(long delayMs, long durationMs, MarketplaceManager.GetTimeHandler getLockedUntil, MarketplaceManager.EmptyHandler updateLockHandler, MarketplaceManager.PlayerHandler playerHandler)
 	{
 		handleLocalPlayer((player) -> {
 			plugin.scheduleOnClientThread(() -> {
+				Instant lockedUntil = getLockedUntil.execute();
 				boolean isLocked = (lockedUntil != null && Instant.now().isBefore(lockedUntil));
 
 				// guard: skip the request if we are not yet done with animating the previous one
