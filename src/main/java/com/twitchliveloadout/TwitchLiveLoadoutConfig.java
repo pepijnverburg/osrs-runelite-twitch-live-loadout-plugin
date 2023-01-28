@@ -493,8 +493,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "marketplaceEnabled",
 			name = "Enable donations",
-			description = "Synchronize the donations configuration.",
-			position = 2,
+			description = "Enable viewers to make donations to trigger in-game effects (requires Twitch Extension configuration!).",
+			position = 4,
 			hidden = false,
 			section = marketplaceSection
 	)
