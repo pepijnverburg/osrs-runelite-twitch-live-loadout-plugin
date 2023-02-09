@@ -484,8 +484,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigSection(
-			name = "Donations",
-			description = "Settings for the donations",
+			name = "Random Event Donations",
+			description = "Settings for the Random Event triggered by donations",
 			position = 12
 	)
 	String marketplaceSection = "donations";
@@ -493,14 +493,14 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "marketplaceEnabled",
 			name = "Enable donations",
-			description = "Enable viewers to make donations to trigger in-game effects (requires Twitch Extension configuration!).",
+			description = "Enable viewers to make donations to trigger in-game Random Events (requires Twitch Extension configuration!).",
 			position = 4,
 			hidden = false,
 			section = marketplaceSection
 	)
 	default boolean marketplaceEnabled()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigSection(
