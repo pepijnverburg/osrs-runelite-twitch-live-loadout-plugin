@@ -367,7 +367,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "fightStatisticsProtectionEnabled",
-			name = "Enable hardcore protection",
+			name = "Enable Hardcore protection",
 			description = "Disable tracking of fight stats on Hardcore Ironmen.",
 			position = 16,
 			section = combatSection

@@ -1004,7 +1004,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public boolean isDangerousAccountType()
 	{
 		JsonElement accountTypeRaw = twitchState.getState().get(TwitchStateEntry.ACCOUNT_TYPE.getKey());
-		String hardcoreRegular = AccountType.IRONMAN.toString(); // TODO
+		String hardcoreRegular = AccountType.HARDCORE_IRONMAN.toString();
 		String hardcoreGroup = AccountType.HARDCORE_GROUP_IRONMAN.toString();
 
 		// guard: check if account type can be found
@@ -1032,7 +1032,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public boolean shouldTrackFightStatistics()
 	{
 		boolean isDisabledGeneral = !config.fightStatisticsEnabled();
-		boolean isDisabledDangerous = config.marketplaceProtectionEnabled() && isDangerousAccountType();
+		boolean isDisabledDangerous = config.fightStatisticsProtectionEnabled() && isDangerousAccountType();
 
 		return !isDisabledGeneral && !isDisabledDangerous;
 	}
