@@ -387,24 +387,26 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Polling mechanism to sync player info.
 	 * We cannot use the game state update events as the player name is not loaded then.
 	 */
-	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void syncPlayerInfo()
 	{
 		try {
+			long accountHash = client.getAccountHash();
 			String playerName = getPlayerName();
 
-			if (playerName == null || playerName.equals(lastPlayerName))
+			// only handle on changes
+			if (playerName != null && !playerName.equals(lastPlayerName))
 			{
-				return;
+				if (config.playerInfoEnabled())
+				{
+					twitchState.setPlayerName(playerName);
+				}
+
+				twitchState.onPlayerNameChanged(playerName);
+				lastPlayerName = playerName;
 			}
 
-			if (config.playerInfoEnabled())
-			{
-				twitchState.setPlayerName(playerName);
-			}
-
-			twitchState.onPlayerNameChanged(playerName);
-			lastPlayerName = playerName;
+			twitchState.setAccountHash(accountHash);
 		} catch (Exception exception) {
 			log.warn("Could not sync player info to state: ", exception);
 		}
@@ -733,6 +735,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			{
 				marketplaceManager.onGameStateChanged(gameStateChanged);
 			}
+
+			// always update on game state change as well to instantly react to logout and login
+			twitchState.setAccountHash(client.getAccountHash());
 		} catch (Exception exception) {
 			log.warn("Could not handle game state event: ", exception);
 		}
@@ -912,7 +917,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void setConfiguration(String configKey, Object payload)
 	{
 		try {
-			String scopedConfigKey = getScopedConfigKey(configKey);
+			String accountHash = Long.toString(client.getAccountHash());
+			String scopedConfigKey = getScopedConfigKey(accountHash, configKey);
 			configManager.setConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey, payload);
 		} catch (Exception exception) {
 			log.warn("Could not set the configuration due to the following error: ", exception);
@@ -922,8 +928,35 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public String getConfiguration(String configKey)
 	{
 		try {
-			String scopedConfigKey = getScopedConfigKey(configKey);
-			return configManager.getConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey);
+			String playerName = getPlayerName();
+			String accountHash = Long.toString(client.getAccountHash());
+
+			if (playerName == null)
+			{
+				playerName = "unknown";
+			}
+
+			String scopedConfigKey = getScopedConfigKey(accountHash, configKey);
+			String configuration = configManager.getConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey);
+
+			// MIGRATION TO ACCOUNT HASH FROM PLAYER NAME
+			// TODO: remove the migration with player name after a while that the new account hash is used
+			// only migrate when there is no hash configuration yet
+			String oldNameScopedConfigKey = getScopedConfigKey(playerName, configKey);
+			String oldNameConfiguration = configManager.getConfiguration(PLUGIN_CONFIG_GROUP, oldNameScopedConfigKey);
+			boolean oldConfigurationIsEmpty = (oldNameConfiguration == null || oldNameConfiguration.trim().equals(""));
+			boolean configurationIsEmpty = (configuration == null || configuration.trim().equals(""));
+			if (!oldConfigurationIsEmpty && configurationIsEmpty)
+			{
+				configManager.setConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey, oldNameConfiguration);
+				configManager.setConfiguration(PLUGIN_CONFIG_GROUP, oldNameScopedConfigKey, "");
+
+				// after migrate set to old value for now to return it properly
+				configuration = oldNameConfiguration;
+				log.info("Migration of config is completed. Moved: "+ oldNameScopedConfigKey +", to: "+ scopedConfigKey);
+			}
+
+			return configuration;
 		} catch (Exception exception) {
 			log.warn("Could not get the configuration due to the following error: ", exception);
 		}
@@ -931,18 +964,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		return null;
 	}
 
-	private String getScopedConfigKey(String configKey)
+	private String getScopedConfigKey(String accountIdentifier, String configKey)
 	{
 		try {
-			String playerName = getPlayerName();
-
-			if (playerName == null)
-			{
-				playerName = "unknown";
-			}
-
-			String playerNamePrefix = playerName.replaceAll("\\s+","_").trim();
-			String scopedConfigKey = playerNamePrefix +"-"+ configKey;
+			String accountIdentifierPrefix = accountIdentifier.replaceAll("\\s+","_").trim();
+			String scopedConfigKey = accountIdentifierPrefix +"-"+ configKey;
 			return scopedConfigKey;
 		} catch (Exception exception) {
 			log.warn("Could not get the scoped config key due to the following error: ", exception);

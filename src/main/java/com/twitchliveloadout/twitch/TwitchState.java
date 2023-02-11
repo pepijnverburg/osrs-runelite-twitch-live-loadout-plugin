@@ -106,7 +106,11 @@ public class TwitchState {
 	public void setPlayerName(String playerName)
 	{
 		currentState.addProperty(TwitchStateEntry.PLAYER_NAME.getKey(), playerName);
-		checkForChange();
+	}
+
+	public void setAccountHash(long accountHash)
+	{
+		currentState.addProperty(TwitchStateEntry.ACCOUNT_HASH.getKey(), accountHash);
 	}
 
 	public void setOverlayTopPosition(int overlayTopPosition)
@@ -121,43 +125,36 @@ public class TwitchState {
 		}
 
 		currentState.addProperty(TwitchStateEntry.TOP_POSITION.getKey(), overlayTopPosition);
-		checkForChange();
 	}
 
 	public void setTwitchTheme(TwitchThemeEntry twitchTheme)
 	{
 		currentState.addProperty(TwitchStateEntry.THEME_TYPE.getKey(), twitchTheme.getKey());
-		checkForChange();
 	}
 
 	public void setWeight(Integer weight)
 	{
 		currentState.addProperty(TwitchStateEntry.WEIGHT.getKey(), weight);
-		checkForChange();
 	}
 
 	public void setSkillExperiences(int[] skillExperiences)
 	{
 		currentState.add(TwitchStateEntry.SKILL_EXPERIENCES.getKey(), convertToJson(skillExperiences, MAX_SKILL_EXPERIENCE));
-		checkForChange();
 	}
 
 	public void setBoostedSkillLevels(int[] boostedSkillLevels)
 	{
 		currentState.add(TwitchStateEntry.BOOSTED_SKILL_LEVELS.getKey(), convertToJson(boostedSkillLevels, MAX_SKILL_LEVEL));
-		checkForChange();
 	}
 
 	public void setVirtualLevelsEnabled(boolean virtualLevelsEnabled)
 	{
 		currentState.addProperty(TwitchStateEntry.VIRTUAL_LEVELS_ENABLED.getKey(), virtualLevelsEnabled);
-		checkForChange();
 	}
 
 	public void setFightStatistics(JsonObject fightStatistics)
 	{
 		currentState.add(TwitchStateEntry.FIGHT_STATISTICS.getKey(), fightStatistics);
-		checkForChange();
 	}
 
 	public void setInventoryItems(Item[] items, long totalPrice)
@@ -188,7 +185,6 @@ public class TwitchState {
 	private void setItems(String itemsKey, JsonArray items)
 	{
 		currentState.add(itemsKey, items);
-		checkForChange();
 	}
 
 	private void setItemsPrice(String priceKey, String totalPrice)
@@ -199,7 +195,6 @@ public class TwitchState {
 	private void setItemsPrice(String priceKey, long totalPrice)
 	{
 		currentState.addProperty(priceKey, totalPrice);
-		checkForChange();
 	}
 
 	private void setMarketplaceSetting(String settingsKey, String settingValue)
@@ -673,16 +668,6 @@ public class TwitchState {
 
 		JsonArray json = new GsonBuilder().create().toJsonTree(copiedArray).getAsJsonArray();
 		return json;
-	}
-
-	private boolean checkForChange()
-	{
-		if (currentState.equals(previousState))
-		{
-			return false;
-		}
-
-		return true;
 	}
 
 	public void acknowledgeChange()

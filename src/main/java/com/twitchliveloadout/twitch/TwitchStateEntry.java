@@ -2,6 +2,7 @@ package com.twitchliveloadout.twitch;
 
 public enum TwitchStateEntry {
 	CONNECTION_STATUS("connectionStatus"),
+	ACCOUNT_HASH("accountHash"),
 	PLAYER_NAME("playerName"),
 	INVENTORY_ITEMS("inventory"),
 	INVENTORY_PRICE("inventoryPrice"),
