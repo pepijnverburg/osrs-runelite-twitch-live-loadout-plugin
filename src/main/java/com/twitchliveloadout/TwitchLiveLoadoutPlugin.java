@@ -35,6 +35,7 @@ import com.twitchliveloadout.skills.SkillStateManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
+import com.twitchliveloadout.twitch.TwitchStateEntry;
 import com.twitchliveloadout.ui.CanvasListener;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -58,9 +59,7 @@ import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -392,24 +391,27 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncPlayerInfo()
 	{
 		try {
-			long accountHash = client.getAccountHash();
-			AccountType accountType = client.getAccountType();
-			String playerName = getPlayerName();
+			// account type can only be fetched on client thread
+			runOnClientThread(() -> {
+				long accountHash = client.getAccountHash();
+				AccountType accountType = client.getAccountType();
+				String playerName = getPlayerName();
 
-			// only handle on changes
-			if (playerName != null && !playerName.equals(lastPlayerName))
-			{
-				if (config.playerInfoEnabled())
+				// only handle on changes
+				if (playerName != null && !playerName.equals(lastPlayerName))
 				{
-					twitchState.setPlayerName(playerName);
+					if (config.playerInfoEnabled())
+					{
+						twitchState.setPlayerName(playerName);
+					}
+
+					twitchState.onPlayerNameChanged(playerName);
+					lastPlayerName = playerName;
 				}
 
-				twitchState.onPlayerNameChanged(playerName);
-				lastPlayerName = playerName;
-			}
-
-			twitchState.setAccountHash(accountHash);
-			twitchState.setAccountType(accountType);
+				twitchState.setAccountHash(accountHash);
+				twitchState.setAccountType(accountType);
+			});
 		} catch (Exception exception) {
 			log.warn("Could not sync player info to state: ", exception);
 		}
@@ -1001,16 +1003,30 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public boolean isDangerousAccountType()
 	{
-		AccountType accountType = client.getAccountType();
+		JsonElement accountTypeRaw = twitchState.getState().get(TwitchStateEntry.ACCOUNT_TYPE.getKey());
+		String hardcoreRegular = AccountType.IRONMAN.toString(); // TODO
+		String hardcoreGroup = AccountType.HARDCORE_GROUP_IRONMAN.toString();
 
-		switch (accountType)
+		// guard: check if account type can be found
+		if (accountTypeRaw == null)
 		{
-			case HARDCORE_GROUP_IRONMAN:
-			case HARDCORE_IRONMAN:
-				return true;
+			return false;
 		}
 
-		return false;
+		String accountType = accountTypeRaw.getAsString();
+
+		if (accountType == null)
+		{
+			return false;
+		}
+
+		// guard: check if regular HC or HCGIM
+		if (!accountType.equals(hardcoreRegular) && !accountType.equals(hardcoreGroup))
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	public boolean shouldTrackFightStatistics()
