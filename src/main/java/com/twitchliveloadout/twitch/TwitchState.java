@@ -10,6 +10,7 @@ import com.twitchliveloadout.ui.CanvasListener;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.vars.AccountType;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -111,6 +112,11 @@ public class TwitchState {
 	public void setAccountHash(long accountHash)
 	{
 		currentState.addProperty(TwitchStateEntry.ACCOUNT_HASH.getKey(), accountHash);
+	}
+
+	public void setAccountType(AccountType accountType)
+	{
+		currentState.addProperty(TwitchStateEntry.ACCOUNT_TYPE.getKey(), accountType.toString());
 	}
 
 	public void setOverlayTopPosition(int overlayTopPosition)

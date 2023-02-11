@@ -39,6 +39,7 @@ import com.twitchliveloadout.ui.CanvasListener;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
+import net.runelite.api.vars.AccountType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -392,6 +393,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			long accountHash = client.getAccountHash();
+			AccountType accountType = client.getAccountType();
 			String playerName = getPlayerName();
 
 			// only handle on changes
@@ -407,6 +409,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 
 			twitchState.setAccountHash(accountHash);
+			twitchState.setAccountType(accountType);
 		} catch (Exception exception) {
 			log.warn("Could not sync player info to state: ", exception);
 		}
@@ -738,6 +741,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			// always update on game state change as well to instantly react to logout and login
 			twitchState.setAccountHash(client.getAccountHash());
+			twitchState.setAccountType(client.getAccountType());
 		} catch (Exception exception) {
 			log.warn("Could not handle game state event: ", exception);
 		}
