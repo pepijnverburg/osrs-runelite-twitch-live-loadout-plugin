@@ -365,6 +365,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+			keyName = "fightStatisticsProtectionEnabled",
+			name = "Enable hardcore protection",
+			description = "Disable tracking of fight stats on Hardcore Ironmen.",
+			position = 16,
+			section = combatSection
+	)
+	default boolean fightStatisticsProtectionEnabled()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 			name = "Raids",
 			description = "Syncing of invocations",
@@ -499,6 +511,32 @@ public interface TwitchLiveLoadoutConfig extends Config
 			section = marketplaceSection
 	)
 	default boolean marketplaceEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "marketplaceProtectionEnabled",
+			name = "Enable Hardcore protection",
+			description = "Automatically disable random events that could be dangerous for Hardcore Ironmen.",
+			position = 6,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default boolean marketplaceProtectionEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "marketplaceStartOnLoadedAt",
+			name = "Start on load time",
+			description = "Base the expiry of the effects when it is loaded and not the transaction time.",
+			position = 6,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default boolean marketplaceStartOnLoadedAt()
 	{
 		return true;
 	}

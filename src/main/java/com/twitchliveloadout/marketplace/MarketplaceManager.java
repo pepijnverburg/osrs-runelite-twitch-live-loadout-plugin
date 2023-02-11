@@ -195,7 +195,8 @@ public class MarketplaceManager {
 				TwitchProduct twitchProduct = transaction.product_data;
 
 				// guard: make sure the twitch product is valid
-				if (twitchProduct == null) {
+				if (twitchProduct == null)
+				{
 					continue;
 				}
 
@@ -203,7 +204,8 @@ public class MarketplaceManager {
 				StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
 
 				// guard: make sure a streamer product is configured for this SKU
-				if (streamerProduct == null) {
+				if (streamerProduct == null)
+				{
 					continue;
 				}
 
@@ -211,7 +213,8 @@ public class MarketplaceManager {
 				EbsProduct ebsProduct = getEbsProductById(ebsProductId);
 
 				// guard: make sure an EBS product is configured for this streamer product
-				if (ebsProduct == null || !ebsProduct.enabled) {
+				if (ebsProduct == null || !ebsProduct.enabled)
+				{
 					continue;
 				}
 
@@ -228,20 +231,28 @@ public class MarketplaceManager {
 				// create a new marketplace product where all the other products
 				// are merged together in one instance for reference
 				MarketplaceProduct newProduct = new MarketplaceProduct(
-						this,
-						transaction,
-						ebsProduct,
-						streamerProduct,
-						twitchProduct
+					this,
+					transaction,
+					ebsProduct,
+					streamerProduct,
+					twitchProduct
 				);
 
 				log.info("The marketplace product is configured for the time-frame:");
 				log.info("It starts at: " + newProduct.getStartedAt());
 
+				// guard: check for hardcore protection and dangerous random events
+				if (ebsProduct.dangerous && plugin.isDangerousAccountType() && config.marketplaceProtectionEnabled())
+				{
+					log.info("Skipping transaction because it is deemed dangerous and protection is required: " + transaction.id);
+					continue;
+				}
+
 				// guard: check if the product is already expired
 				// skipping it here is a bit more efficient, because there is a chance
 				// some of the behaviours are triggered right before removing it immediately.
-				if (newProduct.isExpired()) {
+				if (newProduct.isExpired())
+				{
 					log.info("It is skipped, because it has already expired at: " + newProduct.getExpiredAt());
 					continue;
 				}
@@ -348,6 +359,15 @@ public class MarketplaceManager {
 	 */
 	public void updateEbsProducts()
 	{
+
+		// guard: skip updating the EBS products when there are no streamer products found
+		// this prevents requests to be made by streamers who have not configured the marketplace
+		// NOTE: we do allow an initial fetch to get an initial set of EBS products.
+		if (streamerProducts.size() <= 0 && ebsProducts.size() > 0)
+		{
+			return;
+		}
+
 		try {
 			Response response = twitchApi.getEbsProducts();
 			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();

@@ -374,7 +374,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void syncFightStatisticsState()
 	{
 		try {
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				JsonObject fightStatistics = fightStateManager.getFightStatisticsState();
 				twitchState.setFightStatistics(fightStatistics);
@@ -433,16 +433,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	/**
 	 * Polling mechanism to update the configuration segment cache
-	 * Note that this request is subject to rate limits by twitch of 20 times per minute
+	 * Note that this request is subject to rate limits by twitch of 20 times per minute.
+	 * We keep it at a safe rate to also support the fetching when someone is alting.
 	 * Documentation: https://dev.twitch.tv/docs/api/reference#get-extension-configuration-segment
 	 */
-	@Schedule(period = 3, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 10, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void updateMarketplaceStreamerProducts()
 	{
 		try {
 			if (config.syncEnabled())
 			{
 				twitchApi.updateConfigurationSegment(TwitchSegmentType.BROADCASTER);
+				twitchApi.updateConfigurationSegment(TwitchSegmentType.DEVELOPER);
 			}
 			if (config.marketplaceEnabled())
 			{
@@ -458,7 +460,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to update the EBS products configured in Twitch.
 	 */
-	@Schedule(period = 60, unit = ChronoUnit.SECONDS, asynchronous = true) // TODO: change BACK
+	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true) // TODO: change BACK
 	public void updateMarketplaceEbsProducts()
 	{
 		try {
@@ -523,7 +525,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				return;
 			}
 
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onGameTick();
 			}
@@ -551,7 +553,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				skillStateManager.updateSkills();
 			}
 
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onStatChanged(event);
 			}
@@ -564,7 +566,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onFakeXpDrop(FakeXpDrop event)
 	{
 		try {
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onFakeXpDrop(event);
 			}
@@ -625,7 +627,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onAnimationChanged(AnimationChanged event)
 	{
 		try {
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onAnimationChanged(event);
 			}
@@ -638,7 +640,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onGraphicChanged(GraphicChanged event)
 	{
 		try {
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onGraphicChanged(event);
 			}
@@ -651,7 +653,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
 		try {
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onHitsplatApplied(event);
 			}
@@ -664,7 +666,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onNpcDespawned(NpcDespawned npcDespawned)
 	{
 		try {
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onNpcDespawned(npcDespawned);
 			}
@@ -677,7 +679,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onPlayerDespawned(PlayerDespawned playerDespawned)
 	{
 		try {
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onPlayerDespawned(playerDespawned);
 			}
@@ -690,7 +692,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onInteractingChanged(InteractingChanged interactingChanged)
 	{
 		try {
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onInteractingChanged(interactingChanged);
 			}
@@ -708,7 +710,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.onGameTick();
 			}
 
-			if (config.fightStatisticsEnabled())
+			if (shouldTrackFightStatistics())
 			{
 				fightStateManager.onGameTick();
 			}
@@ -995,6 +997,28 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return null;
+	}
+
+	public boolean isDangerousAccountType()
+	{
+		AccountType accountType = client.getAccountType();
+
+		switch (accountType)
+		{
+			case HARDCORE_GROUP_IRONMAN:
+			case HARDCORE_IRONMAN:
+				return true;
+		}
+
+		return false;
+	}
+
+	public boolean shouldTrackFightStatistics()
+	{
+		boolean isDisabledGeneral = !config.fightStatisticsEnabled();
+		boolean isDisabledDangerous = config.marketplaceProtectionEnabled() && isDangerousAccountType();
+
+		return !isDisabledGeneral && !isDisabledDangerous;
 	}
 
 	public boolean isLoggedIn()
