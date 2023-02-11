@@ -1,6 +1,7 @@
 package com.twitchliveloadout.twitch;
 
 public enum TwitchStateEntry {
+	CONTENT_ID("contentId"),
 	CONNECTION_STATUS("connectionStatus"),
 	ACCOUNT_HASH("accountHash"),
 	ACCOUNT_TYPE("accountType"),

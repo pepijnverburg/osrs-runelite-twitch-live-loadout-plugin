@@ -293,6 +293,12 @@ public class TwitchState {
 		// add the state that is too big to sync at once
 		filteredState = addCyclicState(filteredState);
 
+		// add a unique content ID so the front-end knows
+		// this is a message containing information for the tabs.
+		// if it is only a connection status all of this is filtered
+		// out in a later step.
+		filteredState = addContentId(filteredState);
+
 		// verify whether we can sync this RL window, based on the
 		// anti multi-logging settings
 		filteredState = verifyClientActivityStatus(filteredState);
@@ -427,6 +433,13 @@ public class TwitchState {
 
 			state.add(TwitchStateEntry.COLLECTION_LOG.getKey(), slicedCollectionLog);
 		}
+
+		return state;
+	}
+
+	public JsonObject addContentId(JsonObject state)
+	{
+		state.addProperty(TwitchStateEntry.CONTENT_ID.getKey(), Long.toString(Instant.now().toEpochMilli()));
 
 		return state;
 	}
