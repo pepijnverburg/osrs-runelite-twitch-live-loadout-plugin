@@ -15,6 +15,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -101,7 +102,15 @@ public class MarketplaceProduct
 		int duration = streamerProduct.duration;
 		this.loadedAt = Instant.now();
 		this.transactionAt = Instant.parse(transaction.timestamp);
-		this.startedAt = (manager.getConfig().marketplaceStartOnLoadedAt() ? loadedAt : transactionAt);
+
+		// check when the transaction was loaded in and if it was loaded too late
+		// compared to when the transaction was made. With this mechanism we still allow
+		// queued transactions to be handled while a streamer is logged out for 30 seconds while keeping RL open.
+		// but we will not handle transactions that RL will load when booting up without any in the queue.
+		Instant transactionExpiredAt = transactionAt.plusSeconds(duration);
+		boolean loadedTooLate = transaction.loadedAt.isAfter(transactionExpiredAt);
+
+		this.startedAt = (!loadedTooLate && manager.getConfig().marketplaceStartOnLoadedAt() ? loadedAt : transactionAt);
 		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
 
 		// start immediately
