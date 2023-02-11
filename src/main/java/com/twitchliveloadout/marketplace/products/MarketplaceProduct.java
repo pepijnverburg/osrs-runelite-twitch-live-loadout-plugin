@@ -75,6 +75,10 @@ public class MarketplaceProduct
 	private final Instant startedAt;
 	@Getter
 	private final Instant expiredAt;
+	@Getter
+	private final Instant loadedAt;
+	@Getter
+	private final Instant transactionAt;
 
 	/**
 	 * A list of all the spawned objects for this product
@@ -95,7 +99,9 @@ public class MarketplaceProduct
 		// added along with the actual duration. A correction is added because
 		// it takes a few seconds before the transaction is added.
 		int duration = streamerProduct.duration;
-		this.startedAt = Instant.parse(transaction.timestamp);
+		this.loadedAt = Instant.now();
+		this.transactionAt = Instant.parse(transaction.timestamp);
+		this.startedAt = (manager.getConfig().marketplaceStartOnLoadedAt() ? loadedAt : transactionAt);
 		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
 
 		// start immediately
