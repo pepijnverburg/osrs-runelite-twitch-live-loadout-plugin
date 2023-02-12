@@ -310,6 +310,33 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Get a copied copy of the EBS products list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<EbsProduct> getEbsProducts()
+	{
+		CopyOnWriteArrayList<EbsProduct> copy = new CopyOnWriteArrayList(ebsProducts);
+		return copy;
+	}
+
+	/**
+	 * Get a copied copy of the streamer products list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<StreamerProduct> getStreamerProducts()
+	{
+		CopyOnWriteArrayList<StreamerProduct> copy = new CopyOnWriteArrayList(streamerProducts);
+		return copy;
+	}
+
+	/**
+	 * Get a copied copy of the queued transactions list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<TwitchTransaction> getQueuedTransactions()
+	{
+		CopyOnWriteArrayList<TwitchTransaction> copy = new CopyOnWriteArrayList(queuedTransactions);
+		return copy;
+	}
+
+	/**
 	 * Handle HEAVY periodic effects of the active products,
 	 * such as spawning or random animations.
 	 */

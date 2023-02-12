@@ -860,7 +860,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Periodically update the marketplace panel to show the latest status
 	 */
-	@Schedule(period = 5, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void updateMarketplacePanel()
 	{
 		try {
