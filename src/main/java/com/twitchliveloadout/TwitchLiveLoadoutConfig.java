@@ -530,8 +530,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "marketplaceStartOnLoadedAt",
-			name = "Start on load time",
-			description = "Base the expiry of the effects when it is loaded and not the transaction time.",
+			name = "Start on received time",
+			description = "Base the expiry of the effects when it is received and not the transaction time, which can have delays.",
 			position = 6,
 			hidden = false,
 			section = marketplaceSection
@@ -547,30 +547,4 @@ public interface TwitchLiveLoadoutConfig extends Config
 			position = 99
 	)
 	String advancedSection = "advanced";
-
-	@ConfigItem(
-			keyName = "twitchEbsBaseUrl",
-			name = "Twitch EBS Base URL",
-			description = "The base URL of the Twitch Extension Back-end Service used to switch environments during testing.",
-			position = 2,
-			hidden = false,
-			section = advancedSection
-	)
-	default String twitchEbsBaseUrl()
-	{
-		return TwitchApi.DEFAULT_TWITCH_EBS_BASE_URL;
-	}
-
-	@ConfigItem(
-			keyName = "twitchBaseUrl",
-			name = "Twitch Base URL",
-			description = "The base URL of the Twitch Extension Helix API used to switch environments during testing.",
-			position = 2,
-			hidden = false,
-			section = advancedSection
-	)
-	default String twitchBaseUrl()
-	{
-		return TwitchApi.DEFAULT_TWITCH_BASE_URL;
-	}
 }
