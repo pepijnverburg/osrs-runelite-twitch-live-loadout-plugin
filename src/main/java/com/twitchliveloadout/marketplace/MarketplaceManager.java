@@ -100,6 +100,11 @@ public class MarketplaceManager {
 	 */
 	private Instant lastUpdateActiveProductsAt = null;
 
+	/**
+	 * Timer for when all the active products should be active again
+	 */
+	private boolean pausedActiveProducts = false;
+
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
 		this.plugin = plugin;
@@ -263,6 +268,7 @@ public class MarketplaceManager {
 				// register this product to be active, which is needed to check
 				// for any periodic effects that might need to trigger
 				activeProducts.add(newProduct);
+				plugin.updateMarketplacePanel();
 			} catch (Exception exception) {
 				log.error("Could not handle transaction due to the following error, it is being skipped: ", exception);
 				queuedTransactions.remove(transaction);
@@ -286,11 +292,21 @@ public class MarketplaceManager {
 
 			marketplaceProduct.stop();
 			activeProducts.remove(marketplaceProduct);
+			plugin.updateMarketplacePanel();
 
 			String transactionId = marketplaceProduct.getTransaction().id;
 			String ebsProductId = marketplaceProduct.getEbsProduct().id;
 			log.info("Cleaned an expired marketplace product ("+ ebsProductId +") for transaction: "+ transactionId);
 		});
+	}
+
+	/**
+	 * Get a copied copy of the active products list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<MarketplaceProduct> getActiveProducts()
+	{
+		CopyOnWriteArrayList<MarketplaceProduct> copy = new CopyOnWriteArrayList(activeProducts);
+		return copy;
 	}
 
 	/**
@@ -537,13 +553,31 @@ public class MarketplaceManager {
 	 */
 	public void stopActiveProducts()
 	{
-		Iterator iterator = activeProducts.iterator();
-
-		while (iterator.hasNext())
-		{
-			MarketplaceProduct marketplaceProduct = (MarketplaceProduct) iterator.next();
+		handleActiveProducts((marketplaceProduct) -> {
 			marketplaceProduct.stop();
-		}
+		});
+	}
+
+	/**
+	 * Pause all products
+	 */
+	public void pauseActiveProducts(int pauseDurationMs)
+	{
+		handleActiveProducts((marketplaceProduct) -> {
+			marketplaceProduct.pause();
+		});
+		pausedActiveProducts = true;
+	}
+
+	/**
+	 * Start all products
+	 */
+	public void startActiveProducts()
+	{
+		handleActiveProducts((marketplaceProduct) -> {
+			marketplaceProduct.start();
+		});
+		pausedActiveProducts = false;
 	}
 
 	/**

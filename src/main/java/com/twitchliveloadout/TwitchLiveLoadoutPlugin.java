@@ -234,7 +234,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializePanel()
 	{
 		try {
-			pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager, canvasListener, config);
+			pluginPanel = new TwitchLiveLoadoutPanel(twitchApi, fightStateManager, marketplaceManager, canvasListener, config);
 			pluginPanel.rebuild();
 
 			final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
@@ -854,6 +854,24 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			pluginPanel.getConnectivityPanel().rebuild();
 		} catch (Exception exception) {
 			log.warn("Could not update the connectivity panel due to the following error: ", exception);
+		}
+	}
+
+	/**
+	 * Periodically update the marketplace panel to show the latest status
+	 */
+	@Schedule(period = 5, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void updateMarketplacePanel()
+	{
+		try {
+			if (!hasValidPanels())
+			{
+				return;
+			}
+
+			pluginPanel.getMarketplacePanel().rebuild();
+		} catch (Exception exception) {
+			log.warn("Could not update the marketplace panel due to the following error: ", exception);
 		}
 	}
 

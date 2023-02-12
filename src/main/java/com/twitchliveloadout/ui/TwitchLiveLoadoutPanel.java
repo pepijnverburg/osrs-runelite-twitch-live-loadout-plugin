@@ -6,6 +6,7 @@ import javax.swing.border.EmptyBorder;
 
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.fights.FightStateManager;
+import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.materialtabs.MaterialTab;
@@ -23,14 +24,14 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 	private final CombatPanel combatPanel;
 	private final MarketplacePanel marketplacePanel;
 
-	public TwitchLiveLoadoutPanel(TwitchApi twitchApi, FightStateManager fightStateManager, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
+	public TwitchLiveLoadoutPanel(TwitchApi twitchApi, FightStateManager fightStateManager, MarketplaceManager marketplaceManager, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
 	{
 		super(true);
 		setLayout(new BorderLayout());
 
 		combatPanel = new CombatPanel(fightStateManager);
 		connectivityPanel = new ConnectivityPanel(twitchApi, canvasListener, config);
-		marketplacePanel = new MarketplacePanel(twitchApi);
+		marketplacePanel = new MarketplacePanel(marketplaceManager);
 
 		connectivityTab = new MaterialTab("Status", tabGroup, connectivityPanel);
 		marketplaceTab = new MaterialTab("Donations", tabGroup, marketplacePanel);
