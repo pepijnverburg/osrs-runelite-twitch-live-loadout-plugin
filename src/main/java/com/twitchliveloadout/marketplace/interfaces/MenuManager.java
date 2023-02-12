@@ -34,6 +34,12 @@ public class MenuManager extends InterfaceManager {
 			InterfaceEffect effect = (InterfaceEffect) effectIterator.next();
 			EbsMenuOptionFrame menuOptionFrame = (EbsMenuOptionFrame) effect.getFrame();
 
+			// guard: skip when not active
+			if (!effect.isActive())
+			{
+				continue;
+			}
+
 			// guard: check if valid and if disable type
 			if (menuOptionFrame == null ||
 				!DISABLE_MENU_OPTION_TYPE.equals(menuOptionFrame.type) ||

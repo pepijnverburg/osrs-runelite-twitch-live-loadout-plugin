@@ -20,6 +20,11 @@ public class InterfaceEffect<K extends EbsInterfaceFrame> {
 		this.expiresAt = expiresAt;
 	}
 
+	public boolean isActive()
+	{
+		return !isExpired() && marketplaceProduct.isActive();
+	}
+
 	public boolean isExpired()
 	{
 		return Instant.now().isAfter(expiresAt);
