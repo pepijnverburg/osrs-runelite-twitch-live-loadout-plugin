@@ -133,7 +133,7 @@ public class ConnectivityPanel extends JPanel
 		String authText = "No valid Twitch Token.";
 		String authColor = ERROR_TEXT_COLOR;
 
-		String rateLimitText = "There are "+ rateLimitRemaining +" requests available before hitting the Twitch API rate limit.";
+		String rateLimitText = "There are "+ rateLimitRemaining +" request points available before hitting the Twitch API rate limit.";
 		String rateLimitColor = DEFAULT_TEXT_COLOR;
 
 		try {
@@ -198,7 +198,7 @@ public class ConnectivityPanel extends JPanel
 
 		if (rateLimitRemaining <= 10)
 		{
-			rateLimitText += "<br/><br/>Which is almost exceeded! This should not happen. Please contact the plugin maintainer via GitHub or support@osrs-tools.com.";
+			rateLimitText += "<br/><br/>Which is almost depleted! Consider having fewer RuneLite clients open at the same time with the plugin active.";
 			rateLimitColor = ERROR_TEXT_COLOR;
 		}
 

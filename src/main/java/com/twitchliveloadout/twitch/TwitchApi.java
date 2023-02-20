@@ -38,15 +38,22 @@ import java.util.zip.GZIPOutputStream;
 @Slf4j
 public class TwitchApi
 {
-	public final static int MAX_PAYLOAD_SIZE = 5120;
-	public final static int MIN_SCHEDULE_DELAY = 500; // ms
+	public final static int MAX_PAYLOAD_SIZE = 5120; // bytes
+
+	// this delay supports two clients to sync fast enough while not exceeding the rate limit (1000ms)
+	// however, to anticipate party members to also sync to the account an extra 300ms is added.
+	public final static int MIN_SCHEDULE_DEFAULT_DELAY = 1300; // ms
+	public final static int MIN_SCHEDULE_LOGGED_OUT_DELAY = 6000; // ms
+	public final static int MIN_SCHEDULE_GROUP_DELAY = 6000; // ms
+
 	public final static int MIN_SYNC_DELAY = 0; // ms
 	public final static int BASE_SYNC_DELAY = 1000; // ms
+
 	public final static boolean CHAT_ERRORS_ENABLED = true;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
 	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com/";
 	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions/";
-	private final static String RATE_LIMIT_REMAINING_HEADER = "ratelimit-ratelimitermessagesbychannel-remaining";
+	private final static String RATE_LIMIT_REMAINING_HEADER = "Ratelimit-Remaining";
 	private final static int GET_CONFIGURATION_SERVICE_TIMEOUT_MS = 3 * 1000;
 	private final static int GET_EBS_PRODUCTS_TIMEOUT_MS = 10 * 1000;
 	private final static int GET_EBS_TRANSACTIONS_TIMEOUT_MS = 10 * 1000;
@@ -139,8 +146,10 @@ public class TwitchApi
 			return true;
 		}
 
+		final boolean isLoggedIn = plugin.isLoggedIn();
 		final Instant now = Instant.now();
-		final Instant minTime = lastScheduleStateTime.plusMillis(MIN_SCHEDULE_DELAY);
+		final int delayMs = isLoggedIn ? MIN_SCHEDULE_DEFAULT_DELAY : MIN_SCHEDULE_LOGGED_OUT_DELAY;
+		final Instant minTime = lastScheduleStateTime.plusMillis(delayMs);
 
 		return now.isAfter(minTime);
 	}
