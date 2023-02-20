@@ -101,6 +101,8 @@ public class MarketplacePanel extends JPanel
 		playbackConstraints.gridy++;
 		playbackWrapper.add(playbackControlsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
+		playbackWrapper.add(startPanel, playbackConstraints);
+		playbackConstraints.gridy++;
 		playbackWrapper.add(pauseShortPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(pauseLongPanel, playbackConstraints);
