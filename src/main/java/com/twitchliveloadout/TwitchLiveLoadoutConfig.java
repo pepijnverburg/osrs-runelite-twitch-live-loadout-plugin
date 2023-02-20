@@ -498,7 +498,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Random Event Donations",
 			description = "Settings for the Random Event triggered by donations",
-			position = 12
+			position = 3
 	)
 	String marketplaceSection = "donations";
 
