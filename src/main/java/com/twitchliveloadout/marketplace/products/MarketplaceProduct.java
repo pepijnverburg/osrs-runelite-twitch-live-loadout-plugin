@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
+import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -15,10 +16,10 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
@@ -767,32 +768,68 @@ public class MarketplaceProduct
 			return;
 		}
 
-		int previousDurationDelayMs = 0;
+		int totalDelayMs = baseDelayMs;
 		Iterator visualEffectIterator = visualEffects.iterator();
 
 		while (visualEffectIterator.hasNext())
 		{
 			EbsVisualEffect visualEffect = (EbsVisualEffect) visualEffectIterator.next();
 			boolean isLast = !visualEffectIterator.hasNext();
-			int delayMs = baseDelayMs + previousDurationDelayMs;
 			int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(visualEffect.durationMs, 0, 0);
+			int delayMs = 0; // potentially handy in the future to delay a full visual effect
+			ArrayList<EbsCondition> conditions = visualEffect.conditions;
 
-			triggerModelAnimation(
-				spawnedObject,
-				visualEffect.modelAnimation,
-				delayMs,
-				forceModelAnimation,
-				isLast ? resetModelAnimationHandler : null
-			);
-			triggerPlayerGraphic(visualEffect.playerGraphic, delayMs);
-			triggerPlayerAnimation(visualEffect.playerAnimation, delayMs);
-			triggerInterfaceWidgets(visualEffect.interfaceWidgets, delayMs);
-			triggerMenuOptions(visualEffect.menuOptions, delayMs);
-			triggerSoundEffect(visualEffect.soundEffect, delayMs);
-			triggerNotifications(visualEffect.notifications, delayMs, delayMs + durationMs);
+			// schedule all the individual visual effects
+//			log.info("Scheduling visual effects after: "+ totalDelayMs +", at: "+ Instant.now().toEpochMilli());
+			manager.getPlugin().scheduleOnClientThread(() -> {
 
-			previousDurationDelayMs += durationMs;
+				// guard: check if all the conditions for this visual effect are met
+				if (!verifyConditions(conditions))
+				{
+//					log.info("CANCELLED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
+					return;
+				}
+
+//				log.info("TRIGGERED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
+				triggerModelAnimation(
+					spawnedObject,
+					visualEffect.modelAnimation,
+					delayMs,
+					forceModelAnimation,
+					isLast ? resetModelAnimationHandler : null
+				);
+				triggerPlayerGraphic(visualEffect.playerGraphic, delayMs);
+				triggerPlayerAnimation(visualEffect.playerAnimation, delayMs);
+				triggerInterfaceWidgets(visualEffect.interfaceWidgets, delayMs);
+				triggerMenuOptions(visualEffect.menuOptions, delayMs);
+				triggerSoundEffect(visualEffect.soundEffect, delayMs);
+				triggerNotifications(visualEffect.notifications, delayMs, delayMs + durationMs);
+			}, totalDelayMs);
+
+			totalDelayMs += durationMs;
 		}
+	}
+
+	private boolean verifyConditions(ArrayList<EbsCondition> conditions)
+	{
+		AtomicBoolean verified = new AtomicBoolean(true);
+
+		// check all conditions
+		LambdaIterator.handleAll(conditions, (condition) -> {
+			Integer varbitId = condition.varbitId;
+			Integer varbitValue = condition.varbitValue;
+
+			// check if this condition should check a varbit
+			if (varbitId >= 0)
+			{
+				if (manager.getClient().getVarbitValue(varbitId) != varbitValue)
+				{
+					verified.set(false);
+				}
+			}
+		});
+
+		return verified.get();
 	}
 
 	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetVisualEffectHandler resetAnimationHandler)

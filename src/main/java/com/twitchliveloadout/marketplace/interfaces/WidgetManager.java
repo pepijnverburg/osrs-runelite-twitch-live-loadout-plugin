@@ -5,6 +5,7 @@ import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.products.EbsInterfaceWidgetFrame;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.Varbits;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
 

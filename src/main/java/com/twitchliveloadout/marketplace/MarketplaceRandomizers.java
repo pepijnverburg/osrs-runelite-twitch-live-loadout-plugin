@@ -33,11 +33,9 @@ public class MarketplaceRandomizers {
 				validRandomRange.max = randomRange.max;
 			}
 
-			// when there is a minimum range, but no maximum the minimum
-			// will be used for BOTH
-			if (randomRange.min != null && randomRange.max == null) {
-				validRandomRange.min = randomRange.min;
-				validRandomRange.max = randomRange.min;
+			// make sure the max is valid compared to the min
+			if (validRandomRange.min > validRandomRange.max) {
+				validRandomRange.max = validRandomRange.min;
 			}
 		}
 

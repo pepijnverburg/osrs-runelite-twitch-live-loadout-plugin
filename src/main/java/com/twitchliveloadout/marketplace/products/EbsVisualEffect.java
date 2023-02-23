@@ -11,4 +11,5 @@ public class EbsVisualEffect {
 	public ArrayList<EbsInterfaceWidgetFrame> interfaceWidgets;
 	public EbsSoundEffectFrame soundEffect;
 	public ArrayList<EbsNotification> notifications;
+	public ArrayList<EbsCondition> conditions;
 }
