@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.JagexColor;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetType;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +16,12 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 public class WidgetManager extends InterfaceManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
+	private Widget coveringOverlay;
+
+	private final static int RESIZED_COVERING_GROUP_ID = 161;
+	private final static int DEFAULT_COVERING_GROUP_ID = 548;
+	private final static int RESIZED_COVERING_CHILD_ID = 90;
+	private final static int DEFAULT_COVERING_CHILD_ID = 26;
 
 	/**
 	 * Separate, centralized store of the original widget states because it is possible that multiple active products
@@ -31,6 +38,39 @@ public class WidgetManager extends InterfaceManager {
 
 		this.plugin = plugin;
 		this.client = client;
+
+		initializeCoveringOverlay();
+	}
+
+	public void hideCoveringOverlay()
+	{
+		coveringOverlay.setHidden(true);
+	}
+
+	private void initializeCoveringOverlay()
+	{
+		plugin.runOnClientThread(() -> {
+			final boolean isResized = client.isResized();
+			final int groupId = (isResized ? RESIZED_COVERING_GROUP_ID : DEFAULT_COVERING_GROUP_ID);
+			final int childId = (isResized ? RESIZED_COVERING_CHILD_ID : DEFAULT_COVERING_CHILD_ID);
+			final Widget parent = client.getWidget(groupId, childId);
+
+			if (parent == null) {
+				return;
+			}
+
+			coveringOverlay = (coveringOverlay == null ? parent.createChild(WidgetType.RECTANGLE) : coveringOverlay);
+			coveringOverlay.setFilled(true);
+			coveringOverlay.setOpacity(10);
+			coveringOverlay.setWidthMode(1);
+			coveringOverlay.setHeightMode(1);
+			coveringOverlay.setXPositionMode(1);
+			coveringOverlay.setYPositionMode(1);
+			coveringOverlay.setModelType(1);
+			coveringOverlay.setModelZoom(100);
+			coveringOverlay.revalidate();
+			coveringOverlay.setHidden(false);
+		});
 	}
 
 	@Override
