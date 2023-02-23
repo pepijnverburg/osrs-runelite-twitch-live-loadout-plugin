@@ -504,8 +504,9 @@ public class MarketplaceManager {
 	public void onGameTick()
 	{
 		notificationManager.onGameTick();
-		widgetManager.onGameTick();
 		menuManager.onGameTick();
+		widgetManager.onGameTick();
+		widgetManager.ensureCoveringOverlays();
 	}
 
 	/**
@@ -610,15 +611,9 @@ public class MarketplaceManager {
 	/**
 	 * Handle all active products using an iterator
 	 */
-	public void handleActiveProducts(MarketplaceProductHandler handler)
+	public void handleActiveProducts(LambdaIterator.Handler<MarketplaceProduct> handler)
 	{
-		Iterator iterator = activeProducts.iterator();
-
-		while (iterator.hasNext())
-		{
-			MarketplaceProduct marketplaceProduct = (MarketplaceProduct) iterator.next();
-			handler.execute(marketplaceProduct);
-		}
+		LambdaIterator.handleAll(activeProducts, handler);
 	}
 
 	/**
@@ -630,7 +625,7 @@ public class MarketplaceManager {
 		transmogManager.revertEquipment();
 		menuManager.stopEffects();
 		widgetManager.stopEffects();
-		widgetManager.hideCoveringOverlay();
+		widgetManager.hideCoveringOverlays();
 		stopActiveProducts();
 	}
 
@@ -644,10 +639,6 @@ public class MarketplaceManager {
 
 	public interface SpawnedObjectHandler {
 		public void execute(SpawnedObject spawnedObject);
-	}
-
-	public interface MarketplaceProductHandler {
-		public void execute(MarketplaceProduct marketplaceProduct);
 	}
 
 	public interface PlayerHandler {

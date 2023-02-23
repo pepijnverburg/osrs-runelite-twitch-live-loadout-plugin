@@ -1,13 +1,14 @@
 package com.twitchliveloadout.marketplace.interfaces;
 
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.products.EbsInterfaceWidgetFrame;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.JagexColor;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
@@ -16,12 +17,13 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 public class WidgetManager extends InterfaceManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
-	private Widget coveringOverlay;
 
-	private final static int RESIZED_COVERING_GROUP_ID = 161;
-	private final static int DEFAULT_COVERING_GROUP_ID = 548;
-	private final static int RESIZED_COVERING_CHILD_ID = 90;
-	private final static int DEFAULT_COVERING_CHILD_ID = 26;
+	/**
+	 * Track all the covering overlays that were initialized to show dark / snow / other overlay effects.
+	 * This is a hashmap to support multiple client settings such as resized and fixed, which require different widgets
+	 */
+	private ConcurrentHashMap<Widget, Widget> coveringOverlays = new ConcurrentHashMap();
+	private boolean isResized = false;
 
 	/**
 	 * Separate, centralized store of the original widget states because it is possible that multiple active products
@@ -38,38 +40,66 @@ public class WidgetManager extends InterfaceManager {
 
 		this.plugin = plugin;
 		this.client = client;
-
-		initializeCoveringOverlay();
 	}
 
-	public void hideCoveringOverlay()
+	public void hideCoveringOverlays()
 	{
-		coveringOverlay.setHidden(true);
+		LambdaIterator.handleAllValues(coveringOverlays, (coveringOverlay) -> {
+			coveringOverlay.setHidden(true);
+		});
 	}
 
-	private void initializeCoveringOverlay()
+	public void ensureCoveringOverlays()
 	{
 		plugin.runOnClientThread(() -> {
-			final boolean isResized = client.isResized();
-			final int groupId = (isResized ? RESIZED_COVERING_GROUP_ID : DEFAULT_COVERING_GROUP_ID);
-			final int childId = (isResized ? RESIZED_COVERING_CHILD_ID : DEFAULT_COVERING_CHILD_ID);
-			final Widget parent = client.getWidget(groupId, childId);
+			isResized = client.isResized();
+
+			if (isResized) {
+				ensureCoveringOverlay(CoveringOverlayType.RESIZED_CLASSIC);
+				ensureCoveringOverlay(CoveringOverlayType.RESIZED_MODERN);
+			} else {
+				ensureCoveringOverlay(CoveringOverlayType.FIXED);
+			}
+		});
+	}
+
+	private void ensureCoveringOverlay(CoveringOverlayType overlayType)
+	{
+		plugin.runOnClientThread(() -> {
+			final Widget parent = client.getWidget(overlayType.getWidgetGroupId(), overlayType.getWidgetChildId());
 
 			if (parent == null) {
 				return;
 			}
 
-			coveringOverlay = (coveringOverlay == null ? parent.createChild(WidgetType.RECTANGLE) : coveringOverlay);
+			// get the overlay based on the parent instance because the parent
+			// change across logins, this makes sure we always instantiate a new one
+			Widget coveringOverlay = coveringOverlays.get(parent);
+
+			// guard: check if already existing
+			if (coveringOverlay != null)
+			{
+				return;
+			}
+
+			// create child widget
+			coveringOverlay = parent.createChild(WidgetType.RECTANGLE);
+			coveringOverlays.put(parent, coveringOverlay);
+
+			// set to default properties
+			coveringOverlay.setHidden(false);
 			coveringOverlay.setFilled(true);
-			coveringOverlay.setOpacity(10);
+			coveringOverlay.setType(3);
+			coveringOverlay.setOpacity(255);
 			coveringOverlay.setWidthMode(1);
 			coveringOverlay.setHeightMode(1);
 			coveringOverlay.setXPositionMode(1);
 			coveringOverlay.setYPositionMode(1);
 			coveringOverlay.setModelType(1);
-			coveringOverlay.setModelZoom(100);
+			coveringOverlay.setModelId(-1);
+			coveringOverlay.setAnimationId(-1);
+			coveringOverlay.setModelZoom(1);
 			coveringOverlay.revalidate();
-			coveringOverlay.setHidden(false);
 		});
 	}
 
@@ -77,38 +107,44 @@ public class WidgetManager extends InterfaceManager {
 	protected void applyEffect(InterfaceEffect effect)
 	{
 		EbsInterfaceWidgetFrame widgetFrame = (EbsInterfaceWidgetFrame) effect.getFrame();
-		Widget widget = getWidget(widgetFrame);
+		ArrayList<Widget> widgets = getWidgets(widgetFrame);
 
 		// guard: make sure this widget is known and valid
-		if (widget == null)
+		if (widgets.size() <= 0)
 		{
 			return;
 		}
 
-		// always make sure a potential original is stored
-		registerOriginalWidget(widget);
+		LambdaIterator.handleAll(widgets, (widget) -> {
 
-		String type = widgetFrame.type;
-		String text = widgetFrame.text;
-		Integer textColor = widgetFrame.textColor;
-		Integer opacity = widgetFrame.opacity;
-		Integer itemId = widgetFrame.itemId;
-		Integer itemQuantity = widgetFrame.itemQuantity;
-		String name = widgetFrame.name;
-		Integer spriteId = widgetFrame.spriteId;
-		Integer modelId = widgetFrame.modelId;
-		Integer animationId = widgetFrame.animationId;
+			// always make sure a potential original is stored
+			registerOriginalWidget(widget);
+			String effectType = widgetFrame.effectType;
+			Integer widgetType = widgetFrame.widgetType;
+			String text = widgetFrame.text;
+			Integer textColor = widgetFrame.textColor;
+			Integer opacity = widgetFrame.opacity;
+			Integer itemId = widgetFrame.itemId;
+			Integer itemQuantity = widgetFrame.itemQuantity;
+			String name = widgetFrame.name;
+			Integer spriteId = widgetFrame.spriteId;
+			Integer modelId = widgetFrame.modelId;
+			Integer modelZoom = widgetFrame.modelZoom;
+			Integer animationId = widgetFrame.animationId;
 
-		plugin.runOnClientThread(() -> {
-			// hide widget when disable is requested
-			if (DISABLE_INTERFACE_WIDGET_TYPE.equals(type))
-			{
-				widget.setHidden(true);
-			}
+			plugin.runOnClientThread(() -> {
+				// hide widget when disable is requested
+				if (DISABLE_INTERFACE_WIDGET_TYPE.equals(effectType))
+				{
+					widget.setHidden(true);
+					return;
+				}
 
-			// change text, color and more when alter is requested
-			else if (ALTER_INTERFACE_WIDGET_TYPE.equals(type))
-			{
+				if (widgetType != null)
+				{
+					widget.setType(widgetType);
+				}
+
 				if (text != null)
 				{
 					widget.setText(text);
@@ -149,11 +185,16 @@ public class WidgetManager extends InterfaceManager {
 					widget.setModelId(modelId);
 				}
 
+				if (modelZoom != null)
+				{
+					widget.setModelZoom(modelZoom);
+				}
+
 				if (animationId != null)
 				{
 					widget.setAnimationId(animationId);
 				}
-			}
+			});
 		});
 	}
 
@@ -161,27 +202,32 @@ public class WidgetManager extends InterfaceManager {
 	protected void restoreEffect(InterfaceEffect effect)
 	{
 		EbsInterfaceWidgetFrame widgetFrame = (EbsInterfaceWidgetFrame) effect.getFrame();
-		Widget widget = getWidget(widgetFrame);
+		ArrayList<Widget> widgets = getWidgets(widgetFrame);
 
-		// guard: make sure this widget is known and valid
-		if (widget == null || !originalWidgets.containsKey(widget))
-		{
-			return;
-		}
+		LambdaIterator.handleAll(widgets, (widget) -> {
 
-		OriginalWidget originalWidget = originalWidgets.get(widget);
+			// guard: make sure this widget is known and valid
+			if (widget == null || !originalWidgets.containsKey(widget))
+			{
+				return;
+			}
 
-		// restore the properties of the widget
-		widget.setHidden(originalWidget.getHidden());
-		widget.setText(originalWidget.getText());
-		widget.setTextColor(originalWidget.getTextColor());
-		widget.setOpacity(originalWidget.getOpacity());
-		widget.setItemId(originalWidget.getItemId());
-		widget.setItemQuantity(originalWidget.getItemQuantity());
-		widget.setName(originalWidget.getName());
-		widget.setSpriteId(originalWidget.getSpriteId());
-		widget.setModelId(originalWidget.getModelId());
-		widget.setAnimationId(originalWidget.getAnimationId());
+			OriginalWidget originalWidget = originalWidgets.get(widget);
+
+			// restore the properties of the widget
+			widget.setHidden(originalWidget.getHidden());
+			widget.setType(originalWidget.getType());
+			widget.setText(originalWidget.getText());
+			widget.setTextColor(originalWidget.getTextColor());
+			widget.setOpacity(originalWidget.getOpacity());
+			widget.setItemId(originalWidget.getItemId());
+			widget.setItemQuantity(originalWidget.getItemQuantity());
+			widget.setName(originalWidget.getName());
+			widget.setSpriteId(originalWidget.getSpriteId());
+			widget.setModelId(originalWidget.getModelId());
+			widget.setModelZoom(originalWidget.getModelZoom());
+			widget.setAnimationId(originalWidget.getAnimationId());
+		});
 	}
 
 	private void registerOriginalWidget(Widget widget)
@@ -197,12 +243,34 @@ public class WidgetManager extends InterfaceManager {
 		originalWidgets.put(widget, originalWidget);
 	}
 
-	private Widget getWidget(EbsInterfaceWidgetFrame widgetFrame)
+	private ArrayList<Widget> getWidgets(EbsInterfaceWidgetFrame widgetFrame)
 	{
-		try {
+		final ArrayList<Widget> widgets = new ArrayList();
+		final String effectType = widgetFrame.effectType;
+
+		if (OVERLAY_INTERFACE_WIDGET_TYPE.equals(effectType)) {
+
+			// get all widgets for all screens because when restoring an effect
+			// this should be done for ALL covering overlay widgets otherwise
+			// one might keep on going on a certain effect when switching resizing mode
+			widgets.addAll(coveringOverlays.values());
+		} else {
 			final Integer parentId = widgetFrame.parentId;
 			final Integer childId = widgetFrame.childId;
 			final Integer listIndex = widgetFrame.listIndex;
+			Widget widget = getWidget(parentId, childId, listIndex);
+
+			if (widget != null) {
+				widgets.add(widget);
+			}
+		}
+
+		return widgets;
+	}
+
+	private Widget getWidget(Integer parentId, Integer childId, Integer listIndex)
+	{
+		try {
 
 			// guard: make sure the parent and child selectors are valid
 			if (parentId < 0 || childId < 0)

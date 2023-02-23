@@ -42,6 +42,7 @@ public class MarketplaceConstants {
 	public static final String DISABLE_MENU_OPTION_TYPE = "disable";
 	public static final String DISABLE_INTERFACE_WIDGET_TYPE = "disable";
 	public static final String ALTER_INTERFACE_WIDGET_TYPE = "alter";
+	public static final String OVERLAY_INTERFACE_WIDGET_TYPE = "overlay";
 
 	public static final int CHAT_NOTIFICATION_LOCKED_MS = 1 * 1000;
 	public static final int OVERHEAD_NOTIFICATION_LOCKED_MS = 3 * 1000;

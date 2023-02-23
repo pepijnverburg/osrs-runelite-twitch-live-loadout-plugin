@@ -9,6 +9,8 @@ public class OriginalWidget {
 	@Getter
 	private final Boolean hidden;
 	@Getter
+	private final Integer type;
+	@Getter
 	private final String text;
 	@Getter
 	private final Integer textColor;
@@ -25,6 +27,8 @@ public class OriginalWidget {
 	@Getter
 	private final Integer modelId;
 	@Getter
+	private final Integer modelZoom;
+	@Getter
 	private final Integer animationId;
 
 	public OriginalWidget(Widget widget)
@@ -33,6 +37,7 @@ public class OriginalWidget {
 
 		// initialize all originals
 		this.hidden = widget.isSelfHidden();
+		this.type = widget.getType();
 		this.text = widget.getText();
 		this.textColor = widget.getTextColor();
 		this.opacity = widget.getOpacity();
@@ -41,6 +46,7 @@ public class OriginalWidget {
 		this.name = widget.getName();
 		this.spriteId = widget.getSpriteId();
 		this.modelId = widget.getModelId();
+		this.modelZoom = widget.getModelZoom();
 		this.animationId = widget.getAnimationId();
 	}
 }
