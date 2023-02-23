@@ -223,7 +223,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
-			marketplaceManager = new MarketplaceManager(this, twitchApi, client, config, chatMessageManager);
+			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 		} catch (Exception exception) {

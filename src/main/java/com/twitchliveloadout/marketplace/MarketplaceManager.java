@@ -18,6 +18,7 @@ import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
+import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ import okhttp3.Response;
 
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.UPDATE_ACTIVE_PRODUCTS_DELAY_MS;
@@ -40,6 +42,7 @@ public class MarketplaceManager {
 	@Getter
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchApi twitchApi;
+	private final TwitchState twitchState;
 
 	@Getter
 	private final Client client;
@@ -84,11 +87,6 @@ public class MarketplaceManager {
 	private CopyOnWriteArrayList<EbsProduct> ebsProducts = new CopyOnWriteArrayList();
 
 	/**
-	 * List of all the possible product durations from Twitch
-	 */
-	private CopyOnWriteArrayList<EbsProductDuration> ebsProductDurations = new CopyOnWriteArrayList();
-
-	/**
 	 * List of all extension transactions that should be handled
 	 */
 	private CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList();
@@ -105,10 +103,17 @@ public class MarketplaceManager {
 	 */
 	private boolean pausedActiveProducts = false;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
+	/**
+	 * Lookup to see until when a certain product is cooled down and should stay in the queue if there are any
+	 * transactions made at the same time. This lookup also informs the viewers which products are in cooldown.
+	 */
+	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap();
+
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
+		this.twitchState = twitchState;
 		this.client = client;
 		this.config = config;
 		this.spawnManager = new SpawnManager(plugin, client);
@@ -214,11 +219,23 @@ public class MarketplaceManager {
 					continue;
 				}
 
+				String streamerProductId = streamerProduct.id;
 				String ebsProductId = streamerProduct.ebsProductId;
+				Instant now = Instant.now();
+				Instant cooldownUntil = streamerProductCooldownUntil.get(streamerProductId);
 				EbsProduct ebsProduct = getEbsProductById(ebsProductId);
+				boolean isCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
+				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled;
+
+				// guard: make sure this product is not cooling down
+				// this can be triggered when two transactions are done at the same time
+				if (isCoolingDown)
+				{
+					continue;
+				}
 
 				// guard: make sure an EBS product is configured for this streamer product
-				if (ebsProduct == null || !ebsProduct.enabled)
+				if (!isValidEbsProduct)
 				{
 					continue;
 				}
@@ -265,6 +282,10 @@ public class MarketplaceManager {
 
 				log.info("It expires at: " + newProduct.getExpiredAt() + ", which is in " + newProduct.getExpiresInMs() + "ms");
 
+				// update the cooldown after the product is really started an not expired instantly
+				// otherwise old transactions can impact the cooldown time
+				updateCooldown(streamerProduct);
+
 				// register this product to be active, which is needed to check
 				// for any periodic effects that might need to trigger
 				activeProducts.add(newProduct);
@@ -275,6 +296,37 @@ public class MarketplaceManager {
 				log.error("The ID of the skipped transaction was: "+ transaction.id);
 			}
 		}
+	}
+
+	/**
+	 * Update the cooldown period of a streamer product that will block future usage for x seconds
+	 */
+	private void updateCooldown(StreamerProduct streamerProduct)
+	{
+
+		// guard: make sure the product is valid
+		if (streamerProduct == null)
+		{
+			return;
+		}
+
+		String streamerProductId = streamerProduct.id;
+		Integer cooldownSeconds = streamerProduct.cooldown;
+
+		// guard: check if a cooldown is needed to be set
+		if (cooldownSeconds <= 0)
+		{
+			return;
+		}
+
+		// determine the cooldown ending time and update it
+		Instant now = Instant.now();
+		Instant cooldownUntil = now.plusSeconds(cooldownSeconds);
+		streamerProductCooldownUntil.put(streamerProductId, cooldownUntil);
+
+		// sync the cooldown map to the twitch state to update to users
+		// that have missed the PubSub message, because they open the stream after the transaction
+		
 	}
 
 	/**
@@ -418,7 +470,6 @@ public class MarketplaceManager {
 			Boolean status = result.get("status").getAsBoolean();
 			String message = result.get("message").getAsString();
 			JsonArray products = result.getAsJsonArray("products");
-			JsonArray durations = result.getAsJsonArray("durations");
 
 			// guard: check if the status is valid
 			// if not we want to keep the old products intact
@@ -429,7 +480,6 @@ public class MarketplaceManager {
 			}
 
 			CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList();
-			CopyOnWriteArrayList<EbsProductDuration> newEbsProductDurations = new CopyOnWriteArrayList();
 
 			// try-catch for every parse, to not let all products crash on one misconfiguration
 			products.forEach((element) -> {
@@ -441,17 +491,7 @@ public class MarketplaceManager {
 				}
 			});
 
-			durations.forEach((element) -> {
-				try {
-					EbsProductDuration ebsProductDuration = new Gson().fromJson(element, EbsProductDuration.class);
-					newEbsProductDurations.add(ebsProductDuration);
-				} catch (Exception exception) {
-					// empty?
-				}
-			});
-
 			ebsProducts = newEbsProducts;
-			ebsProductDurations = newEbsProductDurations;
 		} catch (Exception exception) {
 			log.warn("Could not fetch the new EBS products due to the following error: ", exception);
 		}
