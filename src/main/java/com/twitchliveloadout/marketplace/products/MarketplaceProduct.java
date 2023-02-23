@@ -797,8 +797,8 @@ public class MarketplaceProduct
 
 	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetVisualEffectHandler resetAnimationHandler)
 	{
-		// guard: make sure the spawned object is valid
-		if (spawnedObject == null)
+		// guard: make sure the spawned object and animation are valid
+		if (spawnedObject == null || animation == null)
 		{
 			return;
 		}
