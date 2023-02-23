@@ -55,7 +55,7 @@ public class SpawnManager {
 
 			// only respawn if in viewport and a respawn is required
 			// to prevent animations to be reset all the time
-			if (spawnedObject.isInView() && spawnedObject.isRespawnRequired()) {
+			if (spawnedObject.isInRegion() && spawnedObject.isRespawnRequired()) {
 				respawnQueue.add(spawnedObject);
 				spawnedObject.setRespawnRequired(false);
 			}
@@ -212,9 +212,9 @@ public class SpawnManager {
 
 	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
-		for (int radius = startRadius; radius < maxRadius; radius += radiusStepSize)
+		for (int radius = startRadius; radius <= maxRadius; radius++)
 		{
-			int randomizedRadius = radius + ((int) (Math.random() * radiusStepSize));
+			int randomizedRadius = radius + (int) Math.round(Math.random() * ((float) radiusStepSize));
 			int usedRadius = Math.min(randomizedRadius, maxRadius);
 			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, inLineOfSight, referenceWorldPoint);
 
@@ -234,13 +234,20 @@ public class SpawnManager {
 		final WorldArea playerArea = player.getWorldArea();
 		final WorldPoint playerWorldPoint = player.getWorldLocation();
 
-		// make sure the reference local point is always valid
+		// make sure the reference WORLD point is always valid
 		if (referenceWorldPoint == null)
 		{
 			referenceWorldPoint = playerWorldPoint;
 		}
 
 		LocalPoint referenceLocalPoint = LocalPoint.fromWorld(client, referenceWorldPoint);
+
+		// guard: make sure the LOCAL point is always valid
+		if (referenceLocalPoint == null)
+		{
+			referenceLocalPoint = client.getLocalPlayer().getLocalLocation();
+		}
+
 		final int sceneX = referenceLocalPoint.getSceneX();
 		final int sceneY = referenceLocalPoint.getSceneY();
 
@@ -263,9 +270,10 @@ public class SpawnManager {
 
 				int flagData = collisionFlags[sceneAttemptX][sceneAttemptY];
 				int blockedFlags = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
+				boolean isWalkable = (flagData & blockedFlags) == 0;
 
-				// guard: check if this tile is not walkable
-				if ((flagData & blockedFlags) != 0)
+				// guard: make sure the tile is walkable
+				if (!isWalkable)
 				{
 					continue;
 				}

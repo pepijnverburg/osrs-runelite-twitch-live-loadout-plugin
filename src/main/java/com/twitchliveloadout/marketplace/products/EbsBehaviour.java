@@ -9,5 +9,6 @@ public class EbsBehaviour {
 	public ArrayList<ArrayList<EbsVisualEffect>> visualEffectsOptions;
 	public EbsInterval spawnInterval;
 	public ArrayList<EbsSpawnOption> spawnOptions;
+	public ArrayList<EbsSpawnOption> initialSpawnOptions;
 	public ArrayList<EbsNotification> notifications;
 }

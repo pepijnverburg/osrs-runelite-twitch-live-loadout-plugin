@@ -14,7 +14,8 @@ public class MarketplaceConstants {
 	public static final String IN_RADIUS_FOLLOW_TYPE = "in-radius";
 	public static final String PREVIOUS_TILE_FOLLOW_TYPE = "behind-player";
 
-	public static final int DEFAULT_RADIUS = 10;
+	public static final int DEFAULT_MIN_RADIUS = 1;
+	public static final int DEFAULT_MAX_RADIUS = 15;
 	public static final String DEFAULT_RADIUS_TYPE = "radius";
 	public static final String OUTWARD_RADIUS_TYPE = "outward-radius";
 

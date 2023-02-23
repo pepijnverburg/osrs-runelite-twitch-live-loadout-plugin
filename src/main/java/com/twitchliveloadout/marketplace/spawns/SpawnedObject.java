@@ -86,6 +86,14 @@ public class SpawnedObject {
 	public void rotateTowards(LocalPoint targetPoint)
 	{
 		LocalPoint sourcePoint = spawnPoint.getLocalPoint(client);
+
+		// guard: check if the source point is valid
+		// if not that means it is not in the current scene
+		if (sourcePoint == null)
+		{
+			return;
+		}
+
 		int deltaX = sourcePoint.getX() - targetPoint.getX();
 		int deltaY = sourcePoint.getY() - targetPoint.getY();
 		double angleRadians = Math.atan2(deltaX, deltaY);
@@ -199,9 +207,13 @@ public class SpawnedObject {
 		object.setModel(null);
 	}
 
-	public boolean isInView()
+	public boolean isInRegion()
 	{
 		return isInView(Constants.REGION_SIZE);
+	}
+	public boolean isInChunk()
+	{
+		return isInView(Constants.CHUNK_SIZE);
 	}
 
 	public boolean isInView(int radius)
@@ -217,14 +229,14 @@ public class SpawnedObject {
 
 	public void render()
 	{
-		object.setModel(modelData.light());
+		object.setModel(modelData.light(64, 850, -30, -50, -30));
 	}
 
 	public void respawn()
 	{
 
-		// guard: location cannot be set to local point if not in scene
-		if (!isInView())
+		// guard: location cannot be set to local point if not in region
+		if (!isInRegion())
 		{
 			return;
 		}
@@ -241,6 +253,13 @@ public class SpawnedObject {
 	{
 		final LocalPoint localPoint = spawnPoint.getLocalPoint(client);
 		final int plane = spawnPoint.getPlane();
+
+		// guard: check if the point is valid
+		// if not that means it is not in the current scene
+		if (localPoint == null)
+		{
+			return;
+		}
 
 		// move the object to the new relative local point as the scene offset might be changed
 		object.setLocation(localPoint, plane);

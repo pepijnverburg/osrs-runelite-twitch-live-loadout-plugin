@@ -19,7 +19,7 @@ import net.runelite.api.coords.WorldPoint;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
@@ -461,10 +461,10 @@ public class MarketplaceProduct
 				continue;
 			}
 
-			// guard: skip when this spawned object is not in the scene,
+			// guard: skip when this spawned object is not in the region,
 			// because this can feel random when graphics/animations are triggered
 			// without the spawned object in view
-			if (!spawnedObject.isInView())
+			if (!spawnedObject.isInRegion())
 			{
 				continue;
 			}
@@ -556,8 +556,17 @@ public class MarketplaceProduct
 		String transactionId = transaction.id;
 		String productId = ebsProduct.id;
 		EbsBehaviour behaviour = ebsProduct.behaviour;
+		ArrayList<EbsSpawnOption> initialSpawnOptions = behaviour.initialSpawnOptions;
 		ArrayList<EbsSpawnOption> spawnOptions = behaviour.spawnOptions;
 		EbsInterval spawnInterval = behaviour.spawnInterval;
+		boolean hasSpawnedAtLeastOnce = (lastSpawnBehaviourAt != null);
+
+		// override the spawn options with the initial ones when they are valid
+		// and the first spawn still needs to happen
+		if (!hasSpawnedAtLeastOnce && initialSpawnOptions != null)
+		{
+			spawnOptions = initialSpawnOptions;
+		}
 
 		// guard: check if objects need to be spawned
 		if (spawnOptions == null)
@@ -586,7 +595,7 @@ public class MarketplaceProduct
 		}
 
 		// guard: check if the interval has not passed
-		if (lastSpawnBehaviourAt != null && lastSpawnBehaviourAt.plusMillis(spawnInterval.delayMs).isAfter(now))
+		if (hasSpawnedAtLeastOnce && lastSpawnBehaviourAt.plusMillis(spawnInterval.delayMs).isAfter(now))
 		{
 			return;
 		}
@@ -609,6 +618,13 @@ public class MarketplaceProduct
 		// randomize the amount of spawns
 		int spawnGroupAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
 		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
+
+		// guard: check if the conditions are satisfied
+		// NOTE: this should happen after the timer is being set!
+		if (!verifyConditions(spawnOption.conditions))
+		{
+			return;
+		}
 
 		// guard: make sure the spawn behaviours are valid
 		if (spawns == null)
@@ -731,7 +747,7 @@ public class MarketplaceProduct
 
 		SpawnPoint spawnPoint = null;
 		EbsRandomRange radiusRange = placement.radiusRange;
-		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, 0d, DEFAULT_RADIUS);
+		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS);
 		String radiusType = placement.radiusType;
 		String locationType = placement.locationType;
 		Boolean inLineOfSight = placement.inLineOfSight;
@@ -812,24 +828,37 @@ public class MarketplaceProduct
 
 	private boolean verifyConditions(ArrayList<EbsCondition> conditions)
 	{
-		AtomicBoolean verified = new AtomicBoolean(true);
 
-		// check all conditions
-		LambdaIterator.handleAll(conditions, (condition) -> {
+		// guard: check if collection is valid
+		if (conditions == null)
+		{
+			return true;
+		}
+
+		Iterator iterator = conditions.iterator();
+
+		while (iterator.hasNext())
+		{
+			EbsCondition condition = (EbsCondition) iterator.next();
 			Integer varbitId = condition.varbitId;
 			Integer varbitValue = condition.varbitValue;
+			Integer maxSpawnsInView = condition.maxSpawnsInView;
+			Integer inViewRadius = condition.inViewRadius;
 
-			// check if this condition should check a varbit
-			if (varbitId >= 0)
+			// guard: check if this condition should check a varbit
+			if (varbitId >= 0 && manager.getClient().getVarbitValue(varbitId) != varbitValue)
 			{
-				if (manager.getClient().getVarbitValue(varbitId) != varbitValue)
-				{
-					verified.set(false);
-				}
+				return false;
 			}
-		});
 
-		return verified.get();
+			// guard: check for max spawns in view
+			if (maxSpawnsInView > 0 && countSpawnedObjectsInView(inViewRadius) > maxSpawnsInView)
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetVisualEffectHandler resetAnimationHandler)
@@ -1079,6 +1108,23 @@ public class MarketplaceProduct
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
 			spawnedObject.resetAnimation();
 		});
+	}
+
+	/**
+	 * Count the amount of spawned objects that are in view of the player
+	 */
+	private int countSpawnedObjectsInView(int radius)
+	{
+		AtomicInteger inViewAmount = new AtomicInteger();
+
+		LambdaIterator.handleAll(spawnedObjects, (spawnedObject) -> {
+			if (spawnedObject.isInView(radius))
+			{
+				inViewAmount.addAndGet(1);
+			}
+		});
+
+		return inViewAmount.get();
 	}
 
 	/**
