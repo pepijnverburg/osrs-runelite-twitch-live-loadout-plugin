@@ -775,7 +775,7 @@ public class MarketplaceProduct
 		return spawnPoint;
 	}
 
-	private void triggerVisualEffects(ArrayList<EbsVisualEffect> visualEffects, int baseDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetVisualEffectHandler resetModelAnimationHandler)
+	public void triggerVisualEffects(ArrayList<EbsVisualEffect> visualEffects, int baseDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetVisualEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the animation is valid
@@ -824,6 +824,17 @@ public class MarketplaceProduct
 
 			totalDelayMs += durationMs;
 		}
+	}
+
+	public void triggerVisualEffects(ArrayList<EbsVisualEffect> visualEffects)
+	{
+		triggerVisualEffects(
+			visualEffects,
+			0,
+			null,
+			false,
+			null
+		);
 	}
 
 	private boolean verifyConditions(ArrayList<EbsCondition> conditions)

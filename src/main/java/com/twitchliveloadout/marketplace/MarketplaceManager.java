@@ -116,7 +116,7 @@ public class MarketplaceManager {
 		this.transmogManager = new TransmogManager();
 		this.notificationManager = new NotificationManager(plugin, chatMessageManager, client);
 		this.widgetManager = new WidgetManager(plugin, client);
-		this.menuManager = new MenuManager(this);
+		this.menuManager = new MenuManager();
 		this.soundManager = new SoundManager(client);
 	}
 

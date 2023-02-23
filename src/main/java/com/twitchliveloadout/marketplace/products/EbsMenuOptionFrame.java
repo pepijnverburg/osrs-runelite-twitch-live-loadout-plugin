@@ -5,5 +5,5 @@ import java.util.ArrayList;
 public class EbsMenuOptionFrame extends EbsInterfaceFrame {
 	public String type;
 	public ArrayList<String> matchedOptions;
-	public ArrayList<EbsNotification> onClickNotifications;
+	public ArrayList<EbsVisualEffect> onClickVisualEffects;
 }

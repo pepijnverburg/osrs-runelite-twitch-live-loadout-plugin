@@ -3,6 +3,7 @@ package com.twitchliveloadout.marketplace.interfaces;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.products.EbsMenuOptionFrame;
+import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.events.MenuOptionClicked;
 
@@ -13,18 +14,14 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.MENU_EFFECT
 
 @Slf4j
 public class MenuManager extends InterfaceManager {
-	private final MarketplaceManager manager;
 
-	public MenuManager(MarketplaceManager manager)
+	public MenuManager()
 	{
 		super(MENU_EFFECT_MAX_SIZE);
-
-		this.manager = manager;
 	}
 
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
-		NotificationManager notificationManager = manager.getNotificationManager();
 		String clickedOption = event.getMenuOption();
 		Iterator effectIterator = effects.iterator();
 
@@ -32,6 +29,7 @@ public class MenuManager extends InterfaceManager {
 		while (effectIterator.hasNext())
 		{
 			InterfaceEffect effect = (InterfaceEffect) effectIterator.next();
+			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
 			EbsMenuOptionFrame menuOptionFrame = (EbsMenuOptionFrame) effect.getFrame();
 
 			// guard: skip when not active
@@ -54,10 +52,7 @@ public class MenuManager extends InterfaceManager {
 				if (clickedOption.toLowerCase().startsWith(option.toLowerCase()))
 				{
 					event.consume();
-					notificationManager.handleEbsNotifications(
-						effect.getMarketplaceProduct(),
-						menuOptionFrame.onClickNotifications
-					);
+					marketplaceProduct.triggerVisualEffects(menuOptionFrame.onClickVisualEffects);
 				}
 			}
 		}
