@@ -628,6 +628,9 @@ public class MarketplaceManager {
 	{
 		animationManager.revertAnimations();
 		transmogManager.revertEquipment();
+		menuManager.stopEffects();
+		widgetManager.stopEffects();
+		widgetManager.hideCoveringOverlay();
 		stopActiveProducts();
 	}
 

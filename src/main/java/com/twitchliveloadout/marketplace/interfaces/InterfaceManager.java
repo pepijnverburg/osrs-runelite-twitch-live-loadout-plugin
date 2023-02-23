@@ -30,8 +30,8 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 
 	public void onGameTick()
 	{
-		cleanEffects();
-		applyEffects();
+		cleanInactiveEffects();
+		applyActiveEffects();
 	}
 
 	public void addEffect(MarketplaceProduct product, FrameType frame)
@@ -66,7 +66,17 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 		onAddEffect(effect);
 	}
 
-	private void cleanEffects()
+	private void cleanInactiveEffects()
+	{
+		cleanEffects(false);
+	}
+
+	public void stopEffects()
+	{
+		cleanEffects(true);
+	}
+
+	public void cleanEffects(boolean forceStop)
 	{
 		Iterator effectIterator = effects.iterator();
 
@@ -78,7 +88,7 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 			boolean isActive = marketplaceProduct.isActive();
 
 			// check if we should remove this active widget frame
-			if (isExpired)
+			if (isExpired || forceStop)
 			{
 
 				// remove from the active widgets
@@ -92,14 +102,14 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 			}
 
 			// check if we should only restore the widget for now, because the marketplace product is inactive
-			if (!isActive)
+			else if (!isActive)
 			{
 				restoreEffect(effect);
 			}
 		}
 	}
 
-	private void applyEffects()
+	private void applyActiveEffects()
 	{
 		Iterator effectIterator = effects.iterator();
 
