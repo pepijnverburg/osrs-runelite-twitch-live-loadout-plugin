@@ -30,6 +30,8 @@ import net.runelite.client.chat.ChatMessageManager;
 import okhttp3.Response;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -137,7 +139,8 @@ public class MarketplaceManager {
 			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
 			Boolean status = result.get("status").getAsBoolean();
 			String message = result.get("message").getAsString();
-			JsonArray newTransactions = result.getAsJsonArray("transactions");
+			JsonArray newTransactionsJson = result.getAsJsonArray("transactions");
+			ArrayList<TwitchTransaction> newTransactions = new ArrayList();
 
 			// guard: check if the status is valid
 			if (!status)
@@ -146,7 +149,7 @@ public class MarketplaceManager {
 				return;
 			}
 
-			newTransactions.forEach((element) -> {
+			newTransactionsJson.forEach((element) -> {
 
 				// try catch for each individual transaction to not have one invalid transaction
 				// cancel all others with the top-level try-catch in this function
@@ -162,13 +165,22 @@ public class MarketplaceManager {
 						return;
 					}
 
-					queuedTransactions.add(twitchTransaction);
 					handledTransactionIds.add(transactionId);
+					newTransactions.add(twitchTransaction);
 					log.info("Queued a new Twitch transaction with ID: " + transactionId);
 				} catch (Exception exception) {
 					log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
 				}
 			});
+
+			// add in front of the archive as it is from new to old
+			archivedTransactions.addAll(0, newTransactions);
+
+			// add at the end of the queue from old to new
+			// reverse is needed because the list if from NEW to OLD
+			// and we want the oldest transactions to be first in the queue
+			Collections.reverse(newTransactions);
+			queuedTransactions.addAll(newTransactions);
 
 			// only update the last checked at if everything is successful
 			transactionsLastCheckedAt = Instant.now();
@@ -257,7 +269,6 @@ public class MarketplaceManager {
 				// we do this after the validation of all products
 				// to queue transactions that might receive valid product data later
 				queuedTransactions.remove(transaction);
-				archivedTransactions.add(transaction);
 
 				// guard: check for hardcore protection and dangerous random events
 				if (ebsProduct.dangerous && plugin.isDangerousAccountType() && config.marketplaceProtectionEnabled())
@@ -302,7 +313,6 @@ public class MarketplaceManager {
 			} catch (Exception exception) {
 				log.error("Could not handle transaction due to the following error, it is being skipped: ", exception);
 				queuedTransactions.remove(transaction);
-				archivedTransactions.add(transaction);
 				log.error("The ID of the skipped transaction was: "+ transaction.id);
 			}
 		}

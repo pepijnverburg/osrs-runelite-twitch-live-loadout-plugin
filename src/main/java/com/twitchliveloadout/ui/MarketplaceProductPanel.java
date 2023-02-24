@@ -1,7 +1,6 @@
 package com.twitchliveloadout.ui;
 
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
-import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProductCost;
 import lombok.extern.slf4j.Slf4j;
@@ -124,17 +123,10 @@ public class MarketplaceProductPanel extends JPanel {
 			streamerProductName,
 			"By <i>"+ viewerName + "</i>",
 			"For "+ costAmount +" "+ costCurrency,
-			"Expires in "+ humanizeDuration(Duration.ofSeconds(expiresInSeconds)),
+			"Expires in "+ MarketplacePanel.humanizeDuration(Duration.ofSeconds(expiresInSeconds)),
 		};
 		String name = String.join("<br/>", lines);
 
 		nameLabel.setText("<html>"+ name +"</html>");
-	}
-
-	private static String humanizeDuration(Duration duration) {
-		return duration.toString()
-			.substring(2)
-			.replaceAll("(\\d[HMS])(?!$)", "$1 ")
-			.toLowerCase();
 	}
 }
