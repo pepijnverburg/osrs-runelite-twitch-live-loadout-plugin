@@ -85,11 +85,11 @@ public class MarketplacePanel extends JPanel
 		playbackWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		playbackWrapper.add(statusPanel, playbackConstraints);
 		playbackConstraints.gridy++;
-		playbackWrapper.add(availableDonationsPanel, playbackConstraints);
-		playbackConstraints.gridy++;
 		playbackWrapper.add(playbackControlsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(startPanel, playbackConstraints);
+		playbackConstraints.gridy++;
+		playbackWrapper.add(availableDonationsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(queuedTransactionsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
@@ -121,6 +121,17 @@ public class MarketplacePanel extends JPanel
 		wrapper.add(playbackWrapper, PLAYBACK_PANEL);
 		constraints.gridy++;
 		add(wrapper, BorderLayout.NORTH);
+
+		initializePanelButton(startPanel, startLabel, getPlaybackButtonTitle(), () -> {
+			final boolean isMarketplaceActive = marketplaceManager.isActive();
+
+			if (isMarketplaceActive) {
+				marketplaceManager.pause();
+			} else {
+				marketplaceManager.start();
+			}
+			rebuild();
+		});
 
 		// initialize all the panel slots without adding them to the UI
 		for (int i = 0; i < MarketplaceConstants.MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY; i++)
@@ -156,7 +167,6 @@ public class MarketplacePanel extends JPanel
 		final int activeProductAmount = activeProducts.size();
 		final int archivedTransactionAmount = archivedTransactions.size();
 
-		final boolean isMarketplaceActive = marketplaceManager.isActive();
 		int marketplaceProductPanelIndex = 0;
 		int twitchTransactionPanelIndex = 0;
 		String statusText = "<html>Receiving donations is <b color='green'>ACTIVE</b></html>";
@@ -172,16 +182,8 @@ public class MarketplacePanel extends JPanel
 			availableDonationsText = "<html>There are <b color='red'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
 		}
 
-		initializePanelButton(startPanel, startLabel, "<html>"+ (isMarketplaceActive ? "PAUSE ALL" : "RESUME ALL") +"</html>", () -> {
-			if (isMarketplaceActive) {
-				marketplaceManager.pause();
-			} else {
-				marketplaceManager.start();
-			}
-			rebuild();
-		});
-
 		statusPanel.setText(statusText);
+		startLabel.setText(getPlaybackButtonTitle());
 		availableDonationsPanel.setText(availableDonationsText);
 		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" donations queued.");
 		productListTitlePanel.setText("There are "+ activeProductAmount +" random events active.");
@@ -252,6 +254,11 @@ public class MarketplacePanel extends JPanel
 			transactionListPanel.add(panel, transactionListConstraints);
 			transactionListConstraints.gridy++;
 		}
+	}
+
+	private String getPlaybackButtonTitle()
+	{
+		return "<html>"+ (marketplaceManager.isActive() ? "PAUSE ALL" : "RESUME ALL") +"</html>";
 	}
 
 	private void initializePanelButton(JPanel panel, JLabel label, String buttonTitle, ButtonCallback buttonCallback)
