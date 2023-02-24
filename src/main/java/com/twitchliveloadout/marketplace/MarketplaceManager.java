@@ -326,7 +326,7 @@ public class MarketplaceManager {
 
 		// sync the cooldown map to the twitch state to update to users
 		// that have missed the PubSub message, because they open the stream after the transaction
-		
+		twitchState.setCurrentProductCooldowns(streamerProductCooldownUntil);
 	}
 
 	/**
@@ -651,7 +651,7 @@ public class MarketplaceManager {
 	/**
 	 * Handle all active products using an iterator
 	 */
-	public void handleActiveProducts(LambdaIterator.Handler<MarketplaceProduct> handler)
+	public void handleActiveProducts(LambdaIterator.ValueHandler<MarketplaceProduct> handler)
 	{
 		LambdaIterator.handleAll(activeProducts, handler);
 	}

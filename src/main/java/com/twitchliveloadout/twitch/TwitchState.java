@@ -1,19 +1,16 @@
 package com.twitchliveloadout.twitch;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.ui.CanvasListener;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.vars.AccountType;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
@@ -203,18 +200,25 @@ public class TwitchState {
 		currentState.addProperty(priceKey, totalPrice);
 	}
 
-	private void setMarketplaceSetting(String settingsKey, String settingValue)
+	public void setCurrentProductCooldowns(ConcurrentHashMap<String, Instant> cooldownsUntil)
 	{
-		String allSettingsKey = TwitchStateEntry.MARKETPLACE_SETTINGS.getKey();
-		JsonObject currentSettings = currentState.getAsJsonObject(allSettingsKey);
+		Instant now = Instant.now();
+		JsonObject currentProductCooldowns = new JsonObject();
 
-		if (currentSettings == null)
-		{
-			currentSettings = new JsonObject();
-		}
+		// add each one of them
+		cooldownsUntil.forEach((streamerProductId, cooldownUntil) -> {
 
-		currentSettings.addProperty(settingsKey, settingValue);
-		currentState.add(allSettingsKey, currentSettings);
+			// guard: don't include cooldowns that have already passed
+			// this ensures no old cooldowns are sent to the extension which might have
+			// a new cooldown initialized via the PubSub messaging, which is faster than this one!
+			if (now.isAfter(cooldownUntil))
+			{
+				return;
+			}
+			currentProductCooldowns.addProperty(streamerProductId, cooldownUntil.toString());
+		});
+
+		currentState.add(TwitchStateEntry.CURRENT_PRODUCT_COOLDOWNS.getKey(), currentProductCooldowns);
 	}
 
 	public void setInvocations(JsonArray invocations)
@@ -527,6 +531,7 @@ public class TwitchState {
 
 		// for now always true?
 		connectionStatus.addProperty("status", true);
+		connectionStatus.addProperty("isLoggedIn", plugin.isLoggedIn());
 
 		state.add(TwitchStateEntry.CONNECTION_STATUS.getKey(), connectionStatus);
 		return state;
@@ -609,7 +614,7 @@ public class TwitchState {
 
 		if (!config.marketplaceEnabled())
 		{
-			state.add(TwitchStateEntry.MARKETPLACE_SETTINGS.getKey(), null);
+			state.add(TwitchStateEntry.CURRENT_PRODUCT_COOLDOWNS.getKey(), null);
 		}
 
 		if (!config.invocationsEnabled())

@@ -58,7 +58,7 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 			expiresAt = Instant.now().plusMillis(durationMs);
 		}
 
-		log.info("Adding new interface effect from EBS product ID: "+ product.getEbsProduct().id);
+//		log.info("Adding new interface effect from EBS product ID: "+ product.getEbsProduct().id);
 
 		// register the new effect
 		InterfaceEffect effect = new InterfaceEffect(product, frame, expiresAt);
