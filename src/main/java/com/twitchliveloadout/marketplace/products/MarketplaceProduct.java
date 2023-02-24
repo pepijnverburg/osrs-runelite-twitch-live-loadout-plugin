@@ -813,7 +813,7 @@ public class MarketplaceProduct
 					return;
 				}
 
-//				log.info("TRIGGERED VISUAL EFFECTS: "+ Instant.now().toEpochMilli() +", anim ID: "+ visualEffect.modelAnimation.id);
+//				log.info("TRIGGERED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
 				triggerModelAnimation(
 					spawnedObject,
 					visualEffect.modelAnimation,

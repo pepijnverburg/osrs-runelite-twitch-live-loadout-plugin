@@ -910,14 +910,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void runOnClientThread(ClientThreadAction action)
 	{
 		try {
-			clientThread.invoke(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						action.execute();
-					} catch (Exception exception) {
-						log.warn("Could not execute action on client thread: ", exception);
-					}
+			clientThread.invoke(() -> {
+				try {
+					action.execute();
+				} catch (Exception exception) {
+					log.warn("Could not execute action on client thread: ", exception);
 				}
 			});
 		} catch (Exception exception) {

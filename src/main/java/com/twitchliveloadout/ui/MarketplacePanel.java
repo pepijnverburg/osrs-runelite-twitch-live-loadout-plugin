@@ -1,10 +1,8 @@
 package com.twitchliveloadout.ui;
 
-import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.MarketplaceProductSorter;
-import com.twitchliveloadout.marketplace.products.EbsProduct;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.StreamerProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -24,7 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class MarketplacePanel extends JPanel
 {
 	private static final String TRANSACTION_LIST_PANEL = "TRANSACTION_LIST_PANEL";
-	private static final String ERROR_PANEL = "ERROR_PANEL";
+	private static final String NO_TRANSACTIONS_PANEL = "NO_TRANSACTIONS_PANEL";
 
 	private final GridBagConstraints constraints = new GridBagConstraints();
 	private final GridBagConstraints transactionListConstraints = new GridBagConstraints();
@@ -48,8 +46,8 @@ public class MarketplacePanel extends JPanel
 	private final JPanel transactionListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<MarketplaceProductPanel> marketplaceProductPanels = new CopyOnWriteArrayList();
 
-	private final PluginErrorPanel errorPanel = new PluginErrorPanel();
-	private final JPanel errorWrapper = new JPanel(new BorderLayout());
+	private final PluginErrorPanel noTransactionsPanel = new PluginErrorPanel();
+	private final JPanel noTransactionsWrapper = new JPanel(new BorderLayout());
 
 	private final MarketplaceManager marketplaceManager;
 
@@ -119,15 +117,15 @@ public class MarketplacePanel extends JPanel
 		transactionListWrapper.add(transactionListPanel, constraints);
 		constraints.gridy++;
 
-		errorPanel.setBorder(new EmptyBorder(50, 20, 20, 20));
-		errorPanel.setContent("No recent donations", "<html>Let your viewers activate random events through donations. Make sure you have set them up via the Twitch Extension configuration page.</html>");
+		noTransactionsPanel.setBorder(new EmptyBorder(50, 20, 20, 20));
+		noTransactionsPanel.setContent("No recent donations", "<html>Let your viewers activate random events through donations. Make sure you have set them up via the Twitch Extension configuration page.</html>");
 
-		errorWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		errorWrapper.add(playbackWrapper, BorderLayout.NORTH);
-		errorWrapper.add(errorPanel, BorderLayout.CENTER);
+		noTransactionsWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		noTransactionsWrapper.add(playbackWrapper, BorderLayout.NORTH);
+		noTransactionsWrapper.add(noTransactionsPanel, BorderLayout.CENTER);
 
 		wrapper.add(transactionListWrapper, TRANSACTION_LIST_PANEL);
-		wrapper.add(errorWrapper, ERROR_PANEL);
+		wrapper.add(noTransactionsWrapper, NO_TRANSACTIONS_PANEL);
 		add(wrapper, BorderLayout.NORTH);
 
 		// initialize all the fight panel slots without adding them to the UI
@@ -169,7 +167,7 @@ public class MarketplacePanel extends JPanel
 		// guard: check if there are no fights to show
 		if (activeProducts.size() <= 0)
 		{
-			cardLayout.show(wrapper, ERROR_PANEL);
+			cardLayout.show(wrapper, NO_TRANSACTIONS_PANEL);
 			return;
 		}
 
