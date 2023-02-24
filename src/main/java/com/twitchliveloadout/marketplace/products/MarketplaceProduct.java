@@ -178,6 +178,9 @@ public class MarketplaceProduct
 		}
 
 		isActive = false;
+		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
+			spawnedObject.hide();
+		});
 	}
 
 	public void stop()
