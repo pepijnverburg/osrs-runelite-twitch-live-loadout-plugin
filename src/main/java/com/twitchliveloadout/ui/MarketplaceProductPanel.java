@@ -33,7 +33,7 @@ public class MarketplaceProductPanel extends JPanel {
 		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
 	}
 
-	public MarketplaceProductPanel()
+	public MarketplaceProductPanel(MarketplacePanel marketplacePanel)
 	{
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(0, 0, 10, 0));
@@ -56,6 +56,7 @@ public class MarketplaceProductPanel extends JPanel {
 					if (marketplaceProduct != null)
 					{
 						marketplaceProduct.stop();
+						marketplacePanel.rebuild();
 					}
 				}
 			}

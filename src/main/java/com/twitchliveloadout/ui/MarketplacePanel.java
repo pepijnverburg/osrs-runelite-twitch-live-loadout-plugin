@@ -136,7 +136,7 @@ public class MarketplacePanel extends JPanel
 		// initialize all the panel slots without adding them to the UI
 		for (int i = 0; i < MarketplaceConstants.MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY; i++)
 		{
-			MarketplaceProductPanel marketplaceProductPanel = new MarketplaceProductPanel();
+			MarketplaceProductPanel marketplaceProductPanel = new MarketplaceProductPanel(this);
 			productPanels.add(marketplaceProductPanel);
 		}
 
