@@ -477,25 +477,38 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
-	 * Polling mechanism to get new Twitch transactions and manage activation and de-activation of products
+	 * Polling mechanism to get new Twitch transactions
 	 */
 	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
-	public void updateMarketplaceTransactions()
+	public void fetchMarketplaceTransactions()
 	{
 		try {
 			if (config.marketplaceEnabled())
 			{
 				// get new transactions from Twitch
 				marketplaceManager.handleNewTwitchTransactions();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not update the extension transactions due to the following error: ", exception);
+		}
+	}
 
-				// apply new products and clean expired ones
+	/**
+	 * Polling mechanism to manage activation and de-activation of products
+	 */
+	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void applyMarketplaceTransactions()
+	{
+		try {
+			if (config.marketplaceEnabled())
+			{
 				runOnClientThread(() -> {
 					marketplaceManager.applyQueuedTransactions();
 					marketplaceManager.cleanExpiredProducts();
 				});
 			}
 		} catch (Exception exception) {
-			log.warn("Could not update the extension transactions due to the following error: ", exception);
+			log.warn("Could not apply and clean the extension transactions: ", exception);
 		}
 	}
 
