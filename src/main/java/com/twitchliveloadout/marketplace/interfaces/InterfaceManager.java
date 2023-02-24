@@ -71,7 +71,7 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 		cleanEffects(false);
 	}
 
-	public void stopEffects()
+	public void forceCleanAllEffects()
 	{
 		cleanEffects(true);
 	}
@@ -86,6 +86,8 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
 			boolean isExpired = effect.isExpired() || marketplaceProduct.isExpired();
 			boolean isActive = marketplaceProduct.isActive();
+			boolean isPaused = marketplaceProduct.isPaused();
+			boolean isApplied = effect.isApplied();
 
 			// check if we should remove this active widget frame
 			if (isExpired || forceStop)
@@ -99,12 +101,15 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 				// if other effect still change this widget, because
 				// on the next apply cycle these effects change the widget
 				restoreEffect(effect);
+				effect.setApplied(false);
 			}
 
 			// check if we should only restore the widget for now, because the marketplace product is inactive
-			else if (!isActive)
+			// we also don't restore when the effect is not applied anymore and the product is paused
+			else if (!isActive && (isApplied || !isPaused))
 			{
 				restoreEffect(effect);
+				effect.setApplied(false);
 			}
 		}
 	}
@@ -126,6 +131,7 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 			}
 
 			applyEffect(effect);
+			effect.setApplied(true);
 		}
 	}
 
