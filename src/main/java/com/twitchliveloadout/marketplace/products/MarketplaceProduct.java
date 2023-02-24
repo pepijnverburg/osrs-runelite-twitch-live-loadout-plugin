@@ -61,6 +61,8 @@ public class MarketplaceProduct
 	 */
 	@Getter
 	private boolean isActive = false;
+	@Getter
+	private boolean isPaused = false;
 
 	/**
 	 * Long-term interval trackers
@@ -76,7 +78,7 @@ public class MarketplaceProduct
 	@Getter
 	private final Instant startedAt;
 	@Getter
-	private final Instant expiredAt;
+	private Instant expiredAt;
 	@Getter
 	private final Instant loadedAt;
 	@Getter
@@ -162,10 +164,11 @@ public class MarketplaceProduct
 			return;
 		}
 
+		isPaused = false;
+		isActive = true;
 		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
 			spawnedObject.show();
 		});
-		isActive = true;
 	}
 
 	public void pause()
@@ -177,6 +180,7 @@ public class MarketplaceProduct
 			return;
 		}
 
+		isPaused = true;
 		isActive = false;
 		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
 			spawnedObject.hide();
@@ -195,7 +199,15 @@ public class MarketplaceProduct
 		);
 
 		// start with disabling all behaviours
+		isPaused = false;
 		isActive = false;
+
+		// force the expiry when not expired yet
+		// this allows us to prematurely clean up this product
+		if (!isExpired())
+		{
+			expiredAt = Instant.now();
+		}
 
 		// clean up all the spawned objects
 		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
@@ -1130,7 +1142,8 @@ public class MarketplaceProduct
 
 			// guard: check if this product has been disabled in the mean time after this was scheduled
 			// this means we will not trigger the reset animation, because it can interrupt the hide visual effects.
-			if (!isActive)
+			// it will not do this when paused, because with paused objects we still want to reset the animation in the background.
+			if (!isActive && !isPaused)
 			{
 				return;
 			}
