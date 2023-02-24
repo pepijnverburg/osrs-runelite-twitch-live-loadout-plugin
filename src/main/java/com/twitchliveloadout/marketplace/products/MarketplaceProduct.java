@@ -418,6 +418,13 @@ public class MarketplaceProduct
 		Instant now = Instant.now();
 		Iterator spawnedObjectIterator = spawnedObjects.iterator();
 
+		// guard: don't trigger visual effects when the product has gone active
+		// this for example makes sure the hideVisualEffect is not interrupted by the random ones
+		if (!isActive)
+		{
+			return;
+		}
+
 		while (spawnedObjectIterator.hasNext())
 		{
 			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
@@ -537,7 +544,7 @@ public class MarketplaceProduct
 			return;
 		}
 
-		log.info("Executing visual effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
+		log.debug("Executing visual effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
 		lastVisualEffectBehaviourAt = Instant.now();
 		visualEffectBehaviourCounter += 1;
 
@@ -806,7 +813,7 @@ public class MarketplaceProduct
 					return;
 				}
 
-//				log.info("TRIGGERED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
+//				log.info("TRIGGERED VISUAL EFFECTS: "+ Instant.now().toEpochMilli() +", anim ID: "+ visualEffect.modelAnimation.id);
 				triggerModelAnimation(
 					spawnedObject,
 					visualEffect.modelAnimation,
@@ -1117,6 +1124,14 @@ public class MarketplaceProduct
 	private void resetAnimation(SpawnedObject spawnedObject, long delayMs)
 	{
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
+
+			// guard: check if this product has been disabled in the mean time after this was scheduled
+			// this means we will not trigger the reset animation, because it can interrupt the hide visual effects.
+			if (!isActive)
+			{
+				return;
+			}
+
 			spawnedObject.resetAnimation();
 		});
 	}
