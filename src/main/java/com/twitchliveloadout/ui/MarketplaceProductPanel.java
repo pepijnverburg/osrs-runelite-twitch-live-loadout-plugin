@@ -18,7 +18,6 @@ import java.time.Duration;
 
 @Slf4j
 public class MarketplaceProductPanel extends JPanel {
-	private final MarketplaceManager marketplaceManager;
 	private MarketplaceProduct marketplaceProduct;
 
 	private static final ImageIcon DELETE_ICON;
@@ -35,10 +34,8 @@ public class MarketplaceProductPanel extends JPanel {
 		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
 	}
 
-	public MarketplaceProductPanel(MarketplaceManager marketplaceManager)
+	public MarketplaceProductPanel()
 	{
-		this.marketplaceManager = marketplaceManager;
-
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(0, 0, 10, 0));
 

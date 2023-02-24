@@ -90,6 +90,7 @@ public class MarketplaceManager {
 	 * List of all extension transactions that should be handled
 	 */
 	private CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList();
+	private CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = new CopyOnWriteArrayList();
 	private CopyOnWriteArrayList<String> handledTransactionIds = new CopyOnWriteArrayList();
 	private Instant transactionsLastCheckedAt = null;
 
@@ -101,7 +102,8 @@ public class MarketplaceManager {
 	/**
 	 * Timer for when all the active products should be active again
 	 */
-	private boolean pausedActiveProducts = false;
+	@Getter
+	private boolean isActive = true;
 
 	/**
 	 * Lookup to see until when a certain product is cooled down and should stay in the queue if there are any
@@ -122,7 +124,7 @@ public class MarketplaceManager {
 		this.notificationManager = new NotificationManager(plugin, chatMessageManager, client);
 		this.widgetManager = new WidgetManager(plugin, client);
 		this.menuManager = new MenuManager();
-		this.soundManager = new SoundManager(client);
+		this.soundManager = new SoundManager(client, config);
 	}
 
 	/**
@@ -193,6 +195,12 @@ public class MarketplaceManager {
 			return;
 		}
 
+		// guard: skip when marketplace is paused
+		if (!isActive())
+		{
+			return;
+		}
+
 		Iterator iterator = queuedTransactions.iterator();
 
 		while (iterator.hasNext())
@@ -249,6 +257,7 @@ public class MarketplaceManager {
 				// we do this after the validation of all products
 				// to queue transactions that might receive valid product data later
 				queuedTransactions.remove(transaction);
+				archivedTransactions.add(transaction);
 
 				// guard: check for hardcore protection and dangerous random events
 				if (ebsProduct.dangerous && plugin.isDangerousAccountType() && config.marketplaceProtectionEnabled())
@@ -293,6 +302,7 @@ public class MarketplaceManager {
 			} catch (Exception exception) {
 				log.error("Could not handle transaction due to the following error, it is being skipped: ", exception);
 				queuedTransactions.remove(transaction);
+				archivedTransactions.add(transaction);
 				log.error("The ID of the skipped transaction was: "+ transaction.id);
 			}
 		}
@@ -362,15 +372,6 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Get a copied copy of the EBS products list to prevent mutations
-	 */
-	public CopyOnWriteArrayList<EbsProduct> getEbsProducts()
-	{
-		CopyOnWriteArrayList<EbsProduct> copy = new CopyOnWriteArrayList(ebsProducts);
-		return copy;
-	}
-
-	/**
 	 * Get a copied copy of the streamer products list to prevent mutations
 	 */
 	public CopyOnWriteArrayList<StreamerProduct> getStreamerProducts()
@@ -385,6 +386,15 @@ public class MarketplaceManager {
 	public CopyOnWriteArrayList<TwitchTransaction> getQueuedTransactions()
 	{
 		CopyOnWriteArrayList<TwitchTransaction> copy = new CopyOnWriteArrayList(queuedTransactions);
+		return copy;
+	}
+
+	/**
+	 * Get a copied copy of the queued transactions list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<TwitchTransaction> getArchivedTransactions()
+	{
+		CopyOnWriteArrayList<TwitchTransaction> copy = new CopyOnWriteArrayList(archivedTransactions);
 		return copy;
 	}
 
@@ -629,23 +639,23 @@ public class MarketplaceManager {
 	/**
 	 * Pause all products
 	 */
-	public void pauseActiveProducts(int pauseDurationMs)
+	public void pause()
 	{
 		handleActiveProducts((marketplaceProduct) -> {
 			marketplaceProduct.pause();
 		});
-		pausedActiveProducts = true;
+		isActive = false;
 	}
 
 	/**
 	 * Start all products
 	 */
-	public void startActiveProducts()
+	public void start()
 	{
+		isActive = true;
 		handleActiveProducts((marketplaceProduct) -> {
 			marketplaceProduct.start();
 		});
-		pausedActiveProducts = false;
 	}
 
 	/**

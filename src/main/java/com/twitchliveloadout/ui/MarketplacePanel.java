@@ -21,8 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Slf4j
 public class MarketplacePanel extends JPanel
 {
-	private static final String TRANSACTION_LIST_PANEL = "TRANSACTION_LIST_PANEL";
-	private static final String NO_TRANSACTIONS_PANEL = "NO_TRANSACTIONS_PANEL";
+	private static final String PLAYBACK_PANEL = "PLAYBACK_PANEL";
 
 	private final GridBagConstraints constraints = new GridBagConstraints();
 	private final GridBagConstraints transactionListConstraints = new GridBagConstraints();
@@ -30,24 +29,24 @@ public class MarketplacePanel extends JPanel
 	private final JPanel wrapper = new JPanel(cardLayout);
 
 	private final GridBagConstraints playbackConstraints = new GridBagConstraints();
+	private final TextPanel statusPanel = new TextPanel("Status:", "<html><b color='orange'>SETTING UP</b></html>");
 	private final TextPanel availableDonationsPanel = new TextPanel("Configured Donations:", "<html>No donations are configured.</html>");
-	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Transactions:", "<html>No transactions are queued.</html>");
+	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Donations:", "<html>No transactions are queued.</html>");
 	private final JPanel playbackWrapper = new JPanel(new BorderLayout());
-	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start the random events for a specific period to temporarily block distractions.</html>");
+	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start the random events for to temporarily block distractions.</html>");
 	private final JPanel startPanel = new JPanel(new BorderLayout());
 	private final JLabel startLabel = new JLabel();
-	private final JPanel pauseShortPanel = new JPanel(new BorderLayout());
-	private final JLabel pauseShortLabel = new JLabel();
-	private final JPanel pauseLongPanel = new JPanel(new BorderLayout());
-	private final JLabel pauseLongLabel = new JLabel();
 
-	private final JPanel transactionListPanel = new JPanel(new GridBagLayout());
-	private final TextPanel transactionTitlePanel = new TextPanel("Recent donations:", "<html>The list below shows recent donations with the newest at the top.</html>");
-	private final JPanel transactionListWrapper = new JPanel(new BorderLayout());
-	private final CopyOnWriteArrayList<MarketplaceProductPanel> marketplaceProductPanels = new CopyOnWriteArrayList();
+	private final JPanel productListPanel = new JPanel(new GridBagLayout());
+	private final TextPanel productListTitlePanel = new TextPanel("Active donations:", "<html>List of active random event donations.</html>");
+	private final JPanel productListWrapper = new JPanel(new BorderLayout());
+	private final CopyOnWriteArrayList<MarketplaceProductPanel> productPanels = new CopyOnWriteArrayList();
 
-	private final PluginErrorPanel noTransactionsPanel = new PluginErrorPanel();
-	private final JPanel noTransactionsWrapper = new JPanel(new BorderLayout());
+//	private final JPanel transactionListPanel = new JPanel(new GridBagLayout());
+//	private final TextPanel transactionTitlePanel = new TextPanel("Past donations:", "<html>List of all the donations of which the random events are finished.</html>");
+//	private final JPanel transactionListWrapper = new JPanel(new BorderLayout());
+//	private final CopyOnWriteArrayList<MarketplaceProductPanel> transactionPanels = new CopyOnWriteArrayList();
+
 
 	private final MarketplaceManager marketplaceManager;
 
@@ -75,129 +74,118 @@ public class MarketplacePanel extends JPanel
 		transactionListConstraints.gridx = 0;
 		transactionListConstraints.gridy = 0;
 
-		transactionListPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
-		transactionListPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-		initializePanelButton(startPanel, startLabel, "<html>Start</html>", () -> {
-			marketplaceManager.startActiveProducts();
-		});
-
-		initializePanelButton(pauseShortPanel, pauseShortLabel, "<html>Pause for 10 minutes</html>", () -> {
-			marketplaceManager.pauseActiveProducts(10 * 60 * 1000);
-		});
-
-		initializePanelButton(pauseLongPanel, pauseLongLabel, "<html>Pause for 30 minutes</html>", () -> {
-			marketplaceManager.pauseActiveProducts(30 * 60 * 1000);
-		});
-
 		playbackWrapper.setLayout(new GridBagLayout());
 		playbackWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
 		playbackWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		playbackWrapper.add(availableDonationsPanel, playbackConstraints);
+		playbackWrapper.add(statusPanel, playbackConstraints);
 		playbackConstraints.gridy++;
-		playbackWrapper.add(queuedTransactionsPanel, playbackConstraints);
+		playbackWrapper.add(availableDonationsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(playbackControlsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(startPanel, playbackConstraints);
 		playbackConstraints.gridy++;
-		playbackWrapper.add(pauseShortPanel, playbackConstraints);
+		playbackWrapper.add(queuedTransactionsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
-		playbackWrapper.add(pauseLongPanel, playbackConstraints);
+		playbackWrapper.add(productListTitlePanel, playbackConstraints);
 		playbackConstraints.gridy++;
-		playbackWrapper.add(transactionTitlePanel, playbackConstraints);
+		playbackWrapper.add(productListWrapper, playbackConstraints);
+		playbackConstraints.gridy++;
+
+		productListWrapper.setLayout(new GridBagLayout());
+		productListWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
+		productListWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		productListPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
+		productListPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		productListWrapper.add(productListPanel, constraints);
+		transactionListConstraints.gridy++;
+
+		wrapper.add(playbackWrapper, PLAYBACK_PANEL);
 		constraints.gridy++;
-
-		transactionListWrapper.setLayout(new GridBagLayout());
-		transactionListWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
-		transactionListWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		transactionListWrapper.add(playbackWrapper, constraints);
-		constraints.gridy++;
-
-		transactionListWrapper.add(transactionListPanel, constraints);
-		constraints.gridy++;
-
-		noTransactionsPanel.setBorder(new EmptyBorder(50, 20, 20, 20));
-		noTransactionsPanel.setContent("No recent donations", "<html>Let your viewers activate random events through donations. Make sure you have set them up via the Twitch Extension configuration page.</html>");
-
-		noTransactionsWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		noTransactionsWrapper.add(playbackWrapper, BorderLayout.NORTH);
-		noTransactionsWrapper.add(noTransactionsPanel, BorderLayout.CENTER);
-
-		wrapper.add(transactionListWrapper, TRANSACTION_LIST_PANEL);
-		wrapper.add(noTransactionsWrapper, NO_TRANSACTIONS_PANEL);
 		add(wrapper, BorderLayout.NORTH);
 
 		// initialize all the fight panel slots without adding them to the UI
 		for (int i = 0; i < MarketplaceConstants.MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY; i++)
 		{
-			MarketplaceProductPanel marketplaceProductPanel = new MarketplaceProductPanel(marketplaceManager);
-			marketplaceProductPanels.add(marketplaceProductPanel);
+			MarketplaceProductPanel marketplaceProductPanel = new MarketplaceProductPanel();
+			productPanels.add(marketplaceProductPanel);
 		}
 	}
 
 	public void rebuild()
 	{
-		rebuildTransactionList();
+		rebuildContent();
 		repaint();
 		revalidate();
 	}
 
-	private void rebuildTransactionList()
+	private void rebuildContent()
 	{
 		final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = marketplaceManager.getActiveProducts();
 		final CopyOnWriteArrayList<StreamerProduct> streamerProducts = marketplaceManager.getStreamerProducts();
 		final CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = marketplaceManager.getQueuedTransactions();
+		final CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = marketplaceManager.getArchivedTransactions();
 		final int streamerProductAmount = streamerProducts.size();
 		final int queuedTransactionAmount = queuedTransactions.size();
+		final boolean isMarketplaceActive = marketplaceManager.isActive();
 		int marketplaceProductPanelIndex = 0;
+		String statusText = "<html>Receiving donations is <b color='green'>ACTIVE</b></html>";
 		String availableDonationsText = "<html>You have <b color='green'>configured "+ streamerProductAmount +" donations</b>.</html>";
+
+		if (!marketplaceManager.isActive())
+		{
+			statusText = "<html>All donations are temporarily <b color='red'>PAUSED</b></html>";
+		}
 
 		if (streamerProductAmount <= 0)
 		{
 			availableDonationsText = "<html>There are <b color='red'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
 		}
 
+		initializePanelButton(startPanel, startLabel, "<html>"+ (isMarketplaceActive ? "Pause" : "Start") +"</html>", () -> {
+			if (isMarketplaceActive) {
+				marketplaceManager.pause();
+			} else {
+				marketplaceManager.start();
+			}
+			rebuild();
+		});
+
+		statusPanel.setText(statusText);
 		availableDonationsPanel.setText(availableDonationsText);
 		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" transactions queued.");
 
 		// order by started at
 		Collections.sort(activeProducts, new MarketplaceProductSorter());
 
-		// guard: check if there are no fights to show
-		if (activeProducts.size() <= 0)
-		{
-			cardLayout.show(wrapper, NO_TRANSACTIONS_PANEL);
-			return;
-		}
-
-		cardLayout.show(wrapper, TRANSACTION_LIST_PANEL);
-		transactionListPanel.removeAll();
+		// for now always show the playback panel
+		cardLayout.show(wrapper, PLAYBACK_PANEL);
+		productListPanel.removeAll();
 		transactionListConstraints.gridy = 0;
 
 		// first clear all the fight in the panels
-		for (MarketplaceProductPanel marketplaceProductPanel : marketplaceProductPanels)
+		for (MarketplaceProductPanel productPanel : productPanels)
 		{
-			marketplaceProductPanel.setMarketplaceProduct(null);
+			productPanel.setMarketplaceProduct(null);
 		}
 
 		// directly add all the fights again in the new order
 		for (MarketplaceProduct marketplaceProduct : activeProducts)
 		{
-			MarketplaceProductPanel marketplaceProductPanel = marketplaceProductPanels.get(marketplaceProductPanelIndex);
+			MarketplaceProductPanel productPanel = productPanels.get(marketplaceProductPanelIndex);
 
 			// guard: check if the panel is valid
-			if (marketplaceProductPanel == null)
+			if (productPanel == null)
 			{
 				log.warn("An invalid marketplace product panel index was requested: "+ marketplaceProductPanelIndex);
 				break;
 			}
 
-			marketplaceProductPanel.setMarketplaceProduct(marketplaceProduct);
-			marketplaceProductPanel.rebuild();
+			productPanel.setMarketplaceProduct(marketplaceProduct);
+			productPanel.rebuild();
 			marketplaceProductPanelIndex ++;
 
-			transactionListPanel.add(marketplaceProductPanel, transactionListConstraints);
+			productListPanel.add(productPanel, transactionListConstraints);
 			transactionListConstraints.gridy++;
 		}
 	}

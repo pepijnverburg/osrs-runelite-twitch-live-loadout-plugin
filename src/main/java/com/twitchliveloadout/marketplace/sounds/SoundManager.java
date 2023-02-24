@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace.sounds;
 
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 
@@ -11,17 +12,25 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 @Slf4j
 public class SoundManager {
 	private final Client client;
+	private final TwitchLiveLoadoutConfig config;
 
 	private Instant globalLastPlayedAt;
 	private ConcurrentHashMap<Integer, Instant> uniqueLastPlayedAtLookup = new ConcurrentHashMap();
 
-	public SoundManager(Client client)
+	public SoundManager(Client client, TwitchLiveLoadoutConfig config)
 	{
 		this.client = client;
+		this.config = config;
 	}
 
 	public void playSound(Integer soundId)
 	{
+
+		// guard: check if the marketplace sounds are enabled
+		if (!config.marketplaceSoundsEnabled())
+		{
+			return;
+		}
 
 		// guard: make sure the sound is valid
 		if (soundId == null || soundId < 0)

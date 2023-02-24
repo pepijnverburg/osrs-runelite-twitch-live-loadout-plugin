@@ -3,6 +3,7 @@ package com.twitchliveloadout.twitch;
 import com.google.gson.*;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.ui.CanvasListener;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -312,6 +313,11 @@ public class TwitchState {
 		// configuration view when installing the extension
 		filteredState = addConnectionStatus(filteredState);
 
+		// always add marketplace settings because we want to show them even if the
+		// player is not yet logged in so that viewers can preview them
+		// the isLoggedIn property determines whether they are clickable
+		filteredState = addMarketplaceSettings(filteredState);
+
 		// remove any states that are disabled in the settings
 		filteredState = removeDisabledState(filteredState);
 
@@ -537,6 +543,20 @@ public class TwitchState {
 		return state;
 	}
 
+	private JsonObject addMarketplaceSettings(JsonObject state)
+	{
+
+		// also get whether the marketplace manager is active because this can temporarily disable
+		// donations via the playback buttons, it feel more natural to fetch it actively than to move some of that
+		// state also to this class. NOTE: check whether it is not null because this class is initialized first.
+		MarketplaceManager marketplaceManager = plugin.getMarketplaceManager();
+		boolean isEnabled = config.marketplaceEnabled() && marketplaceManager != null && marketplaceManager.isActive();
+
+		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_PROTECTION_ENABLED.getKey(), config.marketplaceProtectionEnabled());
+		return state;
+	}
+
 	private JsonObject removeDisabledState(JsonObject state)
 	{
 
@@ -614,6 +634,7 @@ public class TwitchState {
 
 		if (!config.marketplaceEnabled())
 		{
+			state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), false);
 			state.add(TwitchStateEntry.CURRENT_PRODUCT_COOLDOWNS.getKey(), null);
 		}
 

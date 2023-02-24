@@ -37,6 +37,7 @@ import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
 import com.twitchliveloadout.ui.CanvasListener;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
@@ -149,6 +150,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Dedicated manager for marketplace products information.
 	 */
+	@Getter
 	private MarketplaceManager marketplaceManager;
 
 	/**

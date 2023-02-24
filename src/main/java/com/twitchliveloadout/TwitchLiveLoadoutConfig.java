@@ -102,7 +102,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "syncEnabled",
-			name = "Sync enabled",
+			name = "Enable syncing",
 			description = "Toggle off to disable all syncing, hide extension to viewers and clear data.",
 			position = 0,
 			section = syncingSection
@@ -504,7 +504,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "marketplaceEnabled",
-			name = "Enable donations",
+			name = "Enable Random Event donations",
 			description = "Enable viewers to make donations to trigger in-game Random Events (requires Twitch Extension configuration!).",
 			position = 4,
 			hidden = false,
@@ -529,10 +529,23 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "marketplaceSoundsEnabled",
+			name = "Enable Random Event sounds",
+			description = "Disable to not play any sounds triggered by the random event effects.",
+			position = 8,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default boolean marketplaceSoundsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "marketplaceStartOnLoadedAt",
 			name = "Start on received time",
 			description = "Base the expiry of the effects when it is received and not the transaction time, which can have delays.",
-			position = 6,
+			position = 10,
 			hidden = false,
 			section = marketplaceSection
 	)
