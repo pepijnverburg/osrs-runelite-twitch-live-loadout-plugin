@@ -172,7 +172,7 @@ public class MarketplacePanel extends JPanel
 			availableDonationsText = "<html>There are <b color='red'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
 		}
 
-		initializePanelButton(startPanel, startLabel, "<html>"+ (isMarketplaceActive ? "Pause" : "Start") +"</html>", () -> {
+		initializePanelButton(startPanel, startLabel, "<html>"+ (isMarketplaceActive ? "PAUSE ALL" : "RESUME ALL") +"</html>", () -> {
 			if (isMarketplaceActive) {
 				marketplaceManager.pause();
 			} else {
