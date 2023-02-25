@@ -114,6 +114,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * The plugin panel to manage data such as combat fights.
 	 */
 	private static final String ICON_FILE = "/panel_icon.png";
+	@Getter
 	private TwitchLiveLoadoutPanel pluginPanel;
 	private NavigationButton navigationButton;
 
@@ -875,8 +876,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Periodically update the marketplace panel to show the latest status
 	 */
-	@Schedule(period = 5, unit = ChronoUnit.SECONDS, asynchronous = true)
-	public void updateMarketplacePanel()
+	@Schedule(period = 3, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void updateMarketplaceActiveProductsPanel()
 	{
 		try {
 			if (!hasValidPanels())
@@ -884,23 +885,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				return;
 			}
 
-			pluginPanel.getMarketplacePanel().rebuild();
+			// update periodically to update the expiry time and other texts
+			// NOTE: it is important to not rebuild the whole layout because that causes
+			// the scroll position in the panel to be reset
+			pluginPanel.getMarketplacePanel().rebuildProductPanels();
+			pluginPanel.getMarketplacePanel().updateTexts();
 		} catch (Exception exception) {
 			log.warn("Could not update the marketplace panel due to the following error: ", exception);
-		}
-	}
-
-	public void updateCombatPanel()
-	{
-		try {
-			if (!hasValidPanels())
-			{
-				return;
-			}
-
-			pluginPanel.getCombatPanel().rebuild();
-		} catch (Exception exception) {
-			log.warn("Could not update the combat panel due to the following error: ", exception);
 		}
 	}
 

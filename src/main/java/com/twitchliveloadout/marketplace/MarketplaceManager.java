@@ -173,14 +173,19 @@ public class MarketplaceManager {
 				}
 			});
 
-			// add in front of the archive as it is from new to old
-			archivedTransactions.addAll(0, newTransactions);
+			// only update the lists and the panel when new transactions were found
+			if (newTransactions.size() > 0)
+			{
+				// add in front of the archive as it is from new to old
+				archivedTransactions.addAll(0, newTransactions);
 
-			// add at the end of the queue from old to new
-			// reverse is needed because the list if from NEW to OLD
-			// and we want the oldest transactions to be first in the queue
-			Collections.reverse(newTransactions);
-			queuedTransactions.addAll(newTransactions);
+				// add at the end of the queue from old to new
+				// reverse is needed because the list if from NEW to OLD
+				// and we want the oldest transactions to be first in the queue
+				Collections.reverse(newTransactions);
+				queuedTransactions.addAll(newTransactions);
+				updateMarketplacePanel();
+			}
 
 			// only update the last checked at if everything is successful
 			transactionsLastCheckedAt = Instant.now();
@@ -309,7 +314,7 @@ public class MarketplaceManager {
 				// register this product to be active, which is needed to check
 				// for any periodic effects that might need to trigger
 				activeProducts.add(newProduct);
-				plugin.updateMarketplacePanel();
+				updateMarketplacePanel();
 			} catch (Exception exception) {
 				log.error("Could not handle transaction due to the following error, it is being skipped: ", exception);
 				queuedTransactions.remove(transaction);
@@ -364,12 +369,20 @@ public class MarketplaceManager {
 
 			marketplaceProduct.stop();
 			activeProducts.remove(marketplaceProduct);
-			plugin.updateMarketplacePanel();
+			updateMarketplacePanel();
 
 			String transactionId = marketplaceProduct.getTransaction().id;
 			String ebsProductId = marketplaceProduct.getEbsProduct().id;
 			log.info("Cleaned an expired marketplace product ("+ ebsProductId +") for transaction: "+ transactionId);
 		});
+	}
+
+	/**
+	 * Rebuild the marketplace panel completely
+	 */
+	private void updateMarketplacePanel()
+	{
+		plugin.getPluginPanel().getMarketplacePanel().rebuild();
 	}
 
 	/**

@@ -1,5 +1,6 @@
 package com.twitchliveloadout.ui;
 
+import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.MarketplaceProductSorter;
@@ -150,44 +151,19 @@ public class MarketplacePanel extends JPanel
 
 	public void rebuild()
 	{
-		rebuildContent();
+		rebuildLayout();
+		updateTexts();
 		repaint();
 		revalidate();
 	}
 
-	private void rebuildContent()
+	private void rebuildLayout()
 	{
 		final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = marketplaceManager.getActiveProducts();
-		final CopyOnWriteArrayList<StreamerProduct> streamerProducts = marketplaceManager.getStreamerProducts();
-		final CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = marketplaceManager.getQueuedTransactions();
 		final CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = marketplaceManager.getArchivedTransactions();
-
-		final int streamerProductAmount = streamerProducts.size();
-		final int queuedTransactionAmount = queuedTransactions.size();
-		final int activeProductAmount = activeProducts.size();
-		final int archivedTransactionAmount = archivedTransactions.size();
 
 		int marketplaceProductPanelIndex = 0;
 		int twitchTransactionPanelIndex = 0;
-		String statusText = "<html>Receiving donations is <b color='green'>ACTIVE</b></html>";
-		String availableDonationsText = "<html>You have <b color='green'>configured "+ streamerProductAmount +" donations</b>.</html>";
-
-		if (!marketplaceManager.isActive())
-		{
-			statusText = "<html>All donations are temporarily <b color='red'>PAUSED</b></html>";
-		}
-
-		if (streamerProductAmount <= 0)
-		{
-			availableDonationsText = "<html>There are <b color='red'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
-		}
-
-		statusPanel.setText(statusText);
-		startLabel.setText(getPlaybackButtonTitle());
-		availableDonationsPanel.setText(availableDonationsText);
-		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" donations queued.");
-		productListTitlePanel.setText("There are "+ activeProductAmount +" random events active.");
-		transactionListTitlePanel.setText("There are "+ archivedTransactionAmount +" recent donations.");
 
 		// order by started at
 		Collections.sort(activeProducts, new MarketplaceProductSorter());
@@ -200,10 +176,9 @@ public class MarketplacePanel extends JPanel
 		productListConstraints.gridy = 0;
 
 		// first clear all the panels
-		for (MarketplaceProductPanel productPanel : productPanels)
-		{
+		LambdaIterator.handleAll(productPanels, (productPanel) -> {
 			productPanel.setMarketplaceProduct(null);
-		}
+		});
 
 		// directly add all the products again in the new order
 		for (MarketplaceProduct marketplaceProduct : activeProducts)
@@ -230,10 +205,9 @@ public class MarketplacePanel extends JPanel
 		transactionListConstraints.gridy = 0;
 
 		// first clear all the panels
-		for (TwitchTransactionPanel transactionPanel : transactionPanels)
-		{
+		LambdaIterator.handleAll(transactionPanels, (transactionPanel) -> {
 			transactionPanel.setTwitchTransaction(null);
-		}
+		});
 
 		// directly add all the products again in the new order
 		for (TwitchTransaction twitchTransaction : archivedTransactions)
@@ -256,9 +230,49 @@ public class MarketplacePanel extends JPanel
 		}
 	}
 
+	public void rebuildProductPanels()
+	{
+		LambdaIterator.handleAll(productPanels, (productPanel) -> {
+			productPanel.rebuild();
+		});
+	}
+
+	public void updateTexts()
+	{
+		final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = marketplaceManager.getActiveProducts();
+		final CopyOnWriteArrayList<StreamerProduct> streamerProducts = marketplaceManager.getStreamerProducts();
+		final CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = marketplaceManager.getQueuedTransactions();
+		final CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = marketplaceManager.getArchivedTransactions();
+
+		final int streamerProductAmount = streamerProducts.size();
+		final int queuedTransactionAmount = queuedTransactions.size();
+		final int activeProductAmount = activeProducts.size();
+		final int archivedTransactionAmount = archivedTransactions.size();
+
+		String statusText = "<html><b color='green'>Receiving donations is ACTIVE</b></html>";
+		String availableDonationsText = "<html>You have <b color='green'>configured "+ streamerProductAmount +" donations</b>.</html>";
+
+		if (!marketplaceManager.isActive())
+		{
+			statusText = "<html><b color='red'>Donations are temporarily PAUSED</b></html>";
+		}
+
+		if (streamerProductAmount <= 0)
+		{
+			availableDonationsText = "<html>There are <b color='red'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
+		}
+
+		statusPanel.setText(statusText);
+		startLabel.setText(getPlaybackButtonTitle());
+		availableDonationsPanel.setText(availableDonationsText);
+		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" donations queued.");
+		productListTitlePanel.setText("There are "+ activeProductAmount +" random events active.");
+		transactionListTitlePanel.setText("There are "+ archivedTransactionAmount +" recent donations.");
+	}
+
 	private String getPlaybackButtonTitle()
 	{
-		return "<html>"+ (marketplaceManager.isActive() ? "PAUSE ALL" : "RESUME ALL") +"</html>";
+		return "<html><b color='yellow'>"+ (marketplaceManager.isActive() ? "PAUSE ALL" : "RESUME ALL") +"</b></html>";
 	}
 
 	private void initializePanelButton(JPanel panel, JLabel label, String buttonTitle, ButtonCallback buttonCallback)

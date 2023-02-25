@@ -880,7 +880,7 @@ public class FightStateManager
 		log.debug("Creating new fight for actor {}", actorName);
 
 		fights.put(actorName, fight);
-		plugin.updateCombatPanel();
+		updateCombatPanel();
 	}
 
 	public void deleteFight(Fight fight)
@@ -896,7 +896,7 @@ public class FightStateManager
 
 		String actorName = fight.getActorName();
 		fights.remove(actorName);
-		plugin.updateCombatPanel();
+		updateCombatPanel();
 	}
 
 	public Fight rotateOldestFight()
@@ -928,7 +928,12 @@ public class FightStateManager
 	public void deleteAllFights()
 	{
 		fights.clear();
-		plugin.updateCombatPanel();
+		updateCombatPanel();
+	}
+
+	private void updateCombatPanel()
+	{
+		plugin.getPluginPanel().getCombatPanel().rebuild();
 	}
 
 	public JsonObject getFightStatisticsState()

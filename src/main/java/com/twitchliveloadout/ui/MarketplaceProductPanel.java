@@ -93,10 +93,11 @@ public class MarketplaceProductPanel extends JPanel {
 	public void rebuild()
 	{
 
-		// set the label from the name
+		// guard: check if product is valid
 		if (marketplaceProduct == null)
 		{
 			nameLabel.setText("Invalid random event donation");
+			return;
 		}
 
 		boolean isActive = marketplaceProduct.isActive();
@@ -109,13 +110,9 @@ public class MarketplaceProductPanel extends JPanel {
 		String costCurrency = productCost.type;
 		String statusLine = "<b color='green'>ACTIVE</b>";
 
-		if (isExpired)
-		{
+		if (isExpired) {
 			statusLine = "<b color='red'>EXPIRED</b>";
-		}
-
-		if (!isActive)
-		{
+		} else if (!isActive) {
 			statusLine = "<b color='orange'>PAUSED</b>";
 		}
 

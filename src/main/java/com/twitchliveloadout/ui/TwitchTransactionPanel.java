@@ -43,10 +43,11 @@ public class TwitchTransactionPanel extends JPanel {
 	public void rebuild()
 	{
 
-		// set the label from the name
+		// guard: check if transaction is valid
 		if (twitchTransaction == null)
 		{
 			nameLabel.setText("Invalid transaction");
+			return;
 		}
 
 		String viewerName = twitchTransaction.user_name;
