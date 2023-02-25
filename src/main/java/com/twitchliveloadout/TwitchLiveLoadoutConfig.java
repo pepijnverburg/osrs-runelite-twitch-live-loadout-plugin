@@ -41,6 +41,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String BANK_PRICE_CONFIG_KEY = "bank-price";
 	public final static String INVOCATIONS_CONFIG_KEY = "invocations";
 	public final static String INVOCATIONS_RAID_LEVEL_CONFIG_KEY = "invocations-raid-level";
+	public final static String QUESTS_CONFIG_KEY = "quests";
 
 	public final static int MIN_OVERLAY_TOP_POSITION = 25;
 	public final static int MAX_OVERLAY_TOP_POSITION = 75;
@@ -447,6 +448,25 @@ public interface TwitchLiveLoadoutConfig extends Config
 			section = skillsSection
 	)
 	default boolean virtualLevelsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigSection(
+			name = "Quests",
+			description = "Syncing of quests and their status.",
+			position = 8
+	)
+	String questsSection = "quests";
+
+	@ConfigItem(
+			keyName = "questsEnabled",
+			name = "Sync quests",
+			description = "Synchronize quests and their completion status.",
+			position = 2,
+			section = questsSection
+	)
+	default boolean questsEnabled()
 	{
 		return true;
 	}

@@ -30,6 +30,7 @@ import com.twitchliveloadout.items.CollectionLogManager;
 import com.twitchliveloadout.items.ItemStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.minimap.MinimapManager;
+import com.twitchliveloadout.quests.QuestManager;
 import com.twitchliveloadout.raids.InvocationsManager;
 import com.twitchliveloadout.skills.SkillStateManager;
 import com.twitchliveloadout.twitch.TwitchApi;
@@ -165,6 +166,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private InvocationsManager invocationsManager;
 
 	/**
+	 * Dedicated manager for quests information.
+	 */
+	private QuestManager questManager;
+
+	/**
 	 * Cache to check for player name changes as game state is not reliable for this
 	 */
 	private String lastPlayerName = null;
@@ -197,6 +203,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// tasks to execute immediately on boot
 		updateMarketplaceStreamerProducts();
 		updateMarketplaceEbsProducts();
+
+		// update skills when booted up to trigger when someone is enabling
+		// and disabling the plugin when having the client logged in
 		skillStateManager.updateSkills();
 	}
 
@@ -229,6 +238,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
+			questManager = new QuestManager(this, twitchState, client);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing the managers: ", exception);
 		}
@@ -383,6 +393,24 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 		} catch (Exception exception) {
 			log.warn("Could not update the fight statistics due to the following error: ", exception);
+		}
+	}
+
+	/**
+	 * Polling mechanism to update the quests list
+	 */
+	@Schedule(period = 30, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void updateQuests()
+	{
+		try {
+			if (config.questsEnabled())
+			{
+				runOnClientThread(() -> {
+					questManager.updateQuests();
+				});
+			}
+		} catch (Exception exception) {
+			log.warn("Could not sync quests: ", exception);
 		}
 	}
 
@@ -762,6 +790,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			// always update on game state change as well to instantly react to logout and login
 			twitchState.setAccountHash(client.getAccountHash());
 			twitchState.setAccountType(client.getAccountType());
+
+			// update quests when logged in
+			if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
+			{
+				updateQuests();
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle game state event: ", exception);
 		}
@@ -903,11 +937,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void runOnClientThread(ClientThreadAction action)
 	{
 		try {
-			clientThread.invoke(() -> {
-				try {
-					action.execute();
-				} catch (Exception exception) {
-					log.warn("Could not execute action on client thread: ", exception);
+			clientThread.invoke(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						action.execute();
+					} catch (Exception exception) {
+						log.warn("Could not execute action on client thread: ", exception);
+					}
 				}
 			});
 		} catch (Exception exception) {

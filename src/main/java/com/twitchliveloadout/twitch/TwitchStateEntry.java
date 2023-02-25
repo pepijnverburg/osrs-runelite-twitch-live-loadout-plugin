@@ -28,6 +28,8 @@ public enum TwitchStateEntry {
 	MARKETPLACE_ENABLED("marketplaceEnabled"),
 	MARKETPLACE_PROTECTION_ENABLED("marketplaceProtectionEnabled"),
 	CURRENT_PRODUCT_COOLDOWNS("currentProductCooldowns"),
+	QUESTS("quests"),
+
 	STREAMER_PRODUCTS("streamerProducts"),
 	;
 

@@ -281,6 +281,12 @@ public class TwitchState {
 		plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
 	}
 
+	public void setQuests(JsonArray quests)
+	{
+		cyclicState.add(TwitchStateEntry.QUESTS.getKey(), quests);
+		plugin.setConfiguration(QUESTS_CONFIG_KEY, quests);
+	}
+
 	public JsonObject getCollectionLog()
 	{
 		return cyclicState.getAsJsonObject(TwitchStateEntry.COLLECTION_LOG.getKey());
@@ -444,6 +450,13 @@ public class TwitchState {
 			state.add(TwitchStateEntry.COLLECTION_LOG.getKey(), slicedCollectionLog);
 		}
 
+		if (currentCyclicEntry == TwitchStateEntry.QUESTS)
+		{
+			// add all the quests in one go
+			JsonArray quests = cyclicState.getAsJsonArray(TwitchStateEntry.QUESTS.getKey());
+			state.add(TwitchStateEntry.QUESTS.getKey(), quests);
+		}
+
 		return state;
 	}
 
@@ -482,7 +495,7 @@ public class TwitchState {
 	public void nextCyclicState()
 	{
 
-		// guard: after bank items are synced we move to the collection log
+		// after bank items are synced we move to the collection log
 		// we cannot sync the bank in one go either so we go through the slices
 		if (currentCyclicEntry == TwitchStateEntry.BANK_TABBED_ITEMS)
 		{
@@ -499,8 +512,9 @@ public class TwitchState {
 			}
 		}
 
-		// guard: the collection log is a bit more complex as we cannot sync 1351+ items
+		// the collection log is a bit more complex as we cannot sync 1351+ items
 		// in one go, for this reason we move across the object category by category
+		// after this we go to the quests
 		else if (currentCyclicEntry == TwitchStateEntry.COLLECTION_LOG)
 		{
 			final int itemAmount = getCollectionLogItemAmount();
@@ -511,9 +525,16 @@ public class TwitchState {
 			// we can move to syncing the bank once again
 			if (!config.collectionLogEnabled() || currentCyclicSliceIndex >= itemAmount)
 			{
-				currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
+				currentCyclicEntry = TwitchStateEntry.QUESTS;
 				currentCyclicSliceIndex = 0;
 			}
+		}
+
+		// after quests we go back to the bank
+		else if (currentCyclicEntry == TwitchStateEntry.QUESTS)
+		{
+			currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
+			currentCyclicSliceIndex = 0;
 		}
 	}
 
@@ -643,9 +664,14 @@ public class TwitchState {
 			state.add(TwitchStateEntry.INVOCATIONS.getKey(), null);
 		}
 
-		if (!config.invocationsRaidLevelEnabled())
+		if (!config.invocationsEnabled() || !config.invocationsRaidLevelEnabled())
 		{
 			state.add(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), null);
+		}
+
+		if (!config.questsEnabled())
+		{
+			state.add(TwitchStateEntry.QUESTS.getKey(), null);
 		}
 
 		// reset the invocations for the current viewers when we are not in ToA anymore
@@ -804,6 +830,11 @@ public class TwitchState {
 
 		loadDataFromCache(BANK_PRICE_CONFIG_KEY, (String price) -> {
 			setBankItemsPrice(Long.parseLong(price));
+		});
+
+		loadDataFromCache(QUESTS_CONFIG_KEY, (String rawQuests) -> {
+			JsonArray parsedQuests = new JsonParser().parse(rawQuests).getAsJsonArray();
+			setQuests(parsedQuests);
 		});
 
 		loadDataFromCache(LOOTING_BAG_ITEMS_CONFIG_KEY, (String rawItems) -> {
