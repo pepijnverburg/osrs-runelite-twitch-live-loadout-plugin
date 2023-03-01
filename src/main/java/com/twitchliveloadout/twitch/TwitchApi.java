@@ -208,8 +208,13 @@ public class TwitchApi
 	public Response getEbsProducts() throws Exception
 	{
 		final String token = config.twitchToken();
-//		final String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
-		final String url = "http://localhost:3010/api/marketplace-products";
+		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
+
+		if (plugin.IN_DEVELOPMENT)
+		{
+			url = "http://localhost:3010/api/marketplace-products";
+		}
+
 		final OkHttpClient timeoutHttpClient = httpClient
 			.newBuilder()
 			.callTimeout(GET_EBS_PRODUCTS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
@@ -231,13 +236,17 @@ public class TwitchApi
 	public Response getEbsTransactions(Instant lastCheckedAt) throws Exception
 	{
 		final String token = config.twitchToken();
-//		final String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-transactions";
-		final String url = "http://localhost:3010/api/marketplace-transactions";
+		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-transactions";
 		final JsonObject data = new JsonObject();
 		final OkHttpClient timeoutHttpClient = httpClient
 			.newBuilder()
 			.callTimeout(GET_EBS_TRANSACTIONS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
 			.build();
+
+		if (plugin.IN_DEVELOPMENT)
+		{
+			url = "http://localhost:3010/api/marketplace-transactions";
+		}
 
 		// only add last checked at when it is valid
 		if (lastCheckedAt != null)

@@ -85,6 +85,8 @@ import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
 @Slf4j
 public class TwitchLiveLoadoutPlugin extends Plugin
 {
+	public static final boolean IN_DEVELOPMENT = true;
+
 	@Inject
 	private TwitchLiveLoadoutConfig config;
 
@@ -493,7 +495,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to update the EBS products configured in Twitch.
 	 */
-	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true) // TODO: change BACK
+	@Schedule(period = (IN_DEVELOPMENT ? 1 : 60), unit = ChronoUnit.SECONDS, asynchronous = true) // TODO: change BACK
 	public void updateMarketplaceEbsProducts()
 	{
 		try {
