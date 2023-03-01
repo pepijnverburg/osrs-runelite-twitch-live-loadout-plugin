@@ -16,6 +16,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -374,9 +375,16 @@ public class MarketplaceProduct
 			}
 
 			String followType = modelPlacement.followType;
+			ArrayList<EbsCondition> followConditions = modelPlacement.followConditions;
 			String validFollowType = (followType == null ? NONE_FOLLOW_TYPE : followType);
 			EbsRandomRange radiusRange = modelPlacement.radiusRange;
 			int maxRadius = radiusRange.max.intValue();
+
+			// guard: check if we can execute the follow behaviour according to its conditions
+			if (!verifyConditions(followConditions, spawnedObject))
+			{
+				continue;
+			}
 
 			// this follow type makes sure that the spawned object is always in view
 			if (validFollowType.equals(IN_RADIUS_FOLLOW_TYPE)) {
@@ -873,11 +881,27 @@ public class MarketplaceProduct
 			EbsCondition condition = (EbsCondition) iterator.next();
 			Integer varbitId = condition.varbitId;
 			Integer varbitValue = condition.varbitValue;
+			Integer minTimeMs = condition.minTimeMs;
+			Integer maxTimeMs = condition.maxTimeMs;
+			Double minTimePercentage = condition.minTimePercentage;
+			Double maxTimePercentage = condition.maxTimePercentage;
 			Integer maxSpawnsInView = condition.maxSpawnsInView;
 			Integer maxSpawnsInViewRadius = condition.maxSpawnsInViewRadius;
 			Integer minSpawnsInView = condition.minSpawnsInView;
 			Integer minSpawnsInViewRadius = condition.minSpawnsInViewRadius;
 			Integer spawnInViewRadius = condition.spawnInViewRadius;
+
+			// guard: check if it is allowed within an absolute time-frame
+			if (!verifyTimePassedMs(minTimeMs, maxTimeMs))
+			{
+				return false;
+			}
+
+			// guard: check if it is allowed withing a relative time-frame
+			if (!verifyTimePassedPercentage(minTimePercentage, maxTimePercentage))
+			{
+				return false;
+			}
 
 			// guard: check if this condition should check a varbit
 			if (varbitId >= 0 && manager.getClient().getVarbitValue(varbitId) != varbitValue)
@@ -902,6 +926,63 @@ public class MarketplaceProduct
 			{
 				return false;
 			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check whether a certain time-frame absolute to the starting time is valid
+	 */
+	private boolean verifyTimePassedMs(int minMs, int maxMs)
+	{
+
+		// guard: make sure the time-frame is valid
+		if (minMs < 0 || maxMs < 0)
+		{
+			return true;
+		}
+
+		Instant now = Instant.now();
+		long passedTimeMs = Duration.between(now, startedAt).toMillis();
+
+		// guard: check whether the requested time-frame is outside of the current passed time
+		if (passedTimeMs < minMs || passedTimeMs > maxMs)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check whether a certain time-frame relative to the total duration with percentages is what we are now at
+	 */
+	private boolean verifyTimePassedPercentage(double minPercentage, double maxPercentage)
+	{
+
+		// guard: make sure the percentages are valid
+		if (minPercentage < 0 || maxPercentage < 0 || maxPercentage > 1 || minPercentage > 1)
+		{
+			return true;
+		}
+
+		long durationMs = getDurationMs();
+
+		// guard: make sure the duration is valid
+		if (durationMs <= 0)
+		{
+			return false;
+		}
+
+		Instant now = Instant.now();
+		long passedTimeMs = Duration.between(now, startedAt).toMillis();
+		double passedTimePercentage = (passedTimeMs / durationMs);
+
+		// guard: check whether the current elapsed time is outside of the requested range
+		if (passedTimePercentage < minPercentage || passedTimePercentage > maxPercentage)
+		{
+			return false;
 		}
 
 		return true;
@@ -1221,5 +1302,18 @@ public class MarketplaceProduct
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			handler.execute();
 		}, delayMs);
+	}
+
+	/**
+	 * Calculate how long in milliseconds this product is going to be active
+	 */
+	public long getDurationMs()
+	{
+		if (expiredAt == null || startedAt == null)
+		{
+			return 0;
+		}
+
+		return Duration.between(startedAt, expiredAt).toMillis();
 	}
 }
