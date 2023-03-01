@@ -461,26 +461,29 @@ public class MarketplaceManager {
 			return;
 		}
 
-		JsonArray rawStreamerProducts = segmentContent.getAsJsonArray(TwitchStateEntry.STREAMER_PRODUCTS.getKey());
+		try {
+			JsonArray rawStreamerProducts = segmentContent.getAsJsonArray(TwitchStateEntry.STREAMER_PRODUCTS.getKey());
 
-		if (rawStreamerProducts == null)
-		{
-			return;
-		}
-
-		CopyOnWriteArrayList<StreamerProduct> newStreamerProducts = new CopyOnWriteArrayList();
-
-		rawStreamerProducts.forEach((element) -> {
-			try {
-				JsonObject rawStreamerProduct = element.getAsJsonObject();
-				StreamerProduct streamerProduct = new Gson().fromJson(rawStreamerProduct, StreamerProduct.class);
-				newStreamerProducts.add(streamerProduct);
-			} catch (Exception exception) {
-				// empty
+			if (rawStreamerProducts == null) {
+				return;
 			}
-		});
 
-		streamerProducts = newStreamerProducts;
+			CopyOnWriteArrayList<StreamerProduct> newStreamerProducts = new CopyOnWriteArrayList();
+
+			rawStreamerProducts.forEach((element) -> {
+				try {
+					JsonObject rawStreamerProduct = element.getAsJsonObject();
+					StreamerProduct streamerProduct = new Gson().fromJson(rawStreamerProduct, StreamerProduct.class);
+					newStreamerProducts.add(streamerProduct);
+				} catch (Exception exception) {
+					// empty
+				}
+			});
+
+			streamerProducts = newStreamerProducts;
+		} catch (Exception exception) {
+			log.warn("Could not parse the raw streamer products to a valid set of products:", exception);
+		}
 	}
 
 	/**
