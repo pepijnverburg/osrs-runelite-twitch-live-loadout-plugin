@@ -943,6 +943,12 @@ public class MarketplaceProduct
 			return true;
 		}
 
+		// guard: skip any calculations when it is the full time-frame
+		if (minMs == 0 && maxMs == Integer.MAX_VALUE)
+		{
+			return true;
+		}
+
 		long passedMs = getPassedMs();
 
 		// guard: check whether the requested time-frame is outside of the current passed time
@@ -962,6 +968,12 @@ public class MarketplaceProduct
 
 		// guard: make sure the percentages are valid
 		if (minPercentage < 0 || maxPercentage < 0 || maxPercentage > 1 || minPercentage > 1)
+		{
+			return true;
+		}
+
+		// guard: skip any calculations when it is the full time-frame
+		if (minPercentage == 0 && maxPercentage == 1)
 		{
 			return true;
 		}
