@@ -1,7 +1,5 @@
 package com.twitchliveloadout.marketplace;
 
-import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
