@@ -5,7 +5,6 @@ import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.products.EbsInterfaceWidgetFrame;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.Varbits;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
 
@@ -134,7 +133,6 @@ public class WidgetManager extends InterfaceManager {
 			Integer animationId = widgetFrame.animationId;
 
 			plugin.runOnClientThread(() -> {
-				// hide widget when disable is requested
 				if (DISABLE_INTERFACE_WIDGET_TYPE.equals(effectType))
 				{
 					widget.setHidden(true);
