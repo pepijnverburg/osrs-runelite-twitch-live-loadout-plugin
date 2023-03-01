@@ -157,10 +157,7 @@ public class SpawnedObject {
 		double tileRadius = scale / scalePerOneTile;
 		int radius = (int) (RUNELITE_OBJECT_RADIUS_PER_TILE * tileRadius);
 		int roundedScale = (int) scale;
-		log.info("radius IS: "+ radius);
-		log.info("tileRadius IS: "+ tileRadius);
-		log.info("scalePerOneTile IS: "+ scalePerOneTile);
-		log.info("scale IS: "+ scale);
+
 		modelData.cloneVertices();
 		modelData.scale(roundedScale, roundedScale, roundedScale);
 		object.setRadius(radius);
