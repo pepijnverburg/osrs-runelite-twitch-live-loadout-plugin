@@ -861,7 +861,7 @@ public class TwitchState {
 		String rawCacheData = plugin.getConfiguration(cacheKey);
 
 		// guard: check if any data was found
-		if (rawCacheData == null)
+		if (rawCacheData == null || rawCacheData.trim().isEmpty())
 		{
 			return;
 		}
