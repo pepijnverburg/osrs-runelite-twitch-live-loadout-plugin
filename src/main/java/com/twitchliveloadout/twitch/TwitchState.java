@@ -537,7 +537,7 @@ public class TwitchState {
 		// and check for window focus to prevent syncing of multiple account
 		// if not we will clear the state but still send over a message
 		// because this can help to indicate a connection is made when setting up the extension
-		if (!plugin.isLoggedIn() || !canvasListener.isInFocusLongEnough())
+		if (!plugin.isLoggedIn())
 		{
 			state = new JsonObject();
 		}
@@ -671,7 +671,6 @@ public class TwitchState {
 		// note that this should only be done for the window that is active long enough
 		// otherwise it is possible to have an alt window resetting the invocations for the main window
 		if (plugin.isLoggedIn() &&
-			canvasListener.isInFocusLongEnough() &&
 			config.autoDetectInToaRaidEnabled() &&
 			!wasInToaDebounced() &&
 			state.has(TwitchStateEntry.INVOCATIONS.getKey()))

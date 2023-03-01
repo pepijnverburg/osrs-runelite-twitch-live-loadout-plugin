@@ -5,6 +5,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
+import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.twitch.TwitchApi;
@@ -24,13 +25,13 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 	private final CombatPanel combatPanel;
 	private final MarketplacePanel marketplacePanel;
 
-	public TwitchLiveLoadoutPanel(TwitchApi twitchApi, FightStateManager fightStateManager, MarketplaceManager marketplaceManager, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
+	public TwitchLiveLoadoutPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, FightStateManager fightStateManager, MarketplaceManager marketplaceManager, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
 	{
 		super(true);
 		setLayout(new BorderLayout());
 
 		combatPanel = new CombatPanel(fightStateManager);
-		connectivityPanel = new ConnectivityPanel(twitchApi, canvasListener, config);
+		connectivityPanel = new ConnectivityPanel(plugin, twitchApi, canvasListener, config);
 		marketplacePanel = new MarketplacePanel(marketplaceManager);
 
 		connectivityTab = new MaterialTab("Status", tabGroup, connectivityPanel);

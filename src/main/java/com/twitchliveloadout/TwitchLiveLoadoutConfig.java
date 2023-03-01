@@ -125,41 +125,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigSection(
-			name = "Anti Multi Logging",
-			description = "Multi logging section to determine which account to sync",
-			position = 3
-	)
-	String multiLogSection = "multiLog";
-
-	@ConfigItem(
-			keyName = "minWidowFocusTimeEnabled",
-			name = "Window focus check enabled",
-			description = "Enabled when you want to sync the RuneLite window that is in focus.",
-			position = 4,
-			section = multiLogSection
-	)
-	default boolean minWidowFocusTimeEnabled()
-	{
-		return true;
-	}
-
-	@Range(
-			min = 0,
-			max = 60
-	)
-	@ConfigItem(
-			keyName = "minWindowFocusTime",
-			name = "Focus time to sync (seconds)",
-			description = "Seconds of focus on RuneLite window it takes to start syncing (against multi-logging)",
-			position = 6,
-			section = multiLogSection
-	)
-	default int minWindowFocusTime()
-	{
-		return 8;
-	}
-
-	@ConfigSection(
 			name = "Items",
 			description = "Syncing of items in inventory, equipment and bank.",
 			position = 5

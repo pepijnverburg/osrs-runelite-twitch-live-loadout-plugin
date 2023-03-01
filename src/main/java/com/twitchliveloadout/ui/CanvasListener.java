@@ -10,8 +10,6 @@ import java.time.Instant;
 
 public class CanvasListener implements FocusListener {
 
-	private static final long MAX_MIN_FOCUS_DURATION_MS = 30 * 1000; // ms
-
 	private final TwitchLiveLoadoutConfig config;
 
 	@Getter
@@ -69,25 +67,5 @@ public class CanvasListener implements FocusListener {
 		final long duration = Duration.between(lastInFocusAt, now).toMillis();
 
 		return duration;
-	}
-
-	public boolean isInFocusLongEnough()
-	{
-
-		// guard: check if the check is enabled
-		if (!config.minWidowFocusTimeEnabled())
-		{
-			return true;
-		}
-
-		final long focusDurationMs = getInFocusDurationMs();
-		long minFocusDurationMs = config.minWindowFocusTime() * 1000;
-
-		if (minFocusDurationMs > MAX_MIN_FOCUS_DURATION_MS)
-		{
-			minFocusDurationMs = MAX_MIN_FOCUS_DURATION_MS;
-		}
-
-		return focusDurationMs >= minFocusDurationMs;
 	}
 }

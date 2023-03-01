@@ -27,6 +27,7 @@ package com.twitchliveloadout.ui;
 
 import com.google.gson.JsonObject;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
+import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchApi;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -58,13 +59,14 @@ public class ConnectivityPanel extends JPanel
 	private final GridBagConstraints constraints = new GridBagConstraints();
 	private final JPanel wrapper = new JPanel(new GridBagLayout());
 
-	private final TextPanel syncingStatusPanel = new TextPanel("Anti Multi-logging Status", "N/A");
+	private final TextPanel syncingStatusPanel = new TextPanel("Syncing status", "N/A");
 	private final TextPanel twitchStatusPanel = new TextPanel("Twitch Status", "N/A");
 	private final TextPanel authPanel = new TextPanel("Twitch Token Validity", "N/A");
 	private final TextPanel rateLimitPanel = new TextPanel("Twitch API Limit", "N/A");
 	private final TextPanel statePanel = new TextPanel("Loadout State Size", "N/A");
 	private JPanel actionsContainer = new JPanel();
 
+	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchApi twitchApi;
 	private final CanvasListener canvasListener;
 	private final TwitchLiveLoadoutConfig config;
@@ -76,10 +78,11 @@ public class ConnectivityPanel extends JPanel
 		WIKI_ICON = new ImageIcon(ImageUtil.loadImageResource(ConnectivityPanel.class, "/wiki_icon.png"));
 	}
 
-	public ConnectivityPanel(TwitchApi twitchApi, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
+	public ConnectivityPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
 	{
 		super(new GridBagLayout());
 
+		this.plugin = plugin;
 		this.twitchApi = twitchApi;
 		this.canvasListener = canvasListener;
 		this.config = config;
@@ -122,7 +125,7 @@ public class ConnectivityPanel extends JPanel
 	{
 		final long unixTimestamp = System.currentTimeMillis() / 1000L;
 		final int rateLimitRemaining = twitchApi.getLastRateLimitRemaining();
-		String syncingStatusText = "This RuneLite window is currently syncing to Twitch, because is has been active long enough.";
+		String syncingStatusText = "The logged in account is currently syncing to Twitch.";
 		String syncingStatusColor = SUCCESS_TEXT_COLOR;
 
 		final int responseCode = twitchApi.getLastResponseCode();
@@ -135,6 +138,18 @@ public class ConnectivityPanel extends JPanel
 
 		String rateLimitText = "There are "+ rateLimitRemaining +" request points available before hitting the Twitch API rate limit.";
 		String rateLimitColor = DEFAULT_TEXT_COLOR;
+
+		// update syncing status text
+		if (!config.syncEnabled())
+		{
+			syncingStatusText = "Syncing is currently disabled in the plugin settings. Nothing is being sent to Twitch.";
+			syncingStatusColor = ERROR_TEXT_COLOR;
+		}
+		else if (!plugin.isLoggedIn())
+		{
+			syncingStatusText = "This client is currently not logged into an account. Twitch only receives connectivity updates without any loadout information.";
+			syncingStatusColor = WARNING_TEXT_COLOR;
+		}
 
 		try {
 			final JsonObject decodedToken = twitchApi.getDecodedToken();
@@ -162,27 +177,6 @@ public class ConnectivityPanel extends JPanel
 		float stateUsagePercentage = ((float) stateBytes.length) / ((float) TwitchApi.MAX_PAYLOAD_SIZE) * 100;
 		String stateText = String.format("%.2f", stateUsagePercentage) +"% used of Twitch storage.";
 		String stateColor = DEFAULT_TEXT_COLOR;
-
-		// only have in focus messages when setting is enabled
-		if (config.minWidowFocusTimeEnabled())
-		{
-			if (!canvasListener.isInFocus())
-			{
-				syncingStatusText = "This RuneLite window is not syncing to Twitch, because it's not the active window. You can disable this anti multi-logging check with the 'Active time check enabled' setting of this plugin.";
-				syncingStatusColor = ERROR_TEXT_COLOR;
-			}
-			else if (!canvasListener.isInFocusLongEnough())
-			{
-				final double inFocusTimeS = canvasListener.getInFocusDurationMs() / 1000;
-				final int inFocusRequiredTimeS = config.minWindowFocusTime();
-
-				syncingStatusText = "This RuneLite window is not syncing to Twitch, because it's not yet active long enough. It is currently active for "+ inFocusTimeS +" of the required "+ inFocusRequiredTimeS +".0 seconds.";
-				syncingStatusColor = WARNING_TEXT_COLOR;
-			}
-		} else {
-			syncingStatusText = "All RuneLite windows are syncing to Twitch, because anti-multi logging measures are disabled in the plugin settings. When logging in with multiple account at once this can cause flickering between accounts for viewers.";
-			syncingStatusColor = WARNING_TEXT_COLOR;
-		}
 
 		if (twitchApi.isErrorResponseCode(responseCode))
 		{
