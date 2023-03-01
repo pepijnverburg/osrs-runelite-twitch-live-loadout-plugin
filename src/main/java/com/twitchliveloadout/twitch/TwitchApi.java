@@ -29,7 +29,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +83,7 @@ public class TwitchApi
 	@Getter
 	private long lastErrorChatMessage = 0;
 
-	private ConcurrentHashMap<TwitchSegmentType, JsonObject> configurationSegmentContents = new ConcurrentHashMap();
+	private final ConcurrentHashMap<TwitchSegmentType, JsonObject> configurationSegmentContents = new ConcurrentHashMap<>();
 
 	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
@@ -141,6 +140,13 @@ public class TwitchApi
 	public boolean canScheduleState()
 	{
 
+		// guard: if the scheduler is shutdown block all future requests
+		if (scheduledExecutor.isShutdown())
+		{
+			return false;
+		}
+
+		// guard: when state is never send it is allowed
 		if (lastScheduleStateTime == null)
 		{
 			return true;
@@ -186,14 +192,13 @@ public class TwitchApi
 
 	private Response sendPubSubMessage(JsonObject data) throws Exception
 	{
-		final String clientId = DEFAULT_EXTENSION_CLIENT_ID;
 		final String token = config.twitchToken();
 		final String url = DEFAULT_TWITCH_BASE_URL +"pubsub";
 		final String dataString = data.toString();
 
 		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
 		Request request = new Request.Builder()
-			.header("Client-ID", clientId)
+			.header("Client-ID", DEFAULT_EXTENSION_CLIENT_ID)
 			.header("Authorization", "Bearer "+ token)
 			.header("User-Agent", USER_AGENT)
 			.header("Content-Type", "application/json")
@@ -210,7 +215,7 @@ public class TwitchApi
 		final String token = config.twitchToken();
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
 
-		if (plugin.IN_DEVELOPMENT)
+		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
 		{
 			url = "http://localhost:3010/api/marketplace-products";
 		}
@@ -243,7 +248,7 @@ public class TwitchApi
 			.callTimeout(GET_EBS_TRANSACTIONS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
 			.build();
 
-		if (plugin.IN_DEVELOPMENT)
+		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
 		{
 			url = "http://localhost:3010/api/marketplace-transactions";
 		}

@@ -195,8 +195,8 @@ public enum OldMarketplaceProduct {
 //
 //	private ArrayList<MarketplaceSpawnedObject> spawnProductObjects(MarketplaceProduct product)
 //	{
-//		final ArrayList<MarketplaceSpawnedObject> allObjects = new ArrayList();
-//		final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList();
+//		final ArrayList<MarketplaceSpawnedObject> allObjects = new ArrayList<>();
+//		final ArrayList<MarketplaceSpawnPoint> spawnPoints = new ArrayList<>();
 //
 //		// if there is no spawn point customizer we will spawn one at the player location
 //		if (!hasSpawnPoints)
@@ -234,8 +234,8 @@ public enum OldMarketplaceProduct {
 //		// loop all the requested spawn points
 //		for (MarketplaceSpawnPoint spawnPoint : spawnPoints)
 //		{
-//			final ArrayList<MarketplaceSpawnedObject> objects = new ArrayList();
-//			final ArrayList<ModelData> models = new ArrayList();
+//			final ArrayList<MarketplaceSpawnedObject> objects = new ArrayList<>();
+//			final ArrayList<ModelData> models = new ArrayList<>();
 //			final int spawnDelayMs = (int) (Math.random() * randomSpawnDelayMs);
 //			final Random marketplaceModelsSelector = new Random();
 //			final int marketplaceModelsIndex = marketplaceModelsSelector.nextInt(candidateMarketplaceModels.length);

@@ -76,24 +76,24 @@ public class MarketplaceManager {
 	/**
 	 * List to keep track of all the active products
 	 */
-	private final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = new CopyOnWriteArrayList();
+	private final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = new CopyOnWriteArrayList<>();
 
 	/**
 	 * List of all streamer products from the Twitch configuration segment
 	 */
-	private CopyOnWriteArrayList<StreamerProduct> streamerProducts = new CopyOnWriteArrayList();
+	private CopyOnWriteArrayList<StreamerProduct> streamerProducts = new CopyOnWriteArrayList<>();
 
 	/**
 	 * List of all EBS products from Twitch
 	 */
-	private CopyOnWriteArrayList<EbsProduct> ebsProducts = new CopyOnWriteArrayList();
+	private CopyOnWriteArrayList<EbsProduct> ebsProducts = new CopyOnWriteArrayList<>();
 
 	/**
 	 * List of all extension transactions that should be handled
 	 */
-	private CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList();
-	private CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = new CopyOnWriteArrayList();
-	private CopyOnWriteArrayList<String> handledTransactionIds = new CopyOnWriteArrayList();
+	private final CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList<>();
+	private final CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = new CopyOnWriteArrayList<>();
+	private final CopyOnWriteArrayList<String> handledTransactionIds = new CopyOnWriteArrayList<>();
 	private Instant transactionsLastCheckedAt = null;
 
 	/**
@@ -111,7 +111,7 @@ public class MarketplaceManager {
 	 * Lookup to see until when a certain product is cooled down and should stay in the queue if there are any
 	 * transactions made at the same time. This lookup also informs the viewers which products are in cooldown.
 	 */
-	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap();
+	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap<>();
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
 	{
@@ -137,10 +137,10 @@ public class MarketplaceManager {
 		try {
 			Response response = twitchApi.getEbsTransactions(transactionsLastCheckedAt);
 			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
-			Boolean status = result.get("status").getAsBoolean();
+			boolean status = result.get("status").getAsBoolean();
 			String message = result.get("message").getAsString();
 			JsonArray newTransactionsJson = result.getAsJsonArray("transactions");
-			ArrayList<TwitchTransaction> newTransactions = new ArrayList();
+			ArrayList<TwitchTransaction> newTransactions = new ArrayList<>();
 
 			// guard: check if the status is valid
 			if (!status)
@@ -218,7 +218,7 @@ public class MarketplaceManager {
 			return;
 		}
 
-		Iterator iterator = queuedTransactions.iterator();
+		Iterator<TwitchTransaction> iterator = queuedTransactions.iterator();
 
 		while (iterator.hasNext())
 		{
@@ -390,8 +390,7 @@ public class MarketplaceManager {
 	 */
 	public CopyOnWriteArrayList<MarketplaceProduct> getActiveProducts()
 	{
-		CopyOnWriteArrayList<MarketplaceProduct> copy = new CopyOnWriteArrayList(activeProducts);
-		return copy;
+		return new CopyOnWriteArrayList<>(activeProducts);
 	}
 
 	/**
@@ -399,8 +398,7 @@ public class MarketplaceManager {
 	 */
 	public CopyOnWriteArrayList<StreamerProduct> getStreamerProducts()
 	{
-		CopyOnWriteArrayList<StreamerProduct> copy = new CopyOnWriteArrayList(streamerProducts);
-		return copy;
+		return new CopyOnWriteArrayList<>(streamerProducts);
 	}
 
 	/**
@@ -408,8 +406,7 @@ public class MarketplaceManager {
 	 */
 	public CopyOnWriteArrayList<TwitchTransaction> getQueuedTransactions()
 	{
-		CopyOnWriteArrayList<TwitchTransaction> copy = new CopyOnWriteArrayList(queuedTransactions);
-		return copy;
+		return new CopyOnWriteArrayList<>(queuedTransactions);
 	}
 
 	/**
@@ -417,8 +414,7 @@ public class MarketplaceManager {
 	 */
 	public CopyOnWriteArrayList<TwitchTransaction> getArchivedTransactions()
 	{
-		CopyOnWriteArrayList<TwitchTransaction> copy = new CopyOnWriteArrayList(archivedTransactions);
-		return copy;
+		return new CopyOnWriteArrayList<>(archivedTransactions);
 	}
 
 	/**
@@ -468,7 +464,7 @@ public class MarketplaceManager {
 				return;
 			}
 
-			CopyOnWriteArrayList<StreamerProduct> newStreamerProducts = new CopyOnWriteArrayList();
+			CopyOnWriteArrayList<StreamerProduct> newStreamerProducts = new CopyOnWriteArrayList<>();
 
 			rawStreamerProducts.forEach((element) -> {
 				try {
@@ -503,7 +499,7 @@ public class MarketplaceManager {
 		try {
 			Response response = twitchApi.getEbsProducts();
 			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
-			Boolean status = result.get("status").getAsBoolean();
+			boolean status = result.get("status").getAsBoolean();
 			String message = result.get("message").getAsString();
 			JsonArray products = result.getAsJsonArray("products");
 
@@ -515,7 +511,7 @@ public class MarketplaceManager {
 				return;
 			}
 
-			CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList();
+			CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList<>();
 
 			// try-catch for every parse, to not let all products crash on one misconfiguration
 			products.forEach((element) -> {
@@ -602,9 +598,7 @@ public class MarketplaceManager {
 		Instant now = Instant.now();
 
 		// trigger client tick for all active products
-		handleActiveProducts((marketplaceProduct) -> {
-			marketplaceProduct.onClientTick();
-		});
+		handleActiveProducts(MarketplaceProduct::onClientTick);
 
 		// custom timer running on client ticks every x ms for more heavy things to be executed
 		// this is because the @Schedule is delaying now and then and some of the processes in here
@@ -618,11 +612,11 @@ public class MarketplaceManager {
 
 	private StreamerProduct getStreamerProductBySku(String twitchProductSku)
 	{
-		Iterator iterator = streamerProducts.iterator();
+		Iterator<StreamerProduct> iterator = streamerProducts.iterator();
 
 		while(iterator.hasNext())
 		{
-			StreamerProduct candidateStreamerProduct = (StreamerProduct) iterator.next();
+			StreamerProduct candidateStreamerProduct = iterator.next();
 
 			// guard: check if a match is found
 			if (twitchProductSku.equals(candidateStreamerProduct.twitchProductSku))
@@ -636,11 +630,11 @@ public class MarketplaceManager {
 
 	private EbsProduct getEbsProductById(String ebsProductId)
 	{
-		Iterator iterator = ebsProducts.iterator();
+		Iterator<EbsProduct> iterator = ebsProducts.iterator();
 
 		while(iterator.hasNext())
 		{
-			EbsProduct candidateEbsProduct = (EbsProduct) iterator.next();
+			EbsProduct candidateEbsProduct = iterator.next();
 
 			// guard: check if a match is found
 			if (ebsProductId.equals(candidateEbsProduct.id))
@@ -657,9 +651,7 @@ public class MarketplaceManager {
 	 */
 	public void stopActiveProducts()
 	{
-		handleActiveProducts((marketplaceProduct) -> {
-			marketplaceProduct.stop();
-		});
+		handleActiveProducts(MarketplaceProduct::stop);
 	}
 
 	/**
@@ -667,9 +659,7 @@ public class MarketplaceManager {
 	 */
 	public void pause()
 	{
-		handleActiveProducts((marketplaceProduct) -> {
-			marketplaceProduct.pause();
-		});
+		handleActiveProducts(MarketplaceProduct::pause);
 		isActive = false;
 	}
 
@@ -679,9 +669,7 @@ public class MarketplaceManager {
 	public void start()
 	{
 		isActive = true;
-		handleActiveProducts((marketplaceProduct) -> {
-			marketplaceProduct.start();
-		});
+		handleActiveProducts(MarketplaceProduct::start);
 	}
 
 	/**

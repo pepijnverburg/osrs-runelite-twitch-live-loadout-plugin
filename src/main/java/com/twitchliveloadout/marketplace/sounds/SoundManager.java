@@ -15,7 +15,7 @@ public class SoundManager {
 	private final TwitchLiveLoadoutConfig config;
 
 	private Instant globalLastPlayedAt;
-	private ConcurrentHashMap<Integer, Instant> uniqueLastPlayedAtLookup = new ConcurrentHashMap();
+	private ConcurrentHashMap<Integer, Instant> uniqueLastPlayedAtLookup = new ConcurrentHashMap<>();
 
 	public SoundManager(Client client, TwitchLiveLoadoutConfig config)
 	{

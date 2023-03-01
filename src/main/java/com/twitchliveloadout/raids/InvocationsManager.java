@@ -62,9 +62,18 @@ public class InvocationsManager {
 	{
 		Widget partyWidget = client.getWidget(WIDGET_ID_PARTY_MEMBERS_PARENT, WIDGET_ID_PARTY_MEMBERS_LIST);
 		Widget headerWidget = client.getWidget(WIDGET_ID_INVOCATIONS_PARENT, WIDGET_ID_INVOCATIONS_HEADER);
+
+		// guard: check if the main widgets are found
+		if (partyWidget == null || headerWidget == null)
+		{
+			return false;
+		}
+
+		Widget[] headerChildren = headerWidget.getChildren();
 		int headerWidgetTitleIndex = 1;
 
-		if (partyWidget == null || headerWidget == null || headerWidget.getChildren().length <= headerWidgetTitleIndex)
+		// guard: check if the header widget content is valid
+		if (headerChildren == null || headerChildren.length <= headerWidgetTitleIndex)
 		{
 			return false;
 		}

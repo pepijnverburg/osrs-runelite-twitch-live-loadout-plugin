@@ -23,14 +23,14 @@ public class MenuManager extends InterfaceManager {
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
 		String clickedOption = event.getMenuOption();
-		Iterator effectIterator = effects.iterator();
+		Iterator<InterfaceEffect<EbsMenuOptionFrame>> effectIterator = effects.iterator();
 
 		// check if the event should be disabled
 		while (effectIterator.hasNext())
 		{
-			InterfaceEffect effect = (InterfaceEffect) effectIterator.next();
+			InterfaceEffect<EbsMenuOptionFrame> effect = effectIterator.next();
 			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
-			EbsMenuOptionFrame menuOptionFrame = (EbsMenuOptionFrame) effect.getFrame();
+			EbsMenuOptionFrame menuOptionFrame = effect.getFrame();
 
 			// guard: skip when not active
 			if (!effect.isActive())

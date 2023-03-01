@@ -3,7 +3,6 @@ package com.twitchliveloadout.skills;
 import com.twitchliveloadout.twitch.TwitchState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.events.StatChanged;
 
 @Slf4j
 public class SkillStateManager {

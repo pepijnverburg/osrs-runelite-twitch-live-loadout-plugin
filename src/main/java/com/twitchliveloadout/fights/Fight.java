@@ -20,10 +20,10 @@ public class Fight {
 	private final FightStateManager.ActorType actorType;
 	private final int actorCombatLevel;
 
-	private final CopyOnWriteArrayList<FightQueuedStatistic> queuedStatistics = new CopyOnWriteArrayList();
+	private final CopyOnWriteArrayList<FightQueuedStatistic> queuedStatistics = new CopyOnWriteArrayList<>();
 
-	private final ConcurrentHashMap<Actor, FightSession> sessions = new ConcurrentHashMap();
-	private final CopyOnWriteArrayList<FightSession> finishedSessions = new CopyOnWriteArrayList();
+	private final ConcurrentHashMap<Actor, FightSession> sessions = new ConcurrentHashMap<>();
+	private final CopyOnWriteArrayList<FightSession> finishedSessions = new CopyOnWriteArrayList<>();
 
 	// The session counter should not match the finished session list size,
 	// because some finished sessions are not kills / deaths, separate counter for this.
@@ -78,10 +78,10 @@ public class Fight {
 		log.debug("Checking queue statistics, queued size {} for hitsplat {}", queuedStatistics.size(), hitsplatAmount);
 
 		// synchronized list does not seem to be needed here?
-		Iterator iterator = queuedStatistics.iterator();
+		Iterator<FightQueuedStatistic> iterator = queuedStatistics.iterator();
 		while (iterator.hasNext())
 		{
-			FightQueuedStatistic queuedStatistic = (FightQueuedStatistic) iterator.next();
+			FightQueuedStatistic queuedStatistic = iterator.next();
 			Actor queuedActor = queuedStatistic.getActor();
 			FightStatisticEntry entry = queuedStatistic.getEntry();
 			FightStatisticProperty property = queuedStatistic.getProperty();
@@ -344,7 +344,7 @@ public class Fight {
 
 	public CopyOnWriteArrayList<FightSession> getAllSessions()
 	{
-		CopyOnWriteArrayList<FightSession> allSessions = new CopyOnWriteArrayList();
+		CopyOnWriteArrayList<FightSession> allSessions = new CopyOnWriteArrayList<>();
 		Iterator<FightSession> finishedSessionIterator = finishedSessions.iterator();
 		Iterator<FightSession> sessionIterator = sessions.values().iterator();
 

@@ -89,7 +89,7 @@ public class MarketplaceProduct
 	 * A list of all the spawned objects for this product
 	 */
 	@Getter
-	private final CopyOnWriteArrayList<SpawnedObject> spawnedObjects = new CopyOnWriteArrayList();
+	private final CopyOnWriteArrayList<SpawnedObject> spawnedObjects = new CopyOnWriteArrayList<>();
 
 	public MarketplaceProduct(MarketplaceManager manager, TwitchTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct, TwitchProduct twitchProduct)
 	{
@@ -167,9 +167,7 @@ public class MarketplaceProduct
 
 		isPaused = false;
 		isActive = true;
-		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
-			spawnedObject.show();
-		});
+		handleSpawnedObjects(spawnedObjects, 0, SpawnedObject::show);
 	}
 
 	public void pause()
@@ -183,9 +181,7 @@ public class MarketplaceProduct
 
 		isPaused = true;
 		isActive = false;
-		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
-			spawnedObject.hide();
-		});
+		handleSpawnedObjects(spawnedObjects, 0, SpawnedObject::hide);
 	}
 
 	public void stop()
@@ -227,7 +223,7 @@ public class MarketplaceProduct
 
 	private void handleNotificationsByTimingType(ArrayList<EbsNotification> notifications, String timingType)
 	{
-		ArrayList<EbsNotification> filteredNotifications = new ArrayList();
+		ArrayList<EbsNotification> filteredNotifications = new ArrayList<>();
 		boolean isExpired = ((!isActive && !isExpired()) || isExpired(-1 * END_NOTIFICATION_GRACE_PERIOD_MS));
 
 		// guard: make sure there are any notifications and the product is active
@@ -311,11 +307,11 @@ public class MarketplaceProduct
 
 	private void handleSpawnRotations()
 	{
-		Iterator spawnedObjectIterator = spawnedObjects.iterator();
+		Iterator<SpawnedObject> spawnedObjectIterator = spawnedObjects.iterator();
 
 		while (spawnedObjectIterator.hasNext())
 		{
-			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
+			SpawnedObject spawnedObject = spawnedObjectIterator.next();
 			EbsModelSet modelSet = spawnedObject.getModelSet();
 			String rotationType = modelSet.rotationType;
 			Player player = manager.getClient().getLocalPlayer();
@@ -349,16 +345,16 @@ public class MarketplaceProduct
 	private void handleSpawnLocations()
 	{
 		SpawnManager spawnManager = manager.getSpawnManager();
-		Iterator spawnedObjectIterator = spawnedObjects.iterator();
+		Iterator<SpawnedObject> spawnedObjectIterator = spawnedObjects.iterator();
 
 		// lookup table to change the spawn points consistently across objects
 		// this is needed, because we want objects that are on the same location
 		// to move to the new same location
-		HashMap<WorldPoint, SpawnPoint> newSpawnPoints = new HashMap();
+		HashMap<WorldPoint, SpawnPoint> newSpawnPoints = new HashMap<>();
 
 		while (spawnedObjectIterator.hasNext())
 		{
-			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
+			SpawnedObject spawnedObject = spawnedObjectIterator.next();
 			EbsSpawn spawn = spawnedObject.getSpawn();
 			WorldPoint worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
 
@@ -438,8 +434,6 @@ public class MarketplaceProduct
 
 	private void handleSpawnRandomVisualEffects()
 	{
-		Instant now = Instant.now();
-		Iterator spawnedObjectIterator = spawnedObjects.iterator();
 
 		// guard: don't trigger visual effects when the product has gone active
 		// this for example makes sure the hideVisualEffect is not interrupted by the random ones
@@ -448,9 +442,12 @@ public class MarketplaceProduct
 			return;
 		}
 
+		Instant now = Instant.now();
+		Iterator<SpawnedObject> spawnedObjectIterator = spawnedObjects.iterator();
+
 		while (spawnedObjectIterator.hasNext())
 		{
-			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
+			SpawnedObject spawnedObject = spawnedObjectIterator.next();
 			Instant lastRandomVisualEffectAt = spawnedObject.getLastRandomVisualEffectAt();
 			EbsSpawn spawn = spawnedObject.getSpawn();
 			EbsInterval randomInterval = spawn.randomVisualEffectsInterval;
@@ -719,7 +716,7 @@ public class MarketplaceProduct
 		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.rotationType));
 		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1);
 		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360);
-		ArrayList<ModelData> modelDataChunks = new ArrayList();
+		ArrayList<ModelData> modelDataChunks = new ArrayList<>();
 
 		// load all the models
 		modelSet.ids.forEach((modelId) -> {
@@ -813,11 +810,11 @@ public class MarketplaceProduct
 		}
 
 		int totalDelayMs = baseDelayMs;
-		Iterator visualEffectIterator = visualEffects.iterator();
+		Iterator<EbsVisualEffect> visualEffectIterator = visualEffects.iterator();
 
 		while (visualEffectIterator.hasNext())
 		{
-			EbsVisualEffect visualEffect = (EbsVisualEffect) visualEffectIterator.next();
+			EbsVisualEffect visualEffect = visualEffectIterator.next();
 			boolean isLast = !visualEffectIterator.hasNext();
 			int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(visualEffect.durationMs, 0, 0);
 			int delayMs = 0; // potentially handy in the future to delay a full visual effect
@@ -874,11 +871,11 @@ public class MarketplaceProduct
 			return true;
 		}
 
-		Iterator iterator = conditions.iterator();
+		Iterator<EbsCondition> iterator = conditions.iterator();
 
 		while (iterator.hasNext())
 		{
-			EbsCondition condition = (EbsCondition) iterator.next();
+			EbsCondition condition = iterator.next();
 			Integer varbitId = condition.varbitId;
 			Integer varbitValue = condition.varbitValue;
 			Integer minTimeMs = condition.minTimeMs;
@@ -1036,9 +1033,7 @@ public class MarketplaceProduct
 
 		handleVisualEffectFrame(graphic, baseDelayMs, (startDelayMs) -> {
 			animationManager.setPlayerGraphic(graphic.id, graphic.height, startDelayMs, graphic.durationMs);
-		}, (resetDelayMs) -> {
-			animationManager.resetPlayerGraphic(resetDelayMs);
-		});
+		}, animationManager::resetPlayerGraphic);
 	}
 
 	private void triggerPlayerAnimation(EbsAnimationFrame animation, int baseDelayMs)
@@ -1047,9 +1042,7 @@ public class MarketplaceProduct
 
 		handleVisualEffectFrame(animation, baseDelayMs, (startDelayMs) -> {
 			animationManager.setPlayerAnimation(animation.id, startDelayMs, animation.durationMs);
-		}, (resetDelayMs) -> {
-			animationManager.resetPlayerAnimation(resetDelayMs);
-		});
+		}, animationManager::resetPlayerAnimation);
 	}
 
 	private void triggerInterfaceWidgets(ArrayList<EbsInterfaceWidgetFrame> interfaceWidgetFrames, int delayMs)
@@ -1063,11 +1056,11 @@ public class MarketplaceProduct
 		}
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			Iterator interfaceWidgetFrameIterator = interfaceWidgetFrames.iterator();
+			Iterator<EbsInterfaceWidgetFrame> interfaceWidgetFrameIterator = interfaceWidgetFrames.iterator();
 
 			while (interfaceWidgetFrameIterator.hasNext())
 			{
-				EbsInterfaceWidgetFrame interfaceWidgetFrame = (EbsInterfaceWidgetFrame) interfaceWidgetFrameIterator.next();
+				EbsInterfaceWidgetFrame interfaceWidgetFrame = interfaceWidgetFrameIterator.next();
 				widgetManager.addEffect(this, interfaceWidgetFrame);
 			}
 		}, delayMs);
@@ -1084,11 +1077,11 @@ public class MarketplaceProduct
 		}
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			Iterator menuOptionFrameIterator = menuOptionFrames.iterator();
+			Iterator<EbsMenuOptionFrame> menuOptionFrameIterator = menuOptionFrames.iterator();
 
 			while (menuOptionFrameIterator.hasNext())
 			{
-				EbsMenuOptionFrame menuOptionFrame = (EbsMenuOptionFrame) menuOptionFrameIterator.next();
+				EbsMenuOptionFrame menuOptionFrame = menuOptionFrameIterator.next();
 				menuManager.addEffect(this, menuOptionFrame);
 			}
 		}, delayMs);
@@ -1286,13 +1279,12 @@ public class MarketplaceProduct
 
 		// make the iterator before the delay to make sure any modifications
 		// after calling this handlers are ignored, because a snapshot is made
-		Iterator iterator = spawnedObjects.iterator();
+		Iterator<SpawnedObject> iterator = spawnedObjects.iterator();
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-
 			while(iterator.hasNext())
 			{
-				SpawnedObject spawnedObject = (SpawnedObject) iterator.next();
+				SpawnedObject spawnedObject = iterator.next();
 				handler.execute(spawnedObject);
 			}
 		}, delayMs);

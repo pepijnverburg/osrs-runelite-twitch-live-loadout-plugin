@@ -9,7 +9,7 @@ import static com.twitchliveloadout.fights.FightStateManager.*;
 public class FightSession {
 	private final Fight fight;
 
-	private ConcurrentHashMap<FightStatisticEntry, FightStatistic> statistics = new ConcurrentHashMap();
+	private ConcurrentHashMap<FightStatisticEntry, FightStatistic> statistics = new ConcurrentHashMap<>();
 	private long interactingTickCounter = 0;
 	private long idleTickCounter = 0;
 	private long idleQueuedTickCounter = 0;

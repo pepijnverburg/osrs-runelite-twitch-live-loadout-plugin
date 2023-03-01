@@ -43,12 +43,12 @@ public class MarketplacePanel extends JPanel
 	private final JPanel productListPanel = new JPanel(new GridBagLayout());
 	private final TextPanel productListTitlePanel = new TextPanel("Active random events:", "<html>List of active random events.</html>");
 	private final JPanel productListWrapper = new JPanel(new BorderLayout());
-	private final CopyOnWriteArrayList<MarketplaceProductPanel> productPanels = new CopyOnWriteArrayList();
+	private final CopyOnWriteArrayList<MarketplaceProductPanel> productPanels = new CopyOnWriteArrayList<>();
 
 	private final JPanel transactionListPanel = new JPanel(new GridBagLayout());
 	private final TextPanel transactionListTitlePanel = new TextPanel("Recent donations:", "<html>List of all recent donations.</html>");
 	private final JPanel transactionListWrapper = new JPanel(new BorderLayout());
-	private final CopyOnWriteArrayList<TwitchTransactionPanel> transactionPanels = new CopyOnWriteArrayList();
+	private final CopyOnWriteArrayList<TwitchTransactionPanel> transactionPanels = new CopyOnWriteArrayList<>();
 
 	private final MarketplaceManager marketplaceManager;
 

@@ -189,7 +189,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	/**
 	 * Initialize this plugin
-	 * @throws Exception
 	 */
 	@Override
 	protected void startUp() throws Exception
@@ -206,9 +205,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		updateMarketplaceStreamerProducts();
 		updateMarketplaceEbsProducts();
 
-		// update skills when booted up to trigger when someone is enabling
-		// and disabling the plugin when having the client logged in
+		// trigger some other updates that need to be triggered when booting up the plugin
+		// when someone is already logged in and e.g. disabling and enabling the plugin
 		skillStateManager.updateSkills();
+		syncPlayerInfo();
 	}
 
 	private void initializeExecutors()
@@ -278,7 +278,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	/**
 	 * Cleanup properly after disabling the plugin
-	 * @throws Exception
 	 */
 	@Override
 	protected void shutDown() throws Exception
@@ -372,7 +371,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			// when all is scheduled and there are no in-between changes we can move
 			// to the next state slice
 			twitchState.nextCyclicState();
-			twitchState.acknowledgeChange();
 		} catch (Exception exception) {
 			log.warn("Could not sync the current state to Twitch due to the following error: ", exception);
 		}
@@ -407,9 +405,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			if (config.questsEnabled())
 			{
-				runOnClientThread(() -> {
-					questManager.updateQuests();
-				});
+				runOnClientThread(() -> questManager.updateQuests());
 			}
 		} catch (Exception exception) {
 			log.warn("Could not sync quests: ", exception);
@@ -856,29 +852,28 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			String key = configChanged.getKey();
 
-			// Always clear the scheduled state updates
-			// when either the value is increased of decreased
-			// it can mess up the state updates badly
-			if (key.equals("syncDelay"))
-			{
-				twitchApi.clearScheduledBroadcasterStates();
-			}
 
 			// Handle keys that should trigger an update of the state as well.
 			// Note that on load these events are not triggered, meaning that
 			// in the constructor of the TwitchState class one should also load
 			// this configuration value!
-			if (key.equals("overlayTopPosition"))
-			{
-				twitchState.setOverlayTopPosition(config.overlayTopPosition());
-			}
-			else if (key.equals("virtualLevelsEnabled"))
-			{
-				twitchState.setVirtualLevelsEnabled(config.virtualLevelsEnabled());
-			}
-			else if (key.equals("twitchTheme"))
-			{
-				twitchState.setTwitchTheme(config.twitchTheme());
+			switch (key) {
+
+				// Always clear the scheduled state updates
+				// when either the value is increased of decreased
+				// it can mess up the state updates badly
+				case "syncDelay":
+					twitchApi.clearScheduledBroadcasterStates();
+					break;
+				case "overlayTopPosition":
+					twitchState.setOverlayTopPosition(config.overlayTopPosition());
+					break;
+				case "virtualLevelsEnabled":
+					twitchState.setVirtualLevelsEnabled(config.virtualLevelsEnabled());
+					break;
+				case "twitchTheme":
+					twitchState.setTwitchTheme(config.twitchTheme());
+					break;
 			}
 
 			// somehow when in the settings tab the focus is lost, which means

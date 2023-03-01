@@ -146,7 +146,7 @@ public class ItemStateManager {
 
 	public CopyOnWriteArrayList<PricedItem> getPricedItems(Item[] items, int[] tabAmounts)
 	{
-		final CopyOnWriteArrayList<PricedItem> pricedItems = new CopyOnWriteArrayList();
+		final CopyOnWriteArrayList<PricedItem> pricedItems = new CopyOnWriteArrayList<>();
 
 		for (int slotId = 0; slotId < items.length; slotId++)
 		{
@@ -211,7 +211,7 @@ public class ItemStateManager {
 	public List<PricedItem> getHighestPricedItems(Item[] items, int[] tabAmounts, int maxAmount)
 	{
 		final CopyOnWriteArrayList<PricedItem> pricedItems = getPricedItems(items, tabAmounts);
-		Collections.sort(pricedItems, new ItemPriceSorter());
+		pricedItems.sort(new ItemPriceSorter());
 		final int itemAmount = pricedItems.size();
 
 		if (maxAmount > itemAmount)
@@ -220,7 +220,7 @@ public class ItemStateManager {
 		}
 
 		final List<PricedItem> highestPricedItems = pricedItems.subList(0, maxAmount);
-		Collections.sort(highestPricedItems, new ItemSlotIdSorter());
+		highestPricedItems.sort(new ItemSlotIdSorter());
 
 		return highestPricedItems;
 	}

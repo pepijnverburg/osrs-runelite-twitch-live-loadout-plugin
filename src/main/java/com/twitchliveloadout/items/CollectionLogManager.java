@@ -53,9 +53,7 @@ public class CollectionLogManager {
 	{
 		if (scriptPostFired.getScriptId() == COLLECTION_LOG_DRAW_LIST_SCRIPT_ID)
 		{
-			plugin.runOnClientThread(() -> {
-				updateCurrentCategory();
-			});
+			plugin.runOnClientThread(this::updateCurrentCategory);
 		}
 	}
 
@@ -74,9 +72,7 @@ public class CollectionLogManager {
 
 		if (matchFound)
 		{
-			plugin.runOnClientThread(() -> {
-				updateCurrentCategory();
-			});
+			plugin.runOnClientThread(this::updateCurrentCategory);
 		}
 	}
 

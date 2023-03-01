@@ -21,7 +21,7 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 	 * marketplace products because they can also originate from periodic effects, where the marketplace products
 	 * are unaware of and have no way of tracking.
 	 */
-	protected final CopyOnWriteArrayList<InterfaceEffect<FrameType>> effects = new CopyOnWriteArrayList();
+	protected final CopyOnWriteArrayList<InterfaceEffect<FrameType>> effects = new CopyOnWriteArrayList<>();
 
 	public InterfaceManager(int maxEffectAmount)
 	{
@@ -61,7 +61,7 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 //		log.info("Adding new interface effect from EBS product ID: "+ product.getEbsProduct().id);
 
 		// register the new effect
-		InterfaceEffect effect = new InterfaceEffect(product, frame, expiresAt);
+		InterfaceEffect<FrameType> effect = new InterfaceEffect<FrameType>(product, frame, expiresAt);
 		effects.add(effect);
 		onAddEffect(effect);
 	}
@@ -78,11 +78,11 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 
 	public void cleanEffects(boolean forceStop)
 	{
-		Iterator effectIterator = effects.iterator();
+		Iterator<InterfaceEffect<FrameType>> effectIterator = effects.iterator();
 
 		while (effectIterator.hasNext())
 		{
-			InterfaceEffect effect = (InterfaceEffect) effectIterator.next();
+			InterfaceEffect<FrameType> effect = effectIterator.next();
 			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
 			boolean isExpired = effect.isExpired() || marketplaceProduct.isExpired();
 			boolean isActive = marketplaceProduct.isActive();
@@ -116,11 +116,11 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 
 	private void applyActiveEffects()
 	{
-		Iterator effectIterator = effects.iterator();
+		Iterator<InterfaceEffect<FrameType>> effectIterator = effects.iterator();
 
 		while (effectIterator.hasNext())
 		{
-			InterfaceEffect effect = (InterfaceEffect) effectIterator.next();
+			InterfaceEffect<FrameType> effect = effectIterator.next();
 			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
 			boolean isActive = marketplaceProduct.isActive();
 
@@ -135,8 +135,8 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 		}
 	}
 
-	protected abstract void onAddEffect(InterfaceEffect effect);
-	protected abstract void onDeleteEffect(InterfaceEffect effect);
-	protected abstract void restoreEffect(InterfaceEffect effect);
-	protected abstract void applyEffect(InterfaceEffect effect);
+	protected abstract void onAddEffect(InterfaceEffect<FrameType> effect);
+	protected abstract void onDeleteEffect(InterfaceEffect<FrameType> effect);
+	protected abstract void restoreEffect(InterfaceEffect<FrameType> effect);
+	protected abstract void applyEffect(InterfaceEffect<FrameType> effect);
 }

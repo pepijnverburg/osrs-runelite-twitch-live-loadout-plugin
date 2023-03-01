@@ -22,7 +22,7 @@ public class WidgetManager extends InterfaceManager {
 	 * Track all the covering overlays that were initialized to show dark / snow / other overlay effects.
 	 * This is a hashmap to support multiple client settings such as resized and fixed, which require different widgets
 	 */
-	private ConcurrentHashMap<Widget, Widget> coveringOverlays = new ConcurrentHashMap();
+	private final ConcurrentHashMap<Widget, Widget> coveringOverlays = new ConcurrentHashMap<>();
 	private boolean isResized = false;
 
 	/**
@@ -32,7 +32,7 @@ public class WidgetManager extends InterfaceManager {
 	 * missed because of this and the state might be out of sync. Because of this we need to make sure to only adjust
 	 * widgets that don't have this.
 	 */
-	private final ConcurrentHashMap<Widget, OriginalWidget> originalWidgets = new ConcurrentHashMap();
+	private final ConcurrentHashMap<Widget, OriginalWidget> originalWidgets = new ConcurrentHashMap<>();
 
 	public WidgetManager(TwitchLiveLoadoutPlugin plugin, Client client)
 	{
@@ -244,7 +244,7 @@ public class WidgetManager extends InterfaceManager {
 
 	private ArrayList<Widget> getWidgets(EbsInterfaceWidgetFrame widgetFrame)
 	{
-		final ArrayList<Widget> widgets = new ArrayList();
+		final ArrayList<Widget> widgets = new ArrayList<>();
 		final String effectType = widgetFrame.effectType;
 
 		if (OVERLAY_INTERFACE_WIDGET_TYPE.equals(effectType)) {

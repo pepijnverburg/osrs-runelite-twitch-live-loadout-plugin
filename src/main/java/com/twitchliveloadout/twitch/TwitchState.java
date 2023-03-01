@@ -55,12 +55,7 @@ public class TwitchState {
 	/**
 	 * The current state that is queued to be sent out.
 	 */
-	private JsonObject currentState = new JsonObject();
-
-	/**
-	 * The previous state sent out.
-	 */
-	private JsonObject previousState = new JsonObject();
+	private final JsonObject currentState = new JsonObject();
 
 	/**
 	 * An additional cyclic state that cannot be sent out at once
@@ -70,7 +65,7 @@ public class TwitchState {
 	private final static int MAX_BANK_ITEMS_PER_SLICE = 400;
 	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 400;
 	private final static String COLLECTION_LOG_FILTER_SEPARATOR = ",";
-	private JsonObject cyclicState = new JsonObject();
+	private final JsonObject cyclicState = new JsonObject();
 	private TwitchStateEntry currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 	private int currentCyclicSliceIndex = 0;
 
@@ -245,9 +240,7 @@ public class TwitchState {
 		int currentItemAmount = 0;
 
 		// convert the client item structure to a nested array with the items
-		for (int tabIndex = 0; tabIndex < tabAmounts.length; tabIndex++)
-		{
-			final int tabAmount = tabAmounts[tabIndex];
+		for (final int tabAmount : tabAmounts) {
 			final Item[] tabItems = Arrays.copyOfRange(items, currentItemAmount, currentItemAmount + tabAmount);
 
 			tabbedBankItems.add(convertToJson(tabItems));
@@ -739,11 +732,6 @@ public class TwitchState {
 
 		JsonArray json = new GsonBuilder().create().toJsonTree(copiedArray).getAsJsonArray();
 		return json;
-	}
-
-	public void acknowledgeChange()
-	{
-		previousState = currentState.deepCopy();
 	}
 
 	private int getCollectionLogItemAmount()

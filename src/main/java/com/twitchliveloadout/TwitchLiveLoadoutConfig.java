@@ -26,7 +26,6 @@ package com.twitchliveloadout;
 
 import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.items.ItemStateManager;
-import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchThemeEntry;
 import net.runelite.client.config.*;
 

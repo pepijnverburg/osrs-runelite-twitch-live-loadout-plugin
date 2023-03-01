@@ -48,7 +48,7 @@ public class MarketplaceRandomizers {
 
 	public static boolean rollChance(Double chance)
 	{
-		Double roll = Math.random();
+		double roll = Math.random();
 
 		if (chance == null)
 		{

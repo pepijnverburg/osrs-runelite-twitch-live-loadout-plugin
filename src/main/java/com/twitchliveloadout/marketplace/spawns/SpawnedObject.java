@@ -144,23 +144,29 @@ public class SpawnedObject {
 
 	public void scale(double scale)
 	{
+		int roundedScale = (int) scale;
 
 		// guard: check if the scale is valid and changed
-		if (scale < 0 || scale == currentScale)
+		if (roundedScale < 0 || scale == currentScale)
 		{
 			return;
 		}
 
 		currentScale = scale;
-
-		double scalePerOneTile = (modelSet.scalePerOneTile == null ? 1 : modelSet.scalePerOneTile);
-		double tileRadius = scale / scalePerOneTile;
-		int radius = (int) (RUNELITE_OBJECT_RADIUS_PER_TILE * tileRadius);
-		int roundedScale = (int) scale;
-
 		modelData.cloneVertices();
 		modelData.scale(roundedScale, roundedScale, roundedScale);
-		object.setRadius(radius);
+
+		// only set the radius when it is set, because some radius values
+		// can cause major frame drops, for this reason it needs to be tested
+		// and hard-coded in the config and never automatically set!
+		if (modelSet.scalePerOneTile != null)
+		{
+			double scalePerOneTile = modelSet.scalePerOneTile;
+			double tileRadius = scale / scalePerOneTile;
+			int radius = (int) (RUNELITE_OBJECT_RADIUS_PER_TILE * tileRadius);
+
+			object.setRadius(radius);
+		}
 
 		render();
 	}

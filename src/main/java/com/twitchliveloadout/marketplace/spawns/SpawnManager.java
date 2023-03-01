@@ -23,7 +23,7 @@ public class SpawnManager {
 	/**
 	 * Lookup to see which world points are taken for future spawns
 	 */
-	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<SpawnedObject>> objectPlacements = new ConcurrentHashMap();
+	private final ConcurrentHashMap<WorldPoint, CopyOnWriteArrayList<SpawnedObject>> objectPlacements = new ConcurrentHashMap<>();
 
 	/**
 	 * History of all the previous player tiles used for spawning relative to previous locations
@@ -48,7 +48,7 @@ public class SpawnManager {
 			return;
 		}
 
-		ArrayList<SpawnedObject> respawnQueue = new ArrayList();
+		ArrayList<SpawnedObject> respawnQueue = new ArrayList<>();
 
 		// loop all spawned objects and check whether they should respawn
 		handleAllSpawnedObjects((spawnedObject) -> {
@@ -134,7 +134,7 @@ public class SpawnManager {
 			CopyOnWriteArrayList<SpawnedObject> existingObjects = objectPlacements.get(worldPoint);
 			existingObjects.add(spawnedObject);
 		} else {
-			CopyOnWriteArrayList<SpawnedObject> existingObjects = new CopyOnWriteArrayList();
+			CopyOnWriteArrayList<SpawnedObject> existingObjects = new CopyOnWriteArrayList<>();
 			existingObjects.add(spawnedObject);
 			objectPlacements.put(worldPoint, existingObjects);
 		}
@@ -194,11 +194,11 @@ public class SpawnManager {
 	{
 		for (CopyOnWriteArrayList<SpawnedObject> spawnedObjects : objectPlacements.values())
 		{
-			Iterator spawnedObjectIterator = spawnedObjects.iterator();
+			Iterator<SpawnedObject> spawnedObjectIterator = spawnedObjects.iterator();
 
 			while (spawnedObjectIterator.hasNext())
 			{
-				SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
+				SpawnedObject spawnedObject = spawnedObjectIterator.next();
 
 				handler.execute(spawnedObject);
 			}
@@ -228,7 +228,7 @@ public class SpawnManager {
 
 	public SpawnPoint getSpawnPoint(int radius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
-		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList();
+		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList<>();
 		final int[][] collisionFlags = getSceneCollisionFlags();
 		final Player player = client.getLocalPlayer();
 		final WorldArea playerArea = player.getWorldArea();

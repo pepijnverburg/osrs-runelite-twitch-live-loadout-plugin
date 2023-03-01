@@ -28,7 +28,7 @@ public class CombatPanel extends JPanel
 
 	private final JPanel fightListPanel = new JPanel(new GridBagLayout());
 	private final JPanel fightListWrapper = new JPanel(new BorderLayout());
-	private final CopyOnWriteArrayList<FightPanel> fightPanels = new CopyOnWriteArrayList();
+	private final CopyOnWriteArrayList<FightPanel> fightPanels = new CopyOnWriteArrayList<>();
 	private final JPanel deleteAllPanel = new JPanel(new BorderLayout());
 	private final JLabel deleteAllLabel = new JLabel();
 
@@ -129,7 +129,7 @@ public class CombatPanel extends JPanel
 
 	public void rebuildFightList()
 	{
-		final CopyOnWriteArrayList<Fight> fights = new CopyOnWriteArrayList();
+		final CopyOnWriteArrayList<Fight> fights = new CopyOnWriteArrayList<>();
 		int fightPanelIndex = 0;
 
 		// add all fights by default

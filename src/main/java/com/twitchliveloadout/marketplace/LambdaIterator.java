@@ -18,7 +18,7 @@ public class LambdaIterator {
 			return;
 		}
 
-		Collection values = map.values();
+		Collection<ValueType> values = map.values();
 		handleAll(values, handler);
 	}
 
@@ -33,11 +33,11 @@ public class LambdaIterator {
 			return;
 		}
 
-		Iterator iterator = collection.iterator();
+		Iterator<ValueType> iterator = collection.iterator();
 
 		while (iterator.hasNext())
 		{
-			ValueType value = (ValueType) iterator.next();
+			ValueType value = iterator.next();
 			handler.execute(value);
 		}
 	}

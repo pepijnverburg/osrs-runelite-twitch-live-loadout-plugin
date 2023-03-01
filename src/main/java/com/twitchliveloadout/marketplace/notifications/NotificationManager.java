@@ -35,7 +35,7 @@ public class NotificationManager {
 	 * Note that they can be queued per group of notifications that should trigger at the same time
 	 * This is mainly used for triggering different types of notifications.
 	 */
-	private EvictingQueue<ArrayList<Notification>> notificationGroupQueue = EvictingQueue.create(NOTIFICATION_QUEUE_MAX_SIZE);
+	private final EvictingQueue<ArrayList<Notification>> notificationGroupQueue = EvictingQueue.create(NOTIFICATION_QUEUE_MAX_SIZE);
 
 	public NotificationManager(TwitchLiveLoadoutPlugin plugin, ChatMessageManager chatMessageManager, Client client)
 	{
@@ -56,7 +56,7 @@ public class NotificationManager {
 			return;
 		}
 
-		ArrayList<Notification> notificationGroup = new ArrayList();
+		ArrayList<Notification> notificationGroup = new ArrayList<>();
 
 		for (EbsNotification ebsNotification : ebsNotifications)
 		{
@@ -161,9 +161,8 @@ public class NotificationManager {
 			overheadResetTask.cancel(false);
 		}
 
-		String finalMessage = message;
 		plugin.runOnClientThread(() -> {
-			player.setOverheadText(finalMessage);
+			player.setOverheadText(message);
 		});
 		overheadResetTask = plugin.scheduleOnClientThread(() -> {
 			player.setOverheadText("");

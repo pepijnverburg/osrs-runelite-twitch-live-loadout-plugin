@@ -8,7 +8,7 @@ import net.runelite.api.coords.WorldPoint;
 
 public class SpawnPoint {
 	@Getter
-	private WorldPoint worldPoint;
+	private final WorldPoint worldPoint;
 
 	public SpawnPoint(WorldPoint worldPoint)
 	{
