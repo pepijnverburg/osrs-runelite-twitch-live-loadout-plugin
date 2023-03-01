@@ -11,6 +11,8 @@ import net.runelite.api.coords.WorldPoint;
 
 import java.time.Instant;
 
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.RUNELITE_OBJECT_RADIUS_PER_TILE;
+
 @Slf4j
 public class SpawnedObject {
 
@@ -57,30 +59,43 @@ public class SpawnedObject {
 	private int currentAnimationId;
 	private Instant lockAnimationUntil;
 
-	public SpawnedObject(MarketplaceProduct product, Client client, RuneLiteObject object, ModelData modelData, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
+	public SpawnedObject(MarketplaceProduct product, Client client, ModelData modelData, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
 	{
 		this.spawnedAt = Instant.now();
 		this.product = product;
 		this.client = client;
-		this.object = object;
+		this.object = client.createRuneLiteObject();
 		this.modelData = modelData;
 		this.spawnPoint = spawnPoint;
 		this.spawn = spawn;
 		this.modelSet = modelSet;
 
 		// initialize expiry if set via spawn properties
-		EbsRandomRange durationMs = spawn.durationMs;
-		if (durationMs != null)
-		{
-			int randomDurationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(durationMs, 0,0);
-			expiredAt = Instant.now().plusMillis(randomDurationMs);
-		}
+		initializeExpiry();
+
+		// setup one time settings
+		initializeModel();
 
 		// reset the animations to it will immediately show the idle animation if available
 		resetAnimation();
 
 		// set to initial spawn-point
 		updateLocation();
+	}
+
+	private void initializeExpiry()
+	{
+		EbsRandomRange durationMs = spawn.durationMs;
+		if (durationMs != null)
+		{
+			int randomDurationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(durationMs, 0,0);
+			expiredAt = Instant.now().plusMillis(randomDurationMs);
+		}
+	}
+
+	private void initializeModel()
+	{
+		object.setDrawFrontTilesFirst(true);
 	}
 
 	public void rotateTowards(LocalPoint targetPoint)
@@ -138,7 +153,18 @@ public class SpawnedObject {
 
 		currentScale = scale;
 
-		SpawnUtilities.scaleModel(modelData, scale);
+		double scalePerOneTile = (modelSet.scalePerOneTile == null ? 1 : modelSet.scalePerOneTile);
+		double tileRadius = scale / scalePerOneTile;
+		int radius = (int) (RUNELITE_OBJECT_RADIUS_PER_TILE * tileRadius);
+		int roundedScale = (int) scale;
+		log.info("radius IS: "+ radius);
+		log.info("tileRadius IS: "+ tileRadius);
+		log.info("scalePerOneTile IS: "+ scalePerOneTile);
+		log.info("scale IS: "+ scale);
+		modelData.cloneVertices();
+		modelData.scale(roundedScale, roundedScale, roundedScale);
+		object.setRadius(radius);
+
 		render();
 	}
 

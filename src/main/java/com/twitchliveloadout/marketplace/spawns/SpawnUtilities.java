@@ -7,14 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.RUNELITE_OBJECT_FULL_RADIUS;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.RUNELITE_OBJECT_RADIUS_PER_TILE;
 
 @Slf4j
 public class SpawnUtilities {
 
 	public static void scaleModel(ModelData model, double modelScale)
 	{
-		int modelSize = (int) (RUNELITE_OBJECT_FULL_RADIUS * modelScale);
+		int modelSize = (int) (RUNELITE_OBJECT_RADIUS_PER_TILE * modelScale);
 
 		model.cloneVertices();
 		model.scale(modelSize, modelSize, modelSize);

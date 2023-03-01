@@ -3,8 +3,9 @@ package com.twitchliveloadout.marketplace.products;
 import java.util.ArrayList;
 
 public class EbsModelSet {
-	public ArrayList<Integer> modelIds;
-	public EbsRandomRange modelScale;
-	public String modelRotationType;
-	public EbsRandomRange modelRotation;
+	public ArrayList<Integer> ids;
+	public EbsRandomRange scale;
+	public Integer scalePerOneTile;
+	public String rotationType;
+	public EbsRandomRange rotation;
 }

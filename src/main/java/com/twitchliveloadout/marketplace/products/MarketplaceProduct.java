@@ -316,7 +316,7 @@ public class MarketplaceProduct
 		{
 			SpawnedObject spawnedObject = (SpawnedObject) spawnedObjectIterator.next();
 			EbsModelSet modelSet = spawnedObject.getModelSet();
-			String rotationType = modelSet.modelRotationType;
+			String rotationType = modelSet.rotationType;
 			Player player = manager.getClient().getLocalPlayer();
 
 			// guard: make sure the rotation and player are valid
@@ -643,7 +643,7 @@ public class MarketplaceProduct
 
 		// guard: check if the conditions are satisfied
 		// NOTE: this should happen after the timer is being set!
-		if (!verifyConditions(spawnOption.conditions))
+		if (!verifyConditions(spawnOption.conditions, null))
 		{
 			return;
 		}
@@ -700,32 +700,30 @@ public class MarketplaceProduct
 		EbsModelSet modelSet = MarketplaceRandomizers.getRandomEntryFromList(spawn.modelSetOptions);
 
 		// guard: make sure the selected model is valid
-		if (modelSet == null || modelSet.modelIds == null)
+		if (modelSet == null || modelSet.ids == null)
 		{
 			log.error("Could not find valid model set when triggering spawn behaviour!");
 			return;
 		}
 
 		// get properties from model set
-		boolean shouldScaleModel = (modelSet.modelScale != null);
-		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.modelRotationType));
-		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.modelScale, 1, 1);
-		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.modelRotation, 0, 360);
+		boolean shouldScaleModel = (modelSet.scale != null);
+		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.rotationType));
+		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1);
+		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360);
 		ArrayList<ModelData> modelDataChunks = new ArrayList();
 
 		// load all the models
-		modelSet.modelIds.forEach((modelId) -> {
+		modelSet.ids.forEach((modelId) -> {
 			modelDataChunks.add(client.loadModelData(modelId));
 		});
 
 		// merge all models into one
 		ModelData mergedModelData = client.mergeModels(modelDataChunks.toArray(new ModelData[modelDataChunks.size()]), modelDataChunks.size());
 
-		RuneLiteObject runeLiteObject = client.createRuneLiteObject();
 		SpawnedObject spawnedObject = new SpawnedObject(
-		this,
+			this,
 			client,
-			runeLiteObject,
 			mergedModelData,
 			spawnPoint,
 			spawn,
@@ -822,7 +820,7 @@ public class MarketplaceProduct
 			manager.getPlugin().scheduleOnClientThread(() -> {
 
 				// guard: check if all the conditions for this visual effect are met
-				if (!verifyConditions(conditions))
+				if (!verifyConditions(conditions, spawnedObject))
 				{
 //					log.info("CANCELLED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
 					return;
@@ -859,7 +857,7 @@ public class MarketplaceProduct
 		);
 	}
 
-	private boolean verifyConditions(ArrayList<EbsCondition> conditions)
+	private boolean verifyConditions(ArrayList<EbsCondition> conditions, SpawnedObject spawnedObject)
 	{
 
 		// guard: check if collection is valid
@@ -876,7 +874,10 @@ public class MarketplaceProduct
 			Integer varbitId = condition.varbitId;
 			Integer varbitValue = condition.varbitValue;
 			Integer maxSpawnsInView = condition.maxSpawnsInView;
-			Integer inViewRadius = condition.inViewRadius;
+			Integer maxSpawnsInViewRadius = condition.maxSpawnsInViewRadius;
+			Integer minSpawnsInView = condition.minSpawnsInView;
+			Integer minSpawnsInViewRadius = condition.minSpawnsInViewRadius;
+			Integer spawnInViewRadius = condition.spawnInViewRadius;
 
 			// guard: check if this condition should check a varbit
 			if (varbitId >= 0 && manager.getClient().getVarbitValue(varbitId) != varbitValue)
@@ -885,7 +886,19 @@ public class MarketplaceProduct
 			}
 
 			// guard: check for max spawns in view
-			if (maxSpawnsInView > 0 && countSpawnedObjectsInView(inViewRadius) > maxSpawnsInView)
+			if (maxSpawnsInView > 0 && countSpawnedObjectsInView(maxSpawnsInViewRadius) > maxSpawnsInView)
+			{
+				return false;
+			}
+
+			// guard: check for min spawns in view
+			if (minSpawnsInView > 0 && countSpawnedObjectsInView(minSpawnsInViewRadius) < minSpawnsInView)
+			{
+				return false;
+			}
+
+			// guard: check for request to check the current spawn and if its in radius
+			if (spawnedObject != null && spawnInViewRadius > 0 && !spawnedObject.isInView(spawnInViewRadius))
 			{
 				return false;
 			}

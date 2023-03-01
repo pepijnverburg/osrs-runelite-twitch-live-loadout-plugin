@@ -24,7 +24,7 @@ public class MarketplaceConstants {
 	public static final String PLAYER_ROTATION_TYPE = "player";
 	public static final String INTERACTING_ROTATION_TYPE = "interacting";
 
-	public static final int RUNELITE_OBJECT_FULL_RADIUS = 60;
+	public static final double RUNELITE_OBJECT_RADIUS_PER_TILE = 60d;
 	public static final double RUNELITE_OBJECT_FULL_ROTATION = 2047d;
 
 	public static final int PLAYER_TILE_HISTORY_SIZE = 10;
