@@ -10,6 +10,7 @@ import com.twitchliveloadout.marketplace.animations.AnimationManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
+import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -70,8 +71,8 @@ public class MarketplaceProduct
 	 */
 	private Instant lastSpawnBehaviourAt;
 	private int spawnBehaviourCounter = 0;
-	private Instant lastVisualEffectBehaviourAt;
-	private int visualEffectBehaviourCounter = 0;
+	private Instant lastEffectBehaviourAt;
+	private int effectBehaviourCounter = 0;
 
 	/**
 	 * Expiration trackers
@@ -119,12 +120,6 @@ public class MarketplaceProduct
 
 		// start immediately
 		start();
-
-		// only queue the start notifications on on creation
-		handleNotificationsByTimingType(
-			ebsProduct.behaviour.notifications,
-			START_NOTIFICATION_TIMING_TYPE
-		);
 	}
 
 	public void handleBehaviour()
@@ -136,12 +131,10 @@ public class MarketplaceProduct
 			return;
 		}
 
-		handleNewVisualEffects();
+		handleNewEffects();
 		handleNewSpawns();
 		handleSpawnLocations();
-		handleSpawnRandomVisualEffects();
-		handleMovementAnimations();
-//		handlePlayerEquipment();
+		handleSpawnRandomEffects();
 	}
 
 	public void onClientTick()
@@ -167,7 +160,9 @@ public class MarketplaceProduct
 
 		isPaused = false;
 		isActive = true;
+
 		handleSpawnedObjects(spawnedObjects, 0, SpawnedObject::show);
+		triggerEffectsOptions(ebsProduct.behaviour.startEffectsOptions);
 	}
 
 	public void pause()
@@ -181,19 +176,15 @@ public class MarketplaceProduct
 
 		isPaused = true;
 		isActive = false;
+
 		handleSpawnedObjects(spawnedObjects, 0, SpawnedObject::hide);
 	}
 
 	public void stop()
 	{
-		AnimationManager animationManager = manager.getAnimationManager();
-
-		// queue any notifications that should be triggered at the end
-		// NOTE: do this before toggling to off!
-		handleNotificationsByTimingType(
-			ebsProduct.behaviour.notifications,
-			END_NOTIFICATION_TIMING_TYPE
-		);
+		// NOTE: do this before toggling to off otherwise some effects are skipped
+		// TODO: make sure end notifications work
+		triggerEffectsOptions(ebsProduct.behaviour.stopEffectsOptions);
 
 		// start with disabling all behaviours
 		isPaused = false;
@@ -212,13 +203,6 @@ public class MarketplaceProduct
 			manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
 		});
 		spawnedObjects.clear();
-
-		// revert to the original player animations if these are the movement
-		// animations that are currently active, because other products could've taken over
-		if (animationManager.isCurrentMovementAnimations(ebsProduct.behaviour.playerAnimations))
-		{
-			animationManager.revertAnimations();
-		}
 	}
 
 	private void handleNotificationsByTimingType(ArrayList<EbsNotification> notifications, String timingType)
@@ -281,28 +265,6 @@ public class MarketplaceProduct
 	public long getExpiresInMs()
 	{
 		return expiredAt.toEpochMilli() - Instant.now().toEpochMilli();
-	}
-
-	private boolean hasMovementAnimations()
-	{
-		return ebsProduct.behaviour.playerAnimations != null;
-	}
-
-	private void handleMovementAnimations()
-	{
-		AnimationManager animationManager = manager.getAnimationManager();
-
-		// guard: skip when no movement animations
-		if (!hasMovementAnimations())
-		{
-			return;
-		}
-
-		EbsMovementAnimations movementAnimations = ebsProduct.behaviour.playerAnimations;
-
-		// update the animation manager
-		animationManager.setCurrentMovementAnimations(movementAnimations);
-		animationManager.setCurrentMovementAnimations();
 	}
 
 	private void handleSpawnRotations()
@@ -432,11 +394,11 @@ public class MarketplaceProduct
 		}
 	}
 
-	private void handleSpawnRandomVisualEffects()
+	private void handleSpawnRandomEffects()
 	{
 
-		// guard: don't trigger visual effects when the product has gone active
-		// this for example makes sure the hideVisualEffect is not interrupted by the random ones
+		// guard: don't trigger effects when the product has gone active
+		// this for example makes sure the hideEffect is not interrupted by the random ones
 		if (!isActive)
 		{
 			return;
@@ -448,41 +410,41 @@ public class MarketplaceProduct
 		while (spawnedObjectIterator.hasNext())
 		{
 			SpawnedObject spawnedObject = spawnedObjectIterator.next();
-			Instant lastRandomVisualEffectAt = spawnedObject.getLastRandomVisualEffectAt();
+			Instant lastRandomEffectAt = spawnedObject.getLastRandomEffectAt();
 			EbsSpawn spawn = spawnedObject.getSpawn();
-			EbsInterval randomInterval = spawn.randomVisualEffectsInterval;
-			ArrayList<ArrayList<EbsVisualEffect>> randomVisualEffectsOptions = spawn.randomVisualEffectsOptions;
+			EbsInterval randomInterval = spawn.randomEffectsInterval;
+			ArrayList<ArrayList<EbsEffect>> randomEffectsOptions = spawn.randomEffectsOptions;
 
 			// guard: make sure there is a valid interval and animation
-			if (randomInterval == null || randomVisualEffectsOptions == null || randomVisualEffectsOptions.size() <= 0)
+			if (randomInterval == null || randomEffectsOptions == null || randomEffectsOptions.size() <= 0)
 			{
 				continue;
 			}
 
 			// guard: check if the max repeat amount is exceeded
 			// NOTE: -1 repeat amount if infinity!
-			if (randomInterval.repeatAmount >= 0 && spawnedObject.getRandomVisualEffectCounter() >= randomInterval.repeatAmount)
+			if (randomInterval.repeatAmount >= 0 && spawnedObject.getRandomEffectCounter() >= randomInterval.repeatAmount)
 			{
 				continue;
 			}
 
 			// guard: check if enough time has passed
-			if (lastRandomVisualEffectAt != null && lastRandomVisualEffectAt.plusMillis(randomInterval.delayMs).isAfter(now))
+			if (lastRandomEffectAt != null && lastRandomEffectAt.plusMillis(randomInterval.delayMs).isAfter(now))
 			{
 				continue;
 			}
 
-			// update the last time it was attempted too roll and execute a random visual effect
-			spawnedObject.upateLastRandomVisualEffectAt();
+			// update the last time it was attempted too roll and execute a random effect
+			spawnedObject.upateLastRandomEffectAt();
 
 			// guard: skip when this is the first time the interval is triggered!
-			// this prevents the random visual effect to instantly be triggered on spawn
-			if (lastRandomVisualEffectAt == null)
+			// this prevents the random effect to instantly be triggered on spawn
+			if (lastRandomEffectAt == null)
 			{
 				continue;
 			}
 
-			// guard: skip this visual effect when not rolled, while setting the timer before this roll
+			// guard: skip this effect when not rolled, while setting the timer before this roll
 			if (!MarketplaceRandomizers.rollChance(randomInterval.chance))
 			{
 				continue;
@@ -497,11 +459,11 @@ public class MarketplaceProduct
 			}
 
 			// select a random entry from all the candidates
-			ArrayList<EbsVisualEffect> randomVisualEffects = MarketplaceRandomizers.getRandomEntryFromList(randomVisualEffectsOptions);
+			ArrayList<EbsEffect> randomEffects = MarketplaceRandomizers.getRandomEntryFromList(randomEffectsOptions);
 
 			// trigger the animations on this single spawned object
-			triggerVisualEffects(
-				randomVisualEffects,
+			triggerEffects(
+				randomEffects,
 				0,
 				spawnedObject,
 				false,
@@ -509,67 +471,67 @@ public class MarketplaceProduct
 			);
 
 			// increase the counter that will be used to check if the max repeat count is reached
-			spawnedObject.registerRandomVisualEffect();
+			spawnedObject.registerRandomEffect();
 		}
 	}
 
-	private void handleNewVisualEffects()
+	private void handleNewEffects()
 	{
 		Instant now = Instant.now();
 		String transactionId = transaction.id;
 		String productId = ebsProduct.id;
 		EbsBehaviour behaviour = ebsProduct.behaviour;
-		ArrayList<ArrayList<EbsVisualEffect>> visualEffectOptions = behaviour.visualEffectsOptions;
-		EbsInterval visualEffectsInterval = behaviour.visualEffectsInterval;
+		ArrayList<ArrayList<EbsEffect>> effectOptions = behaviour.effectsOptions;
+		EbsInterval effectsInterval = behaviour.effectsInterval;
 
-		// guard: check if there are any visual effect options
-		if (visualEffectOptions == null)
+		// guard: check if there are any effect options
+		if (effectOptions == null)
 		{
 			return;
 		}
 
 		// make sure the behaviour interval is valid
-		if (visualEffectsInterval == null)
+		if (effectsInterval == null)
 		{
-			visualEffectsInterval = new EbsInterval();
+			effectsInterval = new EbsInterval();
 
 			// when the spawn interval is not set it can only trigger once
 			// this makes the most sense in the JSON configuration of the product
 			// if no interval is set -> no repetition
-			visualEffectsInterval.repeatAmount = 1;
+			effectsInterval.repeatAmount = 1;
 		}
 
-		int repeatAmount = visualEffectsInterval.repeatAmount;
+		int repeatAmount = effectsInterval.repeatAmount;
 
 		// guard: check if the amount has passed
 		// NOTE: -1 repeat amount if infinity!
-		if (repeatAmount >= 0 && visualEffectBehaviourCounter >= repeatAmount)
+		if (repeatAmount >= 0 && effectBehaviourCounter >= repeatAmount)
 		{
 			return;
 		}
 
 		// guard: check if the interval has not passed
-		if (lastVisualEffectBehaviourAt != null && lastVisualEffectBehaviourAt.plusMillis(visualEffectsInterval.delayMs).isAfter(now))
+		if (lastEffectBehaviourAt != null && lastEffectBehaviourAt.plusMillis(effectsInterval.delayMs).isAfter(now))
 		{
 			return;
 		}
 
 		// select a random option
-		ArrayList<EbsVisualEffect> visualEffectsOption = MarketplaceRandomizers.getRandomEntryFromList(visualEffectOptions);
+		ArrayList<EbsEffect> effectsOption = MarketplaceRandomizers.getRandomEntryFromList(effectOptions);
 
 		// guard: check if a valid option was selected
-		if (visualEffectsOption == null)
+		if (effectsOption == null)
 		{
-			log.error("Could not find valid visual effect behaviour option for product ("+ productId +")");
+			log.error("Could not find valid effect behaviour option for product ("+ productId +")");
 			return;
 		}
 
-		log.debug("Executing visual effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
-		lastVisualEffectBehaviourAt = Instant.now();
-		visualEffectBehaviourCounter += 1;
+		log.debug("Executing effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
+		lastEffectBehaviourAt = Instant.now();
+		effectBehaviourCounter += 1;
 
-		triggerVisualEffects(
-			visualEffectsOption,
+		triggerEffects(
+			effectsOption,
 			0,
 			null,
 			false,
@@ -583,16 +545,16 @@ public class MarketplaceProduct
 		String transactionId = transaction.id;
 		String productId = ebsProduct.id;
 		EbsBehaviour behaviour = ebsProduct.behaviour;
-		ArrayList<EbsSpawnOption> initialSpawnOptions = behaviour.initialSpawnOptions;
+		ArrayList<EbsSpawnOption> startSpawnOptions = behaviour.startSpawnOptions;
 		ArrayList<EbsSpawnOption> spawnOptions = behaviour.spawnOptions;
 		EbsInterval spawnInterval = behaviour.spawnInterval;
 		boolean hasSpawnedAtLeastOnce = (lastSpawnBehaviourAt != null);
 
 		// override the spawn options with the initial ones when they are valid
 		// and the first spawn still needs to happen
-		if (!hasSpawnedAtLeastOnce && initialSpawnOptions != null)
+		if (!hasSpawnedAtLeastOnce && startSpawnOptions != null)
 		{
-			spawnOptions = initialSpawnOptions;
+			spawnOptions = startSpawnOptions;
 		}
 
 		// guard: check if objects need to be spawned
@@ -800,31 +762,31 @@ public class MarketplaceProduct
 		return spawnPoint;
 	}
 
-	public void triggerVisualEffects(ArrayList<EbsVisualEffect> visualEffects, int baseDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetVisualEffectHandler resetModelAnimationHandler)
+	public void triggerEffects(ArrayList<EbsEffect> effects, int baseDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the animation is valid
-		if (visualEffects == null)
+		if (effects == null)
 		{
 			return;
 		}
 
 		int totalDelayMs = baseDelayMs;
-		Iterator<EbsVisualEffect> visualEffectIterator = visualEffects.iterator();
+		Iterator<EbsEffect> effectIterator = effects.iterator();
 
-		while (visualEffectIterator.hasNext())
+		while (effectIterator.hasNext())
 		{
-			EbsVisualEffect visualEffect = visualEffectIterator.next();
-			boolean isLast = !visualEffectIterator.hasNext();
-			int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(visualEffect.durationMs, 0, 0);
-			int delayMs = 0; // potentially handy in the future to delay a full visual effect
-			ArrayList<EbsCondition> conditions = visualEffect.conditions;
+			EbsEffect effect = effectIterator.next();
+			boolean isLast = !effectIterator.hasNext();
+			int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(effect.durationMs, 0, 0);
+			int delayMs = 0; // potentially handy in the future to delay a full effect
+			ArrayList<EbsCondition> conditions = effect.conditions;
 
-			// schedule all the individual visual effects
-//			log.info("Scheduling visual effects after: "+ totalDelayMs +", at: "+ Instant.now().toEpochMilli());
+			// schedule all the individual effects
+//			log.info("Scheduling effects after: "+ totalDelayMs +", at: "+ Instant.now().toEpochMilli());
 			manager.getPlugin().scheduleOnClientThread(() -> {
 
-				// guard: check if all the conditions for this visual effect are met
+				// guard: check if all the conditions for this effect are met
 				if (!verifyConditions(conditions, spawnedObject))
 				{
 //					log.info("CANCELLED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
@@ -834,27 +796,35 @@ public class MarketplaceProduct
 //				log.info("TRIGGERED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
 				triggerModelAnimation(
 					spawnedObject,
-					visualEffect.modelAnimation,
+					effect.modelAnimation,
 					delayMs,
 					forceModelAnimation,
 					isLast ? resetModelAnimationHandler : null
 				);
-				triggerPlayerGraphic(visualEffect.playerGraphic, delayMs);
-				triggerPlayerAnimation(visualEffect.playerAnimation, delayMs);
-				triggerInterfaceWidgets(visualEffect.interfaceWidgets, delayMs);
-				triggerMenuOptions(visualEffect.menuOptions, delayMs);
-				triggerSoundEffect(visualEffect.soundEffect, delayMs);
-				triggerNotifications(visualEffect.notifications, delayMs, delayMs + durationMs);
+				triggerPlayerGraphic(effect.playerGraphic, delayMs);
+				triggerPlayerAnimation(effect.playerAnimation, delayMs);
+				triggerPlayerEquipment(effect.playerEquipment, delayMs);
+				triggerInterfaceWidgets(effect.interfaceWidgets, delayMs);
+				triggerMenuOptions(effect.menuOptions, delayMs);
+				triggerSoundEffect(effect.soundEffect, delayMs);
+				triggerNotifications(effect.notifications, delayMs, delayMs + durationMs);
 			}, totalDelayMs);
 
 			totalDelayMs += durationMs;
 		}
 	}
 
-	public void triggerVisualEffects(ArrayList<EbsVisualEffect> visualEffects)
+	public void triggerEffectsOptions(ArrayList<ArrayList<EbsEffect>> effectsOptions)
 	{
-		triggerVisualEffects(
-			visualEffects,
+		// trigger the animations on this single spawned object
+		ArrayList<EbsEffect> startEffects = MarketplaceRandomizers.getRandomEntryFromList(effectsOptions);
+		triggerEffects(startEffects);
+	}
+
+	public void triggerEffects(ArrayList<EbsEffect> effects)
+	{
+		triggerEffects(
+			effects,
 			0,
 			null,
 			false,
@@ -995,7 +965,7 @@ public class MarketplaceProduct
 		return true;
 	}
 
-	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetVisualEffectHandler resetAnimationHandler)
+	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetEffectHandler resetAnimationHandler)
 	{
 		// guard: make sure the spawned object and animation are valid
 		if (spawnedObject == null || animation == null)
@@ -1022,27 +992,44 @@ public class MarketplaceProduct
 		spawnedObject.lockAnimationUntil(animation.durationMs);
 
 		// perform the actual animation along with a possible reset after it is done
-		handleVisualEffectFrame(animation, baseDelayMs, (startDelayMs) -> {
+		handleEffectFrame(animation, baseDelayMs, (startDelayMs) -> {
 			setAnimation(spawnedObject, animation.id, startDelayMs);
 		}, resetAnimationHandler);
 	}
 
-	private void triggerPlayerGraphic(EbsGraphicFrame graphic, int baseDelayMs)
+	private void triggerPlayerGraphic(EbsGraphicFrame graphicFrame, int delayMs)
 	{
 		AnimationManager animationManager = manager.getAnimationManager();
 
-		handleVisualEffectFrame(graphic, baseDelayMs, (startDelayMs) -> {
-			animationManager.setPlayerGraphic(graphic.id, graphic.height, startDelayMs, graphic.durationMs);
+		handleEffectFrame(graphicFrame, delayMs, (startDelayMs) -> {
+			animationManager.setPlayerGraphic(graphicFrame.id, graphicFrame.height, startDelayMs, graphicFrame.durationMs);
 		}, animationManager::resetPlayerGraphic);
 	}
 
-	private void triggerPlayerAnimation(EbsAnimationFrame animation, int baseDelayMs)
+	private void triggerPlayerAnimation(EbsAnimationFrame animationFrame, int delayMs)
 	{
 		AnimationManager animationManager = manager.getAnimationManager();
 
-		handleVisualEffectFrame(animation, baseDelayMs, (startDelayMs) -> {
-			animationManager.setPlayerAnimation(animation.id, startDelayMs, animation.durationMs);
+		handleEffectFrame(animationFrame, delayMs, (startDelayMs) -> {
+			animationManager.setPlayerAnimation(animationFrame.id, startDelayMs, animationFrame.durationMs);
 		}, animationManager::resetPlayerAnimation);
+	}
+
+	private void triggerPlayerEquipment(EbsEquipmentFrame equipmentFrame, int baseDelayMs)
+	{
+		TransmogManager transmogManager = manager.getTransmogManager();
+
+		// guard: make sure the frame is valid
+		if (equipmentFrame == null)
+		{
+			return;
+		}
+
+		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(equipmentFrame.delayMs, 0, 0);
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			transmogManager.addEffect(this, equipmentFrame);
+		}, baseDelayMs + delayMs);
 	}
 
 	private void triggerInterfaceWidgets(ArrayList<EbsInterfaceWidgetFrame> interfaceWidgetFrames, int delayMs)
@@ -1055,6 +1042,7 @@ public class MarketplaceProduct
 			return;
 		}
 
+		// TODO: allow delayMs of the effect frame to be included!
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			Iterator<EbsInterfaceWidgetFrame> interfaceWidgetFrameIterator = interfaceWidgetFrames.iterator();
 
@@ -1076,6 +1064,7 @@ public class MarketplaceProduct
 			return;
 		}
 
+		// TODO: allow delayMs of the effect frame to be included!
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			Iterator<EbsMenuOptionFrame> menuOptionFrameIterator = menuOptionFrames.iterator();
 
@@ -1129,57 +1118,57 @@ public class MarketplaceProduct
 		}, endDelayMs);
 	}
 
-	private void handleVisualEffectFrame(EbsVisualEffectFrame visualEffect, int baseDelayMs, StartVisualEffectHandler startHandler, ResetVisualEffectHandler resetHandler)
+	private void handleEffectFrame(EbsEffectFrame effect, int baseDelayMs, StartEffectHandler startHandler, ResetEffectHandler resetHandler)
 	{
 
 		// guard: make sure the animation is valid
-		if (visualEffect == null)
+		if (effect == null)
 		{
 			return;
 		}
 
-		int visualEffectId = visualEffect.id;
+		int effectId = effect.id;
 
-		// guard: make sure there is an visual effect ID
-		if (visualEffectId < 0)
+		// guard: make sure there is an effect ID
+		if (effectId < 0)
 		{
 			return;
 		}
 
-		EbsRandomRange delayMsRange = visualEffect.delayMs;
+		EbsRandomRange delayMsRange = effect.delayMs;
 		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(delayMsRange, 0, 0);
-		int durationMs = visualEffect.durationMs;
+		int durationMs = effect.durationMs;
 		int startDelayMs = baseDelayMs + delayMs;
 
-		// schedule to start the visual effect
+		// schedule to start the effect
 		startHandler.execute(startDelayMs);
 
-		// only reset visual effects when there is a max duration
+		// only reset effects when there is a max duration
 		if (durationMs >= 0) {
 			int resetDelayMs = startDelayMs + durationMs;
 			resetHandler.execute(resetDelayMs);
 		}
 	}
 
-	private interface StartVisualEffectHandler {
+	private interface StartEffectHandler {
 		public void execute(int delayMs);
 	}
 
-	private interface ResetVisualEffectHandler {
+	private interface ResetEffectHandler {
 		public void execute(int delayMs);
 	}
 
 	/**
-	 * Schedule showing of a spawned object where it will trigger the show visual effects if available
+	 * Schedule showing of a spawned object where it will trigger the show effects if available
 	 */
 	private void showSpawnedObject(SpawnedObject spawnedObject, long delayMs)
 	{
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
-			ArrayList<EbsVisualEffect> showVisualEffects = spawnedObject.getSpawn().showVisualEffects;
+			ArrayList<EbsEffect> showEffects = spawnedObject.getSpawn().showEffects;
 
-			// trigger visual effects and graphics on show
-			triggerVisualEffects(
-				showVisualEffects,
+			// trigger effects and graphics on show
+			triggerEffects(
+				showEffects,
 				0,
 				spawnedObject,
 				true,
@@ -1191,23 +1180,23 @@ public class MarketplaceProduct
 	}
 
 	/**
-	 * Schedule hiding of a spawned object where it will trigger the hide visual effects if available
+	 * Schedule hiding of a spawned object where it will trigger the hide effects if available
 	 */
 	private void hideSpawnedObject(SpawnedObject spawnedObject, long delayMs)
 	{
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
-			ArrayList<EbsVisualEffect> hideVisualEffects = spawnedObject.getSpawn().hideVisualEffects;
+			ArrayList<EbsEffect> hideEffects = spawnedObject.getSpawn().hideEffects;
 
 			// guard: check if the hide animation is set
-			if (hideVisualEffects == null)
+			if (hideEffects == null)
 			{
 				spawnedObject.hide();
 				return;
 			}
 
-			// trigger the visual effects and at the end hide the object
-			triggerVisualEffects(
-				hideVisualEffects,
+			// trigger the effects and at the end hide the object
+			triggerEffects(
+				hideEffects,
 				0,
 				spawnedObject,
 				true,
@@ -1238,7 +1227,7 @@ public class MarketplaceProduct
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
 
 			// guard: check if this product has been disabled in the mean time after this was scheduled
-			// this means we will not trigger the reset animation, because it can interrupt the hide visual effects.
+			// this means we will not trigger the reset animation, because it can interrupt the hide effects.
 			// it will not do this when paused, because with paused objects we still want to reset the animation in the background.
 			if (!isActive && !isPaused)
 			{

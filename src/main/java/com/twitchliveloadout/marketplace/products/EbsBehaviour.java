@@ -3,12 +3,11 @@ package com.twitchliveloadout.marketplace.products;
 import java.util.ArrayList;
 
 public class EbsBehaviour {
-	public EbsMovementAnimations playerAnimations;
-	public EbsPlayerEquipment playerEquipment;
-	public EbsInterval visualEffectsInterval;
-	public ArrayList<ArrayList<EbsVisualEffect>> visualEffectsOptions;
+	public ArrayList<ArrayList<EbsEffect>> startEffectsOptions;
+	public ArrayList<ArrayList<EbsEffect>> stopEffectsOptions;
+	public EbsInterval effectsInterval;
+	public ArrayList<ArrayList<EbsEffect>> effectsOptions;
+	public ArrayList<EbsSpawnOption> startSpawnOptions;
 	public EbsInterval spawnInterval;
 	public ArrayList<EbsSpawnOption> spawnOptions;
-	public ArrayList<EbsSpawnOption> initialSpawnOptions;
-	public ArrayList<EbsNotification> notifications;
 }

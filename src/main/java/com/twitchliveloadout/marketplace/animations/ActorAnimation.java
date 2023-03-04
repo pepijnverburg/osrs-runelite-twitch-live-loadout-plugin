@@ -37,6 +37,10 @@ public enum ActorAnimation
 
 	public int getAnimation(Actor actor)
 	{
+		if (actor == null) {
+			return -1;
+		}
+
 		return animationGetter.getAnimation(actor);
 	}
 

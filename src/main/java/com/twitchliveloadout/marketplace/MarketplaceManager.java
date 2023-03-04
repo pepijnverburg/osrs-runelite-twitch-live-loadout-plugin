@@ -27,6 +27,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.PlayerChanged;
 import net.runelite.client.chat.ChatMessageManager;
+import net.runelite.client.game.ItemManager;
 import okhttp3.Response;
 
 import java.time.Instant;
@@ -113,7 +114,7 @@ public class MarketplaceManager {
 	 */
 	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap<>();
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager)
 	{
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
@@ -122,7 +123,7 @@ public class MarketplaceManager {
 		this.config = config;
 		this.spawnManager = new SpawnManager(plugin, client);
 		this.animationManager = new AnimationManager(plugin, client);
-		this.transmogManager = new TransmogManager();
+		this.transmogManager = new TransmogManager(plugin, client, itemManager);
 		this.notificationManager = new NotificationManager(plugin, chatMessageManager, client);
 		this.widgetManager = new WidgetManager(plugin, client);
 		this.menuManager = new MenuManager();
@@ -541,16 +542,8 @@ public class MarketplaceManager {
 			return;
 		}
 
-		// guard: only update the local player
-		if (playerChanged.getPlayer() != client.getLocalPlayer())
-		{
-			return;
-		}
-
-		transmogManager.recordOriginalEquipment();
-		transmogManager.updateEffectEquipment();
-		animationManager.recordOriginalMovementAnimations();
-		animationManager.setCurrentMovementAnimations();
+		transmogManager.onPlayerChanged(playerChanged);
+		animationManager.onPlayerChanged(playerChanged);
 	}
 
 	/**
@@ -578,7 +571,8 @@ public class MarketplaceManager {
 		notificationManager.onGameTick();
 		menuManager.onGameTick();
 		widgetManager.onGameTick();
-		widgetManager.ensureCoveringOverlays();
+		transmogManager.onGameTick();
+		animationManager.onGameTick();
 	}
 
 	/**
@@ -685,8 +679,8 @@ public class MarketplaceManager {
 	 */
 	public void shutDown()
 	{
-		animationManager.revertAnimations();
-		transmogManager.revertEquipment();
+		animationManager.forceCleanAllEffects();
+		transmogManager.forceCleanAllEffects();
 		menuManager.forceCleanAllEffects();
 		widgetManager.forceCleanAllEffects();
 		widgetManager.hideCoveringOverlays();

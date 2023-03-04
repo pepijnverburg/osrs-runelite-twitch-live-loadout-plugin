@@ -1,6 +1,6 @@
-package com.twitchliveloadout.marketplace.interfaces;
+package com.twitchliveloadout.marketplace;
 
-import com.twitchliveloadout.marketplace.products.EbsInterfaceFrame;
+import com.twitchliveloadout.marketplace.products.EbsEffectFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.extern.slf4j.Slf4j;
 
@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
-public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
+public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame> {
 
 	/**
 	 * The maximum amount of effects allowed to be active at once.
@@ -21,14 +21,14 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 	 * marketplace products because they can also originate from periodic effects, where the marketplace products
 	 * are unaware of and have no way of tracking.
 	 */
-	protected final CopyOnWriteArrayList<InterfaceEffect<FrameType>> effects = new CopyOnWriteArrayList<>();
+	protected final CopyOnWriteArrayList<MarketplaceEffect<FrameType>> effects = new CopyOnWriteArrayList<>();
 
-	public InterfaceManager(int maxEffectAmount)
+	public MarketplaceEffectManager(int maxEffectAmount)
 	{
 		this.maxEffectAmount = maxEffectAmount;
 	}
 
-	public void onGameTick()
+	public void updateEffects()
 	{
 		cleanInactiveEffects();
 		applyActiveEffects();
@@ -53,20 +53,19 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 		Integer durationMs = frame.durationMs;
 		Instant expiresAt = Instant.now().plusMillis(product.getExpiresInMs());
 
+		// if a valid duration can be found we override the duration of the product
 		if (durationMs != null && durationMs >= 0)
 		{
 			expiresAt = Instant.now().plusMillis(durationMs);
 		}
 
-//		log.info("Adding new interface effect from EBS product ID: "+ product.getEbsProduct().id);
-
 		// register the new effect
-		InterfaceEffect<FrameType> effect = new InterfaceEffect<FrameType>(product, frame, expiresAt);
+		MarketplaceEffect<FrameType> effect = new MarketplaceEffect<FrameType>(product, frame, expiresAt);
 		effects.add(effect);
 		onAddEffect(effect);
 	}
 
-	private void cleanInactiveEffects()
+	protected void cleanInactiveEffects()
 	{
 		cleanEffects(false);
 	}
@@ -76,13 +75,13 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 		cleanEffects(true);
 	}
 
-	public void cleanEffects(boolean forceStop)
+	private void cleanEffects(boolean forceStop)
 	{
-		Iterator<InterfaceEffect<FrameType>> effectIterator = effects.iterator();
+		Iterator<MarketplaceEffect<FrameType>> effectIterator = effects.iterator();
 
 		while (effectIterator.hasNext())
 		{
-			InterfaceEffect<FrameType> effect = effectIterator.next();
+			MarketplaceEffect<FrameType> effect = effectIterator.next();
 			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
 			boolean isExpired = effect.isExpired() || marketplaceProduct.isExpired();
 			boolean isActive = marketplaceProduct.isActive();
@@ -114,13 +113,13 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 		}
 	}
 
-	private void applyActiveEffects()
+	protected void applyActiveEffects()
 	{
-		Iterator<InterfaceEffect<FrameType>> effectIterator = effects.iterator();
+		Iterator<MarketplaceEffect<FrameType>> effectIterator = effects.iterator();
 
 		while (effectIterator.hasNext())
 		{
-			InterfaceEffect<FrameType> effect = effectIterator.next();
+			MarketplaceEffect<FrameType> effect = effectIterator.next();
 			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
 			boolean isActive = marketplaceProduct.isActive();
 
@@ -135,8 +134,8 @@ public abstract class InterfaceManager<FrameType extends EbsInterfaceFrame> {
 		}
 	}
 
-	protected abstract void onAddEffect(InterfaceEffect<FrameType> effect);
-	protected abstract void onDeleteEffect(InterfaceEffect<FrameType> effect);
-	protected abstract void restoreEffect(InterfaceEffect<FrameType> effect);
-	protected abstract void applyEffect(InterfaceEffect<FrameType> effect);
+	protected abstract void onAddEffect(MarketplaceEffect<FrameType> effect);
+	protected abstract void onDeleteEffect(MarketplaceEffect<FrameType> effect);
+	protected abstract void restoreEffect(MarketplaceEffect<FrameType> effect);
+	protected abstract void applyEffect(MarketplaceEffect<FrameType> effect);
 }

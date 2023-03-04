@@ -1,6 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
-public class EbsInterfaceWidgetFrame extends EbsInterfaceFrame {
+public class EbsInterfaceWidgetFrame extends EbsEffectFrame {
 	public String effectType;
 	public Integer parentId = -1;
 	public Integer childId = -1;

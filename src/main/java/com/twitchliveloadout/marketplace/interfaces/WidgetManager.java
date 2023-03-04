@@ -2,6 +2,8 @@ package com.twitchliveloadout.marketplace.interfaces;
 
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.LambdaIterator;
+import com.twitchliveloadout.marketplace.MarketplaceEffect;
+import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.products.EbsInterfaceWidgetFrame;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -14,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 @Slf4j
-public class WidgetManager extends InterfaceManager {
+public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFrame> {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
 
@@ -23,7 +25,6 @@ public class WidgetManager extends InterfaceManager {
 	 * This is a hashmap to support multiple client settings such as resized and fixed, which require different widgets
 	 */
 	private final ConcurrentHashMap<Widget, Widget> coveringOverlays = new ConcurrentHashMap<>();
-	private boolean isResized = false;
 
 	/**
 	 * Separate, centralized store of the original widget states because it is possible that multiple active products
@@ -42,6 +43,12 @@ public class WidgetManager extends InterfaceManager {
 		this.client = client;
 	}
 
+	public void onGameTick()
+	{
+		updateEffects();
+		ensureCoveringOverlays();
+	}
+
 	public void hideCoveringOverlays()
 	{
 		LambdaIterator.handleAllValues(coveringOverlays, (coveringOverlay) -> {
@@ -49,10 +56,10 @@ public class WidgetManager extends InterfaceManager {
 		});
 	}
 
-	public void ensureCoveringOverlays()
+	private void ensureCoveringOverlays()
 	{
 		plugin.runOnClientThread(() -> {
-			isResized = client.isResized();
+			boolean isResized = client.isResized();
 
 			if (isResized) {
 				ensureCoveringOverlay(CoveringOverlayType.RESIZED_CLASSIC);
@@ -104,9 +111,9 @@ public class WidgetManager extends InterfaceManager {
 	}
 
 	@Override
-	protected void applyEffect(InterfaceEffect effect)
+	protected void applyEffect(MarketplaceEffect<EbsInterfaceWidgetFrame> effect)
 	{
-		EbsInterfaceWidgetFrame widgetFrame = (EbsInterfaceWidgetFrame) effect.getFrame();
+		EbsInterfaceWidgetFrame widgetFrame = effect.getFrame();
 		ArrayList<Widget> widgets = getWidgets(widgetFrame);
 
 		// guard: make sure this widget is known and valid
@@ -198,9 +205,9 @@ public class WidgetManager extends InterfaceManager {
 	}
 
 	@Override
-	protected void restoreEffect(InterfaceEffect effect)
+	protected void restoreEffect(MarketplaceEffect<EbsInterfaceWidgetFrame> effect)
 	{
-		EbsInterfaceWidgetFrame widgetFrame = (EbsInterfaceWidgetFrame) effect.getFrame();
+		EbsInterfaceWidgetFrame widgetFrame = effect.getFrame();
 		ArrayList<Widget> widgets = getWidgets(widgetFrame);
 
 		LambdaIterator.handleAll(widgets, (widget) -> {
@@ -294,13 +301,13 @@ public class WidgetManager extends InterfaceManager {
 	}
 
 	@Override
-	protected void onAddEffect(InterfaceEffect effect)
+	protected void onAddEffect(MarketplaceEffect<EbsInterfaceWidgetFrame> effect)
 	{
 		// empty
 	}
 
 	@Override
-	protected void onDeleteEffect(InterfaceEffect effect)
+	protected void onDeleteEffect(MarketplaceEffect<EbsInterfaceWidgetFrame> effect)
 	{
 		// empty
 	}

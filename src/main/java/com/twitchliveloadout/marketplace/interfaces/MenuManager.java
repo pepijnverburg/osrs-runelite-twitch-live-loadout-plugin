@@ -1,7 +1,7 @@
 package com.twitchliveloadout.marketplace.interfaces;
 
-import com.twitchliveloadout.marketplace.MarketplaceManager;
-import com.twitchliveloadout.marketplace.notifications.NotificationManager;
+import com.twitchliveloadout.marketplace.MarketplaceEffect;
+import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.products.EbsMenuOptionFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.extern.slf4j.Slf4j;
@@ -13,22 +13,27 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.DISABLE_MEN
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.MENU_EFFECT_MAX_SIZE;
 
 @Slf4j
-public class MenuManager extends InterfaceManager {
+public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 
 	public MenuManager()
 	{
 		super(MENU_EFFECT_MAX_SIZE);
 	}
 
+	public void onGameTick()
+	{
+		updateEffects();
+	}
+
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
 		String clickedOption = event.getMenuOption();
-		Iterator<InterfaceEffect<EbsMenuOptionFrame>> effectIterator = effects.iterator();
+		Iterator<MarketplaceEffect<EbsMenuOptionFrame>> effectIterator = effects.iterator();
 
 		// check if the event should be disabled
 		while (effectIterator.hasNext())
 		{
-			InterfaceEffect<EbsMenuOptionFrame> effect = effectIterator.next();
+			MarketplaceEffect<EbsMenuOptionFrame> effect = effectIterator.next();
 			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
 			EbsMenuOptionFrame menuOptionFrame = effect.getFrame();
 
@@ -52,32 +57,32 @@ public class MenuManager extends InterfaceManager {
 				if (clickedOption.toLowerCase().startsWith(option.toLowerCase()))
 				{
 					event.consume();
-					marketplaceProduct.triggerVisualEffects(menuOptionFrame.onClickVisualEffects);
+					marketplaceProduct.triggerEffects(menuOptionFrame.onClickEffects);
 				}
 			}
 		}
 	}
 
 	@Override
-	protected void onAddEffect(InterfaceEffect effect)
+	protected void onAddEffect(MarketplaceEffect<EbsMenuOptionFrame> effect)
 	{
 		// empty
 	}
 
 	@Override
-	protected void onDeleteEffect(InterfaceEffect effect)
+	protected void onDeleteEffect(MarketplaceEffect<EbsMenuOptionFrame> effect)
 	{
 		// empty
 	}
 
 	@Override
-	protected void restoreEffect(InterfaceEffect effect)
+	protected void restoreEffect(MarketplaceEffect<EbsMenuOptionFrame> effect)
 	{
 		// empty
 	}
 
 	@Override
-	protected void applyEffect(InterfaceEffect effect)
+	protected void applyEffect(MarketplaceEffect<EbsMenuOptionFrame> effect)
 	{
 		// empty
 	}

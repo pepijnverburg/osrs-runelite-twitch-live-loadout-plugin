@@ -46,6 +46,9 @@ public class MarketplaceConstants {
 	public static final String ALTER_INTERFACE_WIDGET_TYPE = "alter";
 	public static final String OVERLAY_INTERFACE_WIDGET_TYPE = "overlay";
 
+	public static final int MOVEMENT_EFFECT_MAX_SIZE = 100;
+	public static final int TRANSMOG_EFFECT_MAX_SIZE = 100;
+
 	public static final int CHAT_NOTIFICATION_LOCKED_MS = 1 * 1000;
 	public static final int OVERHEAD_NOTIFICATION_LOCKED_MS = 3 * 1000;
 	public static final int OVERHEAD_NOTIFICATION_DURATION_MS = OVERHEAD_NOTIFICATION_LOCKED_MS - 1 * 1000;

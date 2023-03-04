@@ -1,5 +1,5 @@
 package com.twitchliveloadout.marketplace.products;
 
-public class EbsAnimationFrame extends EbsVisualEffectFrame {
+public class EbsAnimationFrame extends EbsEffectFrame {
 
 }

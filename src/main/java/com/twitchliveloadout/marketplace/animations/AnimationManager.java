@@ -1,51 +1,68 @@
 package com.twitchliveloadout.marketplace.animations;
 
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.MarketplaceEffect;
+import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
-import com.twitchliveloadout.marketplace.products.EbsMovementAnimations;
-import lombok.Getter;
-import lombok.Setter;
+import com.twitchliveloadout.marketplace.products.EbsMovementFrame;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
+import net.runelite.api.events.PlayerChanged;
 
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.MOVEMENT_EFFECT_MAX_SIZE;
+
 @Slf4j
-public class AnimationManager {
+public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame> {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
 
-	@Setter
-	@Getter
-	private EbsMovementAnimations currentMovementAnimations;
-
-	private final ConcurrentHashMap<ActorAnimation, Integer> originalPlayerMovementAnimations = new ConcurrentHashMap<>();
-
+	private final ConcurrentHashMap<ActorAnimation, Integer> originalMovementAnimations = new ConcurrentHashMap<>();
 	private Instant animationLockedUntil;
 	private Instant graphicLockedUntil;
 
 	public AnimationManager(TwitchLiveLoadoutPlugin plugin, Client client)
 	{
+		super(MOVEMENT_EFFECT_MAX_SIZE);
+
 		this.plugin = plugin;
 		this.client = client;
 	}
 
-	public void setCurrentMovementAnimations()
+	public void onGameTick()
 	{
-		Player player = client.getLocalPlayer();
+		cleanInactiveEffects();
+	}
 
-		// guard: when no effect is active skip
-		if (currentMovementAnimations == null)
+	public void onPlayerChanged(PlayerChanged playerChanged)
+	{
+		Player player = playerChanged.getPlayer();
+		Player localPlayer = client.getLocalPlayer();
+		boolean isLocalPlayer = (localPlayer == player);
+
+		// guard: for now we only support local players
+		if (!isLocalPlayer)
 		{
 			return;
 		}
 
+		recordOriginalMovementAnimations();
+		updateEffects();
+	}
+
+	@Override
+	protected void applyEffect(MarketplaceEffect<EbsMovementFrame> effect)
+	{
+		Player player = client.getLocalPlayer();
+		EbsMovementFrame movementFrame = effect.getFrame();
+
 		plugin.runOnClientThread(() -> {
 			for (ActorAnimation animation : ActorAnimation.values())
 			{
-				final Integer animationId = getCurrentMovementAnimation(animation);
+				final Integer animationId = getCurrentMovementAnimation(animation, movementFrame);
 
 				// fallback to the original when no animation is found
 				if (animationId == null || animationId < 0)
@@ -58,14 +75,39 @@ public class AnimationManager {
 		});
 	}
 
-	public void recordOriginalMovementAnimations()
+	@Override
+	protected void restoreEffect(MarketplaceEffect<EbsMovementFrame> effect)
 	{
-		originalPlayerMovementAnimations.clear();
 		Player player = client.getLocalPlayer();
 
+		// update to originals
+		plugin.runOnClientThread(() -> {
+			for (ActorAnimation animation : ActorAnimation.values())
+			{
+
+				// guard: make sure the animation is known
+				if (!originalMovementAnimations.containsKey(animation))
+				{
+					continue;
+				}
+
+				int originalAnimationId = originalMovementAnimations.get(animation);
+				animation.setAnimation(player, originalAnimationId);
+			}
+		});
+
+		// after the original is restored there might be another one right up in the effect queue
+		applyActiveEffects();
+	}
+
+	private void recordOriginalMovementAnimations()
+	{
+		Player player = client.getLocalPlayer();
+
+		originalMovementAnimations.clear();
 		for (ActorAnimation animation : ActorAnimation.values())
 		{
-			originalPlayerMovementAnimations.put(animation, animation.getAnimation(player));
+			originalMovementAnimations.put(animation, animation.getAnimation(player));
 		}
 	}
 
@@ -154,46 +196,12 @@ public class AnimationManager {
 		playerHandler.execute(player);
 	}
 
-	public void revertAnimations()
-	{
-		Player player = client.getLocalPlayer();
-
-		// reset current animations
-		currentMovementAnimations = null;
-
-		// update to originals
-		plugin.runOnClientThread(() -> {
-			for (ActorAnimation animation : ActorAnimation.values())
-			{
-
-				// guard: make sure the animation is known
-				if (!originalPlayerMovementAnimations.containsKey(animation))
-				{
-					continue;
-				}
-
-				int originalAnimationId = originalPlayerMovementAnimations.get(animation);
-				animation.setAnimation(player, originalAnimationId);
-			}
-		});
-	}
-
-	public boolean isCurrentMovementAnimations(EbsMovementAnimations movementAnimations)
-	{
-		if (movementAnimations == null)
-		{
-			return false;
-		}
-
-		return movementAnimations.equals(currentMovementAnimations);
-	}
-
-	public int getCurrentMovementAnimation(ActorAnimation animation)
+	public int getCurrentMovementAnimation(ActorAnimation animation, EbsMovementFrame movementFrame)
 	{
 		int animationId = -1;
 		int fallbackAnimationId = -1;
 
-		if (currentMovementAnimations == null)
+		if (movementFrame == null)
 		{
 			return animationId;
 		}
@@ -201,34 +209,34 @@ public class AnimationManager {
 		switch(animation)
 		{
 			case RUN:
-				animationId = currentMovementAnimations.run;
-				fallbackAnimationId = currentMovementAnimations.walk;
+				animationId = movementFrame.run;
+				fallbackAnimationId = movementFrame.walk;
 			 	break;
 			case IDLE:
-				animationId = currentMovementAnimations.idle;
+				animationId = movementFrame.idle;
 				break;
 			case IDLE_ROTATE_LEFT:
-				animationId = currentMovementAnimations.idleRotateLeft;
-				fallbackAnimationId = currentMovementAnimations.idle;
+				animationId = movementFrame.idleRotateLeft;
+				fallbackAnimationId = movementFrame.idle;
 				break;
 			case IDLE_ROTATE_RIGHT:
-				animationId = currentMovementAnimations.idleRotateRight;
-				fallbackAnimationId = currentMovementAnimations.idle;
+				animationId = movementFrame.idleRotateRight;
+				fallbackAnimationId = movementFrame.idle;
 				break;
 			case WALK:
-				animationId = currentMovementAnimations.walk;
+				animationId = movementFrame.walk;
 				break;
 			case WALK_ROTATE_180:
-				animationId = currentMovementAnimations.walkRotate180;
-				fallbackAnimationId = currentMovementAnimations.walk;
+				animationId = movementFrame.walkRotate180;
+				fallbackAnimationId = movementFrame.walk;
 				break;
 			case WALK_ROTATE_LEFT:
-				animationId = currentMovementAnimations.walkRotateLeft;
-				fallbackAnimationId = currentMovementAnimations.walk;
+				animationId = movementFrame.walkRotateLeft;
+				fallbackAnimationId = movementFrame.walk;
 				break;
 			case WALK_ROTATE_RIGHT:
-				animationId = currentMovementAnimations.walkRotateRight;
-				fallbackAnimationId = currentMovementAnimations.walk;
+				animationId = movementFrame.walkRotateRight;
+				fallbackAnimationId = movementFrame.walk;
 				break;
 		}
 
@@ -239,5 +247,18 @@ public class AnimationManager {
 		}
 
 		return animationId;
+	}
+
+	@Override
+	protected void onAddEffect(MarketplaceEffect<EbsMovementFrame> effect)
+	{
+		// update immediately when effect is added
+		applyActiveEffects();
+	}
+
+	@Override
+	protected void onDeleteEffect(MarketplaceEffect<EbsMovementFrame> effect)
+	{
+		// empty
 	}
 }

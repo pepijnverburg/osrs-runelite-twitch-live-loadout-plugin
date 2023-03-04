@@ -49,10 +49,10 @@ public class SpawnedObject {
 	private Instant expiredAt;
 
 	@Getter
-	private int randomVisualEffectCounter = 0;
+	private int randomEffectCounter = 0;
 
 	@Getter
-	private Instant lastRandomVisualEffectAt;
+	private Instant lastRandomEffectAt;
 
 	private double currentScale = -1;
 	private double currentRotationDegrees = 0;
@@ -215,11 +215,11 @@ public class SpawnedObject {
 		setAnimation(idleAnimationId, true);
 	}
 
-	public EbsMovementAnimations getMovementAnimations()
+	public EbsMovementFrame getMovementAnimations()
 	{
 		if (spawn.movementAnimations == null)
 		{
-			return new EbsMovementAnimations();
+			return new EbsMovementFrame();
 		}
 
 		return spawn.movementAnimations;
@@ -295,15 +295,15 @@ public class SpawnedObject {
 		object.setLocation(localPoint, plane);
 	}
 
-	public void upateLastRandomVisualEffectAt()
+	public void upateLastRandomEffectAt()
 	{
-		lastRandomVisualEffectAt = Instant.now();
+		lastRandomEffectAt = Instant.now();
 	}
 
-	public void registerRandomVisualEffect()
+	public void registerRandomEffect()
 	{
-		randomVisualEffectCounter += 1;
-		upateLastRandomVisualEffectAt();
+		randomEffectCounter += 1;
+		upateLastRandomEffectAt();
 	}
 
 	public boolean isExpired()

@@ -42,6 +42,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
+import net.runelite.api.kit.KitType;
 import net.runelite.api.vars.AccountType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -237,7 +238,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
-			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager);
+			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 			questManager = new QuestManager(this, twitchState, client);
