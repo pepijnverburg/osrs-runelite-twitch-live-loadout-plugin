@@ -58,7 +58,7 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 		registerOriginalEquipment(player);
 
 		// only after registering the original equipment we apply all the effects
-		updateEffects();
+		applyActiveEffects();
 	}
 
 	@Override

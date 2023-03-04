@@ -50,7 +50,7 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 		}
 
 		recordOriginalMovementAnimations();
-		updateEffects();
+		applyActiveEffects();
 	}
 
 	@Override

@@ -783,17 +783,17 @@ public class MarketplaceProduct
 			ArrayList<EbsCondition> conditions = effect.conditions;
 
 			// schedule all the individual effects
-//			log.info("Scheduling effects after: "+ totalDelayMs +", at: "+ Instant.now().toEpochMilli());
+//			log.info("SCHEDULE EFFECTS: "+ totalDelayMs +", at: "+ Instant.now().toEpochMilli());
 			manager.getPlugin().scheduleOnClientThread(() -> {
 
 				// guard: check if all the conditions for this effect are met
 				if (!verifyConditions(conditions, spawnedObject))
 				{
-//					log.info("CANCELLED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
+//					log.info("CANCELLED EFFECTS: "+ Instant.now().toEpochMilli());
 					return;
 				}
 
-//				log.info("TRIGGERED VISUAL EFFECTS: "+ Instant.now().toEpochMilli());
+//				log.info("TRIGGERED EFFECTS: "+ Instant.now().toEpochMilli());
 				triggerModelAnimation(
 					spawnedObject,
 					effect.modelAnimation,
@@ -804,6 +804,7 @@ public class MarketplaceProduct
 				triggerPlayerGraphic(effect.playerGraphic, delayMs);
 				triggerPlayerAnimation(effect.playerAnimation, delayMs);
 				triggerPlayerEquipment(effect.playerEquipment, delayMs);
+				triggerPlayerMovement(effect.playerMovement, delayMs);
 				triggerInterfaceWidgets(effect.interfaceWidgets, delayMs);
 				triggerMenuOptions(effect.menuOptions, delayMs);
 				triggerSoundEffect(effect.soundEffect, delayMs);
@@ -1029,6 +1030,23 @@ public class MarketplaceProduct
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			transmogManager.addEffect(this, equipmentFrame);
+		}, baseDelayMs + delayMs);
+	}
+
+	private void triggerPlayerMovement(EbsMovementFrame movementFrame, int baseDelayMs)
+	{
+		AnimationManager animationManager = manager.getAnimationManager();
+
+		// guard: make sure the frame is valid
+		if (movementFrame == null)
+		{
+			return;
+		}
+
+		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(movementFrame.delayMs, 0, 0);
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			animationManager.addEffect(this, movementFrame);
 		}, baseDelayMs + delayMs);
 	}
 
