@@ -492,7 +492,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to update the EBS products configured in Twitch.
 	 */
-	@Schedule(period = (IN_DEVELOPMENT ? 1 : 60), unit = ChronoUnit.SECONDS, asynchronous = true) // TODO: change BACK
+	@Schedule(period = (IN_DEVELOPMENT ? 1 : 60), unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void updateMarketplaceEbsProducts()
 	{
 		try {
@@ -759,6 +759,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			{
 				fightStateManager.onGameTick();
 			}
+
+			pluginPanel.onGameTick();
 		} catch (Exception exception) {
 			log.warn("Could not handle game tick event: ", exception);
 		}

@@ -49,6 +49,11 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 		add(mainPanel, BorderLayout.CENTER);
 	}
 
+	public void onGameTick()
+	{
+		marketplacePanel.onGameTick();
+	}
+
 	public void rebuild()
 	{
 		connectivityPanel.rebuild();
