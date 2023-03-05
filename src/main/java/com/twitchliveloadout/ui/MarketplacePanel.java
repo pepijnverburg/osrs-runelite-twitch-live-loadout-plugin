@@ -51,6 +51,7 @@ public class MarketplacePanel extends JPanel
 	private final CopyOnWriteArrayList<TwitchTransactionPanel> transactionPanels = new CopyOnWriteArrayList<>();
 
 	private final MarketplaceManager marketplaceManager;
+	private boolean rebuildRequested = false;
 
 	public MarketplacePanel(MarketplaceManager marketplaceManager)
 	{
@@ -149,8 +150,22 @@ public class MarketplacePanel extends JPanel
 		}
 	}
 
+	public void onGameTick()
+	{
+		if (rebuildRequested)
+		{
+			rebuild();
+		}
+	}
+
+	public void requestRebuild()
+	{
+		rebuildRequested = true;
+	}
+
 	public void rebuild()
 	{
+		rebuildRequested = false;
 		rebuildLayout();
 		updateTexts();
 		repaint();
