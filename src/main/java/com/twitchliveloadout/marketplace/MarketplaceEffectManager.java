@@ -51,12 +51,19 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 
 		// by default the expiry time is linked to the product, but can be overridden with a custom duration
 		Integer durationMs = frame.durationMs;
-		Instant expiresAt = Instant.now().plusMillis(product.getExpiresInMs());
+		Double durationPercentage = frame.durationPercentage;
+		long productExpiresInMs = product.getExpiresInMs();
+		Instant expiresAt = Instant.now().plusMillis(productExpiresInMs);
 
-		// if a valid duration can be found we override the duration of the product
+		// override duration if there is a custom duration
 		if (durationMs != null && durationMs >= 0)
 		{
 			expiresAt = Instant.now().plusMillis(durationMs);
+		}
+		else if (durationPercentage != null && durationPercentage >= 0)
+		{
+			long durationMsFromPercentage = (long) (((double) productExpiresInMs) * durationPercentage);
+			expiresAt = Instant.now().plusMillis(durationMsFromPercentage);
 		}
 
 		// register the new effect
