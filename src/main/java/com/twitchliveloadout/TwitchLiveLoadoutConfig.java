@@ -26,6 +26,7 @@ package com.twitchliveloadout;
 
 import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.items.ItemStateManager;
+import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.twitch.TwitchThemeEntry;
 import net.runelite.client.config.*;
 
@@ -553,6 +554,70 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default int marketplaceMaxActiveProducts()
 	{
 		return 25;
+	}
+
+	@Range(
+			min = 1,
+			max = MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY
+	)
+	@ConfigItem(
+			keyName = "marketplaceTransactionHistoryAmount",
+			name = "Transaction history amount",
+			description = "How many transactions are shown in the 'recent donations' panel.",
+			position = 14,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default int marketplaceTransactionHistoryAmount()
+	{
+		return MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY;
+	}
+
+	@Range(
+			min = 1,
+			max = 10
+	)
+	@ConfigItem(
+			keyName = "marketplaceOverheadTextDurationS",
+			name = "Overhead text duration (seconds)",
+			description = "How long overhead notifications, such as thank you's are shown above the player.",
+			position = 14,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default int marketplaceOverheadTextDurationS()
+	{
+		return 2;
+	}
+
+	@ConfigItem(
+			keyName = "marketplaceDefaultDonationMessage",
+			name = "Default donation message",
+			description = "Message shown when random event enabled notifications. Use '{viewerName}', '{currencyAmount}' and '{currencyType}' to replace with values from the transaction.",
+			position = 14,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default String marketplaceDefaultDonationMessage()
+	{
+		return "Thank you {viewerName} for donating {currencyAmount} {currencyType}!";
+	}
+
+	@Range(
+			min = 0,
+			max = 60 * 30 // half hour max?
+	)
+	@ConfigItem(
+			keyName = "marketplaceSharedCooldownS",
+			name = "Shared cooldown (seconds)",
+			description = "Cooldown time shared between all random events. This works together with the cooldown time per random event configured in Twitch.",
+			position = 14,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default int marketplaceSharedCooldownS()
+	{
+		return 0;
 	}
 
 	@ConfigSection(
