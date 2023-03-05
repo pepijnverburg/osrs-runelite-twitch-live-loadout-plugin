@@ -23,7 +23,6 @@ import com.twitchliveloadout.twitch.TwitchStateEntry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.PlayerChanged;
@@ -115,6 +114,7 @@ public class MarketplaceManager {
 	 * transactions made at the same time. This lookup also informs the viewers which products are in cooldown.
 	 */
 	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap<>();
+	private Instant sharedCooldownUntil;
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager)
 	{
@@ -353,23 +353,31 @@ public class MarketplaceManager {
 			return;
 		}
 
+		Instant now = Instant.now();
 		String streamerProductId = streamerProduct.id;
-		Integer cooldownSeconds = streamerProduct.cooldown;
+		Integer productCooldownSeconds = streamerProduct.cooldown;
+		Integer sharedCooldownSeconds = config.marketplaceSharedCooldownS();
 
-		// guard: check if a cooldown is needed to be set
-		if (cooldownSeconds <= 0)
+		// check if the shared cooldown needs to be updated
+		if (sharedCooldownSeconds > 0)
 		{
-			return;
+			sharedCooldownUntil = now.plusSeconds(sharedCooldownSeconds);
+
+			// sync the shared cooldown
+			twitchState.setCurrentSharedCooldown(sharedCooldownUntil);
 		}
 
-		// determine the cooldown ending time and update it
-		Instant now = Instant.now();
-		Instant cooldownUntil = now.plusSeconds(cooldownSeconds);
-		streamerProductCooldownUntil.put(streamerProductId, cooldownUntil);
+		// check if a product cooldown is needed to be set
+		if (productCooldownSeconds > 0)
+		{
+			// determine the cooldown ending time and update it
+			Instant cooldownUntil = now.plusSeconds(productCooldownSeconds);
+			streamerProductCooldownUntil.put(streamerProductId, cooldownUntil);
 
-		// sync the cooldown map to the twitch state to update to users
-		// that have missed the PubSub message, because they open the stream after the transaction
-		twitchState.setCurrentProductCooldowns(streamerProductCooldownUntil);
+			// sync the cooldown map to the twitch state to update to users
+			// that have missed the PubSub message, because they open the stream after the transaction
+			twitchState.setCurrentProductCooldowns(streamerProductCooldownUntil);
+		}
 	}
 
 	/**

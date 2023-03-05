@@ -515,7 +515,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "marketplaceSoundsEnabled",
-			name = "Enable Random Event sounds",
+			name = "Enable sounds",
 			description = "Disable to not play any sounds triggered by the random event effects.",
 			position = 8,
 			hidden = false,
@@ -528,7 +528,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "marketplaceStartOnLoadedAt",
-			name = "Start on received time",
+			name = "Start on time of received",
 			description = "Base the expiry of the effects when it is received and not the transaction time, which can have delays.",
 			position = 10,
 			hidden = false,
@@ -557,6 +557,23 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@Range(
+			min = 0,
+			max = 60 * 30 // half hour max?
+	)
+	@ConfigItem(
+			keyName = "marketplaceSharedCooldownS",
+			name = "Shared cooldown (seconds)",
+			description = "Cooldown time shared between all random events. This works together with the cooldown time per random event configured in Twitch.",
+			position = 14,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default int marketplaceSharedCooldownS()
+	{
+		return 0;
+	}
+
+	@Range(
 			min = 1,
 			max = MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY
 	)
@@ -564,7 +581,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "marketplaceTransactionHistoryAmount",
 			name = "Transaction history amount",
 			description = "How many transactions are shown in the 'recent donations' panel.",
-			position = 14,
+			position = 16,
 			hidden = false,
 			section = marketplaceSection
 	)
@@ -581,7 +598,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "marketplaceOverheadTextDurationS",
 			name = "Overhead text duration (seconds)",
 			description = "How long overhead notifications, such as thank you's are shown above the player.",
-			position = 14,
+			position = 18,
 			hidden = false,
 			section = marketplaceSection
 	)
@@ -594,30 +611,13 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "marketplaceDefaultDonationMessage",
 			name = "Default donation message",
 			description = "Message shown when random event enabled notifications. Use '{viewerName}', '{currencyAmount}' and '{currencyType}' to replace with values from the transaction.",
-			position = 14,
+			position = 20,
 			hidden = false,
 			section = marketplaceSection
 	)
 	default String marketplaceDefaultDonationMessage()
 	{
 		return "Thank you {viewerName} for donating {currencyAmount} {currencyType}!";
-	}
-
-	@Range(
-			min = 0,
-			max = 60 * 30 // half hour max?
-	)
-	@ConfigItem(
-			keyName = "marketplaceSharedCooldownS",
-			name = "Shared cooldown (seconds)",
-			description = "Cooldown time shared between all random events. This works together with the cooldown time per random event configured in Twitch.",
-			position = 14,
-			hidden = false,
-			section = marketplaceSection
-	)
-	default int marketplaceSharedCooldownS()
-	{
-		return 0;
 	}
 
 	@ConfigSection(

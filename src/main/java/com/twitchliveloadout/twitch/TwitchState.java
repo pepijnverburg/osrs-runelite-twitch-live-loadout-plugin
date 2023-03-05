@@ -217,6 +217,19 @@ public class TwitchState {
 		currentState.add(TwitchStateEntry.CURRENT_PRODUCT_COOLDOWNS.getKey(), currentProductCooldowns);
 	}
 
+	public void setCurrentSharedCooldown(Instant sharedCooldownUntil)
+	{
+		Instant now = Instant.now();
+
+		// guard: don't include a cooldown that has passed
+		if (sharedCooldownUntil == null || now.isAfter(sharedCooldownUntil))
+		{
+			return;
+		}
+
+		currentState.addProperty(TwitchStateEntry.CURRENT_SHARED_COOLDOWN.getKey(), sharedCooldownUntil.toString());
+	}
+
 	public void setInvocations(JsonArray invocations)
 	{
 		currentState.add(TwitchStateEntry.INVOCATIONS.getKey(), invocations);
@@ -568,6 +581,7 @@ public class TwitchState {
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_PROTECTION_ENABLED.getKey(), config.marketplaceProtectionEnabled());
+		state.addProperty(TwitchStateEntry.SHARED_COOLDOWN.getKey(), config.marketplaceSharedCooldownS());
 		return state;
 	}
 
