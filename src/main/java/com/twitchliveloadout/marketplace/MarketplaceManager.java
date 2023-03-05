@@ -23,6 +23,7 @@ import com.twitchliveloadout.twitch.TwitchStateEntry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.PlayerChanged;
@@ -37,7 +38,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.UPDATE_ACTIVE_PRODUCTS_DELAY_MS;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 @Slf4j
 public class MarketplaceManager {
@@ -94,6 +95,7 @@ public class MarketplaceManager {
 	 */
 	private final CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList<>();
 	private final CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = new CopyOnWriteArrayList<>();
+
 	private final CopyOnWriteArrayList<String> handledTransactionIds = new CopyOnWriteArrayList<>();
 	private Instant transactionsLastCheckedAt = null;
 
@@ -124,7 +126,7 @@ public class MarketplaceManager {
 		this.spawnManager = new SpawnManager(plugin, client);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
-		this.notificationManager = new NotificationManager(plugin, chatMessageManager, client);
+		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client);
 		this.widgetManager = new WidgetManager(plugin, client);
 		this.menuManager = new MenuManager();
 		this.soundManager = new SoundManager(client, config);
@@ -186,6 +188,12 @@ public class MarketplaceManager {
 				Collections.reverse(newTransactions);
 				queuedTransactions.addAll(newTransactions);
 				updateMarketplacePanel();
+
+				// clean up archived transactions when exceeding maximum amount
+				while (archivedTransactions.size() > config.marketplaceTransactionHistoryAmount())
+				{
+					archivedTransactions.remove(archivedTransactions.size() - 1);
+				}
 			}
 
 			// only update the last checked at if everything is successful
