@@ -223,7 +223,16 @@ public class MarketplaceManager {
 
 		while (iterator.hasNext())
 		{
-			TwitchTransaction transaction = (TwitchTransaction) iterator.next();
+			TwitchTransaction transaction = iterator.next();
+			int activeProductAmount = activeProducts.size();
+
+			// guard: check if the maximum amount of active products is exceeded
+			// this means this transaction is kept in the queue until one of the products
+			// is done with its effects.
+			if (activeProductAmount >= config.marketplaceMaxActiveProducts())
+			{
+				break;
+			}
 
 			// try to handle each individual transaction to prevent one invalid transaction in the queue
 			// to cancel all other transactions and with that all their effects

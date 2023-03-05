@@ -538,6 +538,23 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return true;
 	}
 
+	@Range(
+			min = 1,
+			max = 50
+	)
+	@ConfigItem(
+			keyName = "marketplaceMaxActiveProducts",
+			name = "Max active amount",
+			description = "How many random events can be active at once. New ones are queued when maximum is exceeded.",
+			position = 12,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default int marketplaceMaxActiveProducts()
+	{
+		return 25;
+	}
+
 	@ConfigSection(
 			name = "Advanced",
 			description = "Settings for advanced usage",
