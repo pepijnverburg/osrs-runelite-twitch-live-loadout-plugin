@@ -59,17 +59,6 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 		applyActiveEffects();
 	}
 
-	public void onGameStateChanged(GameStateChanged gameStateChanged)
-	{
-		GameState newGameState = gameStateChanged.getGameState();
-
-		// apply all effects to handle teleports and such triggering a loading screen
-		if (newGameState == GameState.LOGGED_IN)
-		{
-			applyActiveEffects();
-		}
-	}
-
 	@Override
 	protected void applyEffect(MarketplaceEffect<EbsEquipmentFrame> effect)
 	{

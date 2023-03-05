@@ -3,6 +3,8 @@ package com.twitchliveloadout.marketplace;
 import com.twitchliveloadout.marketplace.products.EbsEffectFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.GameState;
+import net.runelite.api.events.GameStateChanged;
 
 import java.time.Instant;
 import java.util.Iterator;
@@ -32,6 +34,17 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 	{
 		cleanInactiveEffects();
 		applyActiveEffects();
+	}
+
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		GameState newGameState = gameStateChanged.getGameState();
+
+		// apply all effects to handle teleports and such triggering a loading screen
+		if (newGameState == GameState.LOGGED_IN)
+		{
+			applyActiveEffects();
+		}
 	}
 
 	public void addEffect(MarketplaceProduct product, FrameType frame)
