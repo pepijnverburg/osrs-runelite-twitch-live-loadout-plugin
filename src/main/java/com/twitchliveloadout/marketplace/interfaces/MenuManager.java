@@ -79,8 +79,9 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 			if (DISABLE_MENU_OPTION_TYPE.equals(menuOptionFrame.type))
 			{
 				event.consume();
-				marketplaceProduct.triggerEffects(menuOptionFrame.onClickEffects);
 			}
+
+			marketplaceProduct.triggerEffects(menuOptionFrame.onClickEffects);
 		}
 	}
 
