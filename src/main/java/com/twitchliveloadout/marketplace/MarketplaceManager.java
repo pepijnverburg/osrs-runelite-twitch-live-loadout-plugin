@@ -330,6 +330,10 @@ public class MarketplaceManager {
 
 				// update the cooldown after the product is really started an not expired instantly
 				// otherwise old transactions can impact the cooldown time
+				// NOTE: set the cooldowns AFTER the product is activated completely, because
+				// we want cooldowns between the actual activation of them and not between the queueing of them
+				// otherwise it is possible that you still have a burst of products being spawned at once because
+				// they were all cooled down before and in the queue, but not yet triggered.
 				updateCooldown(streamerProduct);
 
 				// register this product to be active, which is needed to check
@@ -581,6 +585,7 @@ public class MarketplaceManager {
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
 		spawnManager.onGameStateChanged(gameStateChanged);
+		animationManager.onGameStateChanged(gameStateChanged);
 		transmogManager.onGameStateChanged(gameStateChanged);
 	}
 
@@ -672,7 +677,7 @@ public class MarketplaceManager {
 	/**
 	 * Pause all products
 	 */
-	public void pause()
+	public void pauseActiveProducts()
 	{
 		handleActiveProducts(MarketplaceProduct::pause);
 		isActive = false;
@@ -681,10 +686,15 @@ public class MarketplaceManager {
 	/**
 	 * Start all products
 	 */
-	public void start()
+	public void playActiveProducts()
 	{
 		isActive = true;
-		handleActiveProducts(MarketplaceProduct::start);
+		handleActiveProducts(MarketplaceProduct::play);
+
+		// re-apply them manually because they are event based and the active flag
+		// is not checked periodically TODO: consider doing this periodically for future side-effects
+		transmogManager.applyActiveEffects();
+		animationManager.applyActiveEffects();
 	}
 
 	/**

@@ -7,7 +7,9 @@ import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.products.EbsMovementFrame;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.Player;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PlayerChanged;
 
 import java.time.Instant;

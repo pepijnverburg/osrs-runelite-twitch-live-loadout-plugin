@@ -36,7 +36,7 @@ public class MarketplacePanel extends JPanel
 	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Donations:", "<html>No donations are queued.</html>");
 
 	private final JPanel playbackWrapper = new JPanel(new BorderLayout());
-	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start the random events for to temporarily block distractions.</html>");
+	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start to temporarily block distractions. Currently active ones will still expire when paused!</html>");
 	private final JPanel startPanel = new JPanel(new BorderLayout());
 	private final JLabel startLabel = new JLabel();
 
@@ -128,9 +128,9 @@ public class MarketplacePanel extends JPanel
 			final boolean isMarketplaceActive = marketplaceManager.isActive();
 
 			if (isMarketplaceActive) {
-				marketplaceManager.pause();
+				marketplaceManager.pauseActiveProducts();
 			} else {
-				marketplaceManager.start();
+				marketplaceManager.playActiveProducts();
 			}
 			rebuild();
 		});
@@ -287,7 +287,7 @@ public class MarketplacePanel extends JPanel
 
 	private String getPlaybackButtonTitle()
 	{
-		return "<html><b color='yellow'>"+ (marketplaceManager.isActive() ? "PAUSE ALL" : "RESUME ALL") +"</b></html>";
+		return "<html><b color='yellow'>"+ (marketplaceManager.isActive() ? "PAUSE ALL" : "PLAY ALL") +"</b></html>";
 	}
 
 	private void initializePanelButton(JPanel panel, JLabel label, String buttonTitle, ButtonCallback buttonCallback)
