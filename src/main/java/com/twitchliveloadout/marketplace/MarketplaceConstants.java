@@ -46,6 +46,13 @@ public class MarketplaceConstants {
 	public static final String ALTER_INTERFACE_WIDGET_TYPE = "alter";
 	public static final String OVERLAY_INTERFACE_WIDGET_TYPE = "overlay";
 
+	// NOTE: keep in sync with front-end!
+	public static final String NPC_MENU_ENTITY_TYPE = "npc";
+	public static final String ITEM_MENU_ENTITY_TYPE = "item";
+	public static final String WIDGET_MENU_ENTITY_TYPE = "widget";
+	public static final String PLAYER_MENU_ENTITY_TYPE = "player";
+	public static final String OBJECT_MENU_ENTITY_TYPE = "object";
+
 	public static final int MOVEMENT_EFFECT_MAX_SIZE = 100;
 	public static final int TRANSMOG_EFFECT_MAX_SIZE = 100;
 

@@ -284,6 +284,8 @@ public class MarketplaceManager {
 					continue;
 				}
 
+				// keep this info verbose as it is a way of logging to debug any issues that might occur
+				// when random events don't trigger and support is required
 				log.info("Found a valid transaction that we can start: " + transaction.id);
 				log.info("Twitch product SKU: " + twitchProduct.sku);
 				log.info("Streamer product name: " + streamerProduct.name);
@@ -341,8 +343,8 @@ public class MarketplaceManager {
 				activeProducts.add(newProduct);
 				updateMarketplacePanel();
 			} catch (Exception exception) {
-				log.error("Could not handle transaction due to the following error, it is being skipped: ", exception);
 				queuedTransactions.remove(transaction);
+				log.error("Could not handle transaction due to the following error, it is being skipped: ", exception);
 				log.error("The ID of the skipped transaction was: "+ transaction.id);
 			}
 		}
