@@ -1,6 +1,7 @@
 package com.twitchliveloadout.marketplace.notifications;
 
 import com.google.common.collect.EvictingQueue;
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
@@ -25,6 +26,7 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 @Slf4j
 public class NotificationManager {
 	private final TwitchLiveLoadoutPlugin plugin;
+	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
 	private final Client client;
 	private Instant notificationsLockedUntil;
@@ -37,9 +39,10 @@ public class NotificationManager {
 	 */
 	private final EvictingQueue<ArrayList<Notification>> notificationGroupQueue = EvictingQueue.create(NOTIFICATION_QUEUE_MAX_SIZE);
 
-	public NotificationManager(TwitchLiveLoadoutPlugin plugin, ChatMessageManager chatMessageManager, Client client)
+	public NotificationManager(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, Client client)
 	{
 		this.plugin = plugin;
+		this.config = config;
 		this.chatMessageManager = chatMessageManager;
 		this.client = client;
 	}
@@ -148,6 +151,7 @@ public class NotificationManager {
 	{
 		Player player = client.getLocalPlayer();
 		String message = getMessage(notification);
+		int overheadTextDurationMs = config.marketplaceOverheadTextDurationS() * 1000;
 
 		// guard: skip on invalid player
 		if (player == null)
@@ -166,8 +170,8 @@ public class NotificationManager {
 		});
 		overheadResetTask = plugin.scheduleOnClientThread(() -> {
 			player.setOverheadText("");
-		}, OVERHEAD_NOTIFICATION_DURATION_MS);
-		lockNotificationsUntil(OVERHEAD_NOTIFICATION_LOCKED_MS);
+		}, overheadTextDurationMs);
+		lockNotificationsUntil(overheadTextDurationMs + OVERHEAD_NOTIFICATION_PAUSE_MS);
 	}
 
 	private String getMessage(Notification notification)
@@ -189,7 +193,7 @@ public class NotificationManager {
 			if (twitchProduct == null) {
 				message = "Thank you {viewerName} for your donation!";
 			} else {
-				message = "Thank you {viewerName} for donating {currencyAmount} {currencyType}!";
+				message = config.marketplaceDefaultDonationMessage();
 			}
 		}
 
