@@ -148,7 +148,12 @@ public class MarketplaceProduct
 
 	public void start()
 	{
+		play();
+		triggerEffectsOptions(ebsProduct.behaviour.startEffectsOptions);
+	}
 
+	public void play()
+	{
 		// guard: skip when already active
 		if (isActive)
 		{
@@ -159,7 +164,6 @@ public class MarketplaceProduct
 		isActive = true;
 
 		handleSpawnedObjects(spawnedObjects, 0, SpawnedObject::show);
-		triggerEffectsOptions(ebsProduct.behaviour.startEffectsOptions);
 	}
 
 	public void pause()
@@ -179,8 +183,13 @@ public class MarketplaceProduct
 
 	public void stop()
 	{
+		// guard: skip if already stopped
+		if (!isActive && !isPaused)
+		{
+			return;
+		}
+
 		// NOTE: do this before toggling to off otherwise some effects are skipped
-		// TODO: make sure end notifications work
 		triggerEffectsOptions(ebsProduct.behaviour.stopEffectsOptions);
 
 		// start with disabling all behaviours
@@ -200,32 +209,6 @@ public class MarketplaceProduct
 			manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
 		});
 		spawnedObjects.clear();
-	}
-
-	private void handleNotificationsByTimingType(ArrayList<EbsNotification> notifications, String timingType)
-	{
-		ArrayList<EbsNotification> filteredNotifications = new ArrayList<>();
-		boolean isExpired = ((!isActive && !isExpired()) || isExpired(-1 * END_NOTIFICATION_GRACE_PERIOD_MS));
-
-		// guard: make sure there are any notifications and the product is active
-		if (notifications == null || isExpired)
-		{
-			log.debug("Skipping notifications because product is expired by time: "+ getExpiresInMs());
-			return;
-		}
-
-		for (EbsNotification notification : notifications)
-		{
-			// make sure the type matches
-			if (timingType.equals(notification.timingType))
-			{
-				filteredNotifications.add(notification);
-			}
-		}
-
-		// now queue them in the manager, so we also safely remove this product anywhere else
-		// while making sure the notifications ARE going to be triggered
-		manager.getNotificationManager().handleEbsNotifications(this, filteredNotifications);
 	}
 
 	/**
@@ -805,7 +788,7 @@ public class MarketplaceProduct
 				triggerInterfaceWidgets(effect.interfaceWidgets, delayMs);
 				triggerMenuOptions(effect.menuOptions, delayMs);
 				triggerSoundEffect(effect.soundEffect, delayMs);
-				triggerNotifications(effect.notifications, delayMs, delayMs + durationMs);
+				triggerNotifications(effect.notifications, delayMs);
 			}, totalDelayMs);
 
 			totalDelayMs += durationMs;
@@ -815,8 +798,8 @@ public class MarketplaceProduct
 	public void triggerEffectsOptions(ArrayList<ArrayList<EbsEffect>> effectsOptions)
 	{
 		// trigger the animations on this single spawned object
-		ArrayList<EbsEffect> startEffects = MarketplaceRandomizers.getRandomEntryFromList(effectsOptions);
-		triggerEffects(startEffects);
+		ArrayList<EbsEffect> effects = MarketplaceRandomizers.getRandomEntryFromList(effectsOptions);
+		triggerEffects(effects);
 	}
 
 	public void triggerEffects(ArrayList<EbsEffect> effects)
@@ -1113,24 +1096,29 @@ public class MarketplaceProduct
 		}, baseDelayMs + delayMs);
 	}
 
-	private void triggerNotifications(ArrayList<EbsNotification> notifications, int startDelayMs, long endDelayMs)
+	private void triggerNotifications(ArrayList<EbsNotification> notifications, int delayMs)
 	{
+		// guard: make sure there are any notifications
+		if (notifications == null || notifications.size() <= 0)
+		{
+			return;
+		}
 
 		// queue at the start of the effect
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			handleNotificationsByTimingType(
-				notifications,
-				START_NOTIFICATION_TIMING_TYPE
-			);
-		}, startDelayMs);
+			boolean isExpired = ((!isActive && !isExpired()) || isExpired(-1 * END_NOTIFICATION_GRACE_PERIOD_MS));
 
-		// queue at the end of the effect
-		manager.getPlugin().scheduleOnClientThread(() -> {
-			handleNotificationsByTimingType(
-				notifications,
-				END_NOTIFICATION_TIMING_TYPE
-			);
-		}, endDelayMs);
+			// guard: make sure the product is active
+			if (isExpired)
+			{
+				log.debug("Skipping notifications because product is expired by time: "+ getExpiresInMs());
+				return;
+			}
+
+			// now queue them in the manager, so we also safely remove this product anywhere else
+			// while making sure the notifications ARE going to be triggered
+			manager.getNotificationManager().handleEbsNotifications(this, notifications);
+		}, delayMs);
 	}
 
 	private void handleEffectFrame(EbsEffectFrame effect, int baseDelayMs, StartEffectHandler startHandler, ResetEffectHandler resetHandler)
