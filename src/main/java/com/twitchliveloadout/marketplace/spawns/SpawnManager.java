@@ -8,6 +8,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,10 +71,23 @@ public class SpawnManager {
 		});
 	}
 
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		GameState newGameState = gameStateChanged.getGameState();
+
+		// only respawn on the loading event
+		// this means all spawned objects are removed from the scene
+		// and need to be queued for a respawn, this is done periodically
+		if (newGameState == GameState.LOADING)
+		{
+			registerDespawn();
+		}
+	}
+
 	/**
 	 * Register all spawned objects to require a respawn to show them again.
 	 */
-	public void registerDespawn()
+	private void registerDespawn()
 	{
 		// set all objects to require a respawn, because after a loading of
 		// a new scene all custom objects are cleared

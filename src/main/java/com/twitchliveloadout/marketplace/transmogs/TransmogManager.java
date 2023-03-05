@@ -5,10 +5,8 @@ import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.products.EbsEquipmentFrame;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.Player;
-import net.runelite.api.PlayerComposition;
+import net.runelite.api.*;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PlayerChanged;
 import net.runelite.client.game.ItemManager;
 
@@ -23,7 +21,7 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 	private final ItemManager itemManager;
 
 	/**
-	 * Lookup map for which original equipment Ids were present before applying the transmog.
+	 * Lookup for which original equipment Ids were present before applying the transmog.
 	 * This is used to revert back to the original equipment when the effect expires.
 	 * This can be done for multiple players to support transforming other players as well in the future.
 	 */
@@ -61,13 +59,24 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 		applyActiveEffects();
 	}
 
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		GameState newGameState = gameStateChanged.getGameState();
+
+		// apply all effects to handle teleports and such triggering a loading screen
+		if (newGameState == GameState.LOGGED_IN)
+		{
+			applyActiveEffects();
+		}
+	}
+
 	@Override
 	protected void applyEffect(MarketplaceEffect<EbsEquipmentFrame> effect)
 	{
 		Player player = client.getLocalPlayer();
 
-		// guard: check if the player is valid and if we are logged in
-		if (player == null || !plugin.isLoggedIn())
+		// guard: make sure the player is valid
+		if (!verifyPlayer(player))
 		{
 			return;
 		}
@@ -111,21 +120,14 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 		Player player = client.getLocalPlayer();
 
 		// guard: make sure the player is valid
-		if (player == null)
+		if (!verifyPlayer(player))
 		{
 			return;
 		}
 
 		String playerName = player.getName();
-
-		// guard: make sure the player name is valid
-		if (playerName == null)
-		{
-			return;
-		}
-
-		int[] originalEquipmentIds = originalEquipmentIdsLookup.get(playerName);
 		PlayerComposition composition = player.getPlayerComposition();
+		int[] originalEquipmentIds = originalEquipmentIdsLookup.get(playerName);
 		int[] currentEquipmentIds = composition.getEquipmentIds();
 
 		System.arraycopy(originalEquipmentIds, 0, currentEquipmentIds, 0, currentEquipmentIds.length);
@@ -139,50 +141,11 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 		applyActiveEffects();
 	}
 
-	private void registerOriginalEquipment(Player player)
-	{
-
-		// guard: make sure the player is valid
-		if (player == null)
-		{
-			return;
-		}
-
-		String playerName = player.getName();
-		int[] equipmentIds = player.getPlayerComposition().getEquipmentIds();
-
-		// guard: make sure the properties are valid
-		if (playerName == null || equipmentIds == null)
-		{
-			return;
-		}
-
-		originalEquipmentIdsLookup.put(playerName, equipmentIds.clone());
-	}
-
-	private boolean hasOriginalEquipment(Player player)
-	{
-		// guard: make sure the player is valid
-		if (player == null)
-		{
-			return false;
-		}
-
-		String playerName = player.getName();
-
-		// guard: make sure the name is valid
-		if (playerName == null)
-		{
-			return false;
-		}
-
-		return originalEquipmentIdsLookup.containsKey(playerName);
-	}
-
 	@Override
 	protected void onAddEffect(MarketplaceEffect effect)
 	{
 		// update immediately when effect is added
+		// because this manager is not updating periodically, but event based
 		applyActiveEffects();
 	}
 
@@ -190,5 +153,61 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 	protected void onDeleteEffect(MarketplaceEffect effect)
 	{
 		// empty
+	}
+
+	private void registerOriginalEquipment(Player player)
+	{
+
+		// guard: make sure the player is valid
+		if (!verifyPlayer(player))
+		{
+			return;
+		}
+
+		String playerName = player.getName();
+		PlayerComposition composition = player.getPlayerComposition();
+		int[] equipmentIds = composition.getEquipmentIds();
+
+		originalEquipmentIdsLookup.put(playerName, equipmentIds.clone());
+	}
+
+	private boolean hasOriginalEquipment(Player player)
+	{
+		// guard: make sure the player is valid
+		if (!verifyPlayer(player))
+		{
+			return false;
+		}
+
+		String playerName = player.getName();
+
+		return originalEquipmentIdsLookup.containsKey(playerName);
+	}
+
+	private boolean verifyPlayer(Player player)
+	{
+		// guard: make sure the player is valid
+		if (player == null)
+		{
+			return false;
+		}
+
+		String playerName = player.getName();
+		PlayerComposition composition = player.getPlayerComposition();
+
+		// guard: make sure the player properties are valid
+		if (playerName == null || composition == null)
+		{
+			return false;
+		}
+
+		int[] equipmentIds = composition.getEquipmentIds();
+
+		if (equipmentIds == null)
+		{
+			return false;
+		}
+
+		return true;
 	}
 }

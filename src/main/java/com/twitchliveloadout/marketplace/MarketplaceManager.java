@@ -550,17 +550,10 @@ public class MarketplaceManager {
 	 * Handle game state changes to respawn all objects, because they are cleared
 	 * when a new scene is being loaded.
 	 */
-	public void onGameStateChanged(GameStateChanged event)
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		GameState newGameState = event.getGameState();
-
-		// guard: only respawn on the loading event
-		// this means all spawned objects are removed from the scene
-		// and need to be queued for a respawn, this is done periodically
-		if (newGameState == GameState.LOADING)
-		{
-			spawnManager.registerDespawn();
-		}
+		spawnManager.onGameStateChanged(gameStateChanged);
+		transmogManager.onGameStateChanged(gameStateChanged);
 	}
 
 	/**

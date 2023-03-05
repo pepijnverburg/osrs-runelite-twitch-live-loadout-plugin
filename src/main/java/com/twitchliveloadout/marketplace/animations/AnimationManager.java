@@ -100,6 +100,20 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 		applyActiveEffects();
 	}
 
+	@Override
+	protected void onAddEffect(MarketplaceEffect<EbsMovementFrame> effect)
+	{
+		// update immediately when effect is added
+		// because this manager is not updating periodically, but event based
+		applyActiveEffects();
+	}
+
+	@Override
+	protected void onDeleteEffect(MarketplaceEffect<EbsMovementFrame> effect)
+	{
+		// empty
+	}
+
 	private void recordOriginalMovementAnimations()
 	{
 		Player player = client.getLocalPlayer();
@@ -247,18 +261,5 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 		}
 
 		return animationId;
-	}
-
-	@Override
-	protected void onAddEffect(MarketplaceEffect<EbsMovementFrame> effect)
-	{
-		// update immediately when effect is added
-		applyActiveEffects();
-	}
-
-	@Override
-	protected void onDeleteEffect(MarketplaceEffect<EbsMovementFrame> effect)
-	{
-		// empty
 	}
 }
