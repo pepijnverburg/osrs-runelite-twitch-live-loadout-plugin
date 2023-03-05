@@ -267,12 +267,13 @@ public class MarketplaceManager {
 				Instant now = Instant.now();
 				Instant cooldownUntil = streamerProductCooldownUntil.get(streamerProductId);
 				EbsProduct ebsProduct = getEbsProductById(ebsProductId);
-				boolean isCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
+				boolean isProductCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
+				boolean isSharedCoolingDown = sharedCooldownUntil != null && now.isBefore(sharedCooldownUntil);
 				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled;
 
 				// guard: make sure this product is not cooling down
-				// this can be triggered when two transactions are done at the same time
-				if (isCoolingDown)
+				// this can be the case when two transactions are done at the same time
+				if (isProductCoolingDown || isSharedCoolingDown)
 				{
 					continue;
 				}
@@ -319,11 +320,13 @@ public class MarketplaceManager {
 				if (newProduct.isExpired())
 				{
 					log.info("It is skipped, because it has already expired at: " + newProduct.getExpiredAt());
-					newProduct.stop();
 					continue;
 				}
 
 				log.info("It expires at: " + newProduct.getExpiredAt() + ", which is in " + newProduct.getExpiresInMs() + "ms");
+
+				// start the product because all the checks have passed
+				newProduct.start();
 
 				// update the cooldown after the product is really started an not expired instantly
 				// otherwise old transactions can impact the cooldown time
@@ -408,7 +411,7 @@ public class MarketplaceManager {
 	 */
 	private void updateMarketplacePanel()
 	{
-		plugin.getPluginPanel().getMarketplacePanel().rebuild();
+		plugin.getPluginPanel().getMarketplacePanel().requestRebuild();
 	}
 
 	/**

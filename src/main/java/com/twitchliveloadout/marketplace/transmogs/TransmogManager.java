@@ -89,6 +89,12 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 		int[] currentEquipmentIds = composition.getEquipmentIds();
 		EbsEquipmentFrame equipmentFrame = effect.getFrame();
 
+		// guard: make sure the equipment ids are valid
+		if (currentEquipmentIds == null)
+		{
+			return;
+		}
+
 		// make sure the original is known for this player, if not
 		// then the current equipment is considered the original
 		if (!hasOriginalEquipment(player))
@@ -129,6 +135,12 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 		PlayerComposition composition = player.getPlayerComposition();
 		int[] originalEquipmentIds = originalEquipmentIdsLookup.get(playerName);
 		int[] currentEquipmentIds = composition.getEquipmentIds();
+
+		// guard: make sure the equipment ids are valid
+		if (originalEquipmentIds == null || currentEquipmentIds == null)
+		{
+			return;
+		}
 
 		System.arraycopy(originalEquipmentIds, 0, currentEquipmentIds, 0, currentEquipmentIds.length);
 

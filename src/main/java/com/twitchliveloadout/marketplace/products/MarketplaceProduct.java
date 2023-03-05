@@ -117,9 +117,6 @@ public class MarketplaceProduct
 
 		this.startedAt = (!loadedTooLate && manager.getConfig().marketplaceStartOnLoadedAt() ? loadedAt : transactionAt);
 		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
-
-		// start immediately
-		start();
 	}
 
 	public void handleBehaviour()
