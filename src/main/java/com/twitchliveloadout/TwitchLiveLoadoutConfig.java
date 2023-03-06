@@ -77,6 +77,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			position = 4,
 			section = twitchSection
 	)
+	@Units(Units.PERCENT)
 	default int overlayTopPosition()
 	{
 		return 35;
@@ -115,11 +116,12 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "syncDelay",
-			name = "Stream delay (seconds)",
+			name = "Stream delay",
 			description = "The amount of seconds to delay the sending of data to match your stream delay.",
 			position = 2,
 			section = syncingSection
 	)
+	@Units(Units.SECONDS)
 	default int syncDelay()
 	{
 		return 0;
@@ -309,11 +311,12 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	@ConfigItem(
 			keyName = "fightStatisticsExpiryTime",
-			name = "Fight expiry time (minutes)",
+			name = "Fight expiry time",
 			description = "Reset a fight after the configured minutes of inactivity.",
 			position = 12,
 			section = combatSection
 	)
+	@Units(Units.MINUTES)
 	default int fightStatisticsExpiryTime()
 	{
 		return 180;
@@ -562,12 +565,13 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	@ConfigItem(
 			keyName = "marketplaceSharedCooldownS",
-			name = "Shared cooldown (seconds)",
+			name = "Shared cooldown",
 			description = "Cooldown time shared between all random events. This works together with the cooldown time per random event configured in Twitch.",
 			position = 14,
 			hidden = false,
 			section = marketplaceSection
 	)
+	@Units(Units.SECONDS)
 	default int marketplaceSharedCooldownS()
 	{
 		return 0;
@@ -596,12 +600,13 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	@ConfigItem(
 			keyName = "marketplaceOverheadTextDurationS",
-			name = "Overhead text duration (seconds)",
+			name = "Overhead text duration",
 			description = "How long overhead notifications, such as thank you's are shown above the player.",
 			position = 18,
 			hidden = false,
 			section = marketplaceSection
 	)
+	@Units(Units.SECONDS)
 	default int marketplaceOverheadTextDurationS()
 	{
 		return 2;
