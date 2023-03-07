@@ -577,9 +577,11 @@ public class TwitchState {
 		// donations via the playback buttons, it feel more natural to fetch it actively than to move some of that
 		// state also to this class. NOTE: check whether it is not null because this class is initialized first.
 		MarketplaceManager marketplaceManager = plugin.getMarketplaceManager();
-		boolean isEnabled = config.marketplaceEnabled() && marketplaceManager != null && marketplaceManager.isActive();
+		boolean isEnabled = config.marketplaceEnabled();
+		boolean isActive = marketplaceManager != null && marketplaceManager.isActive();
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_ACTIVE.getKey(), isActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_PROTECTION_ENABLED.getKey(), config.marketplaceProtectionEnabled());
 		state.addProperty(TwitchStateEntry.SHARED_COOLDOWN.getKey(), config.marketplaceSharedCooldownS());
 		return state;

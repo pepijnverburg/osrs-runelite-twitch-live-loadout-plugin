@@ -26,6 +26,7 @@ public enum TwitchStateEntry {
 	INVOCATIONS("invocations"),
 	INVOCATIONS_RAID_LEVEL("invocationsRaidLevel"),
 	MARKETPLACE_ENABLED("marketplaceEnabled"),
+	MARKETPLACE_ACTIVE("marketplaceActive"),
 	MARKETPLACE_PROTECTION_ENABLED("marketplaceProtectionEnabled"),
 	CURRENT_PRODUCT_COOLDOWNS("currentProductCooldowns"),
 	CURRENT_SHARED_COOLDOWN("currentSharedCooldown"),
