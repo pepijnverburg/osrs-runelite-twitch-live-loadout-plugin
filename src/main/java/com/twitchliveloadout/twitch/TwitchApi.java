@@ -47,6 +47,10 @@ public class TwitchApi
 
 	public final static int MIN_SYNC_DELAY = 0; // ms
 	public final static int BASE_SYNC_DELAY = 1000; // ms
+	public final static double LOW_RATE_LIMIT_DELAY_MULTIPLIER = 2d;
+	public final static int LOW_RATE_LIMIT_REMAINING = 50;
+	public final static double HIGH_RATE_LIMIT_DELAY_MULTIPLIER = 0.5d;
+	public final static int HIGH_RATE_LIMIT_REMAINING = 90;
 
 	public final static boolean CHAT_ERRORS_ENABLED = true;
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
@@ -152,10 +156,25 @@ public class TwitchApi
 			return true;
 		}
 
-		final boolean isLoggedIn = plugin.isLoggedIn();
-		final Instant now = Instant.now();
-		final int delayMs = isLoggedIn ? MIN_SCHEDULE_DEFAULT_DELAY : MIN_SCHEDULE_LOGGED_OUT_DELAY;
-		final Instant minTime = lastScheduleStateTime.plusMillis(delayMs);
+		boolean isLoggedIn = plugin.isLoggedIn();
+		Instant now = Instant.now();
+		int delayMs = isLoggedIn ? MIN_SCHEDULE_DEFAULT_DELAY : MIN_SCHEDULE_LOGGED_OUT_DELAY;
+
+		// multiply the delay time if the rate limit is decreasing too fast
+		// this can be the case with many accounts logged in
+		if (lastRateLimitRemaining < LOW_RATE_LIMIT_REMAINING)
+		{
+			delayMs *= LOW_RATE_LIMIT_DELAY_MULTIPLIER;
+		}
+
+		// decrease the delay when there are enough requests available
+		// this can be the case with only one RL client open
+		if (lastRateLimitRemaining > HIGH_RATE_LIMIT_REMAINING)
+		{
+			delayMs *= HIGH_RATE_LIMIT_DELAY_MULTIPLIER;
+		}
+
+		Instant minTime = lastScheduleStateTime.plusMillis(delayMs);
 
 		return now.isAfter(minTime);
 	}
