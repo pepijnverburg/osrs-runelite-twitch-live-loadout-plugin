@@ -9,6 +9,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
+import java.awt.*;
 import java.time.Instant;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.RUNELITE_OBJECT_RADIUS_PER_TILE;
@@ -171,6 +172,88 @@ public class SpawnedObject {
 		render();
 	}
 
+	/**
+	 * Recolor the model data through an EBS configured recolor.
+	 * Note that cloning the colors and re-rendering the object is needed manually outside of this method!
+	 */
+	public void recolor(EbsRecolor recolor)
+	{
+		int sourceColorIndex = recolor.sourceColorIndex;
+		int sourceColorHsl = recolor.sourceColor;
+		int targetColorHex = recolor.targetColor;
+
+		// determine whether an index or color is requested to be changed
+		if (isValidColor(sourceColorHsl)) {
+			recolorByColor(sourceColorHsl, targetColorHex);
+		} else if (isValidColorIndex(sourceColorIndex)) {
+			recolorByIndex(sourceColorIndex, targetColorHex);
+		} else if (isValidColor(targetColorHex)) {
+
+			// recolor the whole model
+			for (short color : modelData.getFaceColors())
+			{
+				recolorByColor(color, targetColorHex);
+			}
+		}
+	}
+
+	private void recolorByColor(int sourceColorHsl, int targetColorHex)
+	{
+
+		// guard: make sure the target color is valid
+		if (!isValidColor((sourceColorHsl)) || !isValidColor(targetColorHex))
+		{
+			return;
+		}
+
+		short targetColorHsl = getColorHsl(targetColorHex);
+
+		modelData.recolor((short) sourceColorHsl, targetColorHsl);
+	}
+
+	private void recolorByIndex(int sourceColorIndex, int targetColorHex)
+	{
+
+		// guard: make sure the index and color are valid
+		if (!isValidColorIndex(sourceColorIndex) || !isValidColor(targetColorHex))
+		{
+			return;
+		}
+
+		short[] colors = modelData.getFaceColors();
+		short sourceColorHsl = colors[sourceColorIndex];
+		short targetColorHsl = getColorHsl(targetColorHex);
+
+		modelData.recolor(sourceColorHsl, targetColorHsl);
+	}
+
+	private short getColorHsl(int colorHex)
+	{
+		Color color = getColor(colorHex);
+		short hsl = JagexColor.rgbToHSL(color.getRGB(), 1.0d);
+
+		return hsl;
+	}
+
+	private Color getColor(int colorHex)
+	{
+		int r = (colorHex & 0xFF0000) >> 16;
+		int g = (colorHex & 0xFF00) >> 8;
+		int b = (colorHex & 0xFF);
+
+		return new Color(r, g, b);
+	}
+
+	private boolean isValidColor(int color)
+	{
+		return color >= 0;
+	}
+
+	private boolean isValidColorIndex(int colorIndex)
+	{
+		return colorIndex >= 0 && colorIndex < modelData.getFaceColors().length;
+	}
+
 	public void setAnimation(int animationId, boolean shouldLoop)
 	{
 		Animation animation = null;
@@ -295,7 +378,7 @@ public class SpawnedObject {
 		object.setLocation(localPoint, plane);
 	}
 
-	public void upateLastRandomEffectAt()
+	public void updateLastRandomEffectAt()
 	{
 		lastRandomEffectAt = Instant.now();
 	}
@@ -303,7 +386,7 @@ public class SpawnedObject {
 	public void registerRandomEffect()
 	{
 		randomEffectCounter += 1;
-		upateLastRandomEffectAt();
+		updateLastRandomEffectAt();
 	}
 
 	public boolean isExpired()

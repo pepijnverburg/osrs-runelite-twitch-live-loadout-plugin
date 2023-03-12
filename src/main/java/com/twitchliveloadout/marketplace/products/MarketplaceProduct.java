@@ -401,6 +401,8 @@ public class MarketplaceProduct
 				continue;
 			}
 
+			Boolean triggerOnSpawn = randomInterval.triggerOnSpawn;
+
 			// guard: check if the max repeat amount is exceeded
 			// NOTE: -1 repeat amount if infinity!
 			if (randomInterval.repeatAmount >= 0 && spawnedObject.getRandomEffectCounter() >= randomInterval.repeatAmount)
@@ -415,11 +417,11 @@ public class MarketplaceProduct
 			}
 
 			// update the last time it was attempted too roll and execute a random effect
-			spawnedObject.upateLastRandomEffectAt();
+			spawnedObject.updateLastRandomEffectAt();
 
 			// guard: skip when this is the first time the interval is triggered!
-			// this prevents the random effect to instantly be triggered on spawn
-			if (lastRandomEffectAt == null)
+			// this prevents the random effect to instantly be triggered on spawn when that is not requested
+			if (lastRandomEffectAt == null && !triggerOnSpawn)
 			{
 				continue;
 			}
@@ -427,7 +429,11 @@ public class MarketplaceProduct
 			// guard: skip this effect when not rolled, while setting the timer before this roll
 			if (!MarketplaceRandomizers.rollChance(randomInterval.chance))
 			{
-				continue;
+				// we will allow effects that are to be triggered on spawn
+				if (lastRandomEffectAt != null || !triggerOnSpawn)
+				{
+					continue;
+				}
 			}
 
 			// guard: skip when this spawned object is not in the region,
@@ -658,6 +664,7 @@ public class MarketplaceProduct
 		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.rotationType));
 		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1);
 		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360);
+		ArrayList<EbsRecolor> recolors = modelSet.recolors;
 		ArrayList<ModelData> modelDataChunks = new ArrayList<>();
 
 		// load all the models
@@ -677,13 +684,24 @@ public class MarketplaceProduct
 			modelSet
 		);
 
-		// TODO: do any recolours here
+		// check for valid recolors
+		if (recolors != null)
+		{
+			mergedModelData.cloneColors();
 
+			// apply recolors
+			LambdaIterator.handleAll(recolors, (recolor) -> {
+				spawnedObject.recolor(recolor);
+			});
+		}
+
+		// scale model
 		if  (shouldScaleModel)
 		{
 			spawnedObject.scale(modelScale);
 		}
 
+		// rotate model
 		if (shouldRotateModel)
 		{
 			spawnedObject.rotate(modelRotationDegrees);
