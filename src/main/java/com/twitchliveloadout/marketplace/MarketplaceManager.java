@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
@@ -96,7 +97,7 @@ public class MarketplaceManager {
 	private final CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = new CopyOnWriteArrayList<>();
 
 	private final CopyOnWriteArrayList<String> handledTransactionIds = new CopyOnWriteArrayList<>();
-	private Instant transactionsLastCheckedAt = null;
+	private String lastTransactionId = null;
 
 	/**
 	 * Track when the active products were updated for the last time
@@ -138,12 +139,13 @@ public class MarketplaceManager {
 	public void handleNewTwitchTransactions()
 	{
 		try {
-			Response response = twitchApi.getEbsTransactions(transactionsLastCheckedAt);
+			Response response = twitchApi.getEbsTransactions(lastTransactionId);
 			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
 			boolean status = result.get("status").getAsBoolean();
 			String message = result.get("message").getAsString();
 			JsonArray newTransactionsJson = result.getAsJsonArray("transactions");
 			ArrayList<TwitchTransaction> newTransactions = new ArrayList<>();
+			final AtomicBoolean updatedLastTransactionId = new AtomicBoolean(false);
 
 			// guard: check if the status is valid
 			if (!status)
@@ -159,6 +161,13 @@ public class MarketplaceManager {
 				try {
 					TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
 					String transactionId = twitchTransaction.id;
+
+					// update the ID to tell for next requests to fetch newer transactions
+					if (!updatedLastTransactionId.get())
+					{
+						lastTransactionId = transactionId;
+						updatedLastTransactionId.set(true);
+					}
 
 					// guard: check if this transaction is already handled
 					// this is required because we have an offset on the last checked at date
@@ -176,28 +185,27 @@ public class MarketplaceManager {
 				}
 			});
 
-			// only update the lists and the panel when new transactions were found
-			if (newTransactions.size() > 0)
+			// guard: only update the lists and the panel when new transactions were found
+			if (newTransactions.size() <= 0)
 			{
-				// add in front of the archive as it is from new to old
-				archivedTransactions.addAll(0, newTransactions);
-
-				// add at the end of the queue from old to new
-				// reverse is needed because the list if from NEW to OLD
-				// and we want the oldest transactions to be first in the queue
-				Collections.reverse(newTransactions);
-				queuedTransactions.addAll(newTransactions);
-				updateMarketplacePanel();
-
-				// clean up archived transactions when exceeding maximum amount
-				while (archivedTransactions.size() > config.marketplaceTransactionHistoryAmount())
-				{
-					archivedTransactions.remove(archivedTransactions.size() - 1);
-				}
+				return;
 			}
 
-			// only update the last checked at if everything is successful
-			transactionsLastCheckedAt = Instant.now();
+			// add in front of the archive as it is from new to old
+			archivedTransactions.addAll(0, newTransactions);
+
+			// add at the end of the queue from old to new
+			// reverse is needed because the list is from NEW to OLD
+			// and we want the oldest transactions to be first in the queue
+			Collections.reverse(newTransactions);
+			queuedTransactions.addAll(newTransactions);
+			updateMarketplacePanel();
+
+			// clean up archived transactions when exceeding maximum amount
+			while (archivedTransactions.size() > config.marketplaceTransactionHistoryAmount())
+			{
+				archivedTransactions.remove(archivedTransactions.size() - 1);
+			}
 		} catch (Exception exception) {
 			// empty
 		}

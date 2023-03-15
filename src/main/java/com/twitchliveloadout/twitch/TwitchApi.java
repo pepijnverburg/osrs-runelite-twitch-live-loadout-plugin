@@ -19,7 +19,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.TRANSACTION_CHECKED_AT_OFFSET_MS;
 import static net.runelite.http.api.RuneLiteAPI.JSON;
 
 import java.io.ByteArrayOutputStream;
@@ -257,7 +256,7 @@ public class TwitchApi
 		return response;
 	}
 
-	public Response getEbsTransactions(Instant lastCheckedAt) throws Exception
+	public Response getEbsTransactions(String lastTransactionId) throws Exception
 	{
 		final String token = config.twitchToken();
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-transactions";
@@ -273,10 +272,9 @@ public class TwitchApi
 		}
 
 		// only add last checked at when it is valid
-		if (lastCheckedAt != null)
+		if (lastTransactionId != null)
 		{
-			Instant lastCheckedAtOffset = lastCheckedAt.minusMillis(TRANSACTION_CHECKED_AT_OFFSET_MS);
-			data.addProperty("lastCheckedAt", lastCheckedAtOffset.toString());
+			data.addProperty("lastTransactionId", lastTransactionId);
 		}
 
 		// Documentation: https://dev.twitch.tv/docs/api/reference
