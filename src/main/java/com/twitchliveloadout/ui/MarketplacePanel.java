@@ -59,6 +59,31 @@ public class MarketplacePanel extends JPanel
 
 		this.marketplaceManager = marketplaceManager;
 
+		initializeLayout();
+	}
+
+	public void onGameTick()
+	{
+		if (rebuildRequested)
+		{
+			rebuild();
+		}
+	}
+
+	public void requestRebuild()
+	{
+		rebuildRequested = true;
+	}
+
+	public void rebuild()
+	{
+		rebuildRequested = false;
+		repopulatePanels();
+		updateTexts();
+	}
+
+	private void initializeLayout()
+	{
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(10, 10, 10, 10));
 
@@ -124,6 +149,9 @@ public class MarketplacePanel extends JPanel
 		constraints.gridy++;
 		add(wrapper, BorderLayout.NORTH);
 
+		// for now always show the playback panel
+		cardLayout.show(wrapper, PLAYBACK_PANEL);
+
 		initializePanelButton(startPanel, startLabel, getPlaybackButtonTitle(), () -> {
 			final boolean isMarketplaceActive = marketplaceManager.isActive();
 
@@ -132,47 +160,36 @@ public class MarketplacePanel extends JPanel
 			} else {
 				marketplaceManager.playActiveProducts();
 			}
-			rebuild();
+
+			updateTexts();
+			rebuildProductPanels();
 		});
 
-		// initialize all the panel slots without adding them to the UI
+		// initialize all the panel slots
 		for (int i = 0; i < MarketplaceConstants.MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY; i++)
 		{
 			MarketplaceProductPanel marketplaceProductPanel = new MarketplaceProductPanel(this);
 			productPanels.add(marketplaceProductPanel);
+			productListPanel.add(marketplaceProductPanel, productListConstraints);
+			productListConstraints.gridy++;
+			marketplaceProductPanel.rebuild();
 		}
 
-		// initialize all the panel slots without adding them to the UI
+		// initialize all the panel slots
 		for (int i = 0; i < MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY; i++)
 		{
 			TwitchTransactionPanel twitchTransactionPanel = new TwitchTransactionPanel();
 			transactionPanels.add(twitchTransactionPanel);
+			transactionListPanel.add(twitchTransactionPanel, transactionListConstraints);
+			transactionListConstraints.gridy++;
+			twitchTransactionPanel.rebuild();
 		}
-	}
 
-	public void onGameTick()
-	{
-		if (rebuildRequested)
-		{
-			rebuild();
-		}
-	}
-
-	public void requestRebuild()
-	{
-		rebuildRequested = true;
-	}
-
-	public void rebuild()
-	{
-		rebuildRequested = false;
-		rebuildLayout();
-		updateTexts();
 		repaint();
 		revalidate();
 	}
 
-	private void rebuildLayout()
+	private void repopulatePanels()
 	{
 		final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = marketplaceManager.getActiveProducts();
 		final CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = marketplaceManager.getArchivedTransactions();
@@ -183,16 +200,12 @@ public class MarketplacePanel extends JPanel
 		// order by started at
 		Collections.sort(activeProducts, new MarketplaceProductSorter());
 
-		// for now always show the playback panel
-		cardLayout.show(wrapper, PLAYBACK_PANEL);
-
-		// reset product list
-		productListPanel.removeAll();
-		productListConstraints.gridy = 0;
-
 		// first clear all the panels
 		LambdaIterator.handleAll(productPanels, (productPanel) -> {
 			productPanel.setMarketplaceProduct(null);
+		});
+		LambdaIterator.handleAll(transactionPanels, (transactionPanel) -> {
+			transactionPanel.setTwitchTransaction(null);
 		});
 
 		// directly add all the products again in the new order
@@ -208,21 +221,8 @@ public class MarketplacePanel extends JPanel
 			}
 
 			panel.setMarketplaceProduct(marketplaceProduct);
-			panel.rebuild();
 			marketplaceProductPanelIndex ++;
-
-			productListPanel.add(panel, productListConstraints);
-			productListConstraints.gridy++;
 		}
-
-		// reset transaction list
-		transactionListPanel.removeAll();
-		transactionListConstraints.gridy = 0;
-
-		// first clear all the panels
-		LambdaIterator.handleAll(transactionPanels, (transactionPanel) -> {
-			transactionPanel.setTwitchTransaction(null);
-		});
 
 		// directly add all the products again in the new order
 		for (TwitchTransaction twitchTransaction : archivedTransactions)
@@ -237,18 +237,25 @@ public class MarketplacePanel extends JPanel
 			}
 
 			panel.setTwitchTransaction(twitchTransaction);
-			panel.rebuild();
 			twitchTransactionPanelIndex ++;
-
-			transactionListPanel.add(panel, transactionListConstraints);
-			transactionListConstraints.gridy++;
 		}
+
+		// finally update the panels
+		rebuildProductPanels();
+		rebuildTransactionPanels();
 	}
 
 	public void rebuildProductPanels()
 	{
-		LambdaIterator.handleAll(productPanels, (productPanel) -> {
-			productPanel.rebuild();
+		LambdaIterator.handleAll(productPanels, (panel) -> {
+			panel.rebuild();
+		});
+	}
+
+	public void rebuildTransactionPanels()
+	{
+		LambdaIterator.handleAll(transactionPanels, (panel) -> {
+			panel.rebuild();
 		});
 	}
 

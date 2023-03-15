@@ -47,6 +47,7 @@ public class TwitchTransactionPanel extends JPanel {
 		if (twitchTransaction == null)
 		{
 			nameLabel.setText("Invalid transaction");
+			setVisible(false);
 			return;
 		}
 
@@ -65,6 +66,7 @@ public class TwitchTransactionPanel extends JPanel {
 		};
 		String name = String.join("<br/>", lines);
 
+		setVisible(true);
 		nameLabel.setText("<html>"+ name +"</html>");
 	}
 }

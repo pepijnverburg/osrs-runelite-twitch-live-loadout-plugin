@@ -97,6 +97,7 @@ public class MarketplaceProductPanel extends JPanel {
 		if (marketplaceProduct == null)
 		{
 			nameLabel.setText("Invalid random event donation");
+			setVisible(false);
 			return;
 		}
 
@@ -125,6 +126,7 @@ public class MarketplaceProductPanel extends JPanel {
 		};
 		String name = String.join("<br/>", lines);
 
+		setVisible(true);
 		nameLabel.setText("<html>"+ name +"</html>");
 	}
 }
