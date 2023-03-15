@@ -111,6 +111,12 @@ public class MarketplaceManager {
 	private boolean isActive = true;
 
 	/**
+	 * Flag to identify we are already fetching data so requests are not hoarding
+	 */
+	private boolean isFetchingEbsTransactions = false;
+	private boolean isFetchingEbsProducts = false;
+
+	/**
 	 * Lookup to see until when a certain product is cooled down and should stay in the queue if there are any
 	 * transactions made at the same time. This lookup also informs the viewers which products are in cooldown.
 	 */
@@ -136,10 +142,19 @@ public class MarketplaceManager {
 	/**
 	 * Get new Twitch transactions where the effects should be queued for.
 	 */
-	public void handleNewTwitchTransactions()
+	public void handleNewEbsTransactions()
 	{
+
+		// guard: block when already fetching
+		if (isFetchingEbsTransactions)
+		{
+			return;
+		}
+
 		try {
+			isFetchingEbsTransactions = true;
 			Response response = twitchApi.getEbsTransactions(lastTransactionId);
+			isFetchingEbsTransactions = false;
 			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
 			boolean status = result.get("status").getAsBoolean();
 			String message = result.get("message").getAsString();
@@ -209,6 +224,9 @@ public class MarketplaceManager {
 		} catch (Exception exception) {
 			// empty
 		}
+
+		// always set to false when there is an error
+		isFetchingEbsTransactions = false;
 	}
 
 	/**
@@ -531,6 +549,12 @@ public class MarketplaceManager {
 	public void updateEbsProducts()
 	{
 
+		// guard: skip when already fetching
+		if (isFetchingEbsProducts)
+		{
+			return;
+		}
+
 		// guard: skip updating the EBS products when there are no streamer products found
 		// this prevents requests to be made by streamers who have not configured the marketplace
 		// NOTE: we do allow an initial fetch to get an initial set of EBS products.
@@ -540,7 +564,9 @@ public class MarketplaceManager {
 		}
 
 		try {
+			isFetchingEbsProducts = true;
 			Response response = twitchApi.getEbsProducts();
+			isFetchingEbsProducts = false;
 			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
 			boolean status = result.get("status").getAsBoolean();
 			String message = result.get("message").getAsString();
@@ -570,6 +596,9 @@ public class MarketplaceManager {
 		} catch (Exception exception) {
 			log.warn("Could not fetch the new EBS products due to the following error: ", exception);
 		}
+
+		// always set to false when there is an error
+		isFetchingEbsProducts = false;
 	}
 
 	/**

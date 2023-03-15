@@ -516,7 +516,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.marketplaceEnabled())
 			{
 				// get new transactions from Twitch
-				marketplaceManager.handleNewTwitchTransactions();
+				marketplaceManager.handleNewEbsTransactions();
 			}
 		} catch (Exception exception) {
 			log.warn("Could not update the extension transactions due to the following error: ", exception);
