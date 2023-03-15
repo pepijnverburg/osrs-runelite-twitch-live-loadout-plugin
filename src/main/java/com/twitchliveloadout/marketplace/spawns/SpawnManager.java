@@ -262,6 +262,10 @@ public class SpawnManager {
 			referenceLocalPoint = client.getLocalPlayer().getLocalLocation();
 		}
 
+		final int plane = referenceWorldPoint.getPlane();
+		final Scene scene = client.getScene();
+		final short[][][] overlayIds = scene.getOverlayIds();
+		final short[][][] underlayIds = scene.getUnderlayIds();
 		final int sceneX = referenceLocalPoint.getSceneX();
 		final int sceneY = referenceLocalPoint.getSceneY();
 
@@ -285,9 +289,12 @@ public class SpawnManager {
 				int flagData = collisionFlags[sceneAttemptX][sceneAttemptY];
 				int blockedFlags = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
 				boolean isWalkable = (flagData & blockedFlags) == 0;
+				short underlayId = underlayIds[plane][sceneAttemptX][sceneAttemptY];
+				short overlayId = overlayIds[plane][sceneAttemptX][sceneAttemptY];
+				boolean isBlackOnMinimap = (underlayId == 0 && overlayId == 0);
 
 				// guard: make sure the tile is walkable
-				if (!isWalkable)
+				if (!isWalkable || isBlackOnMinimap)
 				{
 					continue;
 				}
