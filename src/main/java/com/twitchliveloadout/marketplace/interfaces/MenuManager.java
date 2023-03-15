@@ -56,18 +56,18 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 		while (effectIterator.hasNext())
 		{
 			MarketplaceEffect<EbsMenuOptionFrame> effect = effectIterator.next();
-			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
-			EbsMenuOptionFrame menuOptionFrame = effect.getFrame();
-
-			boolean satisfiesOptions = verifyPropertyMatch(clickedOption, menuOptionFrame.matchedOptions);
-			boolean satisfiesTargets = verifyPropertyMatch(clickedTarget, menuOptionFrame.matchedTargets);
-			boolean satisfiesEntityTypes = verifyPropertyMatch(clickedEntityType, menuOptionFrame.matchedEntityTypes);
 
 			// guard: skip when not active
 			if (!effect.isActive())
 			{
 				continue;
 			}
+
+			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
+			EbsMenuOptionFrame menuOptionFrame = effect.getFrame();
+			boolean satisfiesOptions = verifyPropertyMatch(clickedOption, menuOptionFrame.matchedOptions);
+			boolean satisfiesTargets = verifyPropertyMatch(clickedTarget, menuOptionFrame.matchedTargets);
+			boolean satisfiesEntityTypes = verifyPropertyMatch(clickedEntityType, menuOptionFrame.matchedEntityTypes);
 
 			// guard: check if all is satisfied
 			if (!satisfiesOptions || !satisfiesTargets || !satisfiesEntityTypes)
@@ -113,7 +113,8 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 				continue;
 			}
 
-			if (formattedProperty.contains(candidate.toLowerCase()))
+			String formattedCandidate = candidate.toLowerCase();
+			if (formattedProperty.matches(formattedCandidate))
 			{
 				return true;
 			}
