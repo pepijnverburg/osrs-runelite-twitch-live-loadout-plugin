@@ -336,6 +336,9 @@ public class MarketplaceProduct
 				// use lookup to get new spawn point candidate
 				SpawnPoint newInSceneSpawnPoint = null;
 
+				// the same new location should be used when moving form the same tile
+				// for this reason we have a lookup so that objects placed on the same tile
+				// move the the same new tile
 				if (newSpawnPoints.containsKey(worldPoint)) {
 					newInSceneSpawnPoint = newSpawnPoints.get(worldPoint);
 				} else {
@@ -593,6 +596,7 @@ public class MarketplaceProduct
 		// randomize the amount of spawns
 		int spawnGroupAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
 		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
+		String spawnPointType = spawnOption.spawnPointType;
 
 		// guard: check if the conditions are satisfied
 		// NOTE: this should happen after the timer is being set!
@@ -608,27 +612,39 @@ public class MarketplaceProduct
 			return;
 		}
 
-		// execute the spawn for the requested amount of times along with all spawn behaviours
-		for (int spawnGroupIndex = 0; spawnGroupIndex < spawnGroupAmount; spawnGroupIndex++)
-		{
-			for (EbsSpawn spawn : spawns)
+		// make sure spawning is on client thread for e.g. using client instance
+		manager.getPlugin().runOnClientThread(() -> {
+
+			// execute the spawn for the requested amount of times along with all spawn behaviours
+			for (int spawnGroupIndex = 0; spawnGroupIndex < spawnGroupAmount; spawnGroupIndex++)
 			{
-				int spawnAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawn.spawnAmount, 1, 1);
 
-				for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
+				// spawn points can be shared between spawns depending on the settings
+				SpawnPoint spawnPoint = null;
+
+				for (EbsSpawn spawn : spawns)
 				{
-					int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
+					int spawnAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawn.spawnAmount, 1, 1);
 
-					// make sure spawning is on client thread for e.g. using client instance
-					manager.getPlugin().runOnClientThread(() -> {
-						triggerSpawn(spawn, spawnDelayMs);
-					});
+					for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
+					{
+						int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
+
+						// determine whether we re-use the same spawn-point we already got
+						// or if we should generate a new one
+						if (spawnPoint == null || INDIVIDUAL_SPAWN_POINT_TYPE.equals(spawnPointType))
+						{
+							spawnPoint = getSpawnPoint(spawn);
+						}
+
+						triggerSpawn(spawn, spawnPoint, spawnDelayMs);
+					};
 				}
 			}
-		}
+		});
 	}
 
-	private void triggerSpawn(EbsSpawn spawn, int spawnDelayMs)
+	private void triggerSpawn(EbsSpawn spawn, SpawnPoint spawnPoint, int spawnDelayMs)
 	{
 
 		// guard: make sure the spawn is valid
@@ -638,9 +654,8 @@ public class MarketplaceProduct
 			return;
 		}
 
-		Client client = manager.getClient();
 		SpawnManager spawnManager = manager.getSpawnManager();
-		SpawnPoint spawnPoint = getSpawnPoint(spawn);
+		Client client = manager.getClient();
 
 		// guard: make sure the spawn point is valid
 		if (spawnPoint == null)

@@ -52,6 +52,9 @@ public class MarketplaceConstants {
 	public static final String PLAYER_MENU_ENTITY_TYPE = "player";
 	public static final String OBJECT_MENU_ENTITY_TYPE = "object";
 
+	public static final String INDIVIDUAL_SPAWN_POINT_TYPE = "individual";
+	public static final String GROUP_SPAWN_POINT_TYPE = "group";
+
 	public static final int MOVEMENT_EFFECT_MAX_SIZE = 100;
 	public static final int TRANSMOG_EFFECT_MAX_SIZE = 100;
 
