@@ -1066,7 +1066,7 @@ public class MarketplaceProduct
 
 		// perform the actual animation along with a possible reset after it is done
 		handleEffectFrame(animation, baseDelayMs, (startDelayMs) -> {
-			setAnimation(spawnedObject, animation.id, startDelayMs);
+			setAnimation(spawnedObject, animation.id, animation.shouldLoop, startDelayMs);
 		}, resetAnimationHandler);
 	}
 
@@ -1307,10 +1307,10 @@ public class MarketplaceProduct
 	/**
 	 * Schedule a set animation for a spawned object
 	 */
-	private void setAnimation(SpawnedObject spawnedObject, int animationId, long delayMs)
+	private void setAnimation(SpawnedObject spawnedObject, int animationId, boolean shouldLoop, long delayMs)
 	{
 		handleSpawnedObject(spawnedObject, delayMs, () -> {
-			spawnedObject.setAnimation(animationId, true);
+			spawnedObject.setAnimation(animationId, shouldLoop);
 		});
 	}
 
