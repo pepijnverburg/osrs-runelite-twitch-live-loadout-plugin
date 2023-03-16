@@ -860,50 +860,109 @@ public class MarketplaceProduct
 		while (iterator.hasNext())
 		{
 			EbsCondition condition = iterator.next();
-			Integer varbitId = condition.varbitId;
-			Integer varbitValue = condition.varbitValue;
-			Integer minTimeMs = condition.minTimeMs;
-			Integer maxTimeMs = condition.maxTimeMs;
-			Double minTimePercentage = condition.minTimePercentage;
-			Double maxTimePercentage = condition.maxTimePercentage;
-			Integer maxSpawnsInView = condition.maxSpawnsInView;
-			Integer maxSpawnsInViewRadius = condition.maxSpawnsInViewRadius;
-			Integer minSpawnsInView = condition.minSpawnsInView;
-			Integer minSpawnsInViewRadius = condition.minSpawnsInViewRadius;
-			Integer spawnInViewRadius = condition.spawnInViewRadius;
+			boolean conditionVerified = verifyCondition(condition, spawnedObject);
 
-			// guard: check if it is allowed within an absolute time-frame
-			if (!verifyTimePassedMs(minTimeMs, maxTimeMs))
+			// guard: if one condition is not verified return false
+			// this means the top-level conditions are using AND logic
+			if (!conditionVerified)
 			{
 				return false;
 			}
+		}
 
-			// guard: check if it is allowed withing a relative time-frame
-			if (!verifyTimePassedPercentage(minTimePercentage, maxTimePercentage))
+		return true;
+	}
+
+	private boolean verifyCondition(EbsCondition condition, SpawnedObject spawnedObject)
+	{
+
+		// guard: check if collection is valid
+		if (condition == null)
+		{
+			return true;
+		}
+
+		Integer varbitId = condition.varbitId;
+		Integer varbitValue = condition.varbitValue;
+		Integer minTimeMs = condition.minTimeMs;
+		Integer maxTimeMs = condition.maxTimeMs;
+		Double minTimePercentage = condition.minTimePercentage;
+		Double maxTimePercentage = condition.maxTimePercentage;
+		Integer maxSpawnsInView = condition.maxSpawnsInView;
+		Integer maxSpawnsInViewRadius = condition.maxSpawnsInViewRadius;
+		Integer minSpawnsInView = condition.minSpawnsInView;
+		Integer minSpawnsInViewRadius = condition.minSpawnsInViewRadius;
+		Integer spawnInViewRadius = condition.spawnInViewRadius;
+		ArrayList<EbsCondition> orConditions = condition.or;
+		ArrayList<EbsCondition> andConditions = condition.and;
+		boolean orConditionsVerified = false;
+
+		// guard: check if it is allowed within an absolute time-frame
+		if (!verifyTimePassedMs(minTimeMs, maxTimeMs))
+		{
+			return false;
+		}
+
+		// guard: check if it is allowed withing a relative time-frame
+		if (!verifyTimePassedPercentage(minTimePercentage, maxTimePercentage))
+		{
+			return false;
+		}
+
+		// guard: check if this condition should check a varbit
+		if (varbitId >= 0 && manager.getClient().getVarbitValue(varbitId) != varbitValue)
+		{
+			return false;
+		}
+
+		// guard: check for max spawns in view
+		if (maxSpawnsInView > 0 && countSpawnedObjectsInView(maxSpawnsInViewRadius) > maxSpawnsInView)
+		{
+			return false;
+		}
+
+		// guard: check for min spawns in view
+		if (minSpawnsInView > 0 && countSpawnedObjectsInView(minSpawnsInViewRadius) < minSpawnsInView)
+		{
+			return false;
+		}
+
+		// guard: check for request to check the current spawn and if its in radius
+		if (spawnedObject != null && spawnInViewRadius > 0 && !spawnedObject.isInView(spawnInViewRadius))
+		{
+			return false;
+		}
+
+		LambdaIterator.handleAll(andConditions, (andCondition) -> {
+
+		});
+
+		// check if one AND condition is not valid to set to false
+		if (andConditions != null)
+		{
+			for (EbsCondition andCondition : andConditions)
 			{
-				return false;
+				if (!verifyCondition(andCondition, spawnedObject))
+				{
+					return false;
+				}
+			}
+		}
+
+		// check if one OR condition is valid to set the flag to true
+		if (orConditions != null)
+		{
+			for (EbsCondition orCondition : orConditions)
+			{
+				if (verifyCondition(orCondition, spawnedObject))
+				{
+					orConditionsVerified = true;
+					break;
+				}
 			}
 
-			// guard: check if this condition should check a varbit
-			if (varbitId >= 0 && manager.getClient().getVarbitValue(varbitId) != varbitValue)
-			{
-				return false;
-			}
-
-			// guard: check for max spawns in view
-			if (maxSpawnsInView > 0 && countSpawnedObjectsInView(maxSpawnsInViewRadius) > maxSpawnsInView)
-			{
-				return false;
-			}
-
-			// guard: check for min spawns in view
-			if (minSpawnsInView > 0 && countSpawnedObjectsInView(minSpawnsInViewRadius) < minSpawnsInView)
-			{
-				return false;
-			}
-
-			// guard: check for request to check the current spawn and if its in radius
-			if (spawnedObject != null && spawnInViewRadius > 0 && !spawnedObject.isInView(spawnInViewRadius))
+			// guard: check if the or conditions are valid
+			if (!orConditionsVerified)
 			{
 				return false;
 			}

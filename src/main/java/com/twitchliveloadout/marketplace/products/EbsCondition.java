@@ -2,6 +2,8 @@ package com.twitchliveloadout.marketplace.products;
 
 import net.runelite.api.Constants;
 
+import java.util.ArrayList;
+
 public class EbsCondition {
 	public Integer varbitId = -1;
 	public Integer varbitValue = -1;
@@ -14,4 +16,6 @@ public class EbsCondition {
 	public Integer minSpawnsInView = -1;
 	public Integer minSpawnsInViewRadius = Constants.CHUNK_SIZE;
 	public Integer spawnInViewRadius = -1;
+	public ArrayList<EbsCondition> or;
+	public ArrayList<EbsCondition> and;
 }
