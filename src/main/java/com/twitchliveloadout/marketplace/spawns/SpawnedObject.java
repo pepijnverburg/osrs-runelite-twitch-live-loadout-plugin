@@ -179,52 +179,57 @@ public class SpawnedObject {
 	public void recolor(EbsRecolor recolor)
 	{
 		int sourceColorIndex = recolor.sourceColorIndex;
-		int sourceColorHsl = recolor.sourceColor;
-		int targetColorHex = recolor.targetColor;
+		int sourceColorHsl = recolor.sourceColorHsl;
+		int targetColorHsl = recolor.targetColorHsl;
+		int targetColorHex = recolor.targetColorHex;
+
+		// check if a hex target color is passed which needs to be converted
+		// NOTE: when also a HSL is padded the HSL takes priority
+		if (!isValidColor(targetColorHsl) && isValidColor(targetColorHex))
+		{
+			targetColorHsl = getColorHsl(targetColorHex);
+		}
 
 		// determine whether an index or color is requested to be changed
 		if (isValidColor(sourceColorHsl)) {
-			recolorByColor(sourceColorHsl, targetColorHex);
+			recolorByColor(sourceColorHsl, targetColorHsl);
 		} else if (isValidColorIndex(sourceColorIndex)) {
-			recolorByIndex(sourceColorIndex, targetColorHex);
-		} else if (isValidColor(targetColorHex)) {
+			recolorByIndex(sourceColorIndex, targetColorHsl);
+		} else if (isValidColor(targetColorHsl)) {
 
 			// recolor the whole model
 			for (short color : modelData.getFaceColors())
 			{
-				recolorByColor(color, targetColorHex);
+				recolorByColor(color, targetColorHsl);
 			}
 		}
 	}
 
-	private void recolorByColor(int sourceColorHsl, int targetColorHex)
+	private void recolorByColor(int sourceColorHsl, int targetColorHsl)
 	{
 
 		// guard: make sure the target color is valid
-		if (!isValidColor((sourceColorHsl)) || !isValidColor(targetColorHex))
+		if (!isValidColor((sourceColorHsl)) || !isValidColor(targetColorHsl))
 		{
 			return;
 		}
 
-		short targetColorHsl = getColorHsl(targetColorHex);
-
-		modelData.recolor((short) sourceColorHsl, targetColorHsl);
+		modelData.recolor((short) sourceColorHsl, (short) targetColorHsl);
 	}
 
-	private void recolorByIndex(int sourceColorIndex, int targetColorHex)
+	private void recolorByIndex(int sourceColorIndex, int targetColorHsl)
 	{
 
 		// guard: make sure the index and color are valid
-		if (!isValidColorIndex(sourceColorIndex) || !isValidColor(targetColorHex))
+		if (!isValidColorIndex(sourceColorIndex) || !isValidColor(targetColorHsl))
 		{
 			return;
 		}
 
 		short[] colors = modelData.getFaceColors();
 		short sourceColorHsl = colors[sourceColorIndex];
-		short targetColorHsl = getColorHsl(targetColorHex);
 
-		modelData.recolor(sourceColorHsl, targetColorHsl);
+		modelData.recolor(sourceColorHsl, (short) targetColorHsl);
 	}
 
 	private short getColorHsl(int colorHex)
