@@ -114,6 +114,10 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return true;
 	}
 
+	@Range(
+			min = 0,
+			max = 120
+	)
 	@ConfigItem(
 			keyName = "syncDelay",
 			name = "Stream delay",
