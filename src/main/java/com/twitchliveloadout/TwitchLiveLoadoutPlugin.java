@@ -42,7 +42,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
-import net.runelite.api.kit.KitType;
 import net.runelite.api.vars.AccountType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -340,28 +339,29 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to update the state only when it has changed.
 	 */
-	@Schedule(period = 500, unit = ChronoUnit.MILLIS, asynchronous = true)
+	@Schedule(period = 500, unit = ChronoUnit.MILLIS, asynchronous = false)
 	public void syncState()
 	{
 		try {
-			final JsonObject filteredState = twitchState.getFilteredState();
 
-			// We will not verify whether the set was successful here
-			// because it is possible that the request is being delayed
-			// due to the custom streamer delay
-			final boolean isScheduled = twitchApi.scheduleBroadcasterState(filteredState);
-
-			// guard: check if the scheduling was successful due to for example rate limiting
-			// if not we will not acknowledge the change
-			if (!isScheduled)
+			// guard: check if enough time has passed and other conditions are valid
+			if (!twitchApi.canScheduleState())
 			{
 				return;
 			}
 
+			final JsonObject filteredState = twitchState.getFilteredState();
 			final String filteredStateString = filteredState.toString();
 			final String newFilteredStateString = twitchState.getFilteredState().toString();
 
-			// Guard: check if the state has changed in the mean time,
+			// we will not verify whether the set was successful here
+			// because it is possible that the request is being delayed
+			// due to the custom streamer delay
+			// also, it is safe to schedule this on the client thread, because
+			// the actual request is done on another thread!
+			twitchApi.scheduleBroadcasterState(filteredState);
+
+			// guard: check if the state has changed in the mean time,
 			// because the request takes some time, in this case we will
 			// not acknowledge the change
 			if (!filteredStateString.equals(newFilteredStateString))
@@ -417,7 +417,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Polling mechanism to sync player info.
 	 * We cannot use the game state update events as the player name is not loaded then.
 	 */
-	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = false)
 	public void syncPlayerInfo()
 	{
 		try {
@@ -509,14 +509,17 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to get new Twitch transactions
 	 */
-	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 4, unit = ChronoUnit.SECONDS, asynchronous = false)
 	public void fetchMarketplaceTransactions()
 	{
 		try {
 			if (config.marketplaceEnabled())
 			{
 				// get new transactions from Twitch
-				marketplaceManager.handleNewEbsTransactions();
+				// NOTE: run on pool thread to be non-blocking
+				runOnPoolThread(() -> {
+					marketplaceManager.handleNewEbsTransactions();
+				});
 			}
 		} catch (Exception exception) {
 			log.warn("Could not update the extension transactions due to the following error: ", exception);
@@ -526,7 +529,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to manage activation and de-activation of products
 	 */
-	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = false)
 	public void applyMarketplaceTransactions()
 	{
 		try {
@@ -892,7 +895,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Periodically update the connectivity panel to show the latest status
 	 */
-	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = false)
 	public void updateConnectivityPanel()
 	{
 		try {
@@ -954,23 +957,42 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public ScheduledFuture scheduleOnClientThread(ClientThreadAction action, long delayMs)
 	{
-
 		// guard: check if we should execute immediately
 		if (delayMs <= 0)
 		{
-			runOnClientThread(action);
+			try {
+				runOnClientThread(action);
+			} catch (Exception exception) {
+				log.warn("Could not execute an action immediately: ", exception);
+			}
 			return null;
 		}
 
+		return scheduleOnPoolThread(() -> {
+			runOnClientThread(action);
+		}, delayMs);
+	}
+
+	public ScheduledFuture runOnPoolThread(ClientThreadAction action)
+	{
+		return scheduleOnPoolThread(action, 0);
+	}
+
+	public ScheduledFuture scheduleOnPoolThread(ClientThreadAction action, long delayMs)
+	{
 		try {
 			return scheduledExecutor.schedule(new Runnable() {
 				@Override
 				public void run() {
-					runOnClientThread(action);
+					try {
+						action.execute();
+					} catch (Exception exception) {
+						log.warn("Could not execute an action: ", exception);
+					}
 				}
 			}, delayMs, TimeUnit.MILLISECONDS);
 		} catch (Exception exception) {
-			log.warn("Could not schedule an action on the client thread (delay: "+ delayMs +"): ", exception);
+			log.warn("Could not schedule an action (delay: "+ delayMs +"): ", exception);
 		}
 
 		return null;
