@@ -43,6 +43,7 @@ public class TwitchApi
 	public final static int MIN_SCHEDULE_DEFAULT_DELAY = 1300; // ms
 	public final static int MIN_SCHEDULE_LOGGED_OUT_DELAY = 6000; // ms
 	public final static int MIN_SCHEDULE_GROUP_DELAY = 6000; // ms
+	public final static int MAX_SCHEDULED_STATE_AMOUNT = 50;
 
 	public final static int MIN_SYNC_DELAY = 0; // ms
 	public final static int BASE_SYNC_DELAY = 1000; // ms
@@ -56,6 +57,7 @@ public class TwitchApi
 	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com/";
 	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions/";
 	private final static String RATE_LIMIT_REMAINING_HEADER = "Ratelimit-Remaining";
+	private final static int SEND_PUBSUB_TIMEOUT_MS = 10 * 1000;
 	private final static int GET_CONFIGURATION_SERVICE_TIMEOUT_MS = 5 * 1000;
 	private final static int GET_EBS_PRODUCTS_TIMEOUT_MS = 10 * 1000;
 	private final static int GET_EBS_TRANSACTIONS_TIMEOUT_MS = 10 * 1000;
@@ -102,14 +104,9 @@ public class TwitchApi
 		scheduledExecutor.shutdown();
 	}
 
-	public boolean scheduleBroadcasterState(final JsonObject state)
+	public void scheduleBroadcasterState(final JsonObject state)
 	{
 		int delay = config.syncDelay() * 1000;
-
-		if (!canScheduleState())
-		{
-			return false;
-		}
 
 		// add the base delay, because every streamer
 		// has some delay we want to take into account
@@ -137,7 +134,6 @@ public class TwitchApi
 		}, delay, TimeUnit.MILLISECONDS);
 
 		lastScheduleStateTime = Instant.now();
-		return true;
 	}
 
 	public boolean canScheduleState()
@@ -145,6 +141,12 @@ public class TwitchApi
 
 		// guard: if the scheduler is shutdown block all future requests
 		if (scheduledExecutor.isShutdown())
+		{
+			return false;
+		}
+
+		// guard: check if the queue is too large
+		if (scheduledExecutor.getQueue().size() >= MAX_SCHEDULED_STATE_AMOUNT)
 		{
 			return false;
 		}
@@ -213,6 +215,10 @@ public class TwitchApi
 		final String token = config.twitchToken();
 		final String url = DEFAULT_TWITCH_BASE_URL +"pubsub";
 		final String dataString = data.toString();
+		final OkHttpClient timeoutHttpClient = httpClient
+			.newBuilder()
+			.callTimeout(SEND_PUBSUB_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+			.build();
 
 		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
 		Request request = new Request.Builder()
@@ -224,24 +230,23 @@ public class TwitchApi
 			.url(url)
 			.build();
 
-		Response response = httpClient.newCall(request).execute();
+		Response response = timeoutHttpClient.newCall(request).execute();
 		return response;
 	}
 
 	public Response getEbsProducts() throws Exception
 	{
-		final String token = config.twitchToken();
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
+		final String token = config.twitchToken();
+		final OkHttpClient timeoutHttpClient = httpClient
+			.newBuilder()
+			.callTimeout(GET_EBS_PRODUCTS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+			.build();
 
 		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
 		{
 			url = "http://localhost:3010/api/marketplace-products";
 		}
-
-		final OkHttpClient timeoutHttpClient = httpClient
-			.newBuilder()
-			.callTimeout(GET_EBS_PRODUCTS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-			.build();
 
 		// Documentation: https://dev.twitch.tv/docs/api/reference
 		Request request = new Request.Builder()
