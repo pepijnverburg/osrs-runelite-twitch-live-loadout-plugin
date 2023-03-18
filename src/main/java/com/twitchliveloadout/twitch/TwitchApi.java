@@ -14,10 +14,7 @@ import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
 
 import static net.runelite.http.api.RuneLiteAPI.JSON;
 
@@ -64,8 +61,19 @@ public class TwitchApi
 	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 15 * 60 * 1000; // in ms
 	private final static String USER_AGENT = "RuneLite";
 
-	private final OkHttpClient httpClient = new OkHttpClient();
+	/**
+	 * Dedicated scheduler for sending the new state with a stream delay
+	 */
 	private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+
+	/**
+	 * Dedicated HTTP clients for every type of request
+	 */
+	private final OkHttpClient httpClient = new OkHttpClient();
+	private final OkHttpClient ebsTransactionsHttpClient;
+	private final OkHttpClient configurationSegmentHttpClient;
+	private final OkHttpClient pubSubHttpClient;
+	final OkHttpClient ebsProductsHttpClient;
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
@@ -96,6 +104,12 @@ public class TwitchApi
 		this.client = client;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
+
+		// instantiate a HTTP client for every call with a different timeout
+		ebsTransactionsHttpClient = createHttpClient(GET_EBS_TRANSACTIONS_TIMEOUT_MS);
+		configurationSegmentHttpClient = createHttpClient(GET_CONFIGURATION_SERVICE_TIMEOUT_MS);
+		pubSubHttpClient = createHttpClient(SEND_PUBSUB_TIMEOUT_MS);
+		ebsProductsHttpClient = createHttpClient(GET_EBS_PRODUCTS_TIMEOUT_MS);
 	}
 
 	public void shutDown()
@@ -126,7 +140,7 @@ public class TwitchApi
 			public void run()
 			{
 				try {
-					sendPubSubState(state);
+					sendAsyncPubSubState(state);
 				} catch (Exception exception) {
 					log.warn("Could not send the pub sub state due to the following error: ", exception);
 				}
@@ -185,7 +199,7 @@ public class TwitchApi
 		scheduledExecutor.getQueue().clear();
 	}
 
-	private boolean sendPubSubState(JsonObject state)
+	private boolean sendAsyncPubSubState(JsonObject state)
 	{
 		try {
 			final JsonObject data = new JsonObject();
@@ -194,14 +208,17 @@ public class TwitchApi
 			targets.add(TwitchPubSubTargetType.BROADCAST.getTarget());
 			String compressedState = compressState(state);
 
-			lastCompressedState = compressedState;
-
 			data.addProperty("message", compressedState);
 			data.addProperty("broadcaster_id", channelId);
 			data.add("target", targets);
 
-			Response response = sendPubSubMessage(data);
-			verifyStateUpdateResponse("PubSub", response, state, compressedState);
+			sendAsyncPubSubMessage(data, (Response response) -> {
+				verifyStateUpdateResponse("PubSub", response, compressedState);
+			}, (exception) -> {
+				log.warn("Could not send pub sub state due to the following error: ", exception);
+			});
+
+			lastCompressedState = compressedState;
 		} catch (Exception exception) {
 			log.warn("Could not send pub sub state due to the following error: ", exception);
 			return false;
@@ -210,66 +227,31 @@ public class TwitchApi
 		return true;
 	}
 
-	private Response sendPubSubMessage(JsonObject data) throws Exception
+	private void sendAsyncPubSubMessage(JsonObject data, HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
 	{
-		final String token = config.twitchToken();
 		final String url = DEFAULT_TWITCH_BASE_URL +"pubsub";
-		final String dataString = data.toString();
-		final OkHttpClient timeoutHttpClient = httpClient
-			.newBuilder()
-			.callTimeout(SEND_PUBSUB_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-			.build();
 
 		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
-		Request request = new Request.Builder()
-			.header("Client-ID", DEFAULT_EXTENSION_CLIENT_ID)
-			.header("Authorization", "Bearer "+ token)
-			.header("User-Agent", USER_AGENT)
-			.header("Content-Type", "application/json")
-			.post(RequestBody.create(JSON, dataString))
-			.url(url)
-			.build();
-
-		Response response = timeoutHttpClient.newCall(request).execute();
-		return response;
+		performPostRequest(url, data, pubSubHttpClient, responseHandler, errorHandler);
 	}
 
-	public Response getEbsProducts() throws Exception
+	public void fetchAsyncEbsProducts(HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
 	{
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
-		final String token = config.twitchToken();
-		final OkHttpClient timeoutHttpClient = httpClient
-			.newBuilder()
-			.callTimeout(GET_EBS_PRODUCTS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-			.build();
+		final JsonObject data = new JsonObject();
 
 		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
 		{
 			url = "http://localhost:3010/api/marketplace-products";
 		}
 
-		// Documentation: https://dev.twitch.tv/docs/api/reference
-		Request request = new Request.Builder()
-			.header("Authorization", "Bearer "+ token)
-			.header("User-Agent", USER_AGENT)
-			.header("Content-Type", "application/json")
-			.get()
-			.url(url)
-			.build();
-
-		Response response = timeoutHttpClient.newCall(request).execute();
-		return response;
+		performPostRequest(url, data, ebsProductsHttpClient, responseHandler, errorHandler);
 	}
 
-	public Response getEbsTransactions(String lastTransactionId) throws Exception
+	public void fetchAsyncEbsTransactions(String lastTransactionId, HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
 	{
-		final String token = config.twitchToken();
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-transactions";
 		final JsonObject data = new JsonObject();
-		final OkHttpClient timeoutHttpClient = httpClient
-			.newBuilder()
-			.callTimeout(GET_EBS_TRANSACTIONS_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-			.build();
 
 		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
 		{
@@ -282,63 +264,43 @@ public class TwitchApi
 			data.addProperty("lastTransactionId", lastTransactionId);
 		}
 
-		// Documentation: https://dev.twitch.tv/docs/api/reference
-		Request request = new Request.Builder()
-			.header("Authorization", "Bearer "+ token)
-			.header("User-Agent", USER_AGENT)
-			.header("Content-Type", "application/json")
-			.post(RequestBody.create(JSON, data.toString()))
-			.url(url)
-			.build();
-
-		Response response = timeoutHttpClient.newCall(request).execute();
-		return response;
+		performPostRequest(url, data, ebsTransactionsHttpClient, responseHandler, errorHandler);
 	}
 
-	public Response updateConfigurationSegment(TwitchSegmentType segmentType) throws Exception
+	public void fetchAsyncConfigurationSegment(TwitchSegmentType segmentType) throws Exception
 	{
 		final String clientId = DEFAULT_EXTENSION_CLIENT_ID;
-		final String token = config.twitchToken();
 		final String channelId = getChannelId();
-		final String url = DEFAULT_TWITCH_BASE_URL +"configurations";
-		final String urlWithQuery = url +"?broadcaster_id="+ channelId +"&extension_id="+ clientId +"&segment="+ segmentType.getKey();
-		final OkHttpClient timeoutHttpClient = httpClient
-			.newBuilder()
-			.callTimeout(GET_CONFIGURATION_SERVICE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-			.build();
+		final String baseUrl = DEFAULT_TWITCH_BASE_URL +"configurations";
+		final String url = baseUrl +"?broadcaster_id="+ channelId +"&extension_id="+ clientId +"&segment="+ segmentType.getKey();
 
 		// Documentation: https://dev.twitch.tv/docs/api/reference#get-extension-configuration-segment
-		Request request = new Request.Builder()
-			.header("Client-ID", clientId)
-			.header("Authorization", "Bearer "+ token)
-			.header("User-Agent", USER_AGENT)
-			.header("Content-Type", "application/json")
-			.get()
-			.url(urlWithQuery)
-			.build();
+		performGetRequest(url, configurationSegmentHttpClient, (Response response) -> {
 
-		Response response = timeoutHttpClient.newCall(request).execute();
+			// there is a fair chance the configuration segment is empty when nothing is configured yet
+			// for this reason we silently ignore the error
+			try {
+				String rawSegmentResult = response.body().string();
+				JsonObject segmentResult = parseJson(rawSegmentResult);
+				String rawSegmentContent = segmentResult
+					.getAsJsonArray("data")
+					.get(0)
+					.getAsJsonObject()
+					.get("content")
+					.getAsString();
+				JsonObject segmentContent = parseJson(rawSegmentContent);
 
-		// immediately cache the response if valid
-		try {
-			String rawSegmentResult = response.body().string();
-			JsonObject segmentResult = parseJson(rawSegmentResult);
-			String rawSegmentContent = segmentResult
-				.getAsJsonArray("data")
-				.get(0)
-				.getAsJsonObject()
-				.get("content")
-				.getAsString();
-			JsonObject segmentContent = parseJson(rawSegmentContent);
-			configurationSegmentContents.put(segmentType, segmentContent);
-		} catch (Exception exception) {
+				// cache the response if valid
+				configurationSegmentContents.put(segmentType, segmentContent);
+			} catch (Exception exception) {
+				// empty
+			}
+		}, (error) -> {
 			// empty
-		}
-
-		return response;
+		});
 	}
 
-	private void verifyStateUpdateResponse(String type, Response response, JsonObject state, String compressedState) throws Exception
+	private void verifyStateUpdateResponse(String type, Response response, String compressedState) throws Exception
 	{
 		final int responseCode = response.code();
 		final String responseText = response.body().string();
@@ -494,5 +456,92 @@ public class TwitchApi
 	private JsonObject parseJson(String rawJson)
 	{
 		return (new JsonParser()).parse(rawJson).getAsJsonObject();
+	}
+
+	/**
+	 * Perform a generic GET request to the Twitch API.
+	 */
+	public void performGetRequest(String url, OkHttpClient httpClient, HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
+	{
+		final String token = config.twitchToken();
+		final Request request = new Request.Builder()
+			.header("Client-ID", DEFAULT_EXTENSION_CLIENT_ID)
+			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.get()
+			.url(url)
+			.build();
+
+		performRequest(request, httpClient, responseHandler, errorHandler);
+	}
+
+	/**
+	 * Perform a generic POST request to the Twitch API.
+	 */
+	public void performPostRequest(String url, JsonObject data, OkHttpClient httpClient, HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
+	{
+		final String token = config.twitchToken();
+		final Request request = new Request.Builder()
+			.header("Client-ID", DEFAULT_EXTENSION_CLIENT_ID)
+			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.post(RequestBody.create(JSON, data.toString()))
+			.url(url)
+			.build();
+
+		performRequest(request, httpClient, responseHandler, errorHandler);
+	}
+
+	/**
+	 * Perform a generic request to the Twitch API.
+	 */
+	public void performRequest(Request request, OkHttpClient httpClient, HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
+	{
+		final HttpUrl url = request.url();
+
+		// queue the request on the OkHttp thread pool to prevent blocking other threads
+		httpClient.newCall(request).enqueue(new Callback() {
+			@Override
+			public void onFailure(Call call, IOException exception) {
+				log.warn("Could not send request to: "+ url);
+				log.warn("The error that occurred was: ");
+				log.warn(exception.getMessage());
+				errorHandler.execute(exception);
+			}
+
+			@Override
+			public void onResponse(Call call, Response response) {
+				try {
+					responseHandler.execute(response);
+				} catch (Exception exception) {
+					log.warn("Could not handle the response that was received from: "+ url);
+					log.warn(exception.getMessage());
+				}
+
+				// always close the response to be sure there are no memory leaks
+				response.close();
+			}
+		});
+	}
+
+	/**
+	 * Create a new HTTP client instance with a specific timeout
+	 */
+	public OkHttpClient createHttpClient(int timeoutMs)
+	{
+		return httpClient
+			.newBuilder()
+			.callTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+			.build();
+	}
+
+	public interface HttpResponseHandler {
+		public void execute(Response response) throws Exception;
+	}
+
+	public interface HttpErrorHandler {
+		public void execute(Exception error);
 	}
 }

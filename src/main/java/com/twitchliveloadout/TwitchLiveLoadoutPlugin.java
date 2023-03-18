@@ -475,8 +475,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			if (config.syncEnabled())
 			{
-				twitchApi.updateConfigurationSegment(TwitchSegmentType.BROADCASTER);
-				twitchApi.updateConfigurationSegment(TwitchSegmentType.DEVELOPER);
+				twitchApi.fetchAsyncConfigurationSegment(TwitchSegmentType.BROADCASTER);
 			}
 			if (config.marketplaceEnabled())
 			{
@@ -499,7 +498,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.marketplaceEnabled())
 			{
 				// update the EBS products
-				marketplaceManager.updateEbsProducts();
+				marketplaceManager.updateAsyncEbsProducts();
 			}
 		} catch (Exception exception) {
 			log.warn("Could not update the EBS products due to the following error: ", exception);
@@ -516,10 +515,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.marketplaceEnabled())
 			{
 				// get new transactions from Twitch
-				// NOTE: run on pool thread to be non-blocking
-				runOnPoolThread(() -> {
-					marketplaceManager.handleNewEbsTransactions();
-				});
+				marketplaceManager.fetchAsyncNewEbsTransactions();
 			}
 		} catch (Exception exception) {
 			log.warn("Could not update the extension transactions due to the following error: ", exception);

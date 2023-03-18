@@ -142,7 +142,7 @@ public class MarketplaceManager {
 	/**
 	 * Get new Twitch transactions where the effects should be queued for.
 	 */
-	public void handleNewEbsTransactions()
+	public void fetchAsyncNewEbsTransactions()
 	{
 
 		// guard: block when already fetching
@@ -153,74 +153,77 @@ public class MarketplaceManager {
 
 		try {
 			isFetchingEbsTransactions = true;
-			Response response = twitchApi.getEbsTransactions(lastTransactionId);
-			isFetchingEbsTransactions = false;
-			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
-			boolean status = result.get("status").getAsBoolean();
-			String message = result.get("message").getAsString();
-			JsonArray newTransactionsJson = result.getAsJsonArray("transactions");
-			ArrayList<TwitchTransaction> newTransactions = new ArrayList<>();
-			final AtomicBoolean updatedLastTransactionId = new AtomicBoolean(false);
+			twitchApi.fetchAsyncEbsTransactions(lastTransactionId, (Response response) -> {
+				isFetchingEbsTransactions = false;
+				JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
+				boolean status = result.get("status").getAsBoolean();
+				String message = result.get("message").getAsString();
+				JsonArray newTransactionsJson = result.getAsJsonArray("transactions");
+				ArrayList<TwitchTransaction> newTransactions = new ArrayList<>();
+				final AtomicBoolean updatedLastTransactionId = new AtomicBoolean(false);
 
-			// guard: check if the status is valid
-			if (!status)
-			{
-				log.warn("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
-				return;
-			}
-
-			newTransactionsJson.forEach((element) -> {
-
-				// try catch for each individual transaction to not have one invalid transaction
-				// cancel all others with the top-level try-catch in this function
-				try {
-					TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
-					String transactionId = twitchTransaction.id;
-
-					// update the ID to tell for next requests to fetch newer transactions
-					if (!updatedLastTransactionId.get())
-					{
-						lastTransactionId = transactionId;
-						updatedLastTransactionId.set(true);
-					}
-
-					// guard: check if this transaction is already handled
-					// this is required because we have an offset on the last checked at date
-					// because with the HTTP request delays it is possible to miss a transaction
-					if (handledTransactionIds.contains(transactionId)) {
-						log.info("Skipping Twitch transaction because it was already handled: " + transactionId);
-						return;
-					}
-
-					handledTransactionIds.add(transactionId);
-					newTransactions.add(twitchTransaction);
-					log.info("Queued a new Twitch transaction with ID: " + transactionId);
-				} catch (Exception exception) {
-					log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
+				// guard: check if the status is valid
+				if (!status)
+				{
+					log.warn("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
+					return;
 				}
+
+				newTransactionsJson.forEach((element) -> {
+
+					// try catch for each individual transaction to not have one invalid transaction
+					// cancel all others with the top-level try-catch in this function
+					try {
+						TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
+						String transactionId = twitchTransaction.id;
+
+						// update the ID to tell for next requests to fetch newer transactions
+						if (!updatedLastTransactionId.get())
+						{
+							lastTransactionId = transactionId;
+							updatedLastTransactionId.set(true);
+						}
+
+						// guard: check if this transaction is already handled
+						// this is required because we have an offset on the last checked at date
+						// because with the HTTP request delays it is possible to miss a transaction
+						if (handledTransactionIds.contains(transactionId)) {
+							log.info("Skipping Twitch transaction because it was already handled: " + transactionId);
+							return;
+						}
+
+						handledTransactionIds.add(transactionId);
+						newTransactions.add(twitchTransaction);
+						log.info("Queued a new Twitch transaction with ID: " + transactionId);
+					} catch (Exception exception) {
+						log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
+					}
+				});
+
+				// guard: only update the lists and the panel when new transactions were found
+				if (newTransactions.size() <= 0)
+				{
+					return;
+				}
+
+				// add in front of the archive as it is from new to old
+				archivedTransactions.addAll(0, newTransactions);
+
+				// add at the end of the queue from old to new
+				// reverse is needed because the list is from NEW to OLD
+				// and we want the oldest transactions to be first in the queue
+				Collections.reverse(newTransactions);
+				queuedTransactions.addAll(newTransactions);
+				updateMarketplacePanel();
+
+				// clean up archived transactions when exceeding maximum amount
+				while (archivedTransactions.size() > config.marketplaceTransactionHistoryAmount())
+				{
+					archivedTransactions.remove(archivedTransactions.size() - 1);
+				}
+			}, (exception) -> {
+				isFetchingEbsTransactions = false;
 			});
-
-			// guard: only update the lists and the panel when new transactions were found
-			if (newTransactions.size() <= 0)
-			{
-				return;
-			}
-
-			// add in front of the archive as it is from new to old
-			archivedTransactions.addAll(0, newTransactions);
-
-			// add at the end of the queue from old to new
-			// reverse is needed because the list is from NEW to OLD
-			// and we want the oldest transactions to be first in the queue
-			Collections.reverse(newTransactions);
-			queuedTransactions.addAll(newTransactions);
-			updateMarketplacePanel();
-
-			// clean up archived transactions when exceeding maximum amount
-			while (archivedTransactions.size() > config.marketplaceTransactionHistoryAmount())
-			{
-				archivedTransactions.remove(archivedTransactions.size() - 1);
-			}
 		} catch (Exception exception) {
 			// empty
 		}
@@ -438,45 +441,6 @@ public class MarketplaceManager {
 		});
 	}
 
-	/**
-	 * Rebuild the marketplace panel completely
-	 */
-	private void updateMarketplacePanel()
-	{
-		plugin.getPluginPanel().getMarketplacePanel().requestRebuild();
-	}
-
-	/**
-	 * Get a copied copy of the active products list to prevent mutations
-	 */
-	public CopyOnWriteArrayList<MarketplaceProduct> getActiveProducts()
-	{
-		return new CopyOnWriteArrayList<>(activeProducts);
-	}
-
-	/**
-	 * Get a copied copy of the streamer products list to prevent mutations
-	 */
-	public CopyOnWriteArrayList<StreamerProduct> getStreamerProducts()
-	{
-		return new CopyOnWriteArrayList<>(streamerProducts);
-	}
-
-	/**
-	 * Get a copied copy of the queued transactions list to prevent mutations
-	 */
-	public CopyOnWriteArrayList<TwitchTransaction> getQueuedTransactions()
-	{
-		return new CopyOnWriteArrayList<>(queuedTransactions);
-	}
-
-	/**
-	 * Get a copied copy of the queued transactions list to prevent mutations
-	 */
-	public CopyOnWriteArrayList<TwitchTransaction> getArchivedTransactions()
-	{
-		return new CopyOnWriteArrayList<>(archivedTransactions);
-	}
 
 	/**
 	 * Handle HEAVY periodic effects of the active products,
@@ -546,7 +510,7 @@ public class MarketplaceManager {
 	/**
 	 * Update the available effects and their configuration from the Twitch EBS.
 	 */
-	public void updateEbsProducts()
+	public void updateAsyncEbsProducts()
 	{
 
 		// guard: skip when already fetching
@@ -565,40 +529,80 @@ public class MarketplaceManager {
 
 		try {
 			isFetchingEbsProducts = true;
-			Response response = twitchApi.getEbsProducts();
-			isFetchingEbsProducts = false;
-			JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
-			boolean status = result.get("status").getAsBoolean();
-			String message = result.get("message").getAsString();
-			JsonArray products = result.getAsJsonArray("products");
+			twitchApi.fetchAsyncEbsProducts((Response response) -> {
+				isFetchingEbsProducts = false;
+				JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
+				boolean status = result.get("status").getAsBoolean();
+				String message = result.get("message").getAsString();
+				JsonArray products = result.getAsJsonArray("products");
 
-			// guard: check if the status is valid
-			// if not we want to keep the old products intact
-			if (!status)
-			{
-				log.warn("Could not fetch EBS products from Twitch as the status is invalid with message: "+ message);
-				return;
-			}
-
-			CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList<>();
-
-			// try-catch for every parse, to not let all products crash on one misconfiguration
-			products.forEach((element) -> {
-				try {
-					EbsProduct ebsProduct = new Gson().fromJson(element, EbsProduct.class);
-					newEbsProducts.add(ebsProduct);
-				} catch (Exception exception) {
-					// empty?
+				// guard: check if the status is valid
+				// if not we want to keep the old products intact
+				if (!status)
+				{
+					log.warn("Could not fetch EBS products from Twitch as the status is invalid with message: "+ message);
+					return;
 				}
-			});
 
-			ebsProducts = newEbsProducts;
+				CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList<>();
+
+				// try-catch for every parse, to not let all products crash on one misconfiguration
+				products.forEach((element) -> {
+					try {
+						EbsProduct ebsProduct = new Gson().fromJson(element, EbsProduct.class);
+						newEbsProducts.add(ebsProduct);
+					} catch (Exception exception) {
+						// empty?
+					}
+				});
+
+				ebsProducts = newEbsProducts;
+			}, (exception) -> {
+				isFetchingEbsProducts = false;
+			});
 		} catch (Exception exception) {
 			log.warn("Could not fetch the new EBS products due to the following error: ", exception);
 		}
+	}
 
-		// always set to false when there is an error
-		isFetchingEbsProducts = false;
+	/**
+	 * Rebuild the marketplace panel completely
+	 */
+	private void updateMarketplacePanel()
+	{
+		plugin.getPluginPanel().getMarketplacePanel().requestRebuild();
+	}
+
+	/**
+	 * Get a copied copy of the active products list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<MarketplaceProduct> getActiveProducts()
+	{
+		return new CopyOnWriteArrayList<>(activeProducts);
+	}
+
+	/**
+	 * Get a copied copy of the streamer products list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<StreamerProduct> getStreamerProducts()
+	{
+		return new CopyOnWriteArrayList<>(streamerProducts);
+	}
+
+	/**
+	 * Get a copied copy of the queued transactions list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<TwitchTransaction> getQueuedTransactions()
+	{
+		return new CopyOnWriteArrayList<>(queuedTransactions);
+	}
+
+	/**
+	 * Get a copied copy of the queued transactions list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<TwitchTransaction> getArchivedTransactions()
+	{
+		return new CopyOnWriteArrayList<>(archivedTransactions);
 	}
 
 	/**
