@@ -60,14 +60,17 @@ public class MarketplaceRandomizers {
 
 	public static EbsSpawnOption getSpawnBehaviourByChance(ArrayList<EbsSpawnOption> spawnBehaviourOptions)
 	{
-		int attempts = 0;
-		int maxAttempts = 50;
 
 		// guard: make sure there are any options
-		if (spawnBehaviourOptions == null || spawnBehaviourOptions.size() < 0)
+		if (spawnBehaviourOptions == null || spawnBehaviourOptions.size() <= 0)
 		{
 			return null;
 		}
+
+		int attempts = 0;
+		int maxAttempts = 50;
+		int optionAmount = spawnBehaviourOptions.size();
+		double defaultChance = (1d / ((double) optionAmount));
 
 		// roll for x amount of times to select the option
 		// TODO: see how this impacts the selection?
@@ -75,9 +78,11 @@ public class MarketplaceRandomizers {
 		{
 			for (EbsSpawnOption option : spawnBehaviourOptions)
 			{
+				Double chance = option.chance;
+				Double validatedChance = (chance == null ? defaultChance : chance);
 
 				// choose this option when the chance is not known or when the roll landed
-				if (MarketplaceRandomizers.rollChance(option.chance))
+				if (MarketplaceRandomizers.rollChance(validatedChance))
 				{
 					return option;
 				}

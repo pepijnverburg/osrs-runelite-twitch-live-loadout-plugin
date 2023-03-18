@@ -757,12 +757,11 @@ public class MarketplaceProduct
 		String radiusType = placement.radiusType;
 		String locationType = placement.locationType;
 		Boolean inLineOfSight = placement.inLineOfSight;
-		String validatedRadiusType = (radiusType == null) ? DEFAULT_RADIUS_TYPE : radiusType;
-		String validatedLocationType = (locationType == null) ? CURRENT_TILE_LOCATION_TYPE : locationType;
 		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
 
 		// check if we should change the reference to the previous tile
-		if (PREVIOUS_TILE_LOCATION_TYPE.equals(validatedLocationType))
+		// NOTE: current tile is not needed to be handled, because this is the default!
+		if (PREVIOUS_TILE_LOCATION_TYPE.equals(locationType))
 		{
 			referenceWorldPoint = spawnManager.getPreviousPlayerLocation();
 
@@ -772,7 +771,7 @@ public class MarketplaceProduct
 			}
 		}
 
-		if (OUTWARD_RADIUS_TYPE.equals(validatedRadiusType)) {
+		if (OUTWARD_RADIUS_TYPE.equals(radiusType)) {
 			spawnPoint = spawnManager.getOutwardSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
 		} else {
 			spawnPoint = spawnManager.getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
