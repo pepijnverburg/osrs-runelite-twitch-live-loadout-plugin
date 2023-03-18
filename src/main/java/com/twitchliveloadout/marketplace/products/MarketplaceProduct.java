@@ -531,8 +531,6 @@ public class MarketplaceProduct
 	private void handleNewSpawns()
 	{
 		Instant now = Instant.now();
-		String transactionId = transaction.id;
-		String productId = ebsProduct.id;
 		EbsBehaviour behaviour = ebsProduct.behaviour;
 		ArrayList<EbsSpawnOption> startSpawnOptions = behaviour.startSpawnOptions;
 		ArrayList<EbsSpawnOption> spawnOptions = behaviour.spawnOptions;
@@ -578,7 +576,17 @@ public class MarketplaceProduct
 			return;
 		}
 
-		// select a random option
+		// update timer and count
+		lastSpawnBehaviourAt = now;
+		spawnBehaviourCounter += 1;
+
+		triggerSpawnOptions(spawnOptions);
+	}
+
+	private void triggerSpawnOptions(ArrayList<EbsSpawnOption> spawnOptions)
+	{
+		String transactionId = transaction.id;
+		String productId = ebsProduct.id;
 		EbsSpawnOption spawnOption = MarketplaceRandomizers.getSpawnBehaviourByChance(spawnOptions);
 
 		// guard: check if a valid option was selected
@@ -588,27 +596,25 @@ public class MarketplaceProduct
 			return;
 		}
 
-		// an option is selected so we can change the timer and count
-		log.debug("Executing spawn behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
-		lastSpawnBehaviourAt = now;
-		spawnBehaviourCounter += 1;
-
 		// randomize the amount of spawns
 		int spawnGroupAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
 		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
 		String spawnPointType = spawnOption.spawnPointType;
 
-		// guard: check if the conditions are satisfied
-		// NOTE: this should happen after the timer is being set!
-		if (!verifyConditions(spawnOption.conditions, null))
-		{
-			return;
-		}
-
 		// guard: make sure the spawn behaviours are valid
 		if (spawns == null)
 		{
 			log.error("Could not find valid spawn behaviours for product ("+ productId +")");
+			return;
+		}
+
+		// valid option is found
+		log.debug("Executing spawn behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
+
+		// guard: check if the conditions are satisfied
+		// NOTE: this should happen after the timer is being set!
+		if (!verifyConditions(spawnOption.conditions, null))
+		{
 			return;
 		}
 
@@ -807,6 +813,7 @@ public class MarketplaceProduct
 				}
 
 //				log.info("TRIGGERED EFFECTS: "+ Instant.now().toEpochMilli());
+				triggerSpawnOptions(effect.spawnOptions);
 				triggerModelAnimation(
 					spawnedObject,
 					effect.modelAnimation,

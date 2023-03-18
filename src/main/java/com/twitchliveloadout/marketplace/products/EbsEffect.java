@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class EbsEffect {
 	public ArrayList<EbsCondition> conditions;
 	public EbsRandomRange durationMs;
+	public ArrayList<EbsSpawnOption> spawnOptions;
 	public EbsAnimationFrame modelAnimation;
 	public EbsAnimationFrame playerAnimation;
 	public EbsMovementFrame playerMovement;

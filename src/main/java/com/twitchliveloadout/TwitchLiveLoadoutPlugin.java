@@ -891,7 +891,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Periodically update the connectivity panel to show the latest status
 	 */
-	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = false)
+	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void updateConnectivityPanel()
 	{
 		try {
@@ -959,7 +959,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			try {
 				runOnClientThread(action);
 			} catch (Exception exception) {
-				log.warn("Could not execute an action immediately: ", exception);
+				log.warn("Could not run an action on the client thread immediately: ", exception);
 			}
 			return null;
 		}
