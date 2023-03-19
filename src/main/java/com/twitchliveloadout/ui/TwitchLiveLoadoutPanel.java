@@ -8,7 +8,7 @@ import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
-import com.twitchliveloadout.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchApi;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.materialtabs.MaterialTab;
 import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;

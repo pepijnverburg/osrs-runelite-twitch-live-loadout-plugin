@@ -28,7 +28,7 @@ package com.twitchliveloadout.ui;
 import com.google.gson.JsonObject;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
-import com.twitchliveloadout.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchApi;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.ImageUtil;
