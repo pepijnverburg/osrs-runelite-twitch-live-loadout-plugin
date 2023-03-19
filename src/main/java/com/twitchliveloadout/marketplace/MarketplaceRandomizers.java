@@ -23,6 +23,11 @@ public class MarketplaceRandomizers {
 
 	public static double getValidRandomNumberByRange(EbsRandomRange randomRange, double defaultMin, double defaultMax)
 	{
+		return getValidRandomNumberByRange(randomRange, defaultMin, defaultMax, Double.MIN_VALUE, Double.MAX_VALUE);
+	}
+
+	public static double getValidRandomNumberByRange(EbsRandomRange randomRange, double defaultMin, double defaultMax, double absoluteMin, double absoluteMax)
+	{
 		EbsRandomRange validRandomRange = new EbsRandomRange(defaultMin, defaultMax);
 
 		if (randomRange != null) {
@@ -42,6 +47,13 @@ public class MarketplaceRandomizers {
 		Double min = validRandomRange.min;
 		Double max = validRandomRange.max;
 		double randomValue = min + ((int) (Math.random() * ((float) Math.abs(max - min))));
+
+		// guard: make sure absolute min and max are not exceeded
+		if (randomValue < absoluteMin) {
+			randomValue = absoluteMin;
+		} else if (randomValue > absoluteMax) {
+			randomValue = absoluteMax;
+		}
 
 		return randomValue;
 	}

@@ -14,17 +14,21 @@ public class MarketplaceConstants {
 	public static final String IN_RADIUS_FOLLOW_TYPE = "in-radius";
 	public static final String PREVIOUS_TILE_FOLLOW_TYPE = "behind-player";
 
+	public static final double RUNELITE_OBJECT_RADIUS_PER_TILE = 60d;
+	public static final double RUNELITE_OBJECT_FULL_ROTATION = 2047d;
+	public static final int REGION_SIZE = 64;
+	public static final int CHUNK_SIZE = 8;
+
 	public static final int DEFAULT_MIN_RADIUS = 1;
 	public static final int DEFAULT_MAX_RADIUS = 15;
+	public static final int ABSOLUTE_MIN_RADIUS = 0;
+	public static final int ABSOLUTE_MAX_RADIUS = REGION_SIZE;
 	public static final String DEFAULT_RADIUS_TYPE = "radius";
 	public static final String OUTWARD_RADIUS_TYPE = "outward-radius";
 
 	public static final String RANDOM_ROTATION_TYPE = "random";
 	public static final String PLAYER_ROTATION_TYPE = "player";
 	public static final String INTERACTING_ROTATION_TYPE = "interacting";
-
-	public static final double RUNELITE_OBJECT_RADIUS_PER_TILE = 60d;
-	public static final double RUNELITE_OBJECT_FULL_ROTATION = 2047d;
 
 	public static final int PLAYER_TILE_HISTORY_SIZE = 10;
 
@@ -52,8 +56,10 @@ public class MarketplaceConstants {
 	public static final String PLAYER_MENU_ENTITY_TYPE = "player";
 	public static final String OBJECT_MENU_ENTITY_TYPE = "object";
 
+	public static final int MAX_SPAWN_AMOUNT = 500;
 	public static final String INDIVIDUAL_SPAWN_POINT_TYPE = "individual";
 	public static final String GROUP_SPAWN_POINT_TYPE = "group";
+	public static final int MAX_MODEL_SCALE = 500;
 
 	public static final int MOVEMENT_EFFECT_MAX_SIZE = 100;
 	public static final int TRANSMOG_EFFECT_MAX_SIZE = 100;

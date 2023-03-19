@@ -1,8 +1,8 @@
 package com.twitchliveloadout.marketplace.products;
 
-import net.runelite.api.Constants;
-
 import java.util.ArrayList;
+
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.CHUNK_SIZE;
 
 public class EbsCondition {
 	public Integer varbitId = -1;
@@ -12,9 +12,9 @@ public class EbsCondition {
 	public Double minTimePercentage = 0d;
 	public Double maxTimePercentage = 1d;
 	public Integer maxSpawnsInView = -1;
-	public Integer maxSpawnsInViewRadius = Constants.CHUNK_SIZE;
+	public Integer maxSpawnsInViewRadius = CHUNK_SIZE;
 	public Integer minSpawnsInView = -1;
-	public Integer minSpawnsInViewRadius = Constants.CHUNK_SIZE;
+	public Integer minSpawnsInViewRadius = CHUNK_SIZE;
 	public Integer spawnInViewRadius = -1;
 	public ArrayList<EbsCondition> or;
 	public ArrayList<EbsCondition> and;

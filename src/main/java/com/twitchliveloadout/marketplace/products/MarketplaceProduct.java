@@ -619,7 +619,7 @@ public class MarketplaceProduct
 		}
 
 		// randomize the amount of spawns
-		int spawnGroupAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1);
+		int spawnGroupAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnAmount, 1, 1, 0, MAX_SPAWN_AMOUNT);
 		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
 		String spawnPointType = spawnOption.spawnPointType;
 
@@ -652,7 +652,7 @@ public class MarketplaceProduct
 
 				for (EbsSpawn spawn : spawns)
 				{
-					int spawnAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawn.spawnAmount, 1, 1);
+					int spawnAmount = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawn.spawnAmount, 1, 1, 0, MAX_SPAWN_AMOUNT);
 
 					for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
 					{
@@ -705,8 +705,8 @@ public class MarketplaceProduct
 		// get properties from model set
 		boolean shouldScaleModel = (modelSet.scale != null);
 		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.rotationType));
-		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1);
-		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360);
+		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1, 0, MAX_MODEL_SCALE);
+		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360, 0, 360);
 		ArrayList<EbsRecolor> recolors = modelSet.recolors;
 		ArrayList<ModelData> modelDataChunks = new ArrayList<>();
 
@@ -775,7 +775,7 @@ public class MarketplaceProduct
 
 		SpawnPoint spawnPoint = null;
 		EbsRandomRange radiusRange = placement.radiusRange;
-		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS);
+		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
 		String radiusType = placement.radiusType;
 		String locationType = placement.locationType;
 		Boolean inLineOfSight = placement.inLineOfSight;

@@ -12,7 +12,7 @@ import net.runelite.api.coords.WorldPoint;
 import java.awt.*;
 import java.time.Instant;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.RUNELITE_OBJECT_RADIUS_PER_TILE;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 @Slf4j
 public class SpawnedObject {
@@ -328,11 +328,11 @@ public class SpawnedObject {
 
 	public boolean isInRegion()
 	{
-		return isInView(Constants.REGION_SIZE);
+		return isInView(REGION_SIZE);
 	}
 	public boolean isInChunk()
 	{
-		return isInView(Constants.CHUNK_SIZE);
+		return isInView(CHUNK_SIZE);
 	}
 
 	public boolean isInView(int radius)
