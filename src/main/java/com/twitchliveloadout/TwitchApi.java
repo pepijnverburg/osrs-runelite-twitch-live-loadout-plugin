@@ -3,8 +3,6 @@ package com.twitchliveloadout;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.twitchliveloadout.TwitchLiveLoadoutConfig;
-import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchPubSubTargetType;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
 import lombok.Getter;
