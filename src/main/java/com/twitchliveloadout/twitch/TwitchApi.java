@@ -36,11 +36,15 @@ public class TwitchApi
 	public final static int MAX_PAYLOAD_SIZE = 5120; // bytes
 
 	// this delay supports two clients to sync fast enough while not exceeding the rate limit (1000ms)
-	// however, to anticipate party members to also sync to the account an extra 300ms is added.
 	public final static int MIN_SCHEDULE_DEFAULT_DELAY = 1300; // ms
 	public final static int MIN_SCHEDULE_LOGGED_OUT_DELAY = 6000; // ms
 	public final static int MIN_SCHEDULE_GROUP_DELAY = 6000; // ms
 	public final static int MAX_SCHEDULED_STATE_AMOUNT = 50;
+
+	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
+	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com/";
+	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions/";
+	private final static String RATE_LIMIT_REMAINING_HEADER = "Ratelimit-Remaining";
 
 	public final static int MIN_SYNC_DELAY = 0; // ms
 	public final static int BASE_SYNC_DELAY = 1000; // ms
@@ -50,10 +54,6 @@ public class TwitchApi
 	public final static int HIGH_RATE_LIMIT_REMAINING = 90;
 
 	public final static boolean CHAT_ERRORS_ENABLED = true;
-	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
-	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com/";
-	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions/";
-	private final static String RATE_LIMIT_REMAINING_HEADER = "Ratelimit-Remaining";
 	private final static int SEND_PUBSUB_TIMEOUT_MS = 10 * 1000;
 	private final static int GET_CONFIGURATION_SERVICE_TIMEOUT_MS = 5 * 1000;
 	private final static int GET_EBS_PRODUCTS_TIMEOUT_MS = 10 * 1000;
