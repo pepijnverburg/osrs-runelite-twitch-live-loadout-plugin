@@ -405,6 +405,7 @@ public class MarketplaceProduct
 			}
 
 			Boolean triggerOnSpawn = randomInterval.triggerOnSpawn;
+			ArrayList<EbsCondition> conditions = randomInterval.conditions;
 
 			// guard: check if the max repeat amount is exceeded
 			// NOTE: -1 repeat amount if infinity!
@@ -419,7 +420,22 @@ public class MarketplaceProduct
 				continue;
 			}
 
-			// update the last time it was attempted too roll and execute a random effect
+			// guard: skip when this spawned object is not in the region,
+			// because this can feel random when graphics/animations are triggered
+			// without the spawned object in view
+			if (!spawnedObject.isInRegion())
+			{
+				continue;
+			}
+
+			// guard: make sure the conditions are met
+			if (!verifyConditions(conditions, spawnedObject))
+			{
+				continue;
+			}
+
+			// update the last timestamp because a roll or a skip due to recent spawning
+			// should count as an execution of the random effect
 			spawnedObject.updateLastRandomEffectAt();
 
 			// guard: skip when this is the first time the interval is triggered!
@@ -437,14 +453,6 @@ public class MarketplaceProduct
 				{
 					continue;
 				}
-			}
-
-			// guard: skip when this spawned object is not in the region,
-			// because this can feel random when graphics/animations are triggered
-			// without the spawned object in view
-			if (!spawnedObject.isInRegion())
-			{
-				continue;
 			}
 
 			// select a random entry from all the candidates
@@ -562,6 +570,7 @@ public class MarketplaceProduct
 		}
 
 		int repeatAmount = spawnInterval.repeatAmount;
+		ArrayList<EbsCondition> conditions = spawnInterval.conditions;
 
 		// guard: check if the amount has passed
 		// NOTE: -1 repeat amount if infinity!
@@ -576,6 +585,12 @@ public class MarketplaceProduct
 			return;
 		}
 
+		// guard: check if the conditions are met
+		if (!verifyConditions(conditions))
+		{
+			return;
+		}
+
 		// update timer and count
 		lastSpawnBehaviourAt = now;
 		spawnBehaviourCounter += 1;
@@ -585,6 +600,13 @@ public class MarketplaceProduct
 
 	private void triggerSpawnOptions(ArrayList<EbsSpawnOption> spawnOptions)
 	{
+
+		// guard: make sure the spawn options are valid
+		if (spawnOptions == null || spawnOptions.size() <= 0)
+		{
+			return;
+		}
+
 		String transactionId = transaction.id;
 		String productId = ebsProduct.id;
 		EbsSpawnOption spawnOption = MarketplaceRandomizers.getSpawnBehaviourByChance(spawnOptions);
@@ -780,58 +802,77 @@ public class MarketplaceProduct
 		return spawnPoint;
 	}
 
-	public void triggerEffects(ArrayList<EbsEffect> effects, int baseDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
+	public void triggerEffects(ArrayList<EbsEffect> effects, int startDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
 	{
 
-		// guard: make sure the animation is valid
+		// guard: make sure the effect is valid
 		if (effects == null)
 		{
 			return;
 		}
 
-		int totalDelayMs = baseDelayMs;
 		Iterator<EbsEffect> effectIterator = effects.iterator();
 
-		while (effectIterator.hasNext())
+		// only trigger the first effect, because we want certain effect frames to be blocking for the future ones
+		// depending on what the outcome of the conditions are, for this reason we cannot queue all frames at once
+		// because certain conditions need to be evaluated when executing the frame and not beforehand.
+		triggerEffect(effectIterator, startDelayMs, spawnedObject, forceModelAnimation, resetModelAnimationHandler);
+	}
+
+	public void triggerEffect(Iterator<EbsEffect> effectIterator, int frameDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
+	{
+
+		// guard: check if the iterator is valid
+		if (effectIterator == null || !effectIterator.hasNext())
 		{
-			EbsEffect effect = effectIterator.next();
-			boolean isLast = !effectIterator.hasNext();
-			int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(effect.durationMs, 0, 0);
-			int delayMs = 0; // potentially handy in the future to delay a full effect
-			ArrayList<EbsCondition> conditions = effect.conditions;
-
-			// schedule all the individual effects
-//			log.info("SCHEDULE EFFECTS: "+ totalDelayMs +", at: "+ Instant.now().toEpochMilli());
-			manager.getPlugin().scheduleOnClientThread(() -> {
-
-				// guard: check if all the conditions for this effect are met
-				if (!verifyConditions(conditions, spawnedObject))
-				{
-//					log.info("CANCELLED EFFECTS: "+ Instant.now().toEpochMilli());
-					return;
-				}
-
-//				log.info("TRIGGERED EFFECTS: "+ Instant.now().toEpochMilli());
-				triggerSpawnOptions(effect.spawnOptions);
-				triggerModelAnimation(
-					spawnedObject,
-					effect.modelAnimation,
-					delayMs,
-					forceModelAnimation,
-					isLast ? resetModelAnimationHandler : null
-				);
-				triggerPlayerGraphic(effect.playerGraphic, delayMs);
-				triggerPlayerAnimation(effect.playerAnimation, delayMs);
-				triggerPlayerEquipment(effect.playerEquipment, delayMs);
-				triggerPlayerMovement(effect.playerMovement, delayMs);
-				triggerInterfaceWidgets(effect.interfaceWidgets, delayMs);
-				triggerMenuOptions(effect.menuOptions, delayMs);
-				triggerSoundEffect(effect.soundEffect, delayMs);
-				triggerNotifications(effect.notifications, delayMs);
-			}, totalDelayMs);
-
-			totalDelayMs += durationMs;
+			return;
 		}
+
+		EbsEffect effect = effectIterator.next();
+		boolean isLast = !effectIterator.hasNext();
+		int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(effect.durationMs, 0, 0);
+		ArrayList<EbsCondition> conditions = effect.conditions;
+		boolean blockingConditions = effect.blockingConditions;
+
+		// schedule all the individual effects
+//		log.info("SCHEDULE EFFECTS: "+ frameDelayMs +", at: "+ Instant.now().toEpochMilli());
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			int nextFrameDelayMs = durationMs;
+			int innerDelayMs = 0; // potentially handy in the future to delay a full effect
+			boolean conditionsVerified = verifyConditions(conditions, spawnedObject);
+
+			// check if we should schedule the next frame
+			// this is allowed when there are no blocking conditions or when the conditions of this frame are okay
+			if (!blockingConditions || conditionsVerified)
+			{
+				triggerEffect(effectIterator, nextFrameDelayMs, spawnedObject, forceModelAnimation, resetModelAnimationHandler);
+			}
+
+			// guard: check if all the conditions for this effect are met
+			if (!conditionsVerified)
+			{
+//				log.info("CANCELLED EFFECTS: "+ Instant.now().toEpochMilli());
+				return;
+			}
+
+//			log.info("TRIGGERED EFFECTS: "+ Instant.now().toEpochMilli());
+			triggerSpawnOptions(effect.spawnOptions);
+			triggerModelAnimation(
+				spawnedObject,
+				effect.modelAnimation,
+				innerDelayMs,
+				forceModelAnimation,
+				isLast ? resetModelAnimationHandler : null
+			);
+			triggerPlayerGraphic(effect.playerGraphic, innerDelayMs);
+			triggerPlayerAnimation(effect.playerAnimation, innerDelayMs);
+			triggerPlayerEquipment(effect.playerEquipment, innerDelayMs);
+			triggerPlayerMovement(effect.playerMovement, innerDelayMs);
+			triggerInterfaceWidgets(effect.interfaceWidgets, innerDelayMs);
+			triggerMenuOptions(effect.menuOptions, innerDelayMs);
+			triggerSoundEffect(effect.soundEffect, innerDelayMs);
+			triggerNotifications(effect.notifications, innerDelayMs);
+		}, frameDelayMs);
 	}
 
 	public void triggerEffectsOptions(ArrayList<ArrayList<EbsEffect>> effectsOptions)
@@ -850,6 +891,11 @@ public class MarketplaceProduct
 			false,
 			null
 		);
+	}
+
+	private boolean verifyConditions(ArrayList<EbsCondition> conditions)
+	{
+		return verifyConditions(conditions, null);
 	}
 
 	private boolean verifyConditions(ArrayList<EbsCondition> conditions, SpawnedObject spawnedObject)
@@ -938,10 +984,6 @@ public class MarketplaceProduct
 		{
 			return false;
 		}
-
-		LambdaIterator.handleAll(andConditions, (andCondition) -> {
-
-		});
 
 		// check if one AND condition is not valid to set to false
 		if (andConditions != null)

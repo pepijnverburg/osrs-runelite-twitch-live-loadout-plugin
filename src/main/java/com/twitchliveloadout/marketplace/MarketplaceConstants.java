@@ -63,5 +63,5 @@ public class MarketplaceConstants {
 	public static final int TILE_MARKER_NOTIFICATION_DURATION_MS = 0 * 1000;
 
 	public static final int GLOBAL_PLAY_SOUND_THROTTLE_MS = 0;
-	public static final int UNIQUE_PLAY_SOUND_THROTTLE_MS = 250;
+	public static final int UNIQUE_PLAY_SOUND_THROTTLE_MS = 100;
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class EbsEffect {
 	public ArrayList<EbsCondition> conditions;
+	public Boolean blockingConditions = false;
 	public EbsRandomRange durationMs;
 	public ArrayList<EbsSpawnOption> spawnOptions;
 	public EbsAnimationFrame modelAnimation;
