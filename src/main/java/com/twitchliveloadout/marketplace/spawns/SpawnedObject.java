@@ -178,24 +178,37 @@ public class SpawnedObject {
 	 */
 	public void recolor(EbsRecolor recolor)
 	{
-		int sourceColorIndex = recolor.sourceColorIndex;
-		int sourceColorHsl = recolor.sourceColorHsl;
-		int targetColorHsl = recolor.targetColorHsl;
-		int targetColorHex = recolor.targetColorHex;
+
+		// guard: make sure the recolor is valid
+		if (recolor == null)
+		{
+			return;
+		}
+
+		Integer sourceColorIndex = recolor.sourceColorIndex;
+		Integer sourceColorHsl = recolor.sourceColorHsl;
+		Integer targetColorHsl = recolor.targetColorHsl;
+		Integer targetColorHex = recolor.targetColorHex;
 
 		// check if a hex target color is passed which needs to be converted
 		// NOTE: when also a HSL is padded the HSL takes priority
-		if (!isValidColor(targetColorHsl) && isValidColor(targetColorHex))
+		if (targetColorHsl == null && targetColorHex != null)
 		{
 			targetColorHsl = getColorHsl(targetColorHex);
 		}
 
-		// determine whether an index or color is requested to be changed
-		if (isValidColor(sourceColorHsl)) {
+		// guard: skip when target is not valid
+		if (targetColorHsl == null)
+		{
+			return;
+		}
+
+		// determine whether an index, specific color or everything is requested to be changed
+		if (sourceColorHsl != null) {
 			recolorByColor(sourceColorHsl, targetColorHsl);
 		} else if (isValidColorIndex(sourceColorIndex)) {
 			recolorByIndex(sourceColorIndex, targetColorHsl);
-		} else if (isValidColor(targetColorHsl)) {
+		} else {
 
 			// recolor the whole model
 			for (short color : modelData.getFaceColors())
@@ -207,13 +220,6 @@ public class SpawnedObject {
 
 	private void recolorByColor(int sourceColorHsl, int targetColorHsl)
 	{
-
-		// guard: make sure the target color is valid
-		if (!isValidColor((sourceColorHsl)) || !isValidColor(targetColorHsl))
-		{
-			return;
-		}
-
 		modelData.recolor((short) sourceColorHsl, (short) targetColorHsl);
 	}
 
@@ -221,7 +227,7 @@ public class SpawnedObject {
 	{
 
 		// guard: make sure the index and color are valid
-		if (!isValidColorIndex(sourceColorIndex) || !isValidColor(targetColorHsl))
+		if (!isValidColorIndex(sourceColorIndex))
 		{
 			return;
 		}
@@ -232,26 +238,21 @@ public class SpawnedObject {
 		modelData.recolor(sourceColorHsl, (short) targetColorHsl);
 	}
 
-	private short getColorHsl(int colorHex)
+	private int getColorHsl(Integer colorHex)
 	{
 		Color color = getColor(colorHex);
-		short hsl = JagexColor.rgbToHSL(color.getRGB(), 1.0d);
+		short colorHsl = JagexColor.rgbToHSL(color.getRGB(), 1.0d);
 
-		return hsl;
+		return colorHsl;
 	}
 
-	private Color getColor(int colorHex)
+	private Color getColor(Integer colorHex)
 	{
 		int r = (colorHex & 0xFF0000) >> 16;
 		int g = (colorHex & 0xFF00) >> 8;
 		int b = (colorHex & 0xFF);
 
 		return new Color(r, g, b);
-	}
-
-	private boolean isValidColor(int color)
-	{
-		return color >= 0;
 	}
 
 	private boolean isValidColorIndex(int colorIndex)
