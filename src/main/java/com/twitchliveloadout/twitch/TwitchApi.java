@@ -42,8 +42,8 @@ public class TwitchApi
 	public final static int MAX_SCHEDULED_STATE_AMOUNT = 50;
 
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
-	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com/";
-	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions/";
+	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com";
+	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions";
 	private final static String RATE_LIMIT_REMAINING_HEADER = "Ratelimit-Remaining";
 
 	public final static int MIN_SYNC_DELAY = 0; // ms
@@ -229,7 +229,7 @@ public class TwitchApi
 
 	private void sendAsyncPubSubMessage(JsonObject data, HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
 	{
-		final String url = DEFAULT_TWITCH_BASE_URL +"pubsub";
+		final String url = DEFAULT_TWITCH_BASE_URL +"/pubsub";
 
 		// Documentation: https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
 		performPostRequest(url, data, pubSubHttpClient, responseHandler, errorHandler);
@@ -237,7 +237,7 @@ public class TwitchApi
 
 	public void fetchAsyncEbsProducts(HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
 	{
-		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-products";
+		String url = DEFAULT_TWITCH_EBS_BASE_URL +"/api/marketplace-products";
 		final JsonObject data = new JsonObject();
 
 		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
@@ -250,7 +250,7 @@ public class TwitchApi
 
 	public void fetchAsyncEbsTransactions(String lastTransactionId, HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
 	{
-		String url = DEFAULT_TWITCH_EBS_BASE_URL +"api/marketplace-transactions";
+		String url = DEFAULT_TWITCH_EBS_BASE_URL +"/api/marketplace-transactions";
 		final JsonObject data = new JsonObject();
 
 		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
@@ -271,7 +271,7 @@ public class TwitchApi
 	{
 		final String clientId = DEFAULT_EXTENSION_CLIENT_ID;
 		final String channelId = getChannelId();
-		final String baseUrl = DEFAULT_TWITCH_BASE_URL +"configurations";
+		final String baseUrl = DEFAULT_TWITCH_BASE_URL +"/configurations";
 		final String url = baseUrl +"?broadcaster_id="+ channelId +"&extension_id="+ clientId +"&segment="+ segmentType.getKey();
 
 		// Documentation: https://dev.twitch.tv/docs/api/reference#get-extension-configuration-segment
