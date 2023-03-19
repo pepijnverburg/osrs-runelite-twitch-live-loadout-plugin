@@ -33,7 +33,6 @@ import com.twitchliveloadout.minimap.MinimapManager;
 import com.twitchliveloadout.quests.QuestManager;
 import com.twitchliveloadout.raids.InvocationsManager;
 import com.twitchliveloadout.skills.SkillStateManager;
-import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;

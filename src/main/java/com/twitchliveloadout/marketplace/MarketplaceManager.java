@@ -16,7 +16,7 @@ import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
-import com.twitchliveloadout.twitch.TwitchApi;
+import com.twitchliveloadout.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
