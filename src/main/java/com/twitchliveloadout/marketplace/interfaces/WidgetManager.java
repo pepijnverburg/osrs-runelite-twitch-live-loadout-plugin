@@ -45,7 +45,6 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 
 	public void onGameTick()
 	{
-		updateEffects();
 		ensureCoveringOverlays();
 	}
 

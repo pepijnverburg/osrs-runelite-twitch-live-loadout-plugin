@@ -100,9 +100,9 @@ public class MarketplaceManager {
 	private String lastTransactionId = null;
 
 	/**
-	 * Track when the active products were updated for the last time
+	 * Track several times that should be slower than client ticks but faster than game ticks
 	 */
-	private Instant lastUpdateActiveProductsAt = null;
+	private final ConcurrentHashMap<String, Instant> timerLastTriggeredAt = new ConcurrentHashMap<>();
 
 	/**
 	 * Timer for when all the active products should be active again
@@ -441,35 +441,6 @@ public class MarketplaceManager {
 		});
 	}
 
-
-	/**
-	 * Handle HEAVY periodic effects of the active products,
-	 * such as spawning or random animations.
-	 */
-	private void updateActiveProducts()
-	{
-
-		// guard: don't do anything when not logged in
-		if (!plugin.isLoggedIn())
-		{
-			return;
-		}
-
-		// respawn all spawned objects that require it
-		// due to for example the reloading of a scene
-		spawnManager.respawnRequested();
-
-		// record a history of the player location that we can use
-		// when spawning new objects that are relative in some way to the player
-		spawnManager.recordPlayerLocation();
-
-		// handle each active product individually
-		handleActiveProducts((marketplaceProduct) -> {
-			marketplaceProduct.handleBehaviour();
-			marketplaceProduct.cleanExpiredSpawnedObjects();
-		});
-	}
-
 	/**
 	 * Update the products the streamer has configured in the Twitch Extension.
 	 */
@@ -633,6 +604,63 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Handle a client tick for all active products for changes
+	 * that need to happen really fast and are lightweight.
+	 */
+	public void onClientTick()
+	{
+		Instant now = Instant.now();
+
+		// guard: don't do anything when not logged in
+		if (!plugin.isLoggedIn())
+		{
+			return;
+		}
+
+		// custom timer running on client ticks every x ms for more heavy things to be executed
+		// this is because the @Schedule is delaying now and then and some of the processes in here are time-sensitive
+		if (passTimerOnce(MarketplaceTimer.RESPAWNS, now))
+		{
+			// respawn all spawned objects that require it
+			// due to for example the reloading of a scene
+			spawnManager.respawnRequested();
+		}
+
+		if (passTimerOnce(MarketplaceTimer.RECORD_LOCATION, now))
+		{
+			// record a history of the player location that we can use
+			// when spawning new objects that are relative in some way to the player
+			spawnManager.recordPlayerLocation();
+		}
+
+		if (passTimerOnce(MarketplaceTimer.WIDGETS, now))
+		{
+			widgetManager.updateEffects();
+		}
+
+		if (passTimerOnce(MarketplaceTimer.PRODUCT_BEHAVIOURS, now))
+		{
+			handleActiveProducts((marketplaceProduct) -> {
+				marketplaceProduct.handleBehaviour();
+			});
+		}
+
+		if (passTimerOnce(MarketplaceTimer.PRODUCT_EXPIRED_SPAWNS, now))
+		{
+			handleActiveProducts((marketplaceProduct) -> {
+				marketplaceProduct.cleanExpiredSpawnedObjects();
+			});
+		}
+
+		if (passTimerOnce(MarketplaceTimer.PRODUCT_SPAWN_ROTATIONS, now))
+		{
+			handleActiveProducts((marketplaceProduct) -> {
+				marketplaceProduct.handleSpawnRotations();
+			});
+		}
+	}
+
+	/**
 	 * Handle game ticks
 	 */
 	public void onGameTick()
@@ -652,25 +680,27 @@ public class MarketplaceManager {
 		menuManager.onMenuOptionClicked(event);
 	}
 
-	/**
-	 * Handle a client tick for all active products for changes
-	 * that need to happen really fast and are lightweight.
-	 */
-	public void onClientTick()
+	private boolean passTimerOnce(MarketplaceTimer timer, Instant now)
 	{
-		Instant now = Instant.now();
 
-		// trigger client tick for all active products
-		handleActiveProducts(MarketplaceProduct::onClientTick);
-
-		// custom timer running on client ticks every x ms for more heavy things to be executed
-		// this is because the @Schedule is delaying now and then and some of the processes in here
-		// are time-sensitive
-		if (lastUpdateActiveProductsAt == null || now.isAfter(lastUpdateActiveProductsAt.plusMillis((UPDATE_ACTIVE_PRODUCTS_DELAY_MS))))
+		// guard: make sure the timer name is valid
+		if (timer == null)
 		{
-			updateActiveProducts();
-			lastUpdateActiveProductsAt = now;
+			return false;
 		}
+
+		String name = timer.getName();
+		int delayMs = timer.getDelayMs();
+		Instant lastTriggeredAt = timerLastTriggeredAt.get(name);
+		boolean isPassed = lastTriggeredAt == null || now.isAfter(lastTriggeredAt.plusMillis((delayMs)));
+
+		// update the timer when passed
+		if (isPassed)
+		{
+			timerLastTriggeredAt.put(name, now);
+		}
+
+		return isPassed;
 	}
 
 	private StreamerProduct getStreamerProductBySku(String twitchProductSku)

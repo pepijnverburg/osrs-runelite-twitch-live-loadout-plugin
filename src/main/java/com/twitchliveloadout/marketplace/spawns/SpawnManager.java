@@ -42,13 +42,6 @@ public class SpawnManager {
 	 */
 	public void respawnRequested()
 	{
-
-		// guard: only apply the products when the player is logged in
-		if (!plugin.isLoggedIn())
-		{
-			return;
-		}
-
 		ArrayList<SpawnedObject> respawnQueue = new ArrayList<>();
 
 		// loop all spawned objects and check whether they should respawn
@@ -56,11 +49,17 @@ public class SpawnManager {
 
 			// only respawn if in viewport and a respawn is required
 			// to prevent animations to be reset all the time
-			if (spawnedObject.isInRegion() && spawnedObject.isRespawnRequired()) {
+			if (spawnedObject.isRespawnRequired() && spawnedObject.isInRegion()) {
 				respawnQueue.add(spawnedObject);
 				spawnedObject.setRespawnRequired(false);
 			}
 		});
+
+		// guard: skip the queue when it is empty
+		if (respawnQueue.size() <= 0)
+		{
+			return;
+		}
 
 		// run all respawns at the same time
 		plugin.runOnClientThread(() -> {
