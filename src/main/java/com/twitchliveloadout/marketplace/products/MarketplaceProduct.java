@@ -134,18 +134,6 @@ public class MarketplaceProduct
 		handleSpawnRandomEffects();
 	}
 
-	public void onClientTick()
-	{
-
-		// guard: make sure the product is active
-		if (!isActive)
-		{
-			return;
-		}
-
-		handleSpawnRotations();
-	}
-
 	public void start()
 	{
 		play();
@@ -247,8 +235,15 @@ public class MarketplaceProduct
 		return expiredAt.toEpochMilli() - Instant.now().toEpochMilli();
 	}
 
-	private void handleSpawnRotations()
+	public void handleSpawnRotations()
 	{
+
+		// guard: make sure the product is active
+		if (!isActive)
+		{
+			return;
+		}
+
 		Iterator<SpawnedObject> spawnedObjectIterator = spawnedObjects.iterator();
 
 		while (spawnedObjectIterator.hasNext())
@@ -317,6 +312,12 @@ public class MarketplaceProduct
 			String validFollowType = (followType == null ? NONE_FOLLOW_TYPE : followType);
 			EbsRandomRange radiusRange = modelPlacement.radiusRange;
 			int maxRadius = radiusRange.max.intValue();
+
+			// guard: skip when no follow type
+			if (validFollowType.equals(NONE_FOLLOW_TYPE))
+			{
+				continue;
+			}
 
 			// guard: check if we can execute the follow behaviour according to its conditions
 			if (!verifyConditions(followConditions, spawnedObject))
@@ -393,6 +394,7 @@ public class MarketplaceProduct
 		while (spawnedObjectIterator.hasNext())
 		{
 			SpawnedObject spawnedObject = spawnedObjectIterator.next();
+			Instant spawnedAt = spawnedObject.getSpawnedAt();
 			Instant lastRandomEffectAt = spawnedObject.getLastRandomEffectAt();
 			EbsSpawn spawn = spawnedObject.getSpawn();
 			EbsInterval randomInterval = spawn.randomEffectsInterval;
@@ -404,18 +406,29 @@ public class MarketplaceProduct
 				continue;
 			}
 
-			Boolean triggerOnSpawn = randomInterval.triggerOnSpawn;
+			Boolean triggerOnStart = randomInterval.triggerOnStart;
+			Integer startDelayMs = randomInterval.startDelayMs;
+			Integer repeatAmount = randomInterval.repeatAmount;
+			Integer delayMs = randomInterval.delayMs;
+			Double chance = randomInterval.chance;
 			ArrayList<EbsCondition> conditions = randomInterval.conditions;
+
+			// when no trigger on spawn is requested we set the interval delay
+			// as the minimum time that should pass after spawning before the random effects are triggered
+			if (startDelayMs <= 0 && !triggerOnStart)
+			{
+				startDelayMs = delayMs;
+			}
 
 			// guard: check if the max repeat amount is exceeded
 			// NOTE: -1 repeat amount if infinity!
-			if (randomInterval.repeatAmount >= 0 && spawnedObject.getRandomEffectCounter() >= randomInterval.repeatAmount)
+			if (repeatAmount >= 0 && spawnedObject.getRandomEffectCounter() >= repeatAmount)
 			{
 				continue;
 			}
 
 			// guard: check if enough time has passed
-			if (lastRandomEffectAt != null && lastRandomEffectAt.plusMillis(randomInterval.delayMs).isAfter(now))
+			if (lastRandomEffectAt != null && lastRandomEffectAt.plusMillis(delayMs).isAfter(now))
 			{
 				continue;
 			}
@@ -438,18 +451,18 @@ public class MarketplaceProduct
 			// should count as an execution of the random effect
 			spawnedObject.updateLastRandomEffectAt();
 
-			// guard: skip when this is the first time the interval is triggered!
-			// this prevents the random effect to instantly be triggered on spawn when that is not requested
-			if (lastRandomEffectAt == null && !triggerOnSpawn)
+			// guard: skip when the first random effect delay has not yet passed after the spawn
+			// this prevents the random effect to instantly be triggered on spawn
+			if (spawnedAt.plusMillis(startDelayMs).isAfter(now))
 			{
 				continue;
 			}
 
 			// guard: skip this effect when not rolled, while setting the timer before this roll
-			if (!MarketplaceRandomizers.rollChance(randomInterval.chance))
+			if (!MarketplaceRandomizers.rollChance(chance))
 			{
 				// we will allow effects that are to be triggered on spawn
-				if (lastRandomEffectAt != null || !triggerOnSpawn)
+				if (lastRandomEffectAt != null || !triggerOnStart)
 				{
 					continue;
 				}
@@ -474,18 +487,19 @@ public class MarketplaceProduct
 
 	private void handleNewEffects()
 	{
-		Instant now = Instant.now();
-		String transactionId = transaction.id;
-		String productId = ebsProduct.id;
 		EbsBehaviour behaviour = ebsProduct.behaviour;
 		ArrayList<ArrayList<EbsEffect>> effectOptions = behaviour.effectsOptions;
-		EbsInterval effectsInterval = behaviour.effectsInterval;
 
 		// guard: check if there are any effect options
 		if (effectOptions == null)
 		{
 			return;
 		}
+
+		Instant now = Instant.now();
+		String transactionId = transaction.id;
+		String productId = ebsProduct.id;
+		EbsInterval effectsInterval = behaviour.effectsInterval;
 
 		// make sure the behaviour interval is valid
 		if (effectsInterval == null)
@@ -569,8 +583,18 @@ public class MarketplaceProduct
 			spawnInterval.repeatAmount = 1;
 		}
 
+		boolean triggerOnStart = spawnInterval.triggerOnStart;
 		int repeatAmount = spawnInterval.repeatAmount;
+		int startDelayMs = spawnInterval.startDelayMs;
+		int delayMs = spawnInterval.delayMs;
 		ArrayList<EbsCondition> conditions = spawnInterval.conditions;
+
+		// when no trigger on spawn is requested we set the interval delay
+		// as the minimum time that should pass after spawning before the new spawns are triggered
+		if (startDelayMs <= 0 && !triggerOnStart)
+		{
+			startDelayMs = delayMs;
+		}
 
 		// guard: check if the amount has passed
 		// NOTE: -1 repeat amount if infinity!
@@ -580,7 +604,13 @@ public class MarketplaceProduct
 		}
 
 		// guard: check if the interval has not passed
-		if (hasSpawnedAtLeastOnce && lastSpawnBehaviourAt.plusMillis(spawnInterval.delayMs).isAfter(now))
+		if (hasSpawnedAtLeastOnce && lastSpawnBehaviourAt.plusMillis(delayMs).isAfter(now))
+		{
+			return;
+		}
+
+		// guard: check if the minimum required time after the creation time has not passed
+		if (startDelayMs > 0 && startedAt.plusMillis(startDelayMs).isAfter(now))
 		{
 			return;
 		}
