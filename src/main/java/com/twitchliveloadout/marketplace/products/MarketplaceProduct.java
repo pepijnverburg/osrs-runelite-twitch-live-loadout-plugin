@@ -448,8 +448,8 @@ public class MarketplaceProduct
 			}
 
 			// update the last timestamp because a roll or a skip due to recent spawning
-			// should count as an execution of the random effect
-			spawnedObject.updateLastRandomEffectAt();
+			// should count to delay with the configured delay time
+			spawnedObject.updateLastRandomEffectAt(false);
 
 			// guard: skip when the first random effect delay has not yet passed after the spawn
 			// this prevents the random effect to instantly be triggered on spawn
@@ -586,6 +586,7 @@ public class MarketplaceProduct
 		boolean triggerOnStart = spawnInterval.triggerOnStart;
 		int repeatAmount = spawnInterval.repeatAmount;
 		int startDelayMs = spawnInterval.startDelayMs;
+		int afterTriggerDelayMs = spawnInterval.afterTriggerDelayMs;
 		int delayMs = spawnInterval.delayMs;
 		ArrayList<EbsCondition> conditions = spawnInterval.conditions;
 
@@ -621,8 +622,8 @@ public class MarketplaceProduct
 			return;
 		}
 
-		// update timer and count
-		lastSpawnBehaviourAt = now;
+		// update timer and count and add extra time requested to delay the effect after a successful trigger
+		lastSpawnBehaviourAt = now.plusMillis(afterTriggerDelayMs);
 		spawnBehaviourCounter += 1;
 
 		triggerSpawnOptions(spawnOptions);

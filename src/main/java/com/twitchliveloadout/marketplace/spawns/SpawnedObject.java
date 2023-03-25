@@ -384,15 +384,24 @@ public class SpawnedObject {
 		object.setLocation(localPoint, plane);
 	}
 
-	public void updateLastRandomEffectAt()
+	public void updateLastRandomEffectAt(boolean isTriggered)
 	{
-		lastRandomEffectAt = Instant.now();
+		EbsInterval randomInterval = spawn.randomEffectsInterval;
+		Integer afterTriggerDelayMs = 0;
+
+		// add extra time requested to delay the effect after a successful trigger
+		if (randomInterval != null && isTriggered)
+		{
+			afterTriggerDelayMs = randomInterval.afterTriggerDelayMs;
+		}
+
+		lastRandomEffectAt = Instant.now().plusMillis(afterTriggerDelayMs);
 	}
 
 	public void registerRandomEffect()
 	{
 		randomEffectCounter += 1;
-		updateLastRandomEffectAt();
+		updateLastRandomEffectAt(true);
 	}
 
 	public boolean isExpired()
