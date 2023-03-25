@@ -8,6 +8,7 @@ public class EbsEffect {
 	public EbsRandomRange durationMs;
 	public ArrayList<EbsSpawnOption> spawnOptions;
 	public EbsAnimationFrame modelAnimation;
+	public EbsModelSet modelSet;
 	public EbsAnimationFrame playerAnimation;
 	public EbsMovementFrame playerMovement;
 	public EbsGraphicFrame playerGraphic;

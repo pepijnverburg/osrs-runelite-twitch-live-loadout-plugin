@@ -11,6 +11,7 @@ import net.runelite.api.coords.WorldPoint;
 
 import java.awt.*;
 import java.time.Instant;
+import java.util.ArrayList;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
@@ -30,10 +31,10 @@ public class SpawnedObject {
 	private final EbsSpawn spawn;
 
 	@Getter
-	private final EbsModelSet modelSet;
+	private EbsModelSet modelSet;
 
 	@Getter
-	private final ModelData modelData;
+	private ModelData modelData;
 
 	@Getter
 	@Setter
@@ -60,28 +61,105 @@ public class SpawnedObject {
 	private int currentAnimationId;
 	private Instant lockAnimationUntil;
 
-	public SpawnedObject(MarketplaceProduct product, Client client, ModelData modelData, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
+	public SpawnedObject(MarketplaceProduct product, Client client, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
 	{
 		this.spawnedAt = Instant.now();
 		this.product = product;
 		this.client = client;
 		this.object = client.createRuneLiteObject();
-		this.modelData = modelData;
 		this.spawnPoint = spawnPoint;
 		this.spawn = spawn;
 		this.modelSet = modelSet;
+
+		// first initialize the model set so we have proper model data
+		// for the next initialisation methods
+		updateModelSet();
 
 		// initialize expiry if set via spawn properties
 		initializeExpiry();
 
 		// setup one time settings
-		initializeModel();
+		initializeObject();
 
 		// reset the animations to it will immediately show the idle animation if available
 		resetAnimation();
 
 		// set to initial spawn-point
 		updateLocation();
+	}
+
+	public void setModelSet(EbsModelSet modelSet)
+	{
+
+		// guard: make sure the new one is valid
+		if (modelSet == null)
+		{
+			return;
+		}
+
+		this.modelSet = modelSet;
+	}
+
+	public void updateModelSet()
+	{
+
+		// guard: make sure the selected model set is valid
+		if (modelSet == null)
+		{
+			return;
+		}
+
+		// get properties from model set
+		ArrayList<Integer> modelIds = modelSet.ids;
+		boolean shouldScaleModel = (modelSet.scale != null);
+		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.rotationType));
+		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1, 0, MAX_MODEL_SCALE);
+		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360, 0, 360);
+		ArrayList<EbsRecolor> recolors = modelSet.recolors;
+		ArrayList<ModelData> modelDataChunks = new ArrayList<>();
+
+		// load all the models if set
+		if (modelIds != null)
+		{
+			modelIds.forEach((modelId) -> {
+				modelDataChunks.add(client.loadModelData(modelId));
+			});
+
+			// merge all models into one
+			modelData = client.mergeModels(modelDataChunks.toArray(new ModelData[modelDataChunks.size()]), modelDataChunks.size());
+		}
+
+		// guard: make sure the model data is valid before doing anything else
+		if (modelData == null)
+		{
+			return;
+		}
+
+		// check for valid recolors
+		if (recolors != null)
+		{
+			modelData.cloneColors();
+
+			// apply recolors
+			LambdaIterator.handleAll(recolors, (recolor) -> {
+				recolor(recolor);
+			});
+		}
+
+		// scale model
+		if (shouldScaleModel)
+		{
+			scale(modelScale);
+		}
+
+		// rotate model
+		if (shouldRotateModel)
+		{
+			rotate(modelRotationDegrees);
+		}
+
+		// re-render after changes
+		render();
 	}
 
 	private void initializeExpiry()
@@ -94,7 +172,7 @@ public class SpawnedObject {
 		}
 	}
 
-	private void initializeModel()
+	private void initializeObject()
 	{
 		object.setDrawFrontTilesFirst(true);
 	}
@@ -168,19 +246,17 @@ public class SpawnedObject {
 
 			object.setRadius(radius);
 		}
-
-		render();
 	}
 
 	/**
 	 * Recolor the model data through an EBS configured recolor.
 	 * Note that cloning the colors and re-rendering the object is needed manually outside of this method!
 	 */
-	public void recolor(EbsRecolor recolor)
+	private void recolor(EbsRecolor recolor)
 	{
 
-		// guard: make sure the recolor is valid
-		if (recolor == null)
+		// guard: make sure the model and recolor is valid
+		if (recolor == null || modelData == null)
 		{
 			return;
 		}
@@ -220,6 +296,13 @@ public class SpawnedObject {
 
 	private void recolorByColor(int sourceColorHsl, int targetColorHsl)
 	{
+
+		// guard: make sure the model is valid
+		if (modelData == null)
+		{
+			return;
+		}
+
 		modelData.recolor((short) sourceColorHsl, (short) targetColorHsl);
 	}
 
@@ -257,6 +340,12 @@ public class SpawnedObject {
 
 	private boolean isValidColorIndex(int colorIndex)
 	{
+		// guard: make sure the model is valid
+		if (modelData == null)
+		{
+			return false;
+		}
+
 		return colorIndex >= 0 && colorIndex < modelData.getFaceColors().length;
 	}
 
@@ -348,6 +437,13 @@ public class SpawnedObject {
 
 	public void render()
 	{
+
+		// guard: make sure the model is valid
+		if (modelData == null)
+		{
+			return;
+		}
+
 		object.setModel(modelData.light(64, 850, -30, -50, -30));
 	}
 

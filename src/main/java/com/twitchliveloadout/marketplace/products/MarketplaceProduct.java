@@ -733,56 +733,13 @@ public class MarketplaceProduct
 			return;
 		}
 
-		// get properties from model set
-		boolean shouldScaleModel = (modelSet.scale != null);
-		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.rotationType));
-		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1, 0, MAX_MODEL_SCALE);
-		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360, 0, 360);
-		ArrayList<EbsRecolor> recolors = modelSet.recolors;
-		ArrayList<ModelData> modelDataChunks = new ArrayList<>();
-
-		// load all the models
-		modelSet.ids.forEach((modelId) -> {
-			modelDataChunks.add(client.loadModelData(modelId));
-		});
-
-		// merge all models into one
-		ModelData mergedModelData = client.mergeModels(modelDataChunks.toArray(new ModelData[modelDataChunks.size()]), modelDataChunks.size());
-
 		SpawnedObject spawnedObject = new SpawnedObject(
 			this,
 			client,
-			mergedModelData,
 			spawnPoint,
 			spawn,
 			modelSet
 		);
-
-		// check for valid recolors
-		if (recolors != null)
-		{
-			mergedModelData.cloneColors();
-
-			// apply recolors
-			LambdaIterator.handleAll(recolors, (recolor) -> {
-				spawnedObject.recolor(recolor);
-			});
-		}
-
-		// scale model
-		if  (shouldScaleModel)
-		{
-			spawnedObject.scale(modelScale);
-		}
-
-		// rotate model
-		if (shouldRotateModel)
-		{
-			spawnedObject.rotate(modelRotationDegrees);
-		}
-
-		// re-render after changes
-		spawnedObject.render();
 
 		// schedule showing of the object as it is initially hidden
 		showSpawnedObject(spawnedObject, spawnDelayMs);
@@ -894,6 +851,10 @@ public class MarketplaceProduct
 				innerDelayMs,
 				forceModelAnimation,
 				isLast ? resetModelAnimationHandler : null
+			);
+			triggerModelSetUpdate(
+				spawnedObject,
+				effect.modelSet
 			);
 			triggerPlayerGraphic(effect.playerGraphic, innerDelayMs);
 			triggerPlayerAnimation(effect.playerAnimation, innerDelayMs);
@@ -1011,7 +972,7 @@ public class MarketplaceProduct
 		}
 
 		// guard: check for request to check the current spawn and if its in radius
-		if (spawnedObject != null && spawnInViewRadius > 0 && !spawnedObject.isInView(spawnInViewRadius))
+		if (spawnedObject != null && spawnInViewRadius >= 0 && !spawnedObject.isInView(spawnInViewRadius))
 		{
 			return false;
 		}
@@ -1115,6 +1076,28 @@ public class MarketplaceProduct
 		}
 
 		return true;
+	}
+
+	private void triggerModelSet(SpawnedObject spawnedObject, EbsModelSet modelSet)
+	{
+
+		// guard: make sure the object and new settings are valid
+		if (spawnedObject == null || modelSet == null)
+		{
+			return;
+		}
+	}
+
+	private void triggerModelSetUpdate(SpawnedObject spawnedObject, EbsModelSet modelSet)
+	{
+		// guard: make sure the spawned object and model set are valid
+		if (spawnedObject == null || modelSet == null)
+		{
+			return;
+		}
+
+		spawnedObject.setModelSet(modelSet);
+		spawnedObject.updateModelSet();
 	}
 
 	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetEffectHandler resetAnimationHandler)
