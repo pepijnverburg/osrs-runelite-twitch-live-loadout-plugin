@@ -50,6 +50,13 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 			}
 		}
 
+//		log.info("MENU OPTION CLICKED:");
+//		log.info("clickedOption: "+ clickedOption);
+//		log.info("clickedOption formatted: "+ Text.removeTags(clickedOption.toLowerCase().trim()));
+//		log.info("clickedTarget: "+ clickedOption);
+//		log.info("clickedEntityType: "+ clickedEntityType);
+//		log.info("event.getMenuAction().name(): "+ event.getMenuAction().toString());
+
 		Iterator<MarketplaceEffect<EbsMenuOptionFrame>> effectIterator = effects.iterator();
 
 		// check if the event should be disabled

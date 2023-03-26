@@ -492,7 +492,8 @@ public class MarketplaceManager {
 
 		// guard: skip updating the EBS products when there are no streamer products found
 		// this prevents requests to be made by streamers who have not configured the marketplace
-		// NOTE: we do allow an initial fetch to get an initial set of EBS products.
+		// NOTE: we do allow an initial fetch to get an initial set of EBS products in case the
+		// streamer products are still being fetched
 		if (streamerProducts.size() <= 0 && ebsProducts.size() > 0)
 		{
 			return;
