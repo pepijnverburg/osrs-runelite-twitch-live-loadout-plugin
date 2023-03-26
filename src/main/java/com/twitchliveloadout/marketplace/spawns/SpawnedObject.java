@@ -12,6 +12,7 @@ import net.runelite.api.coords.WorldPoint;
 import java.awt.*;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
@@ -60,6 +61,8 @@ public class SpawnedObject {
 	private double currentRotationDegrees = 0;
 	private int currentAnimationId;
 	private Instant lockAnimationUntil;
+
+	private final ConcurrentHashMap<String, String> stateFrameValues = new ConcurrentHashMap<>();
 
 	public SpawnedObject(MarketplaceProduct product, Client client, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
 	{
@@ -401,6 +404,26 @@ public class SpawnedObject {
 		}
 
 		return spawn.movementAnimations;
+	}
+
+	public String getStateFrameValue(String stateKey)
+	{
+		if (stateKey == null)
+		{
+			return null;
+		}
+
+		return stateFrameValues.get(stateKey);
+	}
+
+	public void setStateFrameValue(String stateKey, String stateValue)
+	{
+		if (stateKey == null)
+		{
+			return;
+		}
+
+		stateFrameValues.put(stateKey, stateValue);
 	}
 
 	public void show()

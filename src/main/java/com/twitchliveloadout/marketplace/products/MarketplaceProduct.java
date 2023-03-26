@@ -20,6 +20,7 @@ import net.runelite.api.coords.WorldPoint;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -91,6 +92,13 @@ public class MarketplaceProduct
 	 */
 	@Getter
 	private final CopyOnWriteArrayList<SpawnedObject> spawnedObjects = new CopyOnWriteArrayList<>();
+
+	/**
+	 * Lookup table with the current key value pairs of the state frames to assign state values to this product
+	 * which are to be used in conditions to check whether certain effects are allowed to be executed.
+	 * This very simple mechanism makes the MarketplaceProduct and SpawnedObject stateful where logic can be based on.
+	 */
+	private final ConcurrentHashMap<String, String> stateFrameValues = new ConcurrentHashMap<>();
 
 	public MarketplaceProduct(MarketplaceManager manager, TwitchTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct, TwitchProduct twitchProduct)
 	{
@@ -513,6 +521,8 @@ public class MarketplaceProduct
 		}
 
 		int repeatAmount = effectsInterval.repeatAmount;
+		ArrayList<EbsCondition> conditions = effectsInterval.conditions;
+		int afterTriggerDelayMs = effectsInterval.afterTriggerDelayMs;
 
 		// guard: check if the amount has passed
 		// NOTE: -1 repeat amount if infinity!
@@ -527,6 +537,16 @@ public class MarketplaceProduct
 			return;
 		}
 
+		// guard: check if the interval is allowed to be triggered based on the conditions
+		if (!verifyConditions(conditions))
+		{
+
+			// when the conditions are not verified we will set the last behaviour at to prevent the effects
+			// to be check too many times in a row, this gives some throttling in some possible heavy checks
+			lastEffectBehaviourAt = Instant.now();
+			return;
+		}
+
 		// select a random option
 		ArrayList<EbsEffect> effectsOption = MarketplaceRandomizers.getRandomEntryFromList(effectOptions);
 
@@ -538,7 +558,7 @@ public class MarketplaceProduct
 		}
 
 		log.debug("Executing effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
-		lastEffectBehaviourAt = Instant.now();
+		lastEffectBehaviourAt = Instant.now().plusMillis(afterTriggerDelayMs);
 		effectBehaviourCounter += 1;
 
 		triggerEffects(
@@ -840,6 +860,10 @@ public class MarketplaceProduct
 			if (!conditionsVerified)
 			{
 //				log.info("CANCELLED EFFECTS: "+ Instant.now().toEpochMilli());
+				// when this is the last one make sure we still reset the model animations or hide them
+				if (isLast && resetModelAnimationHandler != null) {
+					resetModelAnimationHandler.execute(innerDelayMs);
+				}
 				return;
 			}
 
@@ -863,6 +887,7 @@ public class MarketplaceProduct
 			triggerInterfaceWidgets(effect.interfaceWidgets, innerDelayMs);
 			triggerMenuOptions(effect.menuOptions, innerDelayMs);
 			triggerSoundEffect(effect.soundEffect, innerDelayMs);
+			triggerStateChange(effect.stateChange, innerDelayMs, spawnedObject);
 			triggerNotifications(effect.notifications, innerDelayMs);
 		}, frameDelayMs);
 	}
@@ -937,9 +962,18 @@ public class MarketplaceProduct
 		Integer minSpawnsInView = condition.minSpawnsInView;
 		Integer minSpawnsInViewRadius = condition.minSpawnsInViewRadius;
 		Integer spawnInViewRadius = condition.spawnInViewRadius;
+		String stateType = condition.stateType;
+		String stateKey = condition.stateKey;
+		String stateValue = condition.stateValue;
 		ArrayList<EbsCondition> orConditions = condition.or;
 		ArrayList<EbsCondition> andConditions = condition.and;
 		boolean orConditionsVerified = false;
+
+		// guard: check if the required state is valid
+		if (!verifyStateValue(stateType, stateKey, stateValue, spawnedObject))
+		{
+			return false;
+		}
 
 		// guard: check if it is allowed within an absolute time-frame
 		if (!verifyTimePassedMs(minTimeMs, maxTimeMs))
@@ -1011,6 +1045,39 @@ public class MarketplaceProduct
 		return true;
 	}
 
+	private boolean verifyStateValue(String stateType, String stateKey, String stateValue, SpawnedObject spawnedObject)
+	{
+
+		// guard: make sure the state check is valid
+		if (stateType == null || stateKey == null)
+		{
+			return true;
+		}
+
+		// default state is NULL
+		String currentStateValue = null;
+
+		if (PRODUCT_STATE_TYPE.equals(stateType)) {
+			currentStateValue = stateFrameValues.get(stateKey);
+		} else if (OBJECT_STATE_TYPE.equals(stateType) && spawnedObject != null) {
+			currentStateValue = spawnedObject.getStateFrameValue(stateKey);
+		}
+
+		// guard: compare with a simple if when the current state is NULL
+		// it might be possible a NULL state is requested, so it can still be verified
+		if (currentStateValue == null)
+		{
+			if (stateValue == null) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		// make the null-safe comparison
+		return currentStateValue.equals(stateValue);
+	}
+
 	/**
 	 * Check whether a certain time-frame absolute to the starting time is valid
 	 */
@@ -1023,13 +1090,16 @@ public class MarketplaceProduct
 			return true;
 		}
 
-		// guard: skip any calculations when it is the full time-frame
+		// guard: skip any passed time calculations when it is the full time-frame
 		if (minMs == 0 && maxMs == Integer.MAX_VALUE)
 		{
 			return true;
 		}
 
 		long passedMs = getPassedMs();
+		log.info("passedMs: "+ passedMs);
+		log.info("minMs: "+ minMs);
+		log.info("maxMs: "+ maxMs);
 
 		// guard: check whether the requested time-frame is outside of the current passed time
 		if (passedMs < minMs || passedMs > maxMs)
@@ -1105,6 +1175,12 @@ public class MarketplaceProduct
 		// guard: make sure the spawned object and animation are valid
 		if (spawnedObject == null || animation == null)
 		{
+
+			// always execute the reset animation handler when passed to for example hide the object
+			if (resetAnimationHandler != null)
+			{
+				resetAnimationHandler.execute(baseDelayMs);
+			}
 			return;
 		}
 
@@ -1250,6 +1326,35 @@ public class MarketplaceProduct
 		}, baseDelayMs + delayMs);
 	}
 
+	private void triggerStateChange(EbsStateFrame stateFrame, int baseDelayMs, SpawnedObject spawnedObject)
+	{
+
+		// guard: make sure the state change is valid
+		if (stateFrame == null)
+		{
+			return;
+		}
+
+		String stateType = stateFrame.type;
+		String stateKey = stateFrame.key;
+		String stateValue = stateFrame.value;
+		Integer delayMs = stateFrame.delayMs;
+
+		// guard: make sure the properties are valid
+		if (stateType == null || stateKey == null || delayMs == null)
+		{
+			return;
+		}
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			if (PRODUCT_STATE_TYPE.equals(stateType)) {
+				stateFrameValues.put(stateKey, stateValue);
+			} else if (OBJECT_STATE_TYPE.equals(stateType) && spawnedObject != null) {
+				spawnedObject.setStateFrameValue(stateKey, stateValue);
+			}
+		}, baseDelayMs + delayMs);
+	}
+
 	private void triggerNotifications(ArrayList<EbsNotification> notifications, int delayMs)
 	{
 		// guard: make sure there are any notifications
@@ -1345,7 +1450,7 @@ public class MarketplaceProduct
 			ArrayList<EbsEffect> hideEffects = spawnedObject.getSpawn().hideEffects;
 
 			// guard: check if the hide animation is set
-			if (hideEffects == null)
+			if (hideEffects == null || hideEffects.size() <= 0)
 			{
 				spawnedObject.hide();
 				return;

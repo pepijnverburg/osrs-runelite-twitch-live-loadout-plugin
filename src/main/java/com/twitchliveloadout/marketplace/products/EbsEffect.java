@@ -16,5 +16,6 @@ public class EbsEffect {
 	public ArrayList<EbsMenuOptionFrame> menuOptions;
 	public ArrayList<EbsInterfaceWidgetFrame> interfaceWidgets;
 	public EbsSoundEffectFrame soundEffect;
+	public EbsStateFrame stateChange;
 	public ArrayList<EbsNotification> notifications;
 }

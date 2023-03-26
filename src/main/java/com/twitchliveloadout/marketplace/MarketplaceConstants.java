@@ -59,6 +59,9 @@ public class MarketplaceConstants {
 	public static final String GROUP_SPAWN_POINT_TYPE = "group";
 	public static final int MAX_MODEL_SCALE = 500;
 
+	public static final String PRODUCT_STATE_TYPE = "product";
+	public static final String OBJECT_STATE_TYPE = "object";
+
 	public static final int MOVEMENT_EFFECT_MAX_SIZE = 100;
 	public static final int TRANSMOG_EFFECT_MAX_SIZE = 100;
 
