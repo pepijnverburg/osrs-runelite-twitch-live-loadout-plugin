@@ -523,6 +523,11 @@ public class SpawnedObject {
 		updateLastRandomEffectAt(true);
 	}
 
+	public void expireNow()
+	{
+		expiredAt = Instant.now();
+	}
+
 	public boolean isExpired()
 	{
 		return expiredAt != null && Instant.now().isAfter(expiredAt);

@@ -7,6 +7,7 @@ public class EbsEffect {
 	public Boolean blockingConditions = false;
 	public EbsRandomRange durationMs;
 	public ArrayList<EbsSpawnOption> spawnOptions;
+	public Boolean modelExpired = false;
 	public EbsAnimationFrame modelAnimation;
 	public EbsModelSet modelSet;
 	public EbsAnimationFrame playerAnimation;

@@ -869,6 +869,7 @@ public class MarketplaceProduct
 
 //			log.info("TRIGGERED EFFECTS: "+ Instant.now().toEpochMilli());
 			triggerSpawnOptions(effect.spawnOptions);
+			triggerModelExpired(spawnedObject, effect.modelExpired);
 			triggerModelAnimation(
 				spawnedObject,
 				effect.modelAnimation,
@@ -1165,6 +1166,18 @@ public class MarketplaceProduct
 
 		spawnedObject.setModelSet(modelSet);
 		spawnedObject.updateModelSet();
+	}
+
+	private void triggerModelExpired(SpawnedObject spawnedObject, Boolean modelExpired)
+	{
+
+		// guard: check if everything is valid and if a model expiry should be triggered
+		if (spawnedObject == null || modelExpired == null || !modelExpired)
+		{
+			return;
+		}
+
+		spawnedObject.expireNow();
 	}
 
 	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetEffectHandler resetAnimationHandler)
