@@ -1097,9 +1097,6 @@ public class MarketplaceProduct
 		}
 
 		long passedMs = getPassedMs();
-		log.info("passedMs: "+ passedMs);
-		log.info("minMs: "+ minMs);
-		log.info("maxMs: "+ maxMs);
 
 		// guard: check whether the requested time-frame is outside of the current passed time
 		if (passedMs < minMs || passedMs > maxMs)
