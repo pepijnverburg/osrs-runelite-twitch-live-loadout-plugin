@@ -11,6 +11,8 @@ public class MarketplaceDuration {
 
 	public static String humanizeDurationRounded(Duration duration)
 	{
+		// round up if there are a few nano seconds (at least 1ms) left as well, this creates the best
+		// representation of the duration that is to be shown.
 		int nano = duration.getNano();
 		Duration roundedDuration = Duration.ofSeconds(duration.getSeconds() + (nano > 1000 ? 1 : 0));
 

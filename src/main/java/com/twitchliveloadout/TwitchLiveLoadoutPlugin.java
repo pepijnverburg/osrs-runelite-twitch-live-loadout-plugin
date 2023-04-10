@@ -194,7 +194,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		super.startUp();
-
 		initializeExecutors();
 		initializeCanvasListeners();
 		initializeTwitch();
@@ -209,6 +208,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// when someone is already logged in and e.g. disabling and enabling the plugin
 		skillStateManager.updateSkills();
 		syncPlayerInfo();
+		log.info("Twitch Live Loadout has started!");
 	}
 
 	private void initializeExecutors()
@@ -289,6 +289,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		shutDownTwitch();
 		shutDownCanvasListeners();
 		shutDownSchedulers();
+		log.info("Twitch Live Loadout has stopped!");
 	}
 
 	private void shutDownCanvasListeners()
