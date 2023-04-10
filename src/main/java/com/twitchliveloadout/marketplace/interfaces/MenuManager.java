@@ -88,7 +88,14 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 				event.consume();
 			}
 
-			marketplaceProduct.triggerEffects(menuOptionFrame.onClickEffects);
+			marketplaceProduct.triggerEffects(
+				menuOptionFrame.onClickEffects,
+				0,
+				null,
+				effect,
+				false,
+				null
+			);
 		}
 	}
 

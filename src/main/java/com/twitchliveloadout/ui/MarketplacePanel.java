@@ -331,11 +331,4 @@ public class MarketplacePanel extends JPanel
 	public interface ButtonCallback {
 		public void execute();
 	}
-
-	public static String humanizeDuration(Duration duration) {
-		return duration.toString()
-				.substring(2)
-				.replaceAll("(\\d[HMS])(?!$)", "$1 ")
-				.toLowerCase();
-	}
 }

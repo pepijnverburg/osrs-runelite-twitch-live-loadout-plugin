@@ -5,6 +5,7 @@ import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -25,6 +26,11 @@ public class MarketplaceEffect<K extends EbsEffectFrame> {
 	private final K frame;
 
 	/**
+	 * The start time based on instancing of this class.
+	 */
+	private final Instant startedAt;
+
+	/**
 	 * The expiry based on either the custom duration or the one of the product.
 	 */
 	private final Instant expiresAt;
@@ -42,6 +48,7 @@ public class MarketplaceEffect<K extends EbsEffectFrame> {
 	{
 		this.marketplaceProduct = marketplaceProduct;
 		this.frame = frame;
+		this.startedAt = Instant.now();
 		this.expiresAt = expiresAt;
 	}
 
@@ -53,5 +60,23 @@ public class MarketplaceEffect<K extends EbsEffectFrame> {
 	public boolean isExpired()
 	{
 		return Instant.now().isAfter(expiresAt) || marketplaceProduct.isExpired();
+	}
+
+	/**
+	 * Calculate how long in milliseconds this effect is going to be active
+	 */
+	public Duration getDuration()
+	{
+		return Duration.between(startedAt, expiresAt);
+	}
+
+	/**
+	 * Calculate the amount of time in milliseconds this effect is still active
+	 */
+	public Duration getDurationLeft()
+	{
+		Instant now = Instant.now();
+
+		return Duration.between(now, expiresAt);
 	}
 }

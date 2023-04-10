@@ -3,6 +3,8 @@ package com.twitchliveloadout.marketplace.notifications;
 import com.google.common.collect.EvictingQueue;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.MarketplaceDuration;
+import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
@@ -52,7 +54,7 @@ public class NotificationManager {
 		handleNotificationsQueue();
 	}
 
-	public void handleEbsNotifications(MarketplaceProduct marketplaceProduct, ArrayList<EbsNotification> ebsNotifications)
+	public void handleEbsNotifications(MarketplaceProduct marketplaceProduct, MarketplaceEffect marketplaceEffect, ArrayList<EbsNotification> ebsNotifications)
 	{
 		if (ebsNotifications == null)
 		{
@@ -63,7 +65,7 @@ public class NotificationManager {
 
 		for (EbsNotification ebsNotification : ebsNotifications)
 		{
-			Notification notification = new Notification(marketplaceProduct, ebsNotification);
+			Notification notification = new Notification(marketplaceProduct, marketplaceEffect, ebsNotification);
 
 			// guard: check if this is a notification that should be send immediately
 			if (!ebsNotification.queue)
@@ -178,6 +180,7 @@ public class NotificationManager {
 	{
 		String message = notification.ebsNotification.message;
 		final MarketplaceProduct marketplaceProduct = notification.marketplaceProduct;
+		final MarketplaceEffect marketplaceEffect = notification.marketplaceEffect;
 
 		// guard: make sure the product is valid
 		if (marketplaceProduct == null)
@@ -201,6 +204,8 @@ public class NotificationManager {
 		String channelName = "broadcaster";
 		String currencyAmount = "";
 		String currencyType = "";
+		String effectDuration = "";
+		String effectDurationLeft = "";
 
 		if (transaction != null)
 		{
@@ -214,10 +219,18 @@ public class NotificationManager {
 			currencyType = twitchProduct.cost.type;
 		}
 
+		if (marketplaceEffect != null)
+		{
+			effectDuration = MarketplaceDuration.humanizeDuration(marketplaceEffect.getDuration());
+			effectDurationLeft = MarketplaceDuration.humanizeDuration(marketplaceEffect.getDurationLeft());
+		}
+
 		message = message.replaceAll("\\{viewerName\\}", viewerName);
 		message = message.replaceAll("\\{channelName\\}", channelName);
 		message = message.replaceAll("\\{currencyAmount\\}", currencyAmount);
 		message = message.replaceAll("\\{currencyType\\}", currencyType);
+		message = message.replaceAll("\\{effectDuration\\}", effectDuration);
+		message = message.replaceAll("\\{effectDurationLeft\\}", effectDurationLeft);
 
 		return message;
 	}

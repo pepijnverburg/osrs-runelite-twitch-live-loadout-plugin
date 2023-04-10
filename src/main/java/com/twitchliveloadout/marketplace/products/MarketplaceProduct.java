@@ -1,6 +1,7 @@
 package com.twitchliveloadout.marketplace.products;
 
 import com.twitchliveloadout.marketplace.LambdaIterator;
+import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -486,6 +487,7 @@ public class MarketplaceProduct
 				randomEffects,
 				0,
 				spawnedObject,
+				null,
 				false,
 				null
 			);
@@ -566,6 +568,7 @@ public class MarketplaceProduct
 		triggerEffects(
 			effectsOption,
 			0,
+			null,
 			null,
 			false,
 			null
@@ -814,7 +817,7 @@ public class MarketplaceProduct
 		return spawnPoint;
 	}
 
-	public void triggerEffects(ArrayList<EbsEffect> effects, int startDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
+	public void triggerEffects(ArrayList<EbsEffect> effects, int startDelayMs, SpawnedObject spawnedObject, MarketplaceEffect marketplaceEffect, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the effect is valid
@@ -828,10 +831,10 @@ public class MarketplaceProduct
 		// only trigger the first effect, because we want certain effect frames to be blocking for the future ones
 		// depending on what the outcome of the conditions are, for this reason we cannot queue all frames at once
 		// because certain conditions need to be evaluated when executing the frame and not beforehand.
-		triggerEffect(effectIterator, startDelayMs, spawnedObject, forceModelAnimation, resetModelAnimationHandler);
+		triggerEffect(effectIterator, startDelayMs, spawnedObject, marketplaceEffect, forceModelAnimation, resetModelAnimationHandler);
 	}
 
-	public void triggerEffect(Iterator<EbsEffect> effectIterator, int frameDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
+	public void triggerEffect(Iterator<EbsEffect> effectIterator, int frameDelayMs, SpawnedObject spawnedObject, MarketplaceEffect marketplaceEffect, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: check if the iterator is valid
@@ -857,7 +860,7 @@ public class MarketplaceProduct
 			// this is allowed when there are no blocking conditions or when the conditions of this frame are okay
 			if (!blockingConditions || conditionsVerified)
 			{
-				triggerEffect(effectIterator, nextFrameDelayMs, spawnedObject, forceModelAnimation, resetModelAnimationHandler);
+				triggerEffect(effectIterator, nextFrameDelayMs, spawnedObject, marketplaceEffect, forceModelAnimation, resetModelAnimationHandler);
 			}
 
 			// guard: check if all the conditions for this effect are met
@@ -892,8 +895,8 @@ public class MarketplaceProduct
 			triggerInterfaceWidgets(effect.interfaceWidgets, innerDelayMs);
 			triggerMenuOptions(effect.menuOptions, innerDelayMs);
 			triggerSoundEffect(effect.soundEffect, innerDelayMs);
-			triggerStateChange(effect.stateChange, innerDelayMs, spawnedObject);
-			triggerNotifications(effect.notifications, innerDelayMs);
+			triggerStateChange(spawnedObject, effect.stateChange, innerDelayMs);
+			triggerNotifications(marketplaceEffect, effect.notifications, innerDelayMs);
 		}, frameDelayMs);
 	}
 
@@ -909,6 +912,7 @@ public class MarketplaceProduct
 		triggerEffects(
 			effects,
 			0,
+			null,
 			null,
 			false,
 			null
@@ -1330,7 +1334,7 @@ public class MarketplaceProduct
 		}, baseDelayMs + delayMs);
 	}
 
-	private void triggerStateChange(EbsStateFrame stateFrame, int baseDelayMs, SpawnedObject spawnedObject)
+	private void triggerStateChange(SpawnedObject spawnedObject, EbsStateFrame stateFrame, int baseDelayMs)
 	{
 
 		// guard: make sure the state change is valid
@@ -1359,7 +1363,7 @@ public class MarketplaceProduct
 		}, baseDelayMs + delayMs);
 	}
 
-	private void triggerNotifications(ArrayList<EbsNotification> notifications, int delayMs)
+	private void triggerNotifications(MarketplaceEffect marketplaceEffect, ArrayList<EbsNotification> notifications, int delayMs)
 	{
 		// guard: make sure there are any notifications
 		if (notifications == null || notifications.size() <= 0)
@@ -1380,7 +1384,7 @@ public class MarketplaceProduct
 
 			// now queue them in the manager, so we also safely remove this product anywhere else
 			// while making sure the notifications ARE going to be triggered
-			manager.getNotificationManager().handleEbsNotifications(this, notifications);
+			manager.getNotificationManager().handleEbsNotifications(this, marketplaceEffect, notifications);
 		}, delayMs);
 	}
 
@@ -1437,6 +1441,7 @@ public class MarketplaceProduct
 				showEffects,
 				0,
 				spawnedObject,
+				null,
 				true,
 				null
 			);
@@ -1465,6 +1470,7 @@ public class MarketplaceProduct
 				hideEffects,
 				0,
 				spawnedObject,
+				null,
 				true,
 				(resetDelayMs) -> {
 					handleSpawnedObject(spawnedObject, resetDelayMs, () -> {
