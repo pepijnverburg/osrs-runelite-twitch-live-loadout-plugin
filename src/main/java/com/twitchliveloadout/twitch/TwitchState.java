@@ -593,11 +593,15 @@ public class TwitchState {
 		// clear everything when sync is not enabled to clear everything for all viewers
 		if (!config.syncEnabled())
 		{
-			state = new JsonObject();
 
 			// set null for all keys to make sure all viewers have their state cleared as well
 			for (TwitchStateEntry stateEntry : TwitchStateEntry.values())
 			{
+				if (!stateEntry.isNullable())
+				{
+					continue;
+				}
+
 				state.add(stateEntry.getKey(), null);
 			}
 		}
