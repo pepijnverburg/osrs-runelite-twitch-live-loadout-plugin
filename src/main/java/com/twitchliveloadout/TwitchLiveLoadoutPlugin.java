@@ -1113,6 +1113,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		return !isDisabledGeneral && !isDisabledDangerous;
 	}
 
+	public boolean canPerformDangerousEffects()
+	{
+		boolean isDisabledGeneral = !config.marketplaceEnabled();
+		boolean isDisabledDangerous = config.marketplaceProtectionEnabled() && isDangerousAccountType();
+
+		return !isDisabledGeneral && !isDisabledDangerous;
+	}
+
 	public boolean isLoggedIn()
 	{
 

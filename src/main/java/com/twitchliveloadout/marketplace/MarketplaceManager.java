@@ -38,8 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
-
 @Slf4j
 public class MarketplaceManager {
 
@@ -326,7 +324,7 @@ public class MarketplaceManager {
 				queuedTransactions.remove(transaction);
 
 				// guard: check for hardcore protection and dangerous random events
-				if (ebsProduct.dangerous && plugin.isDangerousAccountType() && config.marketplaceProtectionEnabled())
+				if (ebsProduct.dangerous && !plugin.canPerformDangerousEffects())
 				{
 					log.info("Skipping transaction because it is deemed dangerous and protection is on: " + transaction.id);
 					continue;
@@ -424,9 +422,10 @@ public class MarketplaceManager {
 	public void cleanExpiredProducts()
 	{
 		handleActiveProducts((marketplaceProduct) -> {
+			boolean skipDangerous = marketplaceProduct.isDangerous() && !plugin.canPerformDangerousEffects();
 
-			// guard: check if the product is not expired yet
-			if (!marketplaceProduct.isExpired())
+			// guard: check if the product is not expired yet and is allowed to stay active
+			if (!marketplaceProduct.isExpired() && !skipDangerous)
 			{
 				return;
 			}

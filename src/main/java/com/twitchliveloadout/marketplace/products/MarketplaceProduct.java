@@ -1146,16 +1146,6 @@ public class MarketplaceProduct
 		return true;
 	}
 
-	private void triggerModelSet(SpawnedObject spawnedObject, EbsModelSet modelSet)
-	{
-
-		// guard: make sure the object and new settings are valid
-		if (spawnedObject == null || modelSet == null)
-		{
-			return;
-		}
-	}
-
 	private void triggerModelSetUpdate(SpawnedObject spawnedObject, EbsModelSet modelSet)
 	{
 		// guard: make sure the spawned object and model set are valid
@@ -1588,5 +1578,13 @@ public class MarketplaceProduct
 		Instant now = Instant.now();
 
 		return Duration.between(startedAt, now).toMillis();
+	}
+
+	/**
+	 * Get whether this effect can be seen as potentially dangerous.
+	 */
+	public boolean isDangerous()
+	{
+		return ebsProduct.dangerous;
 	}
 }
