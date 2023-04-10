@@ -436,7 +436,8 @@ public class MarketplaceManager {
 
 			String transactionId = marketplaceProduct.getTransaction().id;
 			String ebsProductId = marketplaceProduct.getEbsProduct().id;
-			log.info("Cleaned an expired marketplace product ("+ ebsProductId +") for transaction: "+ transactionId);
+			int spawnAmount = marketplaceProduct.getSpawnAmount();
+			log.info("Cleaned an expired marketplace product (EBS ID: "+ ebsProductId +", spawn amount: "+ spawnAmount +") for transaction: "+ transactionId);
 		});
 	}
 

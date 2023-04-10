@@ -92,6 +92,8 @@ public class MarketplaceProduct
 	 */
 	@Getter
 	private final CopyOnWriteArrayList<SpawnedObject> spawnedObjects = new CopyOnWriteArrayList<>();
+	@Getter
+	private int spawnAmount = 0;
 
 	/**
 	 * Lookup table with the current key value pairs of the state frames to assign state values to this product
@@ -766,6 +768,7 @@ public class MarketplaceProduct
 
 		// register the objects to the product and manager to make the spawn point unavailable
 		spawnedObjects.add(spawnedObject);
+		spawnAmount += 1;
 		spawnManager.registerSpawnedObjectPlacement(spawnedObject);
 	}
 
@@ -784,6 +787,7 @@ public class MarketplaceProduct
 		SpawnPoint spawnPoint = null;
 		EbsRandomRange radiusRange = placement.radiusRange;
 		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
+		int radiusStepSize  = placement.radiusStepSize;
 		String radiusType = placement.radiusType;
 		String locationType = placement.locationType;
 		Boolean inLineOfSight = placement.inLineOfSight;
@@ -802,7 +806,7 @@ public class MarketplaceProduct
 		}
 
 		if (OUTWARD_RADIUS_TYPE.equals(radiusType)) {
-			spawnPoint = spawnManager.getOutwardSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
+			spawnPoint = spawnManager.getOutwardSpawnPoint(radius, radiusStepSize, inLineOfSight, referenceWorldPoint);
 		} else {
 			spawnPoint = spawnManager.getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
 		}
