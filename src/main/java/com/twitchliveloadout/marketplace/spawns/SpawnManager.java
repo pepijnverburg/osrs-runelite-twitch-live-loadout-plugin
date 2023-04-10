@@ -218,9 +218,9 @@ public class SpawnManager {
 		}
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
+	public SpawnPoint getOutwardSpawnPoint(int maxRadius, int radiusStepSize, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
-		return getOutwardSpawnPoint(1, 2, maxRadius, inLineOfSight, referenceWorldPoint);
+		return getOutwardSpawnPoint(1, radiusStepSize, maxRadius, inLineOfSight, referenceWorldPoint);
 	}
 
 	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
@@ -301,8 +301,8 @@ public class SpawnManager {
 				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
 				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
-				// guard: make sure the tile is in line of sight
-				if (inLineOfSight && !playerArea.hasLineOfSightTo(client, worldPoint))
+				// guard: check if this world point is already taken by another spawned object
+				if (objectPlacements.containsKey(worldPoint))
 				{
 					continue;
 				}
@@ -315,8 +315,8 @@ public class SpawnManager {
 					continue;
 				}
 
-				// guard: check if this world point is already taken by another spawned object
-				if (objectPlacements.containsKey(worldPoint))
+				// guard: make sure the tile is in line of sight
+				if (inLineOfSight && !playerArea.hasLineOfSightTo(client, worldPoint))
 				{
 					continue;
 				}
