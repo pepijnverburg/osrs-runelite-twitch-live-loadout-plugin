@@ -104,7 +104,7 @@ public class MarketplaceProductPanel extends JPanel {
 
 		boolean isActive = marketplaceProduct.isActive();
 		boolean isExpired = marketplaceProduct.isExpired();
-		long expiresInSeconds = marketplaceProduct.getExpiresInMs() / 1000;
+		long expiresInMs = marketplaceProduct.getExpiresInMs();
 		String streamerProductName = marketplaceProduct.getStreamerProduct().name;
 		String viewerName = marketplaceProduct.getTransaction().user_name;
 		TwitchProductCost productCost = marketplaceProduct.getTwitchProduct().cost;
@@ -123,7 +123,7 @@ public class MarketplaceProductPanel extends JPanel {
 			streamerProductName,
 			"By <i>"+ viewerName + "</i>",
 			"For "+ costAmount +" "+ costCurrency,
-			"Expires in "+ MarketplaceDuration.humanizeDuration(Duration.ofSeconds(expiresInSeconds)),
+			"Expires in "+ MarketplaceDuration.humanizeDurationMs(expiresInMs),
 		};
 		String name = String.join("<br/>", lines);
 

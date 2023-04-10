@@ -223,14 +223,14 @@ public class NotificationManager {
 
 		if (marketplaceEffect != null)
 		{
-			effectDuration = MarketplaceDuration.humanizeDuration(marketplaceEffect.getDuration());
-			effectDurationLeft = MarketplaceDuration.humanizeDuration(marketplaceEffect.getDurationLeft());
+			effectDuration = MarketplaceDuration.humanizeDurationRounded(marketplaceEffect.getDuration());
+			effectDurationLeft = MarketplaceDuration.humanizeDurationRounded(marketplaceEffect.getDurationLeft());
 		}
 
 		if (marketplaceProduct != null)
 		{
-			effectDuration = MarketplaceDuration.humanizeDuration(marketplaceProduct.getDuration());
-			effectDurationLeft = MarketplaceDuration.humanizeDuration(marketplaceProduct.getDurationLeft());
+			productDuration = MarketplaceDuration.humanizeDurationRounded(marketplaceProduct.getDuration());
+			productDurationLeft = MarketplaceDuration.humanizeDurationRounded(marketplaceProduct.getDurationLeft());
 		}
 
 		message = message.replaceAll("\\{viewerName\\}", viewerName);
