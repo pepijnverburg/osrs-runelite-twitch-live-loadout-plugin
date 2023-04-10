@@ -1105,7 +1105,7 @@ public class MarketplaceProduct
 			return true;
 		}
 
-		long passedMs = getPassedMs();
+		long passedMs = getDurationPassed().toMillis();
 
 		// guard: check whether the requested time-frame is outside of the current passed time
 		if (passedMs < minMs || passedMs > maxMs)
@@ -1134,7 +1134,7 @@ public class MarketplaceProduct
 			return true;
 		}
 
-		long durationMs = getDurationMs();
+		long durationMs = getDuration().toMillis();
 
 		// guard: make sure the duration is valid
 		if (durationMs <= 0)
@@ -1142,7 +1142,7 @@ public class MarketplaceProduct
 			return false;
 		}
 
-		long passedMs = getPassedMs();
+		long passedMs = getDurationPassed().toMillis();
 		double passedTimePercentage = (((double) passedMs) / ((double) durationMs));
 
 		// guard: check whether the current elapsed time is outside of the requested range
@@ -1568,26 +1568,31 @@ public class MarketplaceProduct
 	}
 
 	/**
-	 * Calculate how long in milliseconds this product is going to be active
+	 * Calculate how long this product is going to be active
 	 */
-	public long getDurationMs()
+	public Duration getDuration()
 	{
-		if (expiredAt == null || startedAt == null)
-		{
-			return 0;
-		}
+		return Duration.between(startedAt, expiredAt);
+	}
 
-		return Duration.between(startedAt, expiredAt).toMillis();
+	/**
+	 * Calculate how long this product is going to be active
+	 */
+	public Duration getDurationLeft()
+	{
+		Instant now = Instant.now();
+
+		return Duration.between(now, expiredAt);
 	}
 
 	/**
 	 * Calculate the amount of time in milliseconds since this product was started
 	 */
-	public long getPassedMs()
+	public Duration getDurationPassed()
 	{
 		Instant now = Instant.now();
 
-		return Duration.between(startedAt, now).toMillis();
+		return Duration.between(startedAt, now);
 	}
 
 	/**

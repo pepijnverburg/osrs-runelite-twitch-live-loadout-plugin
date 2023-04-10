@@ -204,6 +204,8 @@ public class NotificationManager {
 		String channelName = "broadcaster";
 		String currencyAmount = "";
 		String currencyType = "";
+		String productDuration = "";
+		String productDurationLeft = "";
 		String effectDuration = "";
 		String effectDurationLeft = "";
 
@@ -225,10 +227,18 @@ public class NotificationManager {
 			effectDurationLeft = MarketplaceDuration.humanizeDuration(marketplaceEffect.getDurationLeft());
 		}
 
+		if (marketplaceProduct != null)
+		{
+			effectDuration = MarketplaceDuration.humanizeDuration(marketplaceProduct.getDuration());
+			effectDurationLeft = MarketplaceDuration.humanizeDuration(marketplaceProduct.getDurationLeft());
+		}
+
 		message = message.replaceAll("\\{viewerName\\}", viewerName);
 		message = message.replaceAll("\\{channelName\\}", channelName);
 		message = message.replaceAll("\\{currencyAmount\\}", currencyAmount);
 		message = message.replaceAll("\\{currencyType\\}", currencyType);
+		message = message.replaceAll("\\{productDuration\\}", productDuration);
+		message = message.replaceAll("\\{productDurationLeft\\}", productDurationLeft);
 		message = message.replaceAll("\\{effectDuration\\}", effectDuration);
 		message = message.replaceAll("\\{effectDurationLeft\\}", effectDurationLeft);
 
