@@ -108,6 +108,13 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 		// update immediately when effect is added
 		// because this manager is not updating periodically, but event based
 		applyActiveEffects();
+
+		// check whether we should record the original movements for the first time
+		// this is needed because it is possible a onPlayerChanged event was not yet triggered after logging in
+		if (originalMovementAnimations.size() <= 0)
+		{
+			recordOriginalMovementAnimations();
+		}
 	}
 
 	@Override
