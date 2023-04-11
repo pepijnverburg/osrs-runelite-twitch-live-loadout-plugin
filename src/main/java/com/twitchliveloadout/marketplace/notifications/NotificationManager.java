@@ -176,6 +176,27 @@ public class NotificationManager {
 		lockNotificationsUntil(overheadTextDurationMs + OVERHEAD_NOTIFICATION_PAUSE_MS);
 	}
 
+	public void forceHideOverheadText()
+	{
+		Player player = client.getLocalPlayer();
+
+		// guard: skip on invalid player
+		if (player == null)
+		{
+			return;
+		}
+
+		// guard: skip when there is no overhead text at the moment
+		if (overheadResetTask == null || overheadResetTask.isDone())
+		{
+			return;
+		}
+
+		plugin.runOnClientThread(() -> {
+			player.setOverheadText("");
+		});
+	}
+
 	private String getMessage(Notification notification)
 	{
 		String message = notification.ebsNotification.message;
