@@ -38,6 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.twitchliveloadout.TwitchLiveLoadoutPlugin.IN_DEVELOPMENT;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.STRESS_TEST_ACTIVE_PRODUCTS_ENABLED;
+
 @Slf4j
 public class MarketplaceManager {
 
@@ -185,7 +188,8 @@ public class MarketplaceManager {
 						// guard: check if this transaction is already handled
 						// this is required because we have an offset on the last checked at date
 						// because with the HTTP request delays it is possible to miss a transaction
-						if (handledTransactionIds.contains(transactionId)) {
+						if (handledTransactionIds.contains(transactionId))
+						{
 							log.info("Skipping Twitch transaction because it was already handled: " + transactionId);
 							return;
 						}
@@ -193,6 +197,12 @@ public class MarketplaceManager {
 						handledTransactionIds.add(transactionId);
 						newTransactions.add(twitchTransaction);
 						log.info("Queued a new Twitch transaction with ID: " + transactionId);
+
+						// when stress testing we remove the transaction ID, so it can be triggered again
+						if (isStressTesting())
+						{
+							handledTransactionIds.remove(transactionId);
+						}
 					} catch (Exception exception) {
 						log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
 					}
@@ -328,6 +338,13 @@ public class MarketplaceManager {
 				{
 					log.info("Skipping transaction because it is deemed dangerous and protection is on: " + transaction.id);
 					continue;
+				}
+
+				// when stress testing override the timestamp to be now to simulate the transaction expiry
+				// to be later in the future for testing purposes.
+				if (isStressTesting())
+				{
+					transaction.timestamp = Instant.now().toString();
 				}
 
 				// create a new marketplace product where all the other products
@@ -789,7 +806,13 @@ public class MarketplaceManager {
 		menuManager.forceCleanAllEffects();
 		widgetManager.forceCleanAllEffects();
 		widgetManager.hideCoveringOverlays();
+		notificationManager.forceHideOverheadText();
 		stopActiveProducts();
+	}
+
+	public boolean isStressTesting()
+	{
+		return IN_DEVELOPMENT && STRESS_TEST_ACTIVE_PRODUCTS_ENABLED;
 	}
 
 	public interface EmptyHandler {

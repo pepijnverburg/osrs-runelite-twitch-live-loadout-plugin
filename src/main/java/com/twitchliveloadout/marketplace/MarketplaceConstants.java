@@ -1,6 +1,7 @@
 package com.twitchliveloadout.marketplace;
 
 public class MarketplaceConstants {
+	public static final boolean STRESS_TEST_ACTIVE_PRODUCTS_ENABLED = true;
 	public static final int MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY = 50;
 	public static final int MAX_TRANSACTION_AMOUNT_IN_MEMORY = 50;
 	public static final int TRANSACTION_DELAY_CORRECTION_MS = 1 * 200;

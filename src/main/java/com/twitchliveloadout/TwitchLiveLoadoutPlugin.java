@@ -85,6 +85,9 @@ import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
 @Slf4j
 public class TwitchLiveLoadoutPlugin extends Plugin
 {
+	/**
+	 * Debugging flags
+	 */
 	public static final boolean IN_DEVELOPMENT = true;
 
 	@Inject
