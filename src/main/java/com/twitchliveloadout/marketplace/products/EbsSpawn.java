@@ -6,6 +6,7 @@ public class EbsSpawn {
 	public ArrayList<EbsModelSet> modelSetOptions;
 	public EbsRandomRange spawnAmount;
 	public EbsModelPlacement modelPlacement;
+	public EbsModelPlacement modelRespawnPlacement;
 	public EbsMovementFrame movementAnimations;
 	public ArrayList<EbsEffect> hideEffects;
 	public ArrayList<EbsEffect> showEffects;

@@ -311,8 +311,18 @@ public class MarketplaceProduct
 				continue;
 			}
 
+			EbsModelPlacement modelRespawnPlacement = spawn.modelRespawnPlacement;
 			EbsModelPlacement modelPlacement = spawn.modelPlacement;
 
+			// override the model placement with a respawn model placement when set
+			// this allows us to have different behaviours for the initial spawn placement
+			// and the placement and follow behaviour afterwards
+			if (modelRespawnPlacement != null)
+			{
+				modelPlacement = modelRespawnPlacement;
+			}
+
+			// make sure the selected model placement is always valid
 			if (modelPlacement  == null)
 			{
 				modelPlacement = new EbsModelPlacement();
@@ -354,7 +364,7 @@ public class MarketplaceProduct
 				if (newSpawnPoints.containsKey(worldPoint)) {
 					newInSceneSpawnPoint = newSpawnPoints.get(worldPoint);
 				} else {
-					newInSceneSpawnPoint = getSpawnPoint(spawn);
+					newInSceneSpawnPoint = getSpawnPoint(modelPlacement);
 					newSpawnPoints.put(worldPoint, newInSceneSpawnPoint);
 				}
 
@@ -713,12 +723,13 @@ public class MarketplaceProduct
 					for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
 					{
 						int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
+						EbsModelPlacement placement = spawn.modelPlacement;
 
 						// determine whether we re-use the same spawn-point we already got
 						// or if we should generate a new one
 						if (spawnPoint == null || INDIVIDUAL_SPAWN_POINT_TYPE.equals(spawnPointType))
 						{
-							spawnPoint = getSpawnPoint(spawn);
+							spawnPoint = getSpawnPoint(placement);
 						}
 
 						triggerSpawn(spawn, spawnPoint, spawnDelayMs);
@@ -775,11 +786,10 @@ public class MarketplaceProduct
 		spawnManager.registerSpawnedObjectPlacement(spawnedObject);
 	}
 
-	private SpawnPoint getSpawnPoint(EbsSpawn spawn)
+	private SpawnPoint getSpawnPoint(EbsModelPlacement placement)
 	{
 		Client client = manager.getClient();
 		SpawnManager spawnManager = manager.getSpawnManager();
-		EbsModelPlacement placement = spawn.modelPlacement;
 
 		// make sure there are valid placement parameters
 		if (placement == null)
