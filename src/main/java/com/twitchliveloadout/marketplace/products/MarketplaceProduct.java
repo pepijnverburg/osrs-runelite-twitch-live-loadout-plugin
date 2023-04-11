@@ -180,16 +180,19 @@ public class MarketplaceProduct
 		handleSpawnedObjects(spawnedObjects, 0, SpawnedObject::hide);
 	}
 
-	public void stop()
+	public void stop(boolean force)
 	{
 		// guard: skip if already stopped
-		if (!isActive && !isPaused)
+		if (!isActive && !isPaused && !force)
 		{
 			return;
 		}
 
-		// NOTE: do this before toggling to off otherwise some effects are skipped
-		triggerEffectsOptions(ebsProduct.behaviour.stopEffectsOptions);
+		// do this before setting active to FALSE, otherwise some effects are skipped
+		if (!force)
+		{
+			triggerEffectsOptions(ebsProduct.behaviour.stopEffectsOptions);
+		}
 
 		// start with disabling all behaviours
 		isPaused = false;
@@ -204,7 +207,14 @@ public class MarketplaceProduct
 
 		// clean up all the spawned objects
 		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
-			hideSpawnedObject(spawnedObject, 0);
+
+			// when forced hide instantly, otherwise trigger the hide effects
+			if (force) {
+				spawnedObject.hide();
+			} else {
+				hideSpawnedObject(spawnedObject, 0);
+			}
+
 			manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
 		});
 		spawnedObjects.clear();

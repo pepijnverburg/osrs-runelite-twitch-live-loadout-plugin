@@ -56,7 +56,7 @@ public class MarketplaceProductPanel extends JPanel {
 				{
 					if (marketplaceProduct != null)
 					{
-						marketplaceProduct.stop();
+						marketplaceProduct.stop(false);
 						marketplacePanel.rebuild();
 					}
 				}

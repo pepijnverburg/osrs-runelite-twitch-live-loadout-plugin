@@ -447,7 +447,7 @@ public class MarketplaceManager {
 				return;
 			}
 
-			marketplaceProduct.stop();
+			marketplaceProduct.stop(false);
 			activeProducts.remove(marketplaceProduct);
 			updateMarketplacePanel();
 
@@ -758,11 +758,13 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Stop all active products
+	 * Force stop all active products
 	 */
-	public void stopActiveProducts()
+	public void forceStopActiveProducts()
 	{
-		handleActiveProducts(MarketplaceProduct::stop);
+		handleActiveProducts((product) -> {
+			product.stop(true);
+		});
 	}
 
 	/**
@@ -801,13 +803,13 @@ public class MarketplaceManager {
 	 */
 	public void shutDown()
 	{
+		forceStopActiveProducts();
 		animationManager.forceCleanAllEffects();
 		transmogManager.forceCleanAllEffects();
 		menuManager.forceCleanAllEffects();
 		widgetManager.forceCleanAllEffects();
 		widgetManager.hideCoveringOverlays();
 		notificationManager.forceHideOverheadText();
-		stopActiveProducts();
 	}
 
 	public boolean isStressTesting()
