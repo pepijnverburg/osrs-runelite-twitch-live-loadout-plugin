@@ -279,6 +279,11 @@ public class MarketplacePanel extends JPanel
 			statusText = "<html><b color='red'>Donations are temporarily PAUSED</b></html>";
 		}
 
+		if (!marketplaceManager.getConfig().marketplaceEnabled())
+		{
+			statusText = "<html><b color='red'>Random Event Donations are DISABLED in the plugin settings</b></html>";
+		}
+
 		if (streamerProductAmount <= 0)
 		{
 			availableDonationsText = "<html>There are <b color='red'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";

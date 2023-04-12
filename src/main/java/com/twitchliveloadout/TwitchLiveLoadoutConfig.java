@@ -535,7 +535,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "marketplaceStartOnLoadedAt",
-			name = "Start on time of received",
+			name = "Correct transaction delay",
 			description = "Base the expiry of the effects when it is received and not the transaction time, which can have delays.",
 			position = 10,
 			hidden = false,

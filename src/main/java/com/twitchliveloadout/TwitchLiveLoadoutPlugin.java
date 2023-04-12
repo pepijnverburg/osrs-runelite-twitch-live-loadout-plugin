@@ -858,7 +858,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			String key = configChanged.getKey();
 
-
 			// Handle keys that should trigger an update of the state as well.
 			// Note that on load these events are not triggered, meaning that
 			// in the constructor of the TwitchState class one should also load
@@ -879,6 +878,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					break;
 				case "twitchTheme":
 					twitchState.setTwitchTheme(config.twitchTheme());
+					break;
+				case "marketplaceEnabled":
+					pluginPanel.getMarketplacePanel().updateTexts();
+
+					// if it is being disabled immediately remove all active products and effects
+					// this is the most reliable to properly remove everything because ticks are based on this settting
+					if (!config.marketplaceEnabled())
+					{
+						marketplaceManager.shutDown();
+					}
 					break;
 			}
 
