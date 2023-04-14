@@ -88,7 +88,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Debugging flags
 	 */
-	public static final boolean IN_DEVELOPMENT = true;
+	public static final boolean IN_DEVELOPMENT = false;
 
 	@Inject
 	private TwitchLiveLoadoutConfig config;
