@@ -53,7 +53,7 @@ public class TwitchApi
 	public final static double HIGH_RATE_LIMIT_DELAY_MULTIPLIER = 0.5d;
 	public final static int HIGH_RATE_LIMIT_REMAINING = 90;
 
-	public final static boolean CHAT_ERRORS_ENABLED = true;
+	public final static boolean NOTIFY_IN_CHAT_ENABLED = true;
 	private final static int SEND_PUBSUB_TIMEOUT_MS = 10 * 1000;
 	private final static int GET_CONFIGURATION_SERVICE_TIMEOUT_MS = 5 * 1000;
 	private final static int GET_EBS_PRODUCTS_TIMEOUT_MS = 10 * 1000;
@@ -349,7 +349,7 @@ public class TwitchApi
 			// Only send a chat message when the token is not set or expired as other errors
 			// also occur due to reliability of the Twitch servers (e.g. random 500's in between).
 			// Normally they are good again for the next request.
-			if (isAuthErrorResponseCode(responseCode) && CHAT_ERRORS_ENABLED && isLoggedIn && canSendErrorChatMessage) {
+			if (isAuthErrorResponseCode(responseCode) && NOTIFY_IN_CHAT_ENABLED && isLoggedIn && canSendErrorChatMessage) {
 				final ChatMessageBuilder message = new ChatMessageBuilder()
 					.append(ChatColorType.HIGHLIGHT)
 					.append("Could not synchronize loadout to Twitch " + type + " (code: " + responseCode + "). ")
