@@ -270,8 +270,8 @@ public class MarketplaceProduct
 		while (spawnedObjectIterator.hasNext())
 		{
 			SpawnedObject spawnedObject = spawnedObjectIterator.next();
-			EbsModelSet modelSet = spawnedObject.getModelSet();
-			String rotationType = modelSet.rotationType;
+			EbsModelPlacement modelPlacement = spawnedObject.getSpawn().modelPlacement;
+			String rotationType = modelPlacement.rotationType;
 			Player player = manager.getClient().getLocalPlayer();
 
 			// guard: make sure the rotation and player are valid
@@ -374,7 +374,7 @@ public class MarketplaceProduct
 				if (newSpawnPoints.containsKey(worldPoint)) {
 					newInSceneSpawnPoint = newSpawnPoints.get(worldPoint);
 				} else {
-					newInSceneSpawnPoint = getSpawnPoint(modelPlacement);
+					newInSceneSpawnPoint = getSpawnPoint(modelPlacement, spawnedObject);
 					newSpawnPoints.put(worldPoint, newInSceneSpawnPoint);
 				}
 
@@ -671,10 +671,10 @@ public class MarketplaceProduct
 		lastSpawnBehaviourAt = now.plusMillis(afterTriggerDelayMs);
 		spawnBehaviourCounter += 1;
 
-		triggerSpawnOptions(spawnOptions);
+		triggerSpawnOptions(null, spawnOptions);
 	}
 
-	private void triggerSpawnOptions(ArrayList<EbsSpawnOption> spawnOptions)
+	private void triggerSpawnOptions(SpawnedObject spawnedObject, ArrayList<EbsSpawnOption> spawnOptions)
 	{
 
 		// guard: make sure the spawn options are valid
@@ -739,7 +739,7 @@ public class MarketplaceProduct
 						// or if we should generate a new one
 						if (spawnPoint == null || INDIVIDUAL_SPAWN_POINT_TYPE.equals(spawnPointType))
 						{
-							spawnPoint = getSpawnPoint(placement);
+							spawnPoint = getSpawnPoint(placement, spawnedObject);
 						}
 
 						triggerSpawn(spawn, spawnPoint, spawnDelayMs);
@@ -771,6 +771,9 @@ public class MarketplaceProduct
 
 		// roll a random set of model IDs
 		EbsModelSet modelSet = MarketplaceRandomizers.getRandomEntryFromList(spawn.modelSetOptions);
+		EbsRandomRange durationMs = spawn.durationMs;
+		int randomDurationMs = -1;
+		Instant spawnedObjectExpiredAt = null;
 
 		// guard: make sure the selected model is valid
 		if (modelSet == null || modelSet.ids == null)
@@ -779,16 +782,30 @@ public class MarketplaceProduct
 			return;
 		}
 
+		if (durationMs != null)
+		{
+			randomDurationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(durationMs, 0,0);
+			spawnedObjectExpiredAt = Instant.now().plusMillis(randomDurationMs);
+		}
+
 		SpawnedObject spawnedObject = new SpawnedObject(
 			this,
 			client,
 			spawnPoint,
 			spawn,
-			modelSet
+			modelSet,
+			spawnedObjectExpiredAt
 		);
 
 		// schedule showing of the object as it is initially hidden
 		showSpawnedObject(spawnedObject, spawnDelayMs);
+
+		// set timeout to hide object at the exact time of duration
+		// the cleanup will remove it later, but this runs on game ticks
+		if (randomDurationMs >= 0)
+		{
+			hideSpawnedObject(spawnedObject, spawnDelayMs + randomDurationMs);
+		}
 
 		// register the objects to the product and manager to make the spawn point unavailable
 		spawnedObjects.add(spawnedObject);
@@ -796,7 +813,7 @@ public class MarketplaceProduct
 		spawnManager.registerSpawnedObjectPlacement(spawnedObject);
 	}
 
-	private SpawnPoint getSpawnPoint(EbsModelPlacement placement)
+	private SpawnPoint getSpawnPoint(EbsModelPlacement placement, SpawnedObject  spawnedObject)
 	{
 		Client client = manager.getClient();
 		SpawnManager spawnManager = manager.getSpawnManager();
@@ -807,7 +824,6 @@ public class MarketplaceProduct
 			placement = new EbsModelPlacement();
 		}
 
-		SpawnPoint spawnPoint = null;
 		EbsRandomRange radiusRange = placement.radiusRange;
 		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
 		int radiusStepSize  = placement.radiusStepSize;
@@ -828,13 +844,22 @@ public class MarketplaceProduct
 			}
 		}
 
-		if (OUTWARD_RADIUS_TYPE.equals(radiusType)) {
-			spawnPoint = spawnManager.getOutwardSpawnPoint(radius, radiusStepSize, inLineOfSight, referenceWorldPoint);
-		} else {
-			spawnPoint = spawnManager.getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
+		if (MODEL_TILE_LOCATION_TYPE.equals(locationType) && spawnedObject != null)
+		{
+			referenceWorldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
 		}
 
-		return spawnPoint;
+		if (NO_RADIUS_TYPE.equals(radiusType))
+		{
+			return new SpawnPoint(referenceWorldPoint);
+		}
+
+		if (OUTWARD_RADIUS_TYPE.equals(radiusType))
+		{
+			return spawnManager.getOutwardSpawnPoint(radius, radiusStepSize, inLineOfSight, referenceWorldPoint);
+		}
+
+		return spawnManager.getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
 	}
 
 	public void triggerEffects(ArrayList<EbsEffect> effects, int startDelayMs, SpawnedObject spawnedObject, MarketplaceEffect marketplaceEffect, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
@@ -895,7 +920,7 @@ public class MarketplaceProduct
 			}
 
 //			log.info("TRIGGERED EFFECTS: "+ Instant.now().toEpochMilli());
-			triggerSpawnOptions(effect.spawnOptions);
+			triggerSpawnOptions(spawnedObject, effect.spawnOptions);
 			triggerModelExpired(spawnedObject, effect.modelExpired);
 			triggerModelAnimation(
 				spawnedObject,

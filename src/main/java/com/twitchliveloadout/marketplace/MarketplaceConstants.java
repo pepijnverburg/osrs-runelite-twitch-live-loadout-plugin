@@ -8,6 +8,7 @@ public class MarketplaceConstants {
 
 	public static final String CURRENT_TILE_LOCATION_TYPE = "current-tile";
 	public static final String PREVIOUS_TILE_LOCATION_TYPE = "previous-tile";
+	public static final String MODEL_TILE_LOCATION_TYPE = "model-tile";
 
 	public static final String NONE_FOLLOW_TYPE = "none";
 	public static final String IN_RADIUS_FOLLOW_TYPE = "in-radius";
@@ -24,6 +25,7 @@ public class MarketplaceConstants {
 	public static final int ABSOLUTE_MAX_RADIUS = REGION_SIZE;
 	public static final String DEFAULT_RADIUS_TYPE = "radius";
 	public static final String OUTWARD_RADIUS_TYPE = "outward-radius";
+	public static final String NO_RADIUS_TYPE = "no-radius";
 
 	public static final String RANDOM_ROTATION_TYPE = "random";
 	public static final String PLAYER_ROTATION_TYPE = "player";

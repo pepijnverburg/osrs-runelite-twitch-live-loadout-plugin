@@ -6,7 +6,5 @@ public class EbsModelSet {
 	public ArrayList<Integer> ids;
 	public EbsRandomRange scale;
 	public Integer scalePerOneTile;
-	public String rotationType;
-	public EbsRandomRange rotation;
 	public ArrayList<EbsRecolor> recolors;
 }

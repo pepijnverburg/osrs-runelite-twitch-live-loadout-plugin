@@ -64,7 +64,7 @@ public class SpawnedObject {
 
 	private final ConcurrentHashMap<String, String> stateFrameValues = new ConcurrentHashMap<>();
 
-	public SpawnedObject(MarketplaceProduct product, Client client, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet)
+	public SpawnedObject(MarketplaceProduct product, Client client, SpawnPoint spawnPoint, EbsSpawn spawn, EbsModelSet modelSet, Instant expiredAt)
 	{
 		this.spawnedAt = Instant.now();
 		this.product = product;
@@ -73,13 +73,11 @@ public class SpawnedObject {
 		this.spawnPoint = spawnPoint;
 		this.spawn = spawn;
 		this.modelSet = modelSet;
+		this.expiredAt = expiredAt;
 
 		// first initialize the model set so we have proper model data
 		// for the next initialisation methods
 		updateModelSet();
-
-		// initialize expiry if set via spawn properties
-		initializeExpiry();
 
 		// setup one time settings
 		initializeObject();
@@ -114,10 +112,17 @@ public class SpawnedObject {
 
 		// get properties from model set
 		ArrayList<Integer> modelIds = modelSet.ids;
+		EbsModelPlacement modelPlacement = spawn.modelPlacement;
+
+		if (modelPlacement == null)
+		{
+			modelPlacement = new EbsModelPlacement();
+		}
+
 		boolean shouldScaleModel = (modelSet.scale != null);
-		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.rotationType));
+		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelPlacement.rotationType));
 		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1, 0, MAX_MODEL_SCALE);
-		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360, 0, 360);
+		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.rotation, 0, 360, 0, 360);
 		ArrayList<EbsRecolor> recolors = modelSet.recolors;
 		ArrayList<ModelData> modelDataChunks = new ArrayList<>();
 
@@ -163,16 +168,6 @@ public class SpawnedObject {
 
 		// re-render after changes
 		render();
-	}
-
-	private void initializeExpiry()
-	{
-		EbsRandomRange durationMs = spawn.durationMs;
-		if (durationMs != null)
-		{
-			int randomDurationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(durationMs, 0,0);
-			expiredAt = Instant.now().plusMillis(randomDurationMs);
-		}
 	}
 
 	private void initializeObject()
