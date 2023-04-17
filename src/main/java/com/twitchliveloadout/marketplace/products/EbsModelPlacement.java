@@ -14,4 +14,7 @@ public class EbsModelPlacement {
 	public Integer radiusStepSize = 2;
 	public String rotationType;
 	public EbsRandomRange rotation;
+	public EbsRandomRange translateX;
+	public EbsRandomRange translateY;
+	public EbsRandomRange translateZ;
 }

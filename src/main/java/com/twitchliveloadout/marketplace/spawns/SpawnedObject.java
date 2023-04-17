@@ -119,12 +119,16 @@ public class SpawnedObject {
 			modelPlacement = new EbsModelPlacement();
 		}
 
-		boolean shouldScaleModel = (modelSet.scale != null);
-		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelPlacement.rotationType));
+		int translateX = (int) MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.translateX, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
+		int translateY = (int) MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.translateY, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
+		int translateZ = (int) MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.translateZ, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
 		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1, 0, MAX_MODEL_SCALE);
 		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.rotation, 0, 360, 0, 360);
 		ArrayList<EbsRecolor> recolors = modelSet.recolors;
 		ArrayList<ModelData> modelDataChunks = new ArrayList<>();
+		boolean shouldScaleModel = (modelSet.scale != null);
+		boolean shouldRotateModel = !NO_ROTATION_TYPE.equals(modelPlacement.rotationType);
+		boolean shouldTranslateModel = (translateX != 0 || translateY != 0 || translateZ != 0);
 
 		// load all the models if set
 		if (modelIds != null)
@@ -166,6 +170,12 @@ public class SpawnedObject {
 			rotate(modelRotationDegrees);
 		}
 
+		// set the height
+		if (shouldTranslateModel)
+		{
+			translate(translateX, translateY, translateZ);
+		}
+
 		// re-render after changes
 		render();
 	}
@@ -194,6 +204,12 @@ public class SpawnedObject {
 		rotate(angleDegrees);
 	}
 
+	public void translate(int x, int y, int z)
+	{
+		modelData.cloneVertices();
+		modelData.translate(x, y, z);
+	}
+
 	public void rotate(double angleDegrees)
 	{
 
@@ -216,6 +232,11 @@ public class SpawnedObject {
 		}
 
 		int orientation = (int) (angleDegrees * MarketplaceConstants.RUNELITE_OBJECT_FULL_ROTATION / 360d);
+		setOrientation(orientation);
+	}
+
+	public void setOrientation(int orientation)
+	{
 		object.setOrientation(orientation);
 	}
 
