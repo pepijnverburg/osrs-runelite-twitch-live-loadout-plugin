@@ -17,7 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.ProjectileMoved;
 
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -280,22 +282,34 @@ public class MarketplaceProduct
 				continue;
 			}
 
-			if (rotationType.equals(PLAYER_ROTATION_TYPE))
-			{
-				LocalPoint targetPoint = player.getLocalLocation();
-				spawnedObject.rotateTowards(targetPoint);
-			}
-			else if (rotationType.equals(INTERACTING_ROTATION_TYPE))
-			{
-				Actor interacting = player.getInteracting();
+			Actor interacting = player.getInteracting();
 
-				if (interacting == null)
-				{
-					continue;
-				}
+			switch (rotationType)
+			{
+				case PLAYER_ROTATION_TYPE:
+					LocalPoint playerLocalLocation = player.getLocalLocation();
+					spawnedObject.rotateTowards(playerLocalLocation);
+					break;
+				case MIRROR_PLAYER_ROTATION_TYPE:
+					spawnedObject.setOrientation(player.getCurrentOrientation());
+					break;
+				case INTERACTING_ROTATION_TYPE:
+					if (interacting == null)
+					{
+						continue;
+					}
 
-				LocalPoint targetPoint = interacting.getLocalLocation();
-				spawnedObject.rotateTowards(targetPoint);
+					LocalPoint interactingLocalLocation = interacting.getLocalLocation();
+					spawnedObject.rotateTowards(interactingLocalLocation);
+					break;
+				case MIRROR_INTERACTING_ROTATION_TYPE:
+					if (interacting == null)
+					{
+						continue;
+					}
+
+					spawnedObject.setOrientation(interacting.getCurrentOrientation());
+					break;
 			}
 		}
 	}
@@ -942,6 +956,7 @@ public class MarketplaceProduct
 			triggerSoundEffect(effect.soundEffect, innerDelayMs);
 			triggerStateChange(spawnedObject, effect.stateChange, innerDelayMs);
 			triggerNotifications(marketplaceEffect, effect.notifications, innerDelayMs);
+			triggerProjectiles(spawnedObject, effect.projectiles, innerDelayMs);
 		}, frameDelayMs);
 	}
 
@@ -1431,6 +1446,120 @@ public class MarketplaceProduct
 			// while making sure the notifications ARE going to be triggered
 			manager.getNotificationManager().handleEbsNotifications(this, marketplaceEffect, notifications);
 		}, delayMs);
+	}
+
+	private void triggerProjectiles(SpawnedObject spawnedObject, ArrayList<EbsProjectileFrame> projectiles, int delayMs)
+	{
+		// guard: make sure there are valid frames
+		if (projectiles == null)
+		{
+			return;
+		}
+
+		Iterator<EbsProjectileFrame> projectileFrameIterator = projectiles.iterator();
+		Client client = manager.getClient();
+
+		while (projectileFrameIterator.hasNext())
+		{
+			EbsProjectileFrame projectileFrame = projectileFrameIterator.next();
+			int projectileDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(projectileFrame.delayMs, 0, 0, 0, Integer.MAX_VALUE);
+			Integer projectileId = projectileFrame.id;
+			String startLocationType = projectileFrame.startLocationType;
+			String endLocationType = projectileFrame.endLocationType;
+			Actor endActor = getActorByLocationType(endLocationType);
+			LocalPoint startLocation = getLocalPointByLocationType(startLocationType, spawnedObject);
+			LocalPoint endLocation = getLocalPointByLocationType(endLocationType, spawnedObject);
+			int startZ = projectileFrame.startZ;
+			int slope = projectileFrame.slope;
+			int startHeight = projectileFrame.startHeight;
+			int endHeight = projectileFrame.endHeight;
+			int durationMs = projectileFrame.durationMs;
+			int durationCycles = (durationMs / 25); // how to go from ms to cycles? this is an approximation
+
+			// guard: make sure the parameters are valid
+			if (projectileId == null || durationCycles <= 0 || startLocation == null || endLocation == null)
+			{
+				continue;
+			}
+
+			manager.getPlugin().scheduleOnClientThread(() -> {
+				// calculate the game cycle here to make sure delay is taken into account
+				int startCycle = client.getGameCycle();
+				int endCycle = startCycle + durationCycles;
+
+				Projectile projectile = client.createProjectile(
+					projectileId,
+					client.getPlane(),
+					startLocation.getX(),
+					startLocation.getY(),
+					startZ,
+					startCycle,
+					endCycle,
+					slope,
+					startHeight,
+					endHeight,
+					endActor,
+					endLocation.getX(),
+					endLocation.getY()
+				);
+
+				client.getProjectiles().addLast(projectile);
+			}, delayMs + projectileDelayMs);
+		}
+	}
+
+	@Nullable
+	private Actor getActorByLocationType(String locationType)
+	{
+		Player localPlayer = manager.getClient().getLocalPlayer();
+		Actor interactingActor = localPlayer.getInteracting();
+
+		switch (locationType)
+		{
+			case CURRENT_TILE_LOCATION_TYPE:
+			case PREVIOUS_TILE_LOCATION_TYPE:
+				return localPlayer;
+			case MODEL_TILE_LOCATION_TYPE:
+				return null;
+			case INTERACTING_TILE_LOCATION_TYPE:
+				return interactingActor;
+		}
+
+		return null;
+	}
+
+	@Nullable
+	private LocalPoint getLocalPointByLocationType(String locationType, SpawnedObject spawnedObject)
+	{
+		Client client = manager.getClient();
+		Actor actor = getActorByLocationType(locationType);
+		LocalPoint actorLocation = null;
+
+		if (actor != null)
+		{
+			actorLocation = actor.getLocalLocation();
+		}
+
+		switch (locationType)
+		{
+			case CURRENT_TILE_LOCATION_TYPE:
+			case INTERACTING_TILE_LOCATION_TYPE:
+				return actorLocation;
+			case PREVIOUS_TILE_LOCATION_TYPE:
+				WorldPoint previousLocation =  manager.getSpawnManager().getPreviousPlayerLocation();
+
+				// guard: fallback to the current location
+				if (previousLocation == null)
+				{
+					return actorLocation;
+				}
+
+				return LocalPoint.fromWorld(client, previousLocation);
+			case MODEL_TILE_LOCATION_TYPE:
+				return spawnedObject.getSpawnPoint().getLocalPoint(client);
+		}
+
+		return null;
 	}
 
 	private void handleEffectFrame(EbsEffectFrame effect, int baseDelayMs, StartEffectHandler startHandler, ResetEffectHandler resetHandler)

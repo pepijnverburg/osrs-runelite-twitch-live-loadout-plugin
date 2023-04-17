@@ -19,4 +19,5 @@ public class EbsEffect {
 	public EbsSoundEffectFrame soundEffect;
 	public EbsStateFrame stateChange;
 	public ArrayList<EbsNotification> notifications;
+	public ArrayList<EbsProjectileFrame> projectiles;
 }
