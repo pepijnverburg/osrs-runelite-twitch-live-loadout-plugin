@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import jdk.internal.jline.internal.Nullable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -205,6 +206,13 @@ public class TwitchApi
 			final JsonObject data = new JsonObject();
 			final JsonArray targets = new JsonArray();
 			final String channelId = getChannelId();
+
+			// guard: make sure the channel ID is valid
+			if (channelId == null)
+			{
+				return false;
+			}
+
 			targets.add(TwitchPubSubTargetType.BROADCAST.getTarget());
 			String compressedState = compressState(state);
 
@@ -272,9 +280,16 @@ public class TwitchApi
 		final String clientId = DEFAULT_EXTENSION_CLIENT_ID;
 		final String channelId = getChannelId();
 		final String baseUrl = DEFAULT_TWITCH_BASE_URL +"/configurations";
+
+		// guard: make sure the channel ID is valid
+		if (channelId == null)
+		{
+			return;
+		}
+
 		final String url = baseUrl +"?broadcaster_id="+ channelId +"&extension_id="+ clientId +"&segment="+ segmentType.getKey();
 
-		// Documentation: https://dev.twitch.tv/docs/api/reference#get-extension-configuration-segment
+		// documentation: https://dev.twitch.tv/docs/api/reference#get-extension-configuration-segment
 		performGetRequest(url, configurationSegmentHttpClient, (Response response) -> {
 
 			// there is a fair chance the configuration segment is empty when nothing is configured yet
@@ -369,10 +384,18 @@ public class TwitchApi
 		log.debug("Successfully sent state with response code: {}", responseCode);
 	}
 
-	private String getChannelId() throws Exception
+	@Nullable
+	private String getChannelId()
 	{
-		JsonObject decodedToken = getDecodedToken();
-		return decodedToken.get("channel_id").getAsString();
+
+		try {
+			JsonObject decodedToken = getDecodedToken();
+			return decodedToken.get("channel_id").getAsString();
+		} catch (Exception exception) {
+			// empty
+		}
+
+		return null;
 	}
 
 	public JsonObject getDecodedToken() throws Exception
