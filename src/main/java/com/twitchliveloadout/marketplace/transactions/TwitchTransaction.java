@@ -15,5 +15,6 @@ public class TwitchTransaction {
 	public String user_name;
 	public String product_type;
 	public TwitchProduct product_data;
+	public String handled_at;
 	public final Instant loadedAt = Instant.now();
 }
