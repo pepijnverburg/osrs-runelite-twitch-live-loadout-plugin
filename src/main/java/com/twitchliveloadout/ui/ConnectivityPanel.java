@@ -133,7 +133,7 @@ public class ConnectivityPanel extends JPanel
 		String twitchStatusColor = SUCCESS_TEXT_COLOR;
 
 		long tokenExpiry = 0;
-		String authText = "No valid Twitch Token.";
+		String authText = "No valid Twitch Token. Copy your token from your Twitch account. Navigate to: 'Creator Dashboard' > 'Extensions' > 'OSRS Live Loadout' > 'Configure' > 'Copy Token'.";
 		String authColor = ERROR_TEXT_COLOR;
 
 		String rateLimitText = "There are "+ rateLimitRemaining +" request points available before hitting the Twitch API rate limit.";
@@ -186,7 +186,7 @@ public class ConnectivityPanel extends JPanel
 
 		if (stateUsagePercentage >= 100)
 		{
-			stateText += "<br/><br/>An error occurred: state is too large to send to Twitch. Please disable some synced information via the plugin settings in RuneLite.";
+			stateText += "<br/><br/>An error occurred: state is too large to send to Twitch. Please disable some synced information via the plugin settings in RuneLite and report this to the plugin maintainer via the linked Discord above.";
 			stateColor = ERROR_TEXT_COLOR;
 		}
 
