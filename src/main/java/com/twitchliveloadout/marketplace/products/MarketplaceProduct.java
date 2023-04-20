@@ -126,7 +126,8 @@ public class MarketplaceProduct
 		// queued transactions to be handled while a streamer is logged out for 30 seconds while keeping RL open.
 		// but we will not handle transactions that RL will load when booting up without any in the queue.
 		Instant transactionExpiredAt = transactionAt.plusSeconds(duration);
-		boolean loadedTooLate = transaction.loadedAt.isAfter(transactionExpiredAt);
+		Instant transactionLoadedAt = Instant.parse(transaction.loaded_at);
+		boolean loadedTooLate = transactionLoadedAt.isAfter(transactionExpiredAt);
 
 		this.startedAt = (!loadedTooLate && manager.getConfig().marketplaceStartOnLoadedAt() ? loadedAt : transactionAt);
 		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);

@@ -62,7 +62,7 @@ public class TwitchTransactionPanel extends JPanel {
 		String[] lines = {
 			"Donation of <b color='yellow'>"+ costAmount +" "+ costCurrency +"</b>",
 			"By <b color='yellow'>"+ viewerName + "</b>",
-			"At: "+ transactionAtString,
+			"At "+ transactionAtString,
 		};
 		String name = String.join("<br/>", lines);
 
