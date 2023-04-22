@@ -940,7 +940,9 @@ public class MarketplaceProduct
 			triggerModelAnimation(
 				spawnedObject,
 				effect.modelAnimation,
-				innerDelayMs,
+				// when there is no model animation add the frame duration to the delay for the reset model animation handler
+				// to be executed after the frame has been done
+				(effect.modelAnimation == null ? nextFrameDelayMs + innerDelayMs : innerDelayMs),
 				forceModelAnimation,
 				isLast ? resetModelAnimationHandler : null
 			);
