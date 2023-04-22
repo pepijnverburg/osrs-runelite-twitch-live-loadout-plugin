@@ -7,6 +7,7 @@ public class EbsInterfaceWidgetFrame extends EbsEffectFrame {
 	public Integer listIndex = -1;
 
 	public Integer widgetType;
+	public Integer contentType;
 	public String text;
 	public Integer textColor;
 	public Integer opacity;

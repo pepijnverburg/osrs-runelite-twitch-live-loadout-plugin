@@ -145,6 +145,7 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 			registerOriginalWidget(widget);
 			String effectType = widgetFrame.effectType;
 			Integer widgetType = widgetFrame.widgetType;
+			Integer contentType = widgetFrame.contentType;
 			String text = widgetFrame.text;
 			Integer textColor = widgetFrame.textColor;
 			Integer opacity = widgetFrame.opacity;
@@ -166,6 +167,11 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 				if (widgetType != null)
 				{
 					widget.setType(widgetType);
+				}
+
+				if (contentType != null)
+				{
+					widget.setContentType(contentType);
 				}
 
 				if (text != null)
@@ -240,6 +246,7 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 			// restore the properties of the widget
 			widget.setHidden(originalWidget.getHidden());
 			widget.setType(originalWidget.getType());
+			widget.setContentType(originalWidget.getContentType());
 			widget.setText(originalWidget.getText());
 			widget.setTextColor(originalWidget.getTextColor());
 			widget.setOpacity(originalWidget.getOpacity());
