@@ -17,13 +17,13 @@ Optionally engage with gameplay by letting viewers trigger custom `Random Events
 ## ✨ Features
 
 #### 🎒 Syncing Loadout to viewers
-![Collage](./docs/screenshots/1-Collage.png "Collage")
+![Collage](./docs/screenshots/Collage.png "Collage")
 
 #### ⚡️ Viewer triggered Random Events
-![Random Events](./docs/screenshots/2-Random-Events.png "Random Events")
+![Random Events](./docs/screenshots/Random%20Events.png "Random Events")
 
 #### 📱🖥 Cross-platform support
-![Mobile](./docs/screenshots/3-Mobile-support.png "Mobile")
+![Mobile](./docs/screenshots/Mobile%20support.png "Mobile")
 
 
 ## 🚀 Getting Started
