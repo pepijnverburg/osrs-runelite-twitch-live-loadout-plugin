@@ -25,7 +25,6 @@ Optionally engage with gameplay by letting viewers trigger custom `Random Events
 #### 📱🖥 Cross-platform support
 ![Mobile](./docs/screenshots/Mobile%20support.png "Mobile")
 
-
 ## 🚀 Getting Started
 
 ### Requirements
