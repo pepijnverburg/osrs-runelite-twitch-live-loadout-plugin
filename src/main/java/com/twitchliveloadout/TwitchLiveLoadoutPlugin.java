@@ -115,6 +115,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Inject
 	private OkHttpClient httpClient;
 
+	@Inject
+	private Gson gson;
+
 	/**
 	 * Scheduled executor that does not run on the client thread.
 	 */
@@ -244,7 +247,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
-			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager);
+			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager, gson);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 			questManager = new QuestManager(this, twitchState, client);

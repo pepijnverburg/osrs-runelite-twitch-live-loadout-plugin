@@ -76,6 +76,9 @@ public class MarketplaceManager {
 	@Getter
 	private final SoundManager soundManager;
 
+	@Getter
+	private final Gson gson;
+
 	/**
 	 * List to keep track of all the active products
 	 */
@@ -124,13 +127,14 @@ public class MarketplaceManager {
 	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap<>();
 	private Instant sharedCooldownUntil;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager)
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, Gson gson)
 	{
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
 		this.twitchState = twitchState;
 		this.client = client;
 		this.config = config;
+		this.gson = gson;
 		this.spawnManager = new SpawnManager(plugin, client);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
@@ -175,7 +179,7 @@ public class MarketplaceManager {
 					// try catch for each individual transaction to not have one invalid transaction
 					// cancel all others with the top-level try-catch in this function
 					try {
-						TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
+						TwitchTransaction twitchTransaction = gson.fromJson(element, TwitchTransaction.class);
 						String transactionId = twitchTransaction.id;
 
 						// update the ID to tell for next requests to fetch newer transactions
@@ -482,7 +486,7 @@ public class MarketplaceManager {
 			rawStreamerProducts.forEach((element) -> {
 				try {
 					JsonObject rawStreamerProduct = element.getAsJsonObject();
-					StreamerProduct streamerProduct = new Gson().fromJson(rawStreamerProduct, StreamerProduct.class);
+					StreamerProduct streamerProduct = gson.fromJson(rawStreamerProduct, StreamerProduct.class);
 					newStreamerProducts.add(streamerProduct);
 				} catch (Exception exception) {
 					// empty
@@ -538,7 +542,7 @@ public class MarketplaceManager {
 				// try-catch for every parse, to not let all products crash on one misconfiguration
 				products.forEach((element) -> {
 					try {
-						EbsProduct ebsProduct = new Gson().fromJson(element, EbsProduct.class);
+						EbsProduct ebsProduct = gson.fromJson(element, EbsProduct.class);
 						newEbsProducts.add(ebsProduct);
 					} catch (Exception exception) {
 						// empty?
