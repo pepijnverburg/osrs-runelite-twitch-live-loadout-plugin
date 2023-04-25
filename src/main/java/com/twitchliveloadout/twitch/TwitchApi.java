@@ -70,7 +70,7 @@ public class TwitchApi
 	/**
 	 * Dedicated HTTP clients for every type of request
 	 */
-	private final OkHttpClient httpClient = new OkHttpClient();
+	private final OkHttpClient httpClientTemplate;
 	private final OkHttpClient ebsTransactionsHttpClient;
 	private final OkHttpClient configurationSegmentHttpClient;
 	private final OkHttpClient pubSubHttpClient;
@@ -99,12 +99,13 @@ public class TwitchApi
 
 	private final ConcurrentHashMap<TwitchSegmentType, JsonObject> configurationSegmentContents = new ConcurrentHashMap<>();
 
-	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager)
+	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, OkHttpClient httpClientTemplate)
 	{
 		this.plugin = plugin;
 		this.client = client;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
+		this.httpClientTemplate = httpClientTemplate;
 
 		// instantiate a HTTP client for every call with a different timeout
 		ebsTransactionsHttpClient = createHttpClient(GET_EBS_TRANSACTIONS_TIMEOUT_MS);
@@ -554,7 +555,7 @@ public class TwitchApi
 	 */
 	public OkHttpClient createHttpClient(int timeoutMs)
 	{
-		return httpClient
+		return httpClientTemplate
 			.newBuilder()
 			.callTimeout(timeoutMs, TimeUnit.MILLISECONDS)
 			.build();

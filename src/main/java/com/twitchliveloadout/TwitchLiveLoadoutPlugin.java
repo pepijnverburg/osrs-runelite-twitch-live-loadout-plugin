@@ -58,6 +58,7 @@ import com.google.gson.*;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import okhttp3.OkHttpClient;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
@@ -110,6 +111,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	@Inject
 	private ClientToolbar clientToolbar;
+
+	@Inject
+	private OkHttpClient httpClient;
 
 	/**
 	 * Scheduled executor that does not run on the client thread.
@@ -227,7 +231,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			twitchState = new TwitchState(this, config, canvasListener);
-			twitchApi = new TwitchApi(this, client, config, chatMessageManager);
+			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}
