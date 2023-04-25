@@ -20,10 +20,10 @@ Optionally engage with gameplay by letting viewers trigger custom `Random Events
 ![Collage](./docs/screenshots/Collage.png "Collage")
 
 #### ⚡️ Viewer triggered Random Events
-![Random Events](./docs/screenshots/Random%20Events.png "Random Events")
+![Random Events](./docs/screenshots/Random-Events.png "Random Events")
 
 #### 📱🖥 Cross-platform support
-![Mobile](./docs/screenshots/Mobile%20support.png "Mobile")
+![Mobile](./docs/screenshots/Mobile-support.png "Mobile")
 
 ## 🚀 Getting Started
 
