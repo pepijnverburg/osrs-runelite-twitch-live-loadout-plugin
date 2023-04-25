@@ -1283,9 +1283,16 @@ public class MarketplaceProduct
 	{
 		AnimationManager animationManager = manager.getAnimationManager();
 
+		// create a unique key for this specific product and graphic frame
+		// this feels unique enough to support multiple spot anims at once
+		// overflowing of this integer is NOT a problem, so we can just add everything
+		int graphicKey = hashCode() + manager.getClient().getGameCycle();
+
 		handleEffectFrame(graphicFrame, delayMs, (startDelayMs) -> {
-			animationManager.setPlayerGraphic(graphicFrame.id, graphicFrame.height, startDelayMs, graphicFrame.durationMs);
-		}, animationManager::resetPlayerGraphic);
+			animationManager.setPlayerGraphic(graphicKey, graphicFrame.id, graphicFrame.height, startDelayMs, graphicFrame.durationMs);
+		}, (resetDelayMs) -> {
+			animationManager.resetPlayerGraphic(graphicKey, resetDelayMs);
+		});
 	}
 
 	private void triggerPlayerAnimation(EbsAnimationFrame animationFrame, int delayMs)

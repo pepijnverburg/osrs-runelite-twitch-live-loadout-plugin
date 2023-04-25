@@ -6,6 +6,7 @@ import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.products.EbsMovementFrame;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ActorSpotAnim;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
@@ -134,7 +135,7 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 		}
 	}
 
-	public void setPlayerGraphic(int graphicId, int graphicHeight, long delayMs, long durationMs)
+	public void setPlayerGraphic(int graphicKey, int graphicId, int graphicHeight, long delayMs, long durationMs)
 	{
 		handleLockedPlayerEffect(
 			delayMs,
@@ -144,19 +145,16 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 				graphicLockedUntil = Instant.now().plusMillis(durationMs);
 			},
 			(player) -> {
-				player.setSpotAnimFrame(0);
-				player.setGraphic(graphicId);
-				player.setGraphicHeight(graphicHeight);
+				player.createSpotAnim(graphicKey, graphicId, graphicHeight, 0);
 			}
 		);
 	}
 
-	public void resetPlayerGraphic(int delayMs)
+	public void resetPlayerGraphic(int graphicKey, int delayMs)
 	{
 		handleLocalPlayer((player) -> {
 			plugin.scheduleOnClientThread(() -> {
-				player.setGraphic(-1);
-				player.setGraphicHeight(0);
+				player.removeSpotAnim(graphicKey);
 			}, delayMs);
 		});
 	}
