@@ -286,19 +286,11 @@ public class MarketplaceManager {
 			// try to handle each individual transaction to prevent one invalid transaction in the queue
 			// to cancel all other transactions and with that all their effects
 			try {
-				TwitchProduct twitchProduct = transaction.product_data;
+				TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
+				StreamerProduct streamerProduct = getStreamerProductByTransaction(transaction);
 
-				// guard: make sure the twitch product is valid
-				if (twitchProduct == null)
-				{
-					continue;
-				}
-
-				String twitchProductSku = twitchProduct.sku;
-				StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
-
-				// guard: make sure a streamer product is configured for this SKU
-				if (streamerProduct == null)
+				// guard: make sure a products are exist for this transaction
+				if (twitchProduct == null || streamerProduct == null)
 				{
 					continue;
 				}
@@ -328,7 +320,7 @@ public class MarketplaceManager {
 				// keep this info verbose as it is a way of logging to debug any issues that might occur
 				// when random events don't trigger and support is required
 				log.info("Found a valid transaction that we can start: " + transaction.id);
-				log.info("Twitch product SKU: " + twitchProduct.sku);
+				log.info("Twitch product SKU: " + streamerProduct.twitchProductSku);
 				log.info("Streamer product name: " + streamerProduct.name);
 				log.info("Ebs product ID: " + ebsProduct.id);
 
@@ -396,6 +388,39 @@ public class MarketplaceManager {
 				log.error("The ID of the skipped transaction was: "+ transaction.id);
 			}
 		}
+	}
+
+	/**
+	 * Rerun a transaction in full by removing the ID from the handled list and adjusting the timestamp it is received.
+	 */
+	public void rerunTransaction(TwitchTransaction transaction)
+	{
+
+		// guard: make sure the transaction is valid
+		if (transaction == null)
+		{
+			return;
+		}
+
+		String transactionId = transaction.id;
+
+		// guard: don't rerun the transaction when it is already active
+		for (MarketplaceProduct marketplaceProduct : activeProducts)
+		{
+			if (marketplaceProduct.getTransaction().id.equals(transactionId))
+			{
+				return;
+			}
+		}
+
+		log.info("A transaction is going to be rerun, transaction ID: "+ transactionId);
+
+		// update the timestamp so it appears to be a recent transaction
+		transaction.timestamp = Instant.now().toString();
+
+		// remove from the handled transactions and queue once again
+		handledTransactionIds.remove(transactionId);
+		queuedTransactions.add(transaction);
 	}
 
 	/**
@@ -723,6 +748,36 @@ public class MarketplaceManager {
 		}
 
 		return isPassed;
+	}
+
+	public StreamerProduct getStreamerProductByTransaction(TwitchTransaction transaction)
+	{
+		TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
+
+		// guard: make sure the twitch product is valid
+		if (twitchProduct == null)
+		{
+			return null;
+		}
+
+		String twitchProductSku = twitchProduct.sku;
+		StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
+
+		return streamerProduct;
+	}
+
+	public TwitchProduct getTwitchProductByTransaction(TwitchTransaction transaction)
+	{
+
+		// guard: make sure the transaction is valid
+		if (transaction == null)
+		{
+			return null;
+		}
+
+		TwitchProduct twitchProduct = transaction.product_data;
+
+		return twitchProduct;
 	}
 
 	private StreamerProduct getStreamerProductBySku(String twitchProductSku)

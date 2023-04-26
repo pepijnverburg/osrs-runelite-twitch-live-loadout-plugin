@@ -181,7 +181,7 @@ public class MarketplacePanel extends JPanel
 		// initialize all the panel slots
 		for (int i = 0; i < MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY; i++)
 		{
-			TwitchTransactionPanel twitchTransactionPanel = new TwitchTransactionPanel();
+			TwitchTransactionPanel twitchTransactionPanel = new TwitchTransactionPanel(this, marketplaceManager);
 			transactionPanels.add(twitchTransactionPanel);
 			transactionListPanel.add(twitchTransactionPanel, transactionListConstraints);
 			transactionListConstraints.gridy++;
@@ -205,10 +205,10 @@ public class MarketplacePanel extends JPanel
 
 		// first clear all the panels
 		LambdaIterator.handleAll(productPanels, (productPanel) -> {
-			productPanel.setMarketplaceProduct(null);
+			productPanel.setEntity(null);
 		});
 		LambdaIterator.handleAll(transactionPanels, (transactionPanel) -> {
-			transactionPanel.setTwitchTransaction(null);
+			transactionPanel.setEntity(null);
 		});
 
 		// directly add all the products again in the new order
@@ -223,7 +223,7 @@ public class MarketplacePanel extends JPanel
 				break;
 			}
 
-			panel.setMarketplaceProduct(marketplaceProduct);
+			panel.setEntity(marketplaceProduct);
 			marketplaceProductPanelIndex ++;
 		}
 
@@ -239,7 +239,7 @@ public class MarketplacePanel extends JPanel
 				break;
 			}
 
-			panel.setTwitchTransaction(twitchTransaction);
+			panel.setEntity(twitchTransaction);
 			twitchTransactionPanelIndex ++;
 		}
 
