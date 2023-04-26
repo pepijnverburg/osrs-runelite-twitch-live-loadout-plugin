@@ -2,7 +2,12 @@
 ## Changelog
 
 #### v2.0.0
--
+- Feature: support for viewer activated Random Events which can be configured within Twitch. These are temporary visual effects and can be managed in the new 'donations' tab.
+- Feature: support for syncing multiple accounts at once to Twitch meaning there is no need anymore to keep track of what RuneLite window is active. This opens up an opportunity in the future to have GIM / other types of teams send their loadout to each others stream. This is not implemented yet, but will be considered in the future.
+- Feature: the quest tab along with the progression of each quest can be sent over to Twitch.
+- Refactor: a major part of how data is collected and synced to Twitch had a major overhaul where connection status is being synced when not logged in and the loadout when being logged in. This allows us to give proper feedback to the streamer whether everything is setup correctly. Also, data is not collected when certain settings are disabled.
+- Fix: fixed an issue where ToA invocations could not be synced when not being the party leader.
+- Fix: fixed an issue where the skill levels would not be synced when logged in while activating the plugin.
 
 #### v1.1.0
 - Tombs of Amascut Invocations can now be synced automatically when at the raid lobby and in the raid itself.
