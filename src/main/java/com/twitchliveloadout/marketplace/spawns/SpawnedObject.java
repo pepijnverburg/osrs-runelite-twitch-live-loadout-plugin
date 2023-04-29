@@ -189,7 +189,6 @@ public class SpawnedObject {
 		int amountOne = (int) MarketplaceRandomizers.getValidRandomNumberByRange(rangeOne, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
 		int amountTwo = (int) MarketplaceRandomizers.getValidRandomNumberByRange(rangeTwo, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
 
-
 		return amountOne + amountTwo;
 	}
 
