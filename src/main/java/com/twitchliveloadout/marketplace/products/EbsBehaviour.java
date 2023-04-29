@@ -10,4 +10,5 @@ public class EbsBehaviour {
 	public ArrayList<EbsSpawnOption> startSpawnOptions;
 	public EbsInterval spawnInterval;
 	public ArrayList<EbsSpawnOption> spawnOptions;
+	public EbsModelPlacement requiredModelPlacement;
 }

@@ -13,6 +13,7 @@ import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.products.*;
 import com.twitchliveloadout.marketplace.sounds.SoundManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
+import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
@@ -302,7 +303,7 @@ public class MarketplaceManager {
 				EbsProduct ebsProduct = getEbsProductById(ebsProductId);
 				boolean isProductCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
 				boolean isSharedCoolingDown = sharedCooldownUntil != null && now.isBefore(sharedCooldownUntil);
-				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled;
+				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled && ebsProduct.behaviour != null;
 
 				// guard: make sure this product is not cooling down
 				// this can be the case when two transactions are done at the same time
@@ -312,9 +313,28 @@ public class MarketplaceManager {
 				}
 
 				// guard: make sure an EBS product is configured for this streamer product
+				// we will not remove from the queue because the EBS product might need to be loaded still
 				if (!isValidEbsProduct)
 				{
 					continue;
+				}
+
+				EbsModelPlacement requiredModelPlacement = ebsProduct.behaviour.requiredModelPlacement;
+
+				// guard: check if at least one spawn point is required for this product to be handled
+				// if not then it will stay in the queue until there is a spawn point available
+				// this allows support for tight spaces or when many random events are active to not waste
+				// any incoming donations
+				if (requiredModelPlacement != null)
+				{
+
+					SpawnPoint spawnPoint = spawnManager.getSpawnPoint(requiredModelPlacement, null);
+
+					// guard: continue with the queue and don't remove from queue because we will wait for a valid spawn point
+					if (spawnPoint == null)
+					{
+						continue;
+					}
 				}
 
 				// keep this info verbose as it is a way of logging to debug any issues that might occur

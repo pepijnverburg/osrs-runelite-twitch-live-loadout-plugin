@@ -389,7 +389,7 @@ public class MarketplaceProduct
 				if (newSpawnPoints.containsKey(worldPoint)) {
 					newInSceneSpawnPoint = newSpawnPoints.get(worldPoint);
 				} else {
-					newInSceneSpawnPoint = getSpawnPoint(modelPlacement, spawnedObject);
+					newInSceneSpawnPoint = spawnManager.getSpawnPoint(modelPlacement, spawnedObject);
 					newSpawnPoints.put(worldPoint, newInSceneSpawnPoint);
 				}
 
@@ -698,6 +698,7 @@ public class MarketplaceProduct
 			return;
 		}
 
+		SpawnManager spawnManager = manager.getSpawnManager();
 		String transactionId = transaction.id;
 		String productId = ebsProduct.id;
 		EbsSpawnOption spawnOption = MarketplaceRandomizers.getSpawnBehaviourByChance(spawnOptions);
@@ -754,7 +755,7 @@ public class MarketplaceProduct
 						// or if we should generate a new one
 						if (spawnPoint == null || INDIVIDUAL_SPAWN_POINT_TYPE.equals(spawnPointType))
 						{
-							spawnPoint = getSpawnPoint(placement, spawnedObject);
+							spawnPoint = spawnManager.getSpawnPoint(placement, spawnedObject);
 						}
 
 						triggerSpawn(spawn, spawnPoint, spawnDelayMs);
@@ -826,55 +827,6 @@ public class MarketplaceProduct
 		spawnedObjects.add(spawnedObject);
 		spawnAmount += 1;
 		spawnManager.registerSpawnedObjectPlacement(spawnedObject);
-	}
-
-	private SpawnPoint getSpawnPoint(EbsModelPlacement placement, SpawnedObject  spawnedObject)
-	{
-		Client client = manager.getClient();
-		SpawnManager spawnManager = manager.getSpawnManager();
-
-		// make sure there are valid placement parameters
-		if (placement == null)
-		{
-			placement = new EbsModelPlacement();
-		}
-
-		EbsRandomRange radiusRange = placement.radiusRange;
-		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
-		int radiusStepSize  = placement.radiusStepSize;
-		String radiusType = placement.radiusType;
-		String locationType = placement.locationType;
-		Boolean inLineOfSight = placement.inLineOfSight;
-		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
-
-		// check if we should change the reference to the previous tile
-		// NOTE: current tile is not needed to be handled, because this is the default!
-		if (PREVIOUS_TILE_LOCATION_TYPE.equals(locationType))
-		{
-			referenceWorldPoint = spawnManager.getPreviousPlayerLocation();
-
-			if (referenceWorldPoint == null)
-			{
-				return null;
-			}
-		}
-
-		if (MODEL_TILE_LOCATION_TYPE.equals(locationType) && spawnedObject != null)
-		{
-			referenceWorldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
-		}
-
-		if (NO_RADIUS_TYPE.equals(radiusType))
-		{
-			return new SpawnPoint(referenceWorldPoint);
-		}
-
-		if (OUTWARD_RADIUS_TYPE.equals(radiusType))
-		{
-			return spawnManager.getOutwardSpawnPoint(radius, radiusStepSize, inLineOfSight, referenceWorldPoint);
-		}
-
-		return spawnManager.getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
 	}
 
 	public void triggerEffects(ArrayList<EbsEffect> effects, int startDelayMs, SpawnedObject spawnedObject, MarketplaceEffect marketplaceEffect, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)

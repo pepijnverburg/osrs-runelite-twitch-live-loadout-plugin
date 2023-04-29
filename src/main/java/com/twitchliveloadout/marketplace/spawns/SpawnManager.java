@@ -3,6 +3,9 @@ package com.twitchliveloadout.marketplace.spawns;
 import com.google.common.collect.EvictingQueue;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
+import com.twitchliveloadout.marketplace.products.EbsModelPlacement;
+import com.twitchliveloadout.marketplace.products.EbsRandomRange;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -237,6 +240,53 @@ public class SpawnManager {
 		}
 
 		return null;
+	}
+
+	public SpawnPoint getSpawnPoint(EbsModelPlacement placement, SpawnedObject spawnedObject)
+	{
+
+		// make sure there are valid placement parameters
+		if (placement == null)
+		{
+			placement = new EbsModelPlacement();
+		}
+
+		EbsRandomRange radiusRange = placement.radiusRange;
+		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
+		int radiusStepSize  = placement.radiusStepSize;
+		String radiusType = placement.radiusType;
+		String locationType = placement.locationType;
+		Boolean inLineOfSight = placement.inLineOfSight;
+		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
+
+		// check if we should change the reference to the previous tile
+		// NOTE: current tile is not needed to be handled, because this is the default!
+		if (PREVIOUS_TILE_LOCATION_TYPE.equals(locationType))
+		{
+			referenceWorldPoint = getPreviousPlayerLocation();
+
+			if (referenceWorldPoint == null)
+			{
+				return null;
+			}
+		}
+
+		if (MODEL_TILE_LOCATION_TYPE.equals(locationType) && spawnedObject != null)
+		{
+			referenceWorldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+		}
+
+		if (NO_RADIUS_TYPE.equals(radiusType))
+		{
+			return new SpawnPoint(referenceWorldPoint);
+		}
+
+		if (OUTWARD_RADIUS_TYPE.equals(radiusType))
+		{
+			return getOutwardSpawnPoint(radius, radiusStepSize, inLineOfSight, referenceWorldPoint);
+		}
+
+		return getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
 	}
 
 	public SpawnPoint getSpawnPoint(int radius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
