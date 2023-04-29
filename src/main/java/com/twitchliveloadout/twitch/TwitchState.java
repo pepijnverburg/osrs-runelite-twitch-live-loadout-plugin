@@ -546,7 +546,7 @@ public class TwitchState {
 
 	private JsonObject verifyClientActivityStatus(JsonObject state)
 	{
-		boolean forceSyncData = config.syncDataWhileLoggedOut() && plugin.IN_DEVELOPMENT;
+		boolean forceSyncData = config.twitchReviewModeEnabled() && plugin.IN_DEVELOPMENT;
 
 		// check whether this window is actually logged in
 		// and check for window focus to prevent syncing of multiple account
@@ -563,10 +563,12 @@ public class TwitchState {
 	private JsonObject addConnectionStatus(JsonObject state)
 	{
 		final JsonObject connectionStatus = new JsonObject();
+		final boolean forceIsLoggedIn = config.twitchReviewModeEnabled() && plugin.IN_DEVELOPMENT;
+		final boolean isLoggedIn = plugin.isLoggedIn() || forceIsLoggedIn;
 
 		// for now always true?
 		connectionStatus.addProperty("status", true);
-		connectionStatus.addProperty("isLoggedIn", plugin.isLoggedIn());
+		connectionStatus.addProperty("isLoggedIn", isLoggedIn);
 
 		state.add(TwitchStateEntry.CONNECTION_STATUS.getKey(), connectionStatus);
 		return state;
