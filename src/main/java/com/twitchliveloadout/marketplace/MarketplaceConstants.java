@@ -1,6 +1,8 @@
 package com.twitchliveloadout.marketplace;
 
 public class MarketplaceConstants {
+	public static final int EBS_REQUIRED_PRODUCT_VERSION = 1;
+
 	public static final boolean STRESS_TEST_ACTIVE_PRODUCTS_ENABLED = false;
 	public static final int MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY = 50;
 	public static final int MAX_TRANSACTION_AMOUNT_IN_MEMORY = 50;

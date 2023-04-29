@@ -349,6 +349,13 @@ public class MarketplaceManager {
 				// to queue transactions that might receive valid product data later
 				queuedTransactions.remove(transaction);
 
+				// guard: check if the version number is supported
+				if (ebsProduct.version != MarketplaceConstants.EBS_REQUIRED_PRODUCT_VERSION)
+				{
+					log.info("Skipping transaction the version number of the EBS product ("+ ebsProduct.version +") is not compatible. Transaction ID: " + transaction.id);
+					continue;
+				}
+
 				// guard: check for hardcore protection and dangerous random events
 				if (ebsProduct.dangerous && !plugin.canPerformDangerousEffects())
 				{
