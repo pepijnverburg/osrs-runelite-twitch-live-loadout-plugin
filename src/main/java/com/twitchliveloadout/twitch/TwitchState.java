@@ -563,8 +563,7 @@ public class TwitchState {
 	private JsonObject addConnectionStatus(JsonObject state)
 	{
 		final JsonObject connectionStatus = new JsonObject();
-		final boolean forceIsLoggedIn = config.twitchReviewModeEnabled() && plugin.IN_DEVELOPMENT;
-		final boolean isLoggedIn = plugin.isLoggedIn() || forceIsLoggedIn;
+		final boolean isLoggedIn = plugin.isLoggedIn(true);
 
 		// for now always true?
 		connectionStatus.addProperty("status", true);

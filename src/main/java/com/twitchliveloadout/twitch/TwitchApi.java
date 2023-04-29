@@ -173,7 +173,7 @@ public class TwitchApi
 			return true;
 		}
 
-		boolean isLoggedIn = plugin.isLoggedIn();
+		boolean isLoggedIn = plugin.isLoggedIn(true);
 		Instant now = Instant.now();
 		int delayMs = isLoggedIn ? MIN_SCHEDULE_DEFAULT_DELAY : MIN_SCHEDULE_LOGGED_OUT_DELAY;
 

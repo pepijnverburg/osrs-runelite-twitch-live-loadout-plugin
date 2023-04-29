@@ -1143,6 +1143,17 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	public boolean isLoggedIn()
 	{
+		return isLoggedIn(false);
+	}
+
+	public boolean isLoggedIn(boolean considerTwitchReviewMode)
+	{
+		final boolean forceIsLoggedIn = considerTwitchReviewMode && config.twitchReviewModeEnabled() && IN_DEVELOPMENT;
+
+		if (forceIsLoggedIn)
+		{
+			return true;
+		}
 
 		try {
 			// guard: check game state
