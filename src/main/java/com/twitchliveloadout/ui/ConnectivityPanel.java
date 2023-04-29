@@ -107,9 +107,9 @@ public class ConnectivityPanel extends JPanel
 		// add all panels
 		wrapper.add(actionsContainer);
 		constraints.gridy += 2;
-		wrapper.add(syncingStatusPanel, constraints);
-		constraints.gridy++;
 		wrapper.add(twitchStatusPanel, constraints);
+		constraints.gridy++;
+		wrapper.add(syncingStatusPanel, constraints);
 		constraints.gridy++;
 		wrapper.add(authPanel, constraints);
 		constraints.gridy++;
@@ -133,7 +133,7 @@ public class ConnectivityPanel extends JPanel
 		String twitchStatusColor = SUCCESS_TEXT_COLOR;
 
 		long tokenExpiry = 0;
-		String authText = "No valid Twitch Token. Copy your token from your Twitch account. Navigate to: 'Creator Dashboard' > 'Extensions' > 'OSRS Live Loadout' > 'Configure' > 'Copy Token'.";
+		String authText = "No valid Twitch Token. See instructions above how to get a new token.";
 		String authColor = ERROR_TEXT_COLOR;
 
 		String rateLimitText = "There are "+ rateLimitRemaining +" request points available before hitting the Twitch API rate limit.";
@@ -161,15 +161,22 @@ public class ConnectivityPanel extends JPanel
 			// check if the token is still valid
 			if (secondsUntilExpired > 0)
 			{
-				authText = "Twitch Token will expire at: <br/>"+ tokenExpiryFormatted;
+				authText = "Twitch Token is VALID and expires at: <br/>"+ tokenExpiryFormatted;
 				authColor = (secondsUntilExpired > WARNING_BEFORE_EXPIRY ? DEFAULT_TEXT_COLOR : ERROR_TEXT_COLOR);
 			}
 			else
 			{
-				authText = "Token has expired at: <br/>"+ tokenExpiryFormatted;
+				authText = "Token has EXPIRED at: <br/>"+ tokenExpiryFormatted;
 			}
 		} catch (Exception exception) {
 			// empty, ignore any errors
+		}
+
+		// check if the token is not valid
+		if (authColor.equals(ERROR_TEXT_COLOR))
+		{
+			twitchStatusText = "Could not send data to Twitch due to invalid token. Paste the new token in the 'Your copied Twitch Extension Token' setting of the plugin. To get a new token in Twitch navigate to: 'Creator Dashboard' > 'Extensions' > 'OSRS Live Loadout' > 'Configure' > 'Copy Token'.";
+			twitchStatusColor = ERROR_TEXT_COLOR;
 		}
 
 		String state = twitchApi.getLastCompressedState();
