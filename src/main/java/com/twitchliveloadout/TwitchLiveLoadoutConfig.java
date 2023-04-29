@@ -635,4 +635,17 @@ public interface TwitchLiveLoadoutConfig extends Config
 			position = 99
 	)
 	String advancedSection = "advanced";
+
+	@ConfigItem(
+			keyName = "syncDataWhileLoggedOut",
+			name = "Force sync data",
+			description = "Force syncing of data while being logged out, meant for the Twitch review process.",
+			position = 2,
+			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			section = advancedSection
+	)
+	default boolean syncDataWhileLoggedOut()
+	{
+		return false;
+	}
 }
