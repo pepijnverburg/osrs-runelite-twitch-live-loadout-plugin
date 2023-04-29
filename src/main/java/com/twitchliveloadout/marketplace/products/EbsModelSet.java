@@ -7,4 +7,5 @@ public class EbsModelSet {
 	public EbsRandomRange scale;
 	public Integer scalePerOneTile;
 	public ArrayList<EbsRecolor> recolors;
+	public EbsTranslation translation;
 }

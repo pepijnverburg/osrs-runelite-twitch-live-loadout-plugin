@@ -16,6 +16,10 @@ public class MarketplaceConstants {
 	public static final String IN_RADIUS_FOLLOW_TYPE = "in-radius";
 	public static final String PREVIOUS_TILE_FOLLOW_TYPE = "behind-player";
 
+	public static final String TRANSLATE_X_AXIS = "x";
+	public static final String TRANSLATE_Y_AXIS = "y";
+	public static final String TRANSLATE_Z_AXIS = "z";
+
 	public static final double RUNELITE_OBJECT_RADIUS_PER_TILE = 60d;
 	public static final double RUNELITE_OBJECT_FULL_ROTATION = 2047d;
 	public static final int REGION_SIZE = 64;

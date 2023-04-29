@@ -113,15 +113,17 @@ public class SpawnedObject {
 		// get properties from model set
 		ArrayList<Integer> modelIds = modelSet.ids;
 		EbsModelPlacement modelPlacement = spawn.modelPlacement;
+		EbsTranslation modelSetTranslation = modelSet.translation;
 
 		if (modelPlacement == null)
 		{
 			modelPlacement = new EbsModelPlacement();
 		}
 
-		int translateX = (int) MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.translateX, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
-		int translateY = (int) MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.translateY, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
-		int translateZ = (int) MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.translateZ, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
+		EbsTranslation modelPlacementTranslation = modelPlacement.translation;
+		int translateX = mergeTranslations(TRANSLATE_X_AXIS, modelSetTranslation, modelPlacementTranslation);
+		int translateY = mergeTranslations(TRANSLATE_Y_AXIS, modelSetTranslation, modelPlacementTranslation);
+		int translateZ = mergeTranslations(TRANSLATE_Z_AXIS, modelSetTranslation, modelPlacementTranslation);
 		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1, 0, MAX_MODEL_SCALE);
 		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelPlacement.rotation, 0, 360, 0, 360);
 		ArrayList<EbsRecolor> recolors = modelSet.recolors;
@@ -178,6 +180,39 @@ public class SpawnedObject {
 
 		// re-render after changes
 		render();
+	}
+
+	private int mergeTranslations(String translateAxis, EbsTranslation translationOne, EbsTranslation translationTwo)
+	{
+		EbsRandomRange rangeOne = getTranslationRandomRange(translateAxis, translationOne);
+		EbsRandomRange rangeTwo = getTranslationRandomRange(translateAxis, translationTwo);
+		int amountOne = (int) MarketplaceRandomizers.getValidRandomNumberByRange(rangeOne, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
+		int amountTwo = (int) MarketplaceRandomizers.getValidRandomNumberByRange(rangeTwo, 0, 0, MIN_MODEL_TRANSLATE, MAX_MODEL_TRANSLATE);
+
+
+		return amountOne + amountTwo;
+	}
+
+	private EbsRandomRange getTranslationRandomRange(String translateAxis, EbsTranslation translation)
+	{
+
+		// guard: make sure the passed params are valid
+		if (translateAxis == null || translation == null)
+		{
+			return null;
+		}
+
+		switch (translateAxis)
+		{
+			case TRANSLATE_X_AXIS:
+				return translation.x;
+			case TRANSLATE_Y_AXIS:
+				return translation.y;
+			case TRANSLATE_Z_AXIS:
+				return translation.z;
+		}
+
+		return null;
 	}
 
 	private void initializeObject()
