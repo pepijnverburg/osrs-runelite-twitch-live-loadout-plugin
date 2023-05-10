@@ -554,13 +554,9 @@ public class TwitchState {
 
 	private JsonObject verifyClientActivityStatus(JsonObject state)
 	{
-		boolean forceSyncData = config.twitchReviewModeEnabled() && plugin.IN_DEVELOPMENT;
 
-		// check whether this window is actually logged in
-		// and check for window focus to prevent syncing of multiple account
-		// if not we will clear the state but still send over a message
-		// because this can help to indicate a connection is made when setting up the extension
-		if (!plugin.isLoggedIn() && !forceSyncData)
+		// only sync this account when logged in
+		if (!plugin.isLoggedIn(true))
 		{
 			state = new JsonObject();
 		}
