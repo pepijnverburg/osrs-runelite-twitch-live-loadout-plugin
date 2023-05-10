@@ -57,7 +57,7 @@ https://github.com/pepijnverburg/osrs-runelite-twitch-live-loadout-plugin/assets
 Note that the token is **valid for a long time**, meaning it is important you don't share the token with anyone. The RuneLite plugin panel shows the validity of the token.
 
 ### Step 4: Test if everything works
-Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can now verify whether data is now synced, for example changes to your inventory:
+Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can now verify whether data is synced, for example changes to your inventory:
 
 https://github.com/pepijnverburg/osrs-runelite-twitch-live-loadout-plugin/assets/15874104/af71e762-f9e6-401a-88db-761386869a62
 
