@@ -43,22 +43,17 @@ Optionally engage with gameplay by letting viewers trigger custom `Random Events
 You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/show/twitch-live-loadout).
 
 The Plugin Hub can be found all the way to the bottom of your RuneLite plugins:
-![Plugin Hub](./docs/getting-started/runelite-plugin-installation.gif "Plugin Hub")
 
 ### Step 2: Install Twitch Extension
 The [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is available via the `Creator Dashboard` in your Twitch account. Make sure to set the extension to `Overlay 1` as well.
 
-![Twitch Extension](./docs/getting-started/twitch-extension-installation.gif "Twitch Extension")
-
 ### Step 3: Copy Twitch Extension token for authentication
 Now open the `Configuration view` by clicking on the `settings/cog icon`. Here you can preview what the extension looks like. The `Settings tab` opens automatically where you can copy an Extension Token that you need to authenticate RuneLite to send data to the extension.
-![Configuration](./docs/getting-started/configuration.gif "Configuration")
 
 Note that the token is **valid for a long time**, meaning it is important you don't share the token with anyone. The RuneLite plugin panel shows the validity of the token.
 
 ### Step 4: Test if everything works
 Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can also verify whether data is now synced, for example your gear:
-![Twitch Extension](./docs/getting-started/twitch-extension-testing.gif "Twitch Extension")
 
 ## 📄 Further reading
 
