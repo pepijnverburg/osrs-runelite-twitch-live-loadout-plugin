@@ -40,20 +40,26 @@ Optionally engage with gameplay by letting viewers trigger custom `Random Events
 ⚠️ Note that for the `collection log`, `bank`, `looting bag` and `ToA invocations` to show you need to **open them at least once**. Their information is stored in your RuneLite profile so on your next session you wont need to open them again.
 
 ### Step 1: Install Runelite Plugin
-You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/show/twitch-live-loadout).
+You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/show/twitch-live-loadout):
 
-The Plugin Hub can be found all the way to the bottom of your RuneLite plugins:
+https://github.com/pepijnverburg/osrs-runelite-twitch-live-loadout-plugin/assets/15874104/e22429a0-ede7-4f56-b740-7db0b23097d5
 
 ### Step 2: Install Twitch Extension
 The [OSRS Live Loadout Extension](https://dashboard.twitch.tv/extensions/cuhr4y87yiqd92qebs1mlrj3z5xfp6) is available via the `Creator Dashboard` in your Twitch account. Make sure to set the extension to `Overlay 1` as well.
 
+https://github.com/pepijnverburg/osrs-runelite-twitch-live-loadout-plugin/assets/15874104/f285ccbd-adc6-4c56-ba74-edac208729e8
+
 ### Step 3: Copy Twitch Extension token for authentication
 Now open the `Configuration view` by clicking on the `settings/cog icon`. Here you can preview what the extension looks like. The `Settings tab` opens automatically where you can copy an Extension Token that you need to authenticate RuneLite to send data to the extension.
+
+https://github.com/pepijnverburg/osrs-runelite-twitch-live-loadout-plugin/assets/15874104/5ff485d8-2178-427c-a5f8-51f90ae2a640
 
 Note that the token is **valid for a long time**, meaning it is important you don't share the token with anyone. The RuneLite plugin panel shows the validity of the token.
 
 ### Step 4: Test if everything works
-Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can also verify whether data is now synced, for example your gear:
+Make sure you have something in your inventory or equipment to test with. Via the `Configuration view` of the extension you can also verify whether data is now synced, for example changes to your inventory:
+
+https://github.com/pepijnverburg/osrs-runelite-twitch-live-loadout-plugin/assets/15874104/af71e762-f9e6-401a-88db-761386869a62
 
 ## 📄 Further reading
 
