@@ -554,6 +554,13 @@ public class TwitchState {
 
 	private JsonObject verifyClientActivityStatus(JsonObject state)
 	{
+		final Long accountHash = state.get(TwitchStateEntry.ACCOUNT_HASH.getKey()).getAsLong();
+
+		// only sync this account when a valid account hash
+		if (accountHash == null || accountHash == -1)
+		{
+			state = new JsonObject();
+		}
 
 		// only sync this account when logged in
 		if (!plugin.isLoggedIn(true))
