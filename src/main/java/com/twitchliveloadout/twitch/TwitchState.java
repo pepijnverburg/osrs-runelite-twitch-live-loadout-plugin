@@ -109,6 +109,14 @@ public class TwitchState {
 
 	public void setAccountType(AccountType accountType)
 	{
+
+		// guard: skip when account type is not valid
+		// this happens mainly when the client is booting up
+		if (accountType == null)
+		{
+			return;
+		}
+
 		currentState.addProperty(TwitchStateEntry.ACCOUNT_TYPE.getKey(), accountType.toString());
 	}
 
