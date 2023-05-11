@@ -2,6 +2,7 @@ package com.twitchliveloadout.marketplace;
 
 import com.twitchliveloadout.marketplace.products.EbsEffectFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
+import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
@@ -47,7 +48,7 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 		}
 	}
 
-	public void addEffect(MarketplaceProduct product, FrameType frame)
+	public void addEffect(MarketplaceProduct product, FrameType frame, SpawnedObject spawnedObject)
 	{
 
 		// guard: make sure the maximum is not exceeded for security and performance reasons
@@ -80,7 +81,7 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 		}
 
 		// register the new effect
-		MarketplaceEffect<FrameType> effect = new MarketplaceEffect<FrameType>(product, frame, expiresAt);
+		MarketplaceEffect<FrameType> effect = new MarketplaceEffect<FrameType>(product, frame, spawnedObject, expiresAt);
 		effects.add(effect);
 		onAddEffect(effect);
 	}
@@ -108,22 +109,20 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 			boolean isPaused = marketplaceProduct.isPaused();
 			boolean isApplied = effect.isApplied();
 
-			// check if we should remove this active widget frame
+			// check if we should remove this effect
 			if (isExpired || forceStop)
 			{
 
-				// remove from the active widgets
+				// remove from the current effects
 				effects.remove(effect);
 				onDeleteEffect(effect);
 
-				// always restore the widget without the need to check
-				// if other effect still change this widget, because
-				// on the next apply cycle these effects change the widget
+				// always restore the effect
 				restoreEffect(effect);
 				effect.setApplied(false);
 			}
 
-			// check if we should only restore the widget for now, because the marketplace product is inactive
+			// check if we should only restore the effect for now, because the marketplace product is inactive
 			// we also don't restore when the effect is not applied anymore and the product is paused
 			else if (!isActive && (isApplied || !isPaused))
 			{

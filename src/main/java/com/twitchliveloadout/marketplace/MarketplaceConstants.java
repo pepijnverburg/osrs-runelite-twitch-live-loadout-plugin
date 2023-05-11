@@ -57,6 +57,7 @@ public class MarketplaceConstants {
 
 	public static final int WIDGET_EFFECT_MAX_SIZE = 100;
 	public static final int MENU_EFFECT_MAX_SIZE = 100;
+	public static final int SPAWN_OVERHEAD_EFFECT_MAX_SIZE = 100;
 	public static final String DISABLE_MENU_OPTION_TYPE = "disable";
 	public static final String DISABLE_INTERFACE_WIDGET_TYPE = "disable";
 	public static final String ALTER_INTERFACE_WIDGET_TYPE = "alter";

@@ -2,6 +2,8 @@ package com.twitchliveloadout.marketplace;
 
 import com.twitchliveloadout.marketplace.products.EbsEffectFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
+import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
+import jdk.internal.jline.internal.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,6 +28,13 @@ public class MarketplaceEffect<K extends EbsEffectFrame> {
 	private final K frame;
 
 	/**
+	 * Optional spawned object this effect is applicable for.
+	 */
+	@Nullable
+	@Getter
+	private final SpawnedObject spawnedObject;
+
+	/**
 	 * The start time based on instancing of this class.
 	 */
 	private final Instant startedAt;
@@ -44,10 +53,11 @@ public class MarketplaceEffect<K extends EbsEffectFrame> {
 	@Setter
 	private boolean isApplied = false;
 
-	public MarketplaceEffect(MarketplaceProduct marketplaceProduct, K frame, Instant expiresAt)
+	public MarketplaceEffect(MarketplaceProduct marketplaceProduct, K frame, SpawnedObject spawnedObject, Instant expiresAt)
 	{
 		this.marketplaceProduct = marketplaceProduct;
 		this.frame = frame;
+		this.spawnedObject = spawnedObject;
 		this.startedAt = Instant.now();
 		this.expiresAt = expiresAt;
 	}

@@ -323,7 +323,7 @@ public class SpawnedObject {
 		// NOTE: when also a HSL is padded the HSL takes priority
 		if (targetColorHsl == null && targetColorHex != null)
 		{
-			targetColorHsl = getColorHsl(targetColorHex);
+			targetColorHsl = MarketplaceColors.getColorHsl(targetColorHex);
 		}
 
 		// guard: skip when target is not valid
@@ -372,23 +372,6 @@ public class SpawnedObject {
 		short sourceColorHsl = colors[sourceColorIndex];
 
 		modelData.recolor(sourceColorHsl, (short) targetColorHsl);
-	}
-
-	private int getColorHsl(Integer colorHex)
-	{
-		Color color = getColor(colorHex);
-		short colorHsl = JagexColor.rgbToHSL(color.getRGB(), 1.0d);
-
-		return colorHsl;
-	}
-
-	private Color getColor(Integer colorHex)
-	{
-		int r = (colorHex & 0xFF0000) >> 16;
-		int g = (colorHex & 0xFF00) >> 8;
-		int b = (colorHex & 0xFF);
-
-		return new Color(r, g, b);
 	}
 
 	private boolean isValidColorIndex(int colorIndex)

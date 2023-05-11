@@ -57,6 +57,7 @@ import net.runelite.client.task.Schedule;
 import com.google.gson.*;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 import okhttp3.OkHttpClient;
 
@@ -108,6 +109,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	@Inject
 	private ConfigManager configManager;
+
+	@Inject
+	private OverlayManager overlayManager;
 
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -247,7 +251,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
-			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager, gson);
+			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager, overlayManager, gson);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 			questManager = new QuestManager(this, twitchState, client);
@@ -908,7 +912,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					// this is the most reliable to properly remove everything because ticks are based on this settting
 					if (!config.marketplaceEnabled())
 					{
-						marketplaceManager.shutDown();
+						marketplaceManager.disable();
 					}
 					break;
 			}

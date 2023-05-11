@@ -9,6 +9,7 @@ public class EbsEffect {
 	public ArrayList<EbsSpawnOption> spawnOptions;
 	public Boolean modelExpired = false;
 	public EbsAnimationFrame modelAnimation;
+	public EbsModelOverheadFrame modelOverhead;
 	public EbsModelSet modelSet;
 	public EbsAnimationFrame playerAnimation;
 	public EbsMovementFrame playerMovement;

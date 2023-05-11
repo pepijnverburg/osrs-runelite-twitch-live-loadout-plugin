@@ -4,6 +4,7 @@ import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
+import com.twitchliveloadout.marketplace.spawns.SpawnOverheadManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -898,6 +899,7 @@ public class MarketplaceProduct
 				forceModelAnimation,
 				isLast ? resetModelAnimationHandler : null
 			);
+			triggerModelOverhead(spawnedObject, effect.modelOverhead, innerDelayMs);
 			triggerModelSetUpdate(
 				spawnedObject,
 				effect.modelSet
@@ -1269,7 +1271,7 @@ public class MarketplaceProduct
 		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(equipmentFrame.delayMs, 0, 0);
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			transmogManager.addEffect(this, equipmentFrame);
+			transmogManager.addEffect(this, equipmentFrame,  null);
 		}, baseDelayMs + delayMs);
 	}
 
@@ -1286,7 +1288,24 @@ public class MarketplaceProduct
 		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(movementFrame.delayMs, 0, 0);
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			animationManager.addEffect(this, movementFrame);
+			animationManager.addEffect(this, movementFrame, null);
+		}, baseDelayMs + delayMs);
+	}
+
+	private void triggerModelOverhead(SpawnedObject spawnedObject, EbsModelOverheadFrame overheadFrame, int baseDelayMs)
+	{
+		SpawnOverheadManager spawnOverheadManager = manager.getSpawnOverheadManager();
+
+		// guard: make sure the frame is valid
+		if (overheadFrame == null)
+		{
+			return;
+		}
+
+		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(overheadFrame.delayMs, 0, 0);
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			spawnOverheadManager.addEffect(this, overheadFrame, spawnedObject);
 		}, baseDelayMs + delayMs);
 	}
 
@@ -1307,7 +1326,7 @@ public class MarketplaceProduct
 			while (interfaceWidgetFrameIterator.hasNext())
 			{
 				EbsInterfaceWidgetFrame interfaceWidgetFrame = interfaceWidgetFrameIterator.next();
-				widgetManager.addEffect(this, interfaceWidgetFrame);
+				widgetManager.addEffect(this, interfaceWidgetFrame, null);
 			}
 		}, delayMs);
 	}
@@ -1329,7 +1348,7 @@ public class MarketplaceProduct
 			while (menuOptionFrameIterator.hasNext())
 			{
 				EbsMenuOptionFrame menuOptionFrame = menuOptionFrameIterator.next();
-				menuManager.addEffect(this, menuOptionFrame);
+				menuManager.addEffect(this, menuOptionFrame, null);
 			}
 		}, delayMs);
 	}

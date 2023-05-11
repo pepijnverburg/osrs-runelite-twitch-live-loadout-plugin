@@ -13,6 +13,7 @@ import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.products.*;
 import com.twitchliveloadout.marketplace.sounds.SoundManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
+import com.twitchliveloadout.marketplace.spawns.SpawnOverheadManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -29,6 +30,7 @@ import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.PlayerChanged;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.ui.overlay.OverlayManager;
 import okhttp3.Response;
 
 import java.time.Instant;
@@ -58,6 +60,9 @@ public class MarketplaceManager {
 
 	@Getter
 	private final SpawnManager spawnManager;
+
+	@Getter
+	private final SpawnOverheadManager spawnOverheadManager;
 
 	@Getter
 	private final AnimationManager animationManager;
@@ -128,7 +133,7 @@ public class MarketplaceManager {
 	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap<>();
 	private Instant sharedCooldownUntil;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, Gson gson)
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson)
 	{
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
@@ -137,6 +142,7 @@ public class MarketplaceManager {
 		this.config = config;
 		this.gson = gson;
 		this.spawnManager = new SpawnManager(plugin, client);
+		this.spawnOverheadManager = new SpawnOverheadManager(client, overlayManager);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
 		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client);
@@ -744,6 +750,7 @@ public class MarketplaceManager {
 		widgetManager.onGameTick();
 		transmogManager.onGameTick();
 		animationManager.onGameTick();
+		spawnOverheadManager.onGameTick();
 	}
 
 	/**
@@ -885,9 +892,9 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Handle plugin shutdown / marketplace disable
+	 * Handle marketplace disable
 	 */
-	public void shutDown()
+	public void disable()
 	{
 		forceStopActiveProducts();
 		animationManager.forceCleanAllEffects();
@@ -896,6 +903,16 @@ public class MarketplaceManager {
 		widgetManager.forceCleanAllEffects();
 		widgetManager.hideCoveringOverlays();
 		notificationManager.forceHideOverheadText();
+		spawnOverheadManager.forceCleanAllEffects();
+	}
+
+	/**
+	 * Handle plugin shutdown
+	 */
+	public void shutDown()
+	{
+		disable();
+		spawnOverheadManager.removeOverlay();
 	}
 
 	public boolean isStressTesting()
