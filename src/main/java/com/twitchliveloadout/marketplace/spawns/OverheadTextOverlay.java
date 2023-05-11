@@ -19,7 +19,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class OverheadTextOverlay extends Overlay {
 	private final Client client;
 	private final CopyOnWriteArrayList<MarketplaceEffect<EbsModelOverheadFrame>> activeEffects = new CopyOnWriteArrayList<>();
-	private final Color DEFAULT_TEXT_COLOR = Color.YELLOW;
 
 	public OverheadTextOverlay(Client client)
 	{
@@ -50,7 +49,7 @@ public class OverheadTextOverlay extends Overlay {
 			{
 				continue;
 			}
-
+			
 			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
 			Point textLocation = Perspective.localToCanvas(client, localPoint, client.getPlane(), textHeight);
 			Color textColor = MarketplaceColors.getColorByHex(textColorHex);
