@@ -81,7 +81,7 @@ import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
  */
 @PluginDescriptor(
 	name = "Twitch Live Loadout",
-	description = "Send live Equipment, Collection Log, Combat Statistics and more to Twitch Extensions as a streamer.",
+	description = "Show Twitch viewers your collection log, bank, inventory, combat statistics, equipment, skills and more.",
 	enabledByDefault = true
 )
 @Slf4j

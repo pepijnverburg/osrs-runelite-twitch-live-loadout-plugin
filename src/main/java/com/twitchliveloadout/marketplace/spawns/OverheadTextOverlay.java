@@ -49,7 +49,7 @@ public class OverheadTextOverlay extends Overlay {
 			{
 				continue;
 			}
-			
+
 			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
 			Point textLocation = Perspective.localToCanvas(client, localPoint, client.getPlane(), textHeight);
 			Color textColor = MarketplaceColors.getColorByHex(textColorHex);
