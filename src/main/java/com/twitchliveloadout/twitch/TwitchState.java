@@ -102,7 +102,7 @@ public class TwitchState {
 		currentState.addProperty(TwitchStateEntry.PLAYER_NAME.getKey(), playerName);
 	}
 
-	public void setAccountHash(long accountHash)
+	public void setAccountHash(Long accountHash)
 	{
 		currentState.addProperty(TwitchStateEntry.ACCOUNT_HASH.getKey(), accountHash);
 	}
@@ -554,7 +554,8 @@ public class TwitchState {
 
 	private JsonObject verifyClientActivityStatus(JsonObject state)
 	{
-		final Long accountHash = state.get(TwitchStateEntry.ACCOUNT_HASH.getKey()).getAsLong();
+		final JsonElement accountHashElement = state.get(TwitchStateEntry.ACCOUNT_HASH.getKey());
+		final Long accountHash = (accountHashElement == null ? -1 : accountHashElement.getAsLong());
 
 		// only sync this account when a valid account hash
 		if (accountHash == null || accountHash == -1)

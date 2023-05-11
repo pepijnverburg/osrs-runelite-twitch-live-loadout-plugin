@@ -450,6 +450,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					lastPlayerName = playerName;
 				}
 
+				// update this information periodically because it is possible the plugin
+				// is being installed or activated after e.g. the AccountHashChanged event fires
 				twitchState.setAccountHash(accountHash);
 				twitchState.setAccountType(accountType);
 			});
@@ -809,6 +811,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 		} catch (Exception exception) {
 			log.warn("Could not handle game state event: ", exception);
+		}
+	}
+
+	/**
+	 * Handle account hash changes alongside the polling done for this as well
+	 */
+	@Subscribe
+	public void onAccountHashChanged(AccountHashChanged accountHashChanged)
+	{
+		try {
+			twitchState.setAccountHash(client.getAccountHash());
+		} catch (Exception exception) {
+			log.warn("Could not handle account hash event: ", exception);
 		}
 	}
 
