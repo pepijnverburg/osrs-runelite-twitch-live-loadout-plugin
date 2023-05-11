@@ -10,7 +10,7 @@ Visit the landing page for more information:<br/>
 ## Introduction
 Let your Twitch viewers be fully immersed by showing them interactive and live information about `Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Quests`, `Looting Bag`, `Tombs of Amascut Invocations` and more!
 
-Optionally engage with gameplay by letting viewers trigger custom `Random Events`. There are many `Random Events` available by default channel exclusive ones can be requested in the [Discord](https://discord.gg/3Fjm5HTFGM).
+Optionally engage with gameplay by letting viewers activate custom `Random Events`. There are many `Random Events` available by default. New ones can be requested in the [Discord](https://discord.gg/3Fjm5HTFGM).
 
 ![Summary](./docs/summary.gif "Summary")
 
