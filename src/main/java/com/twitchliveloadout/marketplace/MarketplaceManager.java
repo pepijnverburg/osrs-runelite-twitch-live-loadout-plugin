@@ -692,7 +692,7 @@ public class MarketplaceManager {
 		}
 
 		// custom timer running on client ticks every x ms for more heavy things to be executed
-		// this is because the @Schedule is delaying now and then and some of the processes in here are time-sensitive
+		// this is because the @Schedule is delaying very often and some of the processes in here are time-sensitive
 		if (passTimerOnce(MarketplaceTimer.RESPAWNS, now))
 		{
 			// respawn all spawned objects that require it

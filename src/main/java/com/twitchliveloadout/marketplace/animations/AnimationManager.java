@@ -142,7 +142,9 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 			durationMs,
 			() -> graphicLockedUntil,
 			() -> {
-				graphicLockedUntil = Instant.now().plusMillis(durationMs);
+				// locking the player graphic is not needed anymore because multiple graphics (spot anims)
+				// can be spawned on the player at once now! consider removing this completely with a next update
+				// graphicLockedUntil = Instant.now().plusMillis(durationMs);
 			},
 			(player) -> {
 				player.createSpotAnim(graphicKey, graphicId, graphicHeight, 0);
