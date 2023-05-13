@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace.interfaces;
 
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.products.EbsMenuOptionFrame;
@@ -16,10 +17,13 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 @Slf4j
 public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
+	private final TwitchLiveLoadoutConfig config;
 
-	public MenuManager()
+	public MenuManager(TwitchLiveLoadoutConfig config)
 	{
 		super(MENU_EFFECT_MAX_SIZE);
+
+		this.config = config;
 	}
 
 	public void onGameTick()
@@ -50,12 +54,13 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 			}
 		}
 
-//		log.info("MENU OPTION CLICKED:");
-//		log.info("clickedOption: "+ clickedOption);
-//		log.info("clickedOption formatted: "+ Text.removeTags(clickedOption.toLowerCase().trim()));
-//		log.info("clickedTarget: "+ clickedOption);
-//		log.info("clickedEntityType: "+ clickedEntityType);
-//		log.info("event.getMenuAction().name(): "+ event.getMenuAction().toString());
+		if (config.debugMenuOptionClicks())
+		{
+			log.info("MENU OPTION CLICKED:");
+			log.info("clickedOption: "+ clickedOption);
+			log.info("clickedTarget: "+ clickedTarget);
+			log.info("clickedEntityType: "+ clickedEntityType);
+		}
 
 		Iterator<MarketplaceEffect<EbsMenuOptionFrame>> effectIterator = effects.iterator();
 

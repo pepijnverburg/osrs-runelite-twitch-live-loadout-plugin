@@ -648,4 +648,17 @@ public interface TwitchLiveLoadoutConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+			keyName = "debugMenuOptionClicks",
+			name = "Debug menu clicks",
+			description = "Debug menu option click events.",
+			position = 4,
+			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			section = advancedSection
+	)
+	default boolean debugMenuOptionClicks()
+	{
+		return false;
+	}
 }
