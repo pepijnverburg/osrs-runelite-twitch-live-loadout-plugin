@@ -72,7 +72,7 @@ public class FightStateManager
 	public static final int NO_ANIMATION_ID = -1;
 	public static final int SINGLE_ANCIENT_ANIMATION_ID = 1978;
 	public static final int MULTI_ANCIENT_ANIMATION_ID = 1979;
-	public static final int ENTANGLE_ANIMATION_ID = 710;
+	public static final int ENTANGLE_ANIMATION_ID = 1161;
 
 	public enum FightGraphic {
 		ICE_BARRAGE(369, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
