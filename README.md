@@ -19,7 +19,7 @@ Optionally engage with gameplay by letting viewers activate custom `Random Event
 #### 🎒 Syncing Loadout to viewers
 ![Collage](./docs/screenshots/Collage.png "Collage")
 
-#### ⚡️ Viewer triggered Random Events
+#### ⚡️ Viewer activated Random Events
 ![Random Events](./docs/screenshots/Random-Events.png "Random Events")
 
 #### 📱🖥 Cross-platform support
@@ -37,7 +37,7 @@ Optionally engage with gameplay by letting viewers activate custom `Random Event
 - Step 3: Copy token from the `Twitch Extension configuration page` and paste in the RuneLite plugin setting `Your copied Twitch Extension Token`.
 - Step 4: Verify whether data is synced by previewing it in the `Twitch Extension configuration page`.
 
-⚠️ Note that for the `collection log`, `bank`, `looting bag` and `ToA invocations` to show you need to **open them at least once**. Their information is stored in your RuneLite profile so on your next session you wont need to open them again.
+⚠️ Note that for the `collection log`, `bank`, `looting bag` and `ToA invocations` to show you need to **open them at least once**. Their information is stored in your RuneLite profile, so on your next session you wont need to open them again.
 
 ### Step 1: Install Runelite Plugin
 You can install this plugin from the [Plugin Hub](https://runelite.net/plugin-hub/show/twitch-live-loadout).
