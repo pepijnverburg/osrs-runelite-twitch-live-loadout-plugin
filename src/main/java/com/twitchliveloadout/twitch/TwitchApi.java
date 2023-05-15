@@ -529,9 +529,9 @@ public class TwitchApi
 		httpClient.newCall(request).enqueue(new Callback() {
 			@Override
 			public void onFailure(Call call, IOException exception) {
-				log.warn("Could not send request to: "+ url);
-				log.warn("The error that occurred was: ");
-				log.warn(exception.getMessage());
+				log.debug("Could not send request to: "+ url);
+				log.debug("The error that occurred was: ");
+				log.debug(exception.getMessage());
 				errorHandler.execute(exception);
 			}
 

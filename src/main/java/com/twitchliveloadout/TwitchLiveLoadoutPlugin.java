@@ -424,7 +424,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				runOnClientThread(() -> questManager.updateQuests());
 			}
 		} catch (Exception exception) {
-			log.warn("Could not sync quests due to the following error: ", exception);
+			log.debug("Could not sync quests due to the following error: ", exception);
 		}
 	}
 
@@ -501,7 +501,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.updateStreamerProducts();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not update the configuration segments due to the following error: ", exception);
+			log.debug("Could not update the configuration segments due to the following error: ", exception);
 		}
 	}
 

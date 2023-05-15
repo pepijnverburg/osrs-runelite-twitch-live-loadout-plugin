@@ -177,7 +177,7 @@ public class MarketplaceManager {
 				// guard: check if the status is valid
 				if (!status)
 				{
-					log.warn("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
+					log.debug("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
 					return;
 				}
 
@@ -591,7 +591,7 @@ public class MarketplaceManager {
 				// if not we want to keep the old products intact
 				if (!status)
 				{
-					log.warn("Could not fetch EBS products from Twitch as the status is invalid with message: "+ message);
+					log.debug("Could not fetch EBS products from Twitch as the status is invalid with message: "+ message);
 					return;
 				}
 
@@ -603,7 +603,7 @@ public class MarketplaceManager {
 						EbsProduct ebsProduct = gson.fromJson(element, EbsProduct.class);
 						newEbsProducts.add(ebsProduct);
 					} catch (Exception exception) {
-						// empty?
+						log.warn("Could not parse the raw EBS product to a valid product: ", exception);
 					}
 				});
 
@@ -612,7 +612,7 @@ public class MarketplaceManager {
 				isFetchingEbsProducts = false;
 			});
 		} catch (Exception exception) {
-			log.warn("Could not fetch the new EBS products due to the following error: ", exception);
+			log.debug("Could not fetch the new EBS products due to the following error: ", exception);
 		}
 	}
 
