@@ -215,7 +215,7 @@ public class MarketplaceManager {
 							handledTransactionIds.remove(transactionId);
 						}
 					} catch (Exception exception) {
-						log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
+						log.warn("Could not parse Twitch Extension transaction due to the following error: ", exception);
 					}
 				});
 

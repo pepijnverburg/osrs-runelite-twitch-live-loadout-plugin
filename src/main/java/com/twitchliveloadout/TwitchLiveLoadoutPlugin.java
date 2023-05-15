@@ -388,7 +388,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			// to the next state slice
 			twitchState.nextCyclicState();
 		} catch (Exception exception) {
-			log.warn("Could not sync the current state to Twitch due to the following error: ", exception);
+			log.debug("Could not sync the current state to Twitch due to the following error: ", exception);
 		}
 	}
 
@@ -408,7 +408,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				twitchState.setFightStatistics(fightStatistics);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not update the fight statistics due to the following error: ", exception);
+			log.debug("Could not update the fight statistics due to the following error: ", exception);
 		}
 	}
 
@@ -424,7 +424,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				runOnClientThread(() -> questManager.updateQuests());
 			}
 		} catch (Exception exception) {
-			log.warn("Could not sync quests: ", exception);
+			log.warn("Could not sync quests due to the following error: ", exception);
 		}
 	}
 
@@ -460,7 +460,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				twitchState.setAccountType(accountType);
 			});
 		} catch (Exception exception) {
-			log.warn("Could not sync player info to state: ", exception);
+			log.debug("Could not sync player info to state due to the following error: ", exception);
 		}
 	}
 
@@ -476,7 +476,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				minimapManager.updateMinimap();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not sync mini map: ", exception);
+			log.debug("Could not sync mini map: ", exception);
 		}
 	}
 
@@ -508,7 +508,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to update the EBS products configured in Twitch.
 	 */
-	@Schedule(period = (IN_DEVELOPMENT ? 1 : 60), unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = (IN_DEVELOPMENT ? 1 : 60 * 5), unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void updateMarketplaceEbsProducts()
 	{
 		try {
@@ -518,7 +518,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.updateAsyncEbsProducts();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not update the EBS products due to the following error: ", exception);
+			log.debug("Could not update the EBS products due to the following error: ", exception);
 		}
 	}
 
@@ -535,7 +535,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.fetchAsyncNewEbsTransactions();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not update the extension transactions due to the following error: ", exception);
+			log.debug("Could not update the extension transactions due to the following error: ", exception);
 		}
 	}
 
@@ -554,7 +554,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				});
 			}
 		} catch (Exception exception) {
-			log.warn("Could not apply and clean the extension transactions: ", exception);
+			log.debug("Could not apply and clean the extension transactions: ", exception);
 		}
 	}
 
@@ -570,7 +570,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				invocationsManager.checkIfInToA();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not check if in ToA: ", exception);
+			log.debug("Could not check if in ToA: ", exception);
 		}
 	}
 
@@ -591,7 +591,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				fightStateManager.onGameTick();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle lobby game tick event: ", exception);
+			log.debug("Could not handle lobby game tick event: ", exception);
 		}
 	}
 
@@ -778,7 +778,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			pluginPanel.onGameTick();
 		} catch (Exception exception) {
-			log.warn("Could not handle game tick event: ", exception);
+			log.debug("Could not handle game tick event: ", exception);
 		}
 	}
 
@@ -791,7 +791,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.onClientTick();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle client tick event: ", exception);
+			log.debug("Could not handle client tick event: ", exception);
 		}
 	}
 
@@ -861,7 +861,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				invocationsManager.onScriptPostFired(scriptPostFired);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle script post fired event:", exception);
+			log.debug("Could not handle script post fired event:", exception);
 		}
 	}
 
@@ -874,7 +874,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				collectionLogManager.onVarbitChanged(varbitChanged);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle varbit change event: ", exception);
+			log.debug("Could not handle varbit change event: ", exception);
 		}
 	}
 
@@ -941,7 +941,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			pluginPanel.getConnectivityPanel().rebuild();
 		} catch (Exception exception) {
-			log.warn("Could not update the connectivity panel due to the following error: ", exception);
+			log.debug("Could not update the connectivity panel due to the following error: ", exception);
 		}
 	}
 
@@ -963,7 +963,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			pluginPanel.getMarketplacePanel().rebuildProductPanels();
 			pluginPanel.getMarketplacePanel().updateTexts();
 		} catch (Exception exception) {
-			log.warn("Could not update the marketplace panel due to the following error: ", exception);
+			log.debug("Could not update the marketplace panel due to the following error: ", exception);
 		}
 	}
 
