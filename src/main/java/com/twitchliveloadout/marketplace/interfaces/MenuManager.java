@@ -13,6 +13,7 @@ import net.runelite.client.util.Text;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import static com.twitchliveloadout.TwitchLiveLoadoutPlugin.IN_DEVELOPMENT;
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 @Slf4j
@@ -54,7 +55,7 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 			}
 		}
 
-		if (config.debugMenuOptionClicks())
+		if (config.debugMenuOptionClicks() && IN_DEVELOPMENT)
 		{
 			log.info("MENU OPTION CLICKED:");
 			log.info("clickedOption: "+ clickedOption);
