@@ -11,6 +11,8 @@ public class OriginalWidget {
 	@Getter
 	private final Integer type;
 	@Getter
+	private final Integer contentType;
+	@Getter
 	private final String text;
 	@Getter
 	private final Integer textColor;
@@ -38,6 +40,7 @@ public class OriginalWidget {
 		// initialize all originals
 		this.hidden = widget.isSelfHidden();
 		this.type = widget.getType();
+		this.contentType = widget.getContentType();
 		this.text = widget.getText();
 		this.textColor = widget.getTextColor();
 		this.opacity = widget.getOpacity();

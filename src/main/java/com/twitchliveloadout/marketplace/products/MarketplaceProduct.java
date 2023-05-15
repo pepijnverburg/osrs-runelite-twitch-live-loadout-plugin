@@ -1,8 +1,10 @@
 package com.twitchliveloadout.marketplace.products;
 
 import com.twitchliveloadout.marketplace.LambdaIterator;
+import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
+import com.twitchliveloadout.marketplace.spawns.SpawnOverheadManager;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -16,10 +18,13 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.ProjectileMoved;
 
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -91,6 +96,15 @@ public class MarketplaceProduct
 	 */
 	@Getter
 	private final CopyOnWriteArrayList<SpawnedObject> spawnedObjects = new CopyOnWriteArrayList<>();
+	@Getter
+	private int spawnAmount = 0;
+
+	/**
+	 * Lookup table with the current key value pairs of the state frames to assign state values to this product
+	 * which are to be used in conditions to check whether certain effects are allowed to be executed.
+	 * This very simple mechanism makes the MarketplaceProduct and SpawnedObject stateful where logic can be based on.
+	 */
+	private final ConcurrentHashMap<String, String> stateFrameValues = new ConcurrentHashMap<>();
 
 	public MarketplaceProduct(MarketplaceManager manager, TwitchTransaction transaction, EbsProduct ebsProduct, StreamerProduct streamerProduct, TwitchProduct twitchProduct)
 	{
@@ -113,7 +127,8 @@ public class MarketplaceProduct
 		// queued transactions to be handled while a streamer is logged out for 30 seconds while keeping RL open.
 		// but we will not handle transactions that RL will load when booting up without any in the queue.
 		Instant transactionExpiredAt = transactionAt.plusSeconds(duration);
-		boolean loadedTooLate = transaction.loadedAt.isAfter(transactionExpiredAt);
+		Instant transactionLoadedAt = Instant.parse(transaction.loaded_at);
+		boolean loadedTooLate = transactionLoadedAt.isAfter(transactionExpiredAt);
 
 		this.startedAt = (!loadedTooLate && manager.getConfig().marketplaceStartOnLoadedAt() ? loadedAt : transactionAt);
 		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
@@ -169,16 +184,19 @@ public class MarketplaceProduct
 		handleSpawnedObjects(spawnedObjects, 0, SpawnedObject::hide);
 	}
 
-	public void stop()
+	public void stop(boolean force)
 	{
 		// guard: skip if already stopped
-		if (!isActive && !isPaused)
+		if (!isActive && !isPaused && !force)
 		{
 			return;
 		}
 
-		// NOTE: do this before toggling to off otherwise some effects are skipped
-		triggerEffectsOptions(ebsProduct.behaviour.stopEffectsOptions);
+		// do this before setting active to FALSE, otherwise some effects are skipped
+		if (!force)
+		{
+			triggerEffectsOptions(ebsProduct.behaviour.stopEffectsOptions);
+		}
 
 		// start with disabling all behaviours
 		isPaused = false;
@@ -193,7 +211,14 @@ public class MarketplaceProduct
 
 		// clean up all the spawned objects
 		handleSpawnedObjects(spawnedObjects, 0, (spawnedObject) -> {
-			hideSpawnedObject(spawnedObject, 0);
+
+			// when forced hide instantly, otherwise trigger the hide effects
+			if (force) {
+				spawnedObject.hide();
+			} else {
+				hideSpawnedObject(spawnedObject, 0);
+			}
+
 			manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
 		});
 		spawnedObjects.clear();
@@ -249,8 +274,8 @@ public class MarketplaceProduct
 		while (spawnedObjectIterator.hasNext())
 		{
 			SpawnedObject spawnedObject = spawnedObjectIterator.next();
-			EbsModelSet modelSet = spawnedObject.getModelSet();
-			String rotationType = modelSet.rotationType;
+			EbsModelPlacement modelPlacement = spawnedObject.getSpawn().modelPlacement;
+			String rotationType = modelPlacement.rotationType;
 			Player player = manager.getClient().getLocalPlayer();
 
 			// guard: make sure the rotation and player are valid
@@ -259,22 +284,34 @@ public class MarketplaceProduct
 				continue;
 			}
 
-			if (rotationType.equals(PLAYER_ROTATION_TYPE))
-			{
-				LocalPoint targetPoint = player.getLocalLocation();
-				spawnedObject.rotateTowards(targetPoint);
-			}
-			else if (rotationType.equals(INTERACTING_ROTATION_TYPE))
-			{
-				Actor interacting = player.getInteracting();
+			Actor interacting = player.getInteracting();
 
-				if (interacting == null)
-				{
-					continue;
-				}
+			switch (rotationType)
+			{
+				case PLAYER_ROTATION_TYPE:
+					LocalPoint playerLocalLocation = player.getLocalLocation();
+					spawnedObject.rotateTowards(playerLocalLocation);
+					break;
+				case MIRROR_PLAYER_ROTATION_TYPE:
+					spawnedObject.setOrientation(player.getCurrentOrientation());
+					break;
+				case INTERACTING_ROTATION_TYPE:
+					if (interacting == null)
+					{
+						continue;
+					}
 
-				LocalPoint targetPoint = interacting.getLocalLocation();
-				spawnedObject.rotateTowards(targetPoint);
+					LocalPoint interactingLocalLocation = interacting.getLocalLocation();
+					spawnedObject.rotateTowards(interactingLocalLocation);
+					break;
+				case MIRROR_INTERACTING_ROTATION_TYPE:
+					if (interacting == null)
+					{
+						continue;
+					}
+
+					spawnedObject.setOrientation(interacting.getCurrentOrientation());
+					break;
 			}
 		}
 	}
@@ -300,8 +337,18 @@ public class MarketplaceProduct
 				continue;
 			}
 
+			EbsModelPlacement modelRespawnPlacement = spawn.modelRespawnPlacement;
 			EbsModelPlacement modelPlacement = spawn.modelPlacement;
 
+			// override the model placement with a respawn model placement when set
+			// this allows us to have different behaviours for the initial spawn placement
+			// and the placement and follow behaviour afterwards
+			if (modelRespawnPlacement != null)
+			{
+				modelPlacement = modelRespawnPlacement;
+			}
+
+			// make sure the selected model placement is always valid
 			if (modelPlacement  == null)
 			{
 				modelPlacement = new EbsModelPlacement();
@@ -343,7 +390,7 @@ public class MarketplaceProduct
 				if (newSpawnPoints.containsKey(worldPoint)) {
 					newInSceneSpawnPoint = newSpawnPoints.get(worldPoint);
 				} else {
-					newInSceneSpawnPoint = getSpawnPoint(spawn);
+					newInSceneSpawnPoint = spawnManager.getSpawnPoint(modelPlacement, spawnedObject);
 					newSpawnPoints.put(worldPoint, newInSceneSpawnPoint);
 				}
 
@@ -476,6 +523,7 @@ public class MarketplaceProduct
 				randomEffects,
 				0,
 				spawnedObject,
+				null,
 				false,
 				null
 			);
@@ -513,6 +561,8 @@ public class MarketplaceProduct
 		}
 
 		int repeatAmount = effectsInterval.repeatAmount;
+		ArrayList<EbsCondition> conditions = effectsInterval.conditions;
+		int afterTriggerDelayMs = effectsInterval.afterTriggerDelayMs;
 
 		// guard: check if the amount has passed
 		// NOTE: -1 repeat amount if infinity!
@@ -527,6 +577,16 @@ public class MarketplaceProduct
 			return;
 		}
 
+		// guard: check if the interval is allowed to be triggered based on the conditions
+		if (!verifyConditions(conditions))
+		{
+
+			// when the conditions are not verified we will set the last behaviour at to prevent the effects
+			// to be check too many times in a row, this gives some throttling in some possible heavy checks
+			lastEffectBehaviourAt = Instant.now();
+			return;
+		}
+
 		// select a random option
 		ArrayList<EbsEffect> effectsOption = MarketplaceRandomizers.getRandomEntryFromList(effectOptions);
 
@@ -538,12 +598,13 @@ public class MarketplaceProduct
 		}
 
 		log.debug("Executing effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
-		lastEffectBehaviourAt = Instant.now();
+		lastEffectBehaviourAt = Instant.now().plusMillis(afterTriggerDelayMs);
 		effectBehaviourCounter += 1;
 
 		triggerEffects(
 			effectsOption,
 			0,
+			null,
 			null,
 			false,
 			null
@@ -626,10 +687,10 @@ public class MarketplaceProduct
 		lastSpawnBehaviourAt = now.plusMillis(afterTriggerDelayMs);
 		spawnBehaviourCounter += 1;
 
-		triggerSpawnOptions(spawnOptions);
+		triggerSpawnOptions(null, spawnOptions);
 	}
 
-	private void triggerSpawnOptions(ArrayList<EbsSpawnOption> spawnOptions)
+	private void triggerSpawnOptions(SpawnedObject spawnedObject, ArrayList<EbsSpawnOption> spawnOptions)
 	{
 
 		// guard: make sure the spawn options are valid
@@ -638,6 +699,7 @@ public class MarketplaceProduct
 			return;
 		}
 
+		SpawnManager spawnManager = manager.getSpawnManager();
 		String transactionId = transaction.id;
 		String productId = ebsProduct.id;
 		EbsSpawnOption spawnOption = MarketplaceRandomizers.getSpawnBehaviourByChance(spawnOptions);
@@ -688,12 +750,13 @@ public class MarketplaceProduct
 					for (int spawnIndex = 0; spawnIndex < spawnAmount; spawnIndex++)
 					{
 						int spawnDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(spawnOption.spawnDelayMs, 0, 0);
+						EbsModelPlacement placement = spawn.modelPlacement;
 
 						// determine whether we re-use the same spawn-point we already got
 						// or if we should generate a new one
 						if (spawnPoint == null || INDIVIDUAL_SPAWN_POINT_TYPE.equals(spawnPointType))
 						{
-							spawnPoint = getSpawnPoint(spawn);
+							spawnPoint = spawnManager.getSpawnPoint(placement, spawnedObject);
 						}
 
 						triggerSpawn(spawn, spawnPoint, spawnDelayMs);
@@ -725,6 +788,9 @@ public class MarketplaceProduct
 
 		// roll a random set of model IDs
 		EbsModelSet modelSet = MarketplaceRandomizers.getRandomEntryFromList(spawn.modelSetOptions);
+		EbsRandomRange durationMs = spawn.durationMs;
+		int randomDurationMs = -1;
+		Instant spawnedObjectExpiredAt = null;
 
 		// guard: make sure the selected model is valid
 		if (modelSet == null || modelSet.ids == null)
@@ -733,107 +799,38 @@ public class MarketplaceProduct
 			return;
 		}
 
-		// get properties from model set
-		boolean shouldScaleModel = (modelSet.scale != null);
-		boolean shouldRotateModel = (RANDOM_ROTATION_TYPE.equals(modelSet.rotationType));
-		double modelScale = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.scale, 1, 1, 0, MAX_MODEL_SCALE);
-		double modelRotationDegrees = MarketplaceRandomizers.getValidRandomNumberByRange(modelSet.rotation, 0, 360, 0, 360);
-		ArrayList<EbsRecolor> recolors = modelSet.recolors;
-		ArrayList<ModelData> modelDataChunks = new ArrayList<>();
-
-		// load all the models
-		modelSet.ids.forEach((modelId) -> {
-			modelDataChunks.add(client.loadModelData(modelId));
-		});
-
-		// merge all models into one
-		ModelData mergedModelData = client.mergeModels(modelDataChunks.toArray(new ModelData[modelDataChunks.size()]), modelDataChunks.size());
+		if (durationMs != null)
+		{
+			randomDurationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(durationMs, 0,0);
+			spawnedObjectExpiredAt = Instant.now().plusMillis(randomDurationMs);
+		}
 
 		SpawnedObject spawnedObject = new SpawnedObject(
 			this,
 			client,
-			mergedModelData,
 			spawnPoint,
 			spawn,
-			modelSet
+			modelSet,
+			spawnedObjectExpiredAt
 		);
-
-		// check for valid recolors
-		if (recolors != null)
-		{
-			mergedModelData.cloneColors();
-
-			// apply recolors
-			LambdaIterator.handleAll(recolors, (recolor) -> {
-				spawnedObject.recolor(recolor);
-			});
-		}
-
-		// scale model
-		if  (shouldScaleModel)
-		{
-			spawnedObject.scale(modelScale);
-		}
-
-		// rotate model
-		if (shouldRotateModel)
-		{
-			spawnedObject.rotate(modelRotationDegrees);
-		}
-
-		// re-render after changes
-		spawnedObject.render();
 
 		// schedule showing of the object as it is initially hidden
 		showSpawnedObject(spawnedObject, spawnDelayMs);
 
+		// set timeout to hide object at the exact time of duration
+		// the cleanup will remove it later, but this runs on game ticks
+		if (randomDurationMs >= 0)
+		{
+			hideSpawnedObject(spawnedObject, spawnDelayMs + randomDurationMs);
+		}
+
 		// register the objects to the product and manager to make the spawn point unavailable
 		spawnedObjects.add(spawnedObject);
+		spawnAmount += 1;
 		spawnManager.registerSpawnedObjectPlacement(spawnedObject);
 	}
 
-	private SpawnPoint getSpawnPoint(EbsSpawn spawn)
-	{
-		Client client = manager.getClient();
-		SpawnManager spawnManager = manager.getSpawnManager();
-		EbsModelPlacement placement = spawn.modelPlacement;
-
-		// make sure there are valid placement parameters
-		if (placement == null)
-		{
-			placement = new EbsModelPlacement();
-		}
-
-		SpawnPoint spawnPoint = null;
-		EbsRandomRange radiusRange = placement.radiusRange;
-		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
-		String radiusType = placement.radiusType;
-		String locationType = placement.locationType;
-		Boolean inLineOfSight = placement.inLineOfSight;
-		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
-
-		// check if we should change the reference to the previous tile
-		// NOTE: current tile is not needed to be handled, because this is the default!
-		if (PREVIOUS_TILE_LOCATION_TYPE.equals(locationType))
-		{
-			referenceWorldPoint = spawnManager.getPreviousPlayerLocation();
-
-			if (referenceWorldPoint == null)
-			{
-				return null;
-			}
-		}
-
-		if (OUTWARD_RADIUS_TYPE.equals(radiusType)) {
-			spawnPoint = spawnManager.getOutwardSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
-		} else {
-			spawnPoint = spawnManager.getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
-		}
-
-		return spawnPoint;
-	}
-
-	public void triggerEffects(ArrayList<EbsEffect> effects, int startDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
+	public void triggerEffects(ArrayList<EbsEffect> effects, int startDelayMs, SpawnedObject spawnedObject, MarketplaceEffect marketplaceEffect, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: make sure the effect is valid
@@ -847,10 +844,10 @@ public class MarketplaceProduct
 		// only trigger the first effect, because we want certain effect frames to be blocking for the future ones
 		// depending on what the outcome of the conditions are, for this reason we cannot queue all frames at once
 		// because certain conditions need to be evaluated when executing the frame and not beforehand.
-		triggerEffect(effectIterator, startDelayMs, spawnedObject, forceModelAnimation, resetModelAnimationHandler);
+		triggerEffect(effectIterator, startDelayMs, spawnedObject, marketplaceEffect, forceModelAnimation, resetModelAnimationHandler);
 	}
 
-	public void triggerEffect(Iterator<EbsEffect> effectIterator, int frameDelayMs, SpawnedObject spawnedObject, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
+	public void triggerEffect(Iterator<EbsEffect> effectIterator, int frameDelayMs, SpawnedObject spawnedObject, MarketplaceEffect marketplaceEffect, boolean forceModelAnimation, ResetEffectHandler resetModelAnimationHandler)
 	{
 
 		// guard: check if the iterator is valid
@@ -876,24 +873,36 @@ public class MarketplaceProduct
 			// this is allowed when there are no blocking conditions or when the conditions of this frame are okay
 			if (!blockingConditions || conditionsVerified)
 			{
-				triggerEffect(effectIterator, nextFrameDelayMs, spawnedObject, forceModelAnimation, resetModelAnimationHandler);
+				triggerEffect(effectIterator, nextFrameDelayMs, spawnedObject, marketplaceEffect, forceModelAnimation, resetModelAnimationHandler);
 			}
 
 			// guard: check if all the conditions for this effect are met
 			if (!conditionsVerified)
 			{
 //				log.info("CANCELLED EFFECTS: "+ Instant.now().toEpochMilli());
+				// when this is the last one make sure we still reset the model animations or hide them
+				if (isLast && resetModelAnimationHandler != null) {
+					resetModelAnimationHandler.execute(innerDelayMs);
+				}
 				return;
 			}
 
 //			log.info("TRIGGERED EFFECTS: "+ Instant.now().toEpochMilli());
-			triggerSpawnOptions(effect.spawnOptions);
+			triggerSpawnOptions(spawnedObject, effect.spawnOptions);
+			triggerModelExpired(spawnedObject, effect.modelExpired);
 			triggerModelAnimation(
 				spawnedObject,
 				effect.modelAnimation,
-				innerDelayMs,
+				// when there is no model animation add the frame duration to the delay for the reset model animation handler
+				// to be executed after the frame has been done
+				(effect.modelAnimation == null ? nextFrameDelayMs + innerDelayMs : innerDelayMs),
 				forceModelAnimation,
 				isLast ? resetModelAnimationHandler : null
+			);
+			triggerModelOverhead(spawnedObject, effect.modelOverhead, innerDelayMs);
+			triggerModelSetUpdate(
+				spawnedObject,
+				effect.modelSet
 			);
 			triggerPlayerGraphic(effect.playerGraphic, innerDelayMs);
 			triggerPlayerAnimation(effect.playerAnimation, innerDelayMs);
@@ -902,7 +911,9 @@ public class MarketplaceProduct
 			triggerInterfaceWidgets(effect.interfaceWidgets, innerDelayMs);
 			triggerMenuOptions(effect.menuOptions, innerDelayMs);
 			triggerSoundEffect(effect.soundEffect, innerDelayMs);
-			triggerNotifications(effect.notifications, innerDelayMs);
+			triggerStateChange(spawnedObject, effect.stateChange, innerDelayMs);
+			triggerNotifications(marketplaceEffect, effect.notifications, innerDelayMs);
+			triggerProjectiles(spawnedObject, effect.projectiles, innerDelayMs);
 		}, frameDelayMs);
 	}
 
@@ -918,6 +929,7 @@ public class MarketplaceProduct
 		triggerEffects(
 			effects,
 			0,
+			null,
 			null,
 			false,
 			null
@@ -976,9 +988,18 @@ public class MarketplaceProduct
 		Integer minSpawnsInView = condition.minSpawnsInView;
 		Integer minSpawnsInViewRadius = condition.minSpawnsInViewRadius;
 		Integer spawnInViewRadius = condition.spawnInViewRadius;
+		String stateType = condition.stateType;
+		String stateKey = condition.stateKey;
+		String stateValue = condition.stateValue;
 		ArrayList<EbsCondition> orConditions = condition.or;
 		ArrayList<EbsCondition> andConditions = condition.and;
 		boolean orConditionsVerified = false;
+
+		// guard: check if the required state is valid
+		if (!verifyStateValue(stateType, stateKey, stateValue, spawnedObject))
+		{
+			return false;
+		}
 
 		// guard: check if it is allowed within an absolute time-frame
 		if (!verifyTimePassedMs(minTimeMs, maxTimeMs))
@@ -1011,7 +1032,7 @@ public class MarketplaceProduct
 		}
 
 		// guard: check for request to check the current spawn and if its in radius
-		if (spawnedObject != null && spawnInViewRadius > 0 && !spawnedObject.isInView(spawnInViewRadius))
+		if (spawnedObject != null && spawnInViewRadius >= 0 && !spawnedObject.isInView(spawnInViewRadius))
 		{
 			return false;
 		}
@@ -1050,6 +1071,39 @@ public class MarketplaceProduct
 		return true;
 	}
 
+	private boolean verifyStateValue(String stateType, String stateKey, String stateValue, SpawnedObject spawnedObject)
+	{
+
+		// guard: make sure the state check is valid
+		if (stateType == null || stateKey == null)
+		{
+			return true;
+		}
+
+		// default state is NULL
+		String currentStateValue = null;
+
+		if (PRODUCT_STATE_TYPE.equals(stateType)) {
+			currentStateValue = stateFrameValues.get(stateKey);
+		} else if (OBJECT_STATE_TYPE.equals(stateType) && spawnedObject != null) {
+			currentStateValue = spawnedObject.getStateFrameValue(stateKey);
+		}
+
+		// guard: compare with a simple if when the current state is NULL
+		// it might be possible a NULL state is requested, so it can still be verified
+		if (currentStateValue == null)
+		{
+			if (stateValue == null) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		// make the null-safe comparison
+		return currentStateValue.equals(stateValue);
+	}
+
 	/**
 	 * Check whether a certain time-frame absolute to the starting time is valid
 	 */
@@ -1062,13 +1116,13 @@ public class MarketplaceProduct
 			return true;
 		}
 
-		// guard: skip any calculations when it is the full time-frame
+		// guard: skip any passed time calculations when it is the full time-frame
 		if (minMs == 0 && maxMs == Integer.MAX_VALUE)
 		{
 			return true;
 		}
 
-		long passedMs = getPassedMs();
+		long passedMs = getDurationPassed().toMillis();
 
 		// guard: check whether the requested time-frame is outside of the current passed time
 		if (passedMs < minMs || passedMs > maxMs)
@@ -1097,7 +1151,7 @@ public class MarketplaceProduct
 			return true;
 		}
 
-		long durationMs = getDurationMs();
+		long durationMs = getDuration().toMillis();
 
 		// guard: make sure the duration is valid
 		if (durationMs <= 0)
@@ -1105,7 +1159,7 @@ public class MarketplaceProduct
 			return false;
 		}
 
-		long passedMs = getPassedMs();
+		long passedMs = getDurationPassed().toMillis();
 		double passedTimePercentage = (((double) passedMs) / ((double) durationMs));
 
 		// guard: check whether the current elapsed time is outside of the requested range
@@ -1117,11 +1171,41 @@ public class MarketplaceProduct
 		return true;
 	}
 
+	private void triggerModelSetUpdate(SpawnedObject spawnedObject, EbsModelSet modelSet)
+	{
+		// guard: make sure the spawned object and model set are valid
+		if (spawnedObject == null || modelSet == null)
+		{
+			return;
+		}
+
+		spawnedObject.setModelSet(modelSet);
+		spawnedObject.updateModelSet();
+	}
+
+	private void triggerModelExpired(SpawnedObject spawnedObject, Boolean modelExpired)
+	{
+
+		// guard: check if everything is valid and if a model expiry should be triggered
+		if (spawnedObject == null || modelExpired == null || !modelExpired)
+		{
+			return;
+		}
+
+		spawnedObject.expireNow();
+	}
+
 	private void triggerModelAnimation(SpawnedObject spawnedObject, EbsAnimationFrame animation, int baseDelayMs, boolean force, ResetEffectHandler resetAnimationHandler)
 	{
 		// guard: make sure the spawned object and animation are valid
 		if (spawnedObject == null || animation == null)
 		{
+
+			// always execute the reset animation handler when passed to for example hide the object
+			if (resetAnimationHandler != null)
+			{
+				resetAnimationHandler.execute(baseDelayMs);
+			}
 			return;
 		}
 
@@ -1153,9 +1237,16 @@ public class MarketplaceProduct
 	{
 		AnimationManager animationManager = manager.getAnimationManager();
 
+		// create a unique key for this specific product and graphic frame
+		// this feels unique enough to support multiple spot anims at once
+		// overflowing of this integer is NOT a problem, so we can just add everything
+		int graphicKey = hashCode() + manager.getClient().getGameCycle();
+
 		handleEffectFrame(graphicFrame, delayMs, (startDelayMs) -> {
-			animationManager.setPlayerGraphic(graphicFrame.id, graphicFrame.height, startDelayMs, graphicFrame.durationMs);
-		}, animationManager::resetPlayerGraphic);
+			animationManager.setPlayerGraphic(graphicKey, graphicFrame.id, graphicFrame.height, startDelayMs, graphicFrame.durationMs);
+		}, (resetDelayMs) -> {
+			animationManager.resetPlayerGraphic(graphicKey, resetDelayMs);
+		});
 	}
 
 	private void triggerPlayerAnimation(EbsAnimationFrame animationFrame, int delayMs)
@@ -1180,7 +1271,7 @@ public class MarketplaceProduct
 		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(equipmentFrame.delayMs, 0, 0);
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			transmogManager.addEffect(this, equipmentFrame);
+			transmogManager.addEffect(this, equipmentFrame,  null);
 		}, baseDelayMs + delayMs);
 	}
 
@@ -1197,7 +1288,24 @@ public class MarketplaceProduct
 		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(movementFrame.delayMs, 0, 0);
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
-			animationManager.addEffect(this, movementFrame);
+			animationManager.addEffect(this, movementFrame, null);
+		}, baseDelayMs + delayMs);
+	}
+
+	private void triggerModelOverhead(SpawnedObject spawnedObject, EbsModelOverheadFrame overheadFrame, int baseDelayMs)
+	{
+		SpawnOverheadManager spawnOverheadManager = manager.getSpawnOverheadManager();
+
+		// guard: make sure the frame is valid
+		if (overheadFrame == null)
+		{
+			return;
+		}
+
+		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(overheadFrame.delayMs, 0, 0);
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			spawnOverheadManager.addEffect(this, overheadFrame, spawnedObject);
 		}, baseDelayMs + delayMs);
 	}
 
@@ -1218,7 +1326,7 @@ public class MarketplaceProduct
 			while (interfaceWidgetFrameIterator.hasNext())
 			{
 				EbsInterfaceWidgetFrame interfaceWidgetFrame = interfaceWidgetFrameIterator.next();
-				widgetManager.addEffect(this, interfaceWidgetFrame);
+				widgetManager.addEffect(this, interfaceWidgetFrame, null);
 			}
 		}, delayMs);
 	}
@@ -1240,7 +1348,7 @@ public class MarketplaceProduct
 			while (menuOptionFrameIterator.hasNext())
 			{
 				EbsMenuOptionFrame menuOptionFrame = menuOptionFrameIterator.next();
-				menuManager.addEffect(this, menuOptionFrame);
+				menuManager.addEffect(this, menuOptionFrame, null);
 			}
 		}, delayMs);
 	}
@@ -1267,7 +1375,36 @@ public class MarketplaceProduct
 		}, baseDelayMs + delayMs);
 	}
 
-	private void triggerNotifications(ArrayList<EbsNotification> notifications, int delayMs)
+	private void triggerStateChange(SpawnedObject spawnedObject, EbsStateFrame stateFrame, int baseDelayMs)
+	{
+
+		// guard: make sure the state change is valid
+		if (stateFrame == null)
+		{
+			return;
+		}
+
+		String stateType = stateFrame.type;
+		String stateKey = stateFrame.key;
+		String stateValue = stateFrame.value;
+		Integer delayMs = stateFrame.delayMs;
+
+		// guard: make sure the properties are valid
+		if (stateType == null || stateKey == null || delayMs == null)
+		{
+			return;
+		}
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			if (PRODUCT_STATE_TYPE.equals(stateType)) {
+				stateFrameValues.put(stateKey, stateValue);
+			} else if (OBJECT_STATE_TYPE.equals(stateType) && spawnedObject != null) {
+				spawnedObject.setStateFrameValue(stateKey, stateValue);
+			}
+		}, baseDelayMs + delayMs);
+	}
+
+	private void triggerNotifications(MarketplaceEffect marketplaceEffect, ArrayList<EbsNotification> notifications, int delayMs)
 	{
 		// guard: make sure there are any notifications
 		if (notifications == null || notifications.size() <= 0)
@@ -1288,8 +1425,122 @@ public class MarketplaceProduct
 
 			// now queue them in the manager, so we also safely remove this product anywhere else
 			// while making sure the notifications ARE going to be triggered
-			manager.getNotificationManager().handleEbsNotifications(this, notifications);
+			manager.getNotificationManager().handleEbsNotifications(this, marketplaceEffect, notifications);
 		}, delayMs);
+	}
+
+	private void triggerProjectiles(SpawnedObject spawnedObject, ArrayList<EbsProjectileFrame> projectiles, int delayMs)
+	{
+		// guard: make sure there are valid frames
+		if (projectiles == null)
+		{
+			return;
+		}
+
+		Iterator<EbsProjectileFrame> projectileFrameIterator = projectiles.iterator();
+		Client client = manager.getClient();
+
+		while (projectileFrameIterator.hasNext())
+		{
+			EbsProjectileFrame projectileFrame = projectileFrameIterator.next();
+			int projectileDelayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(projectileFrame.delayMs, 0, 0, 0, Integer.MAX_VALUE);
+			Integer projectileId = projectileFrame.id;
+			String startLocationType = projectileFrame.startLocationType;
+			String endLocationType = projectileFrame.endLocationType;
+			Actor endActor = getActorByLocationType(endLocationType);
+			LocalPoint startLocation = getLocalPointByLocationType(startLocationType, spawnedObject);
+			LocalPoint endLocation = getLocalPointByLocationType(endLocationType, spawnedObject);
+			int startZ = projectileFrame.startZ;
+			int slope = projectileFrame.slope;
+			int startHeight = projectileFrame.startHeight;
+			int endHeight = projectileFrame.endHeight;
+			int durationMs = projectileFrame.durationMs;
+			int durationCycles = (durationMs / 25); // how to go from ms to cycles? this is an approximation
+
+			// guard: make sure the parameters are valid
+			if (projectileId == null || durationCycles <= 0 || startLocation == null || endLocation == null)
+			{
+				continue;
+			}
+
+			manager.getPlugin().scheduleOnClientThread(() -> {
+				// calculate the game cycle here to make sure delay is taken into account
+				int startCycle = client.getGameCycle();
+				int endCycle = startCycle + durationCycles;
+
+				Projectile projectile = client.createProjectile(
+					projectileId,
+					client.getPlane(),
+					startLocation.getX(),
+					startLocation.getY(),
+					startZ,
+					startCycle,
+					endCycle,
+					slope,
+					startHeight,
+					endHeight,
+					endActor,
+					endLocation.getX(),
+					endLocation.getY()
+				);
+
+				client.getProjectiles().addLast(projectile);
+			}, delayMs + projectileDelayMs);
+		}
+	}
+
+	@Nullable
+	private Actor getActorByLocationType(String locationType)
+	{
+		Player localPlayer = manager.getClient().getLocalPlayer();
+		Actor interactingActor = localPlayer.getInteracting();
+
+		switch (locationType)
+		{
+			case CURRENT_TILE_LOCATION_TYPE:
+			case PREVIOUS_TILE_LOCATION_TYPE:
+				return localPlayer;
+			case MODEL_TILE_LOCATION_TYPE:
+				return null;
+			case INTERACTING_TILE_LOCATION_TYPE:
+				return interactingActor;
+		}
+
+		return null;
+	}
+
+	@Nullable
+	private LocalPoint getLocalPointByLocationType(String locationType, SpawnedObject spawnedObject)
+	{
+		Client client = manager.getClient();
+		Actor actor = getActorByLocationType(locationType);
+		LocalPoint actorLocation = null;
+
+		if (actor != null)
+		{
+			actorLocation = actor.getLocalLocation();
+		}
+
+		switch (locationType)
+		{
+			case CURRENT_TILE_LOCATION_TYPE:
+			case INTERACTING_TILE_LOCATION_TYPE:
+				return actorLocation;
+			case PREVIOUS_TILE_LOCATION_TYPE:
+				WorldPoint previousLocation =  manager.getSpawnManager().getPreviousPlayerLocation();
+
+				// guard: fallback to the current location
+				if (previousLocation == null)
+				{
+					return actorLocation;
+				}
+
+				return LocalPoint.fromWorld(client, previousLocation);
+			case MODEL_TILE_LOCATION_TYPE:
+				return spawnedObject.getSpawnPoint().getLocalPoint(client);
+		}
+
+		return null;
 	}
 
 	private void handleEffectFrame(EbsEffectFrame effect, int baseDelayMs, StartEffectHandler startHandler, ResetEffectHandler resetHandler)
@@ -1345,6 +1596,7 @@ public class MarketplaceProduct
 				showEffects,
 				0,
 				spawnedObject,
+				null,
 				true,
 				null
 			);
@@ -1362,7 +1614,7 @@ public class MarketplaceProduct
 			ArrayList<EbsEffect> hideEffects = spawnedObject.getSpawn().hideEffects;
 
 			// guard: check if the hide animation is set
-			if (hideEffects == null)
+			if (hideEffects == null || hideEffects.size() <= 0)
 			{
 				spawnedObject.hide();
 				return;
@@ -1373,6 +1625,7 @@ public class MarketplaceProduct
 				hideEffects,
 				0,
 				spawnedObject,
+				null,
 				true,
 				(resetDelayMs) -> {
 					handleSpawnedObject(spawnedObject, resetDelayMs, () -> {
@@ -1470,25 +1723,38 @@ public class MarketplaceProduct
 	}
 
 	/**
-	 * Calculate how long in milliseconds this product is going to be active
+	 * Calculate how long this product is going to be active
 	 */
-	public long getDurationMs()
+	public Duration getDuration()
 	{
-		if (expiredAt == null || startedAt == null)
-		{
-			return 0;
-		}
+		return Duration.between(startedAt, expiredAt);
+	}
 
-		return Duration.between(startedAt, expiredAt).toMillis();
+	/**
+	 * Calculate how long this product is going to be active
+	 */
+	public Duration getDurationLeft()
+	{
+		Instant now = Instant.now();
+
+		return Duration.between(now, expiredAt);
 	}
 
 	/**
 	 * Calculate the amount of time in milliseconds since this product was started
 	 */
-	public long getPassedMs()
+	public Duration getDurationPassed()
 	{
 		Instant now = Instant.now();
 
-		return Duration.between(startedAt, now).toMillis();
+		return Duration.between(startedAt, now);
+	}
+
+	/**
+	 * Get whether this effect can be seen as potentially dangerous.
+	 */
+	public boolean isDangerous()
+	{
+		return ebsProduct.dangerous;
 	}
 }

@@ -6,6 +6,7 @@ import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.products.EbsMovementFrame;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ActorSpotAnim;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
@@ -108,6 +109,13 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 		// update immediately when effect is added
 		// because this manager is not updating periodically, but event based
 		applyActiveEffects();
+
+		// check whether we should record the original movements for the first time
+		// this is needed because it is possible a onPlayerChanged event was not yet triggered after logging in
+		if (originalMovementAnimations.size() <= 0)
+		{
+			recordOriginalMovementAnimations();
+		}
 	}
 
 	@Override
@@ -127,29 +135,28 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 		}
 	}
 
-	public void setPlayerGraphic(int graphicId, int graphicHeight, long delayMs, long durationMs)
+	public void setPlayerGraphic(int graphicKey, int graphicId, int graphicHeight, long delayMs, long durationMs)
 	{
 		handleLockedPlayerEffect(
 			delayMs,
 			durationMs,
 			() -> graphicLockedUntil,
 			() -> {
-				graphicLockedUntil = Instant.now().plusMillis(durationMs);
+				// locking the player graphic is not needed anymore because multiple graphics (spot anims)
+				// can be spawned on the player at once now! consider removing this completely with a next update
+				// graphicLockedUntil = Instant.now().plusMillis(durationMs);
 			},
 			(player) -> {
-				player.setSpotAnimFrame(0);
-				player.setGraphic(graphicId);
-				player.setGraphicHeight(graphicHeight);
+				player.createSpotAnim(graphicKey, graphicId, graphicHeight, 0);
 			}
 		);
 	}
 
-	public void resetPlayerGraphic(int delayMs)
+	public void resetPlayerGraphic(int graphicKey, int delayMs)
 	{
 		handleLocalPlayer((player) -> {
 			plugin.scheduleOnClientThread(() -> {
-				player.setGraphic(-1);
-				player.setGraphicHeight(0);
+				player.removeSpotAnim(graphicKey);
 			}, delayMs);
 		});
 	}

@@ -1,6 +1,7 @@
 package com.twitchliveloadout.marketplace.products;
 
 public class EbsEquipmentFrame extends EbsEffectFrame {
+	public Integer npcId = -1;
 	public Integer head = -1;
 	public Integer cape = -1;
 	public Integer amulet = -1;

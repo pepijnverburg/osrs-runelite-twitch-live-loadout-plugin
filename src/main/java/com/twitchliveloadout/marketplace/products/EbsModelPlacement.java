@@ -11,4 +11,8 @@ public class EbsModelPlacement {
 	public String radiusType = OUTWARD_RADIUS_TYPE;
 	public Boolean inLineOfSight = false;
 	public EbsRandomRange radiusRange = new EbsRandomRange(DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS);
+	public Integer radiusStepSize = 2;
+	public String rotationType;
+	public EbsRandomRange rotation;
+	public EbsTranslation translation;
 }

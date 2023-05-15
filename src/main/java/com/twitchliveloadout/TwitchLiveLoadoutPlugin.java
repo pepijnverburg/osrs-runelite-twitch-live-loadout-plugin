@@ -57,7 +57,9 @@ import net.runelite.client.task.Schedule;
 import com.google.gson.*;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
+import okhttp3.OkHttpClient;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
@@ -79,13 +81,16 @@ import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
  */
 @PluginDescriptor(
 	name = "Twitch Live Loadout",
-	description = "Send live Equipment, Collection Log, Combat Statistics and more to Twitch Extensions as a streamer.",
+	description = "Show Twitch viewers your collection log, bank, inventory, combat statistics, equipment, skills and more.",
 	enabledByDefault = true
 )
 @Slf4j
 public class TwitchLiveLoadoutPlugin extends Plugin
 {
-	public static final boolean IN_DEVELOPMENT = true;
+	/**
+	 * Debugging flags
+	 */
+	public static final boolean IN_DEVELOPMENT = false;
 
 	@Inject
 	private TwitchLiveLoadoutConfig config;
@@ -106,7 +111,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private ConfigManager configManager;
 
 	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
 	private ClientToolbar clientToolbar;
+
+	@Inject
+	private OkHttpClient httpClient;
+
+	@Inject
+	private Gson gson;
 
 	/**
 	 * Scheduled executor that does not run on the client thread.
@@ -194,7 +208,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		super.startUp();
-
 		initializeExecutors();
 		initializeCanvasListeners();
 		initializeTwitch();
@@ -209,6 +222,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// when someone is already logged in and e.g. disabling and enabling the plugin
 		skillStateManager.updateSkills();
 		syncPlayerInfo();
+		log.info("Twitch Live Loadout has started!");
 	}
 
 	private void initializeExecutors()
@@ -224,7 +238,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			twitchState = new TwitchState(this, config, canvasListener);
-			twitchApi = new TwitchApi(this, client, config, chatMessageManager);
+			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}
@@ -237,7 +251,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
-			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager);
+			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager, overlayManager, gson);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 			questManager = new QuestManager(this, twitchState, client);
@@ -289,6 +303,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		shutDownTwitch();
 		shutDownCanvasListeners();
 		shutDownSchedulers();
+		log.info("Twitch Live Loadout has stopped!");
 	}
 
 	private void shutDownCanvasListeners()
@@ -439,6 +454,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					lastPlayerName = playerName;
 				}
 
+				// update this information periodically because it is possible the plugin
+				// is being installed or activated after e.g. the AccountHashChanged event fires
 				twitchState.setAccountHash(accountHash);
 				twitchState.setAccountType(accountType);
 			});
@@ -802,6 +819,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
+	 * Handle account hash changes alongside the polling done for this as well
+	 */
+	@Subscribe
+	public void onAccountHashChanged(AccountHashChanged accountHashChanged)
+	{
+		try {
+			twitchState.setAccountHash(client.getAccountHash());
+		} catch (Exception exception) {
+			log.warn("Could not handle account hash event: ", exception);
+		}
+	}
+
+	/**
 	 * Handle player changes
 	 */
 	@Subscribe
@@ -854,7 +884,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			String key = configChanged.getKey();
 
-
 			// Handle keys that should trigger an update of the state as well.
 			// Note that on load these events are not triggered, meaning that
 			// in the constructor of the TwitchState class one should also load
@@ -875,6 +904,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					break;
 				case "twitchTheme":
 					twitchState.setTwitchTheme(config.twitchTheme());
+					break;
+				case "marketplaceEnabled":
+					pluginPanel.getMarketplacePanel().updateTexts();
+
+					// if it is being disabled immediately remove all active products and effects
+					// this is the most reliable to properly remove everything because ticks are based on this settting
+					if (!config.marketplaceEnabled())
+					{
+						marketplaceManager.disable();
+					}
 					break;
 			}
 
@@ -1113,8 +1152,27 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		return !isDisabledGeneral && !isDisabledDangerous;
 	}
 
+	public boolean canPerformDangerousEffects()
+	{
+		boolean isDisabledGeneral = !config.marketplaceEnabled();
+		boolean isDisabledDangerous = config.marketplaceProtectionEnabled() && isDangerousAccountType();
+
+		return !isDisabledGeneral && !isDisabledDangerous;
+	}
+
 	public boolean isLoggedIn()
 	{
+		return isLoggedIn(false);
+	}
+
+	public boolean isLoggedIn(boolean considerTwitchReviewMode)
+	{
+		final boolean forceIsLoggedIn = considerTwitchReviewMode && config.twitchReviewModeEnabled() && IN_DEVELOPMENT;
+
+		if (forceIsLoggedIn)
+		{
+			return true;
+		}
 
 		try {
 			// guard: check game state

@@ -340,10 +340,11 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "fightStatisticsProtectionEnabled",
-			name = "Enable Hardcore protection",
-			description = "Disable tracking of fight stats on Hardcore Ironmen.",
+			name = "Disable tracking on Hardcores",
+			description = "Disable tracking of fight stats on Hardcore Ironmen to interfere as little as possible with combat.",
 			position = 16,
-			section = combatSection
+			section = combatSection,
+			warning = "Are you sure you want to toggle fight stats to be tracked on Hardcore Ironmen?"
 	)
 	default boolean fightStatisticsProtectionEnabled()
 	{
@@ -513,7 +514,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 			description = "Automatically disable random events that could be dangerous for Hardcore Ironmen.",
 			position = 6,
 			hidden = false,
-			section = marketplaceSection
+			section = marketplaceSection,
+			warning = "Disabling this allows Random Events that are potentially dangerous in terms of gameplay to be activated by viewers when you have them configured. Are you sure?"
 	)
 	default boolean marketplaceProtectionEnabled()
 	{
@@ -535,7 +537,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "marketplaceStartOnLoadedAt",
-			name = "Start on time of received",
+			name = "Correct transaction delay",
 			description = "Base the expiry of the effects when it is received and not the transaction time, which can have delays.",
 			position = 10,
 			hidden = false,
@@ -635,4 +637,30 @@ public interface TwitchLiveLoadoutConfig extends Config
 			position = 99
 	)
 	String advancedSection = "advanced";
+
+	@ConfigItem(
+			keyName = "twitchReviewModeEnabled",
+			name = "Twitch review mode",
+			description = "Force syncing of data while being logged out, meant for the Twitch review process.",
+			position = 2,
+			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			section = advancedSection
+	)
+	default boolean twitchReviewModeEnabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "debugMenuOptionClicks",
+			name = "Debug menu clicks",
+			description = "Debug menu option click events.",
+			position = 4,
+			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			section = advancedSection
+	)
+	default boolean debugMenuOptionClicks()
+	{
+		return false;
+	}
 }

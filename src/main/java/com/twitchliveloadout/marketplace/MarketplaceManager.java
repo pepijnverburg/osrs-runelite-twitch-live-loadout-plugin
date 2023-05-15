@@ -13,6 +13,8 @@ import com.twitchliveloadout.marketplace.notifications.NotificationManager;
 import com.twitchliveloadout.marketplace.products.*;
 import com.twitchliveloadout.marketplace.sounds.SoundManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
+import com.twitchliveloadout.marketplace.spawns.SpawnOverheadManager;
+import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
@@ -28,6 +30,7 @@ import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.PlayerChanged;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.ui.overlay.OverlayManager;
 import okhttp3.Response;
 
 import java.time.Instant;
@@ -38,7 +41,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
+import static com.twitchliveloadout.TwitchLiveLoadoutPlugin.IN_DEVELOPMENT;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.STRESS_TEST_ACTIVE_PRODUCTS_ENABLED;
 
 @Slf4j
 public class MarketplaceManager {
@@ -58,6 +62,9 @@ public class MarketplaceManager {
 	private final SpawnManager spawnManager;
 
 	@Getter
+	private final SpawnOverheadManager spawnOverheadManager;
+
+	@Getter
 	private final AnimationManager animationManager;
 
 	@Getter
@@ -74,6 +81,9 @@ public class MarketplaceManager {
 
 	@Getter
 	private final SoundManager soundManager;
+
+	@Getter
+	private final Gson gson;
 
 	/**
 	 * List to keep track of all the active products
@@ -123,19 +133,21 @@ public class MarketplaceManager {
 	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap<>();
 	private Instant sharedCooldownUntil;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager)
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson)
 	{
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
 		this.twitchState = twitchState;
 		this.client = client;
 		this.config = config;
+		this.gson = gson;
 		this.spawnManager = new SpawnManager(plugin, client);
+		this.spawnOverheadManager = new SpawnOverheadManager(client, overlayManager);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
 		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client);
 		this.widgetManager = new WidgetManager(plugin, client);
-		this.menuManager = new MenuManager();
+		this.menuManager = new MenuManager(config);
 		this.soundManager = new SoundManager(client, config);
 	}
 
@@ -174,7 +186,7 @@ public class MarketplaceManager {
 					// try catch for each individual transaction to not have one invalid transaction
 					// cancel all others with the top-level try-catch in this function
 					try {
-						TwitchTransaction twitchTransaction = new Gson().fromJson(element, TwitchTransaction.class);
+						TwitchTransaction twitchTransaction = gson.fromJson(element, TwitchTransaction.class);
 						String transactionId = twitchTransaction.id;
 
 						// update the ID to tell for next requests to fetch newer transactions
@@ -187,7 +199,8 @@ public class MarketplaceManager {
 						// guard: check if this transaction is already handled
 						// this is required because we have an offset on the last checked at date
 						// because with the HTTP request delays it is possible to miss a transaction
-						if (handledTransactionIds.contains(transactionId)) {
+						if (handledTransactionIds.contains(transactionId))
+						{
 							log.info("Skipping Twitch transaction because it was already handled: " + transactionId);
 							return;
 						}
@@ -195,6 +208,12 @@ public class MarketplaceManager {
 						handledTransactionIds.add(transactionId);
 						newTransactions.add(twitchTransaction);
 						log.info("Queued a new Twitch transaction with ID: " + transactionId);
+
+						// when stress testing we remove the transaction ID, so it can be triggered again
+						if (isStressTesting())
+						{
+							handledTransactionIds.remove(transactionId);
+						}
 					} catch (Exception exception) {
 						log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
 					}
@@ -274,19 +293,11 @@ public class MarketplaceManager {
 			// try to handle each individual transaction to prevent one invalid transaction in the queue
 			// to cancel all other transactions and with that all their effects
 			try {
-				TwitchProduct twitchProduct = transaction.product_data;
+				TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
+				StreamerProduct streamerProduct = getStreamerProductByTransaction(transaction);
 
-				// guard: make sure the twitch product is valid
-				if (twitchProduct == null)
-				{
-					continue;
-				}
-
-				String twitchProductSku = twitchProduct.sku;
-				StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
-
-				// guard: make sure a streamer product is configured for this SKU
-				if (streamerProduct == null)
+				// guard: make sure a products are exist for this transaction
+				if (twitchProduct == null || streamerProduct == null)
 				{
 					continue;
 				}
@@ -298,7 +309,7 @@ public class MarketplaceManager {
 				EbsProduct ebsProduct = getEbsProductById(ebsProductId);
 				boolean isProductCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
 				boolean isSharedCoolingDown = sharedCooldownUntil != null && now.isBefore(sharedCooldownUntil);
-				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled;
+				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled && ebsProduct.behaviour != null;
 
 				// guard: make sure this product is not cooling down
 				// this can be the case when two transactions are done at the same time
@@ -308,15 +319,34 @@ public class MarketplaceManager {
 				}
 
 				// guard: make sure an EBS product is configured for this streamer product
+				// we will not remove from the queue because the EBS product might need to be loaded still
 				if (!isValidEbsProduct)
 				{
 					continue;
 				}
 
+				EbsModelPlacement requiredModelPlacement = ebsProduct.behaviour.requiredModelPlacement;
+
+				// guard: check if at least one spawn point is required for this product to be handled
+				// if not then it will stay in the queue until there is a spawn point available
+				// this allows support for tight spaces or when many random events are active to not waste
+				// any incoming donations
+				if (requiredModelPlacement != null)
+				{
+
+					SpawnPoint spawnPoint = spawnManager.getSpawnPoint(requiredModelPlacement, null);
+
+					// guard: continue with the queue and don't remove from queue because we will wait for a valid spawn point
+					if (spawnPoint == null)
+					{
+						continue;
+					}
+				}
+
 				// keep this info verbose as it is a way of logging to debug any issues that might occur
 				// when random events don't trigger and support is required
 				log.info("Found a valid transaction that we can start: " + transaction.id);
-				log.info("Twitch product SKU: " + twitchProduct.sku);
+				log.info("Twitch product SKU: " + streamerProduct.twitchProductSku);
 				log.info("Streamer product name: " + streamerProduct.name);
 				log.info("Ebs product ID: " + ebsProduct.id);
 
@@ -325,11 +355,25 @@ public class MarketplaceManager {
 				// to queue transactions that might receive valid product data later
 				queuedTransactions.remove(transaction);
 
+				// guard: check if the version number is supported
+				if (ebsProduct.version != MarketplaceConstants.EBS_REQUIRED_PRODUCT_VERSION)
+				{
+					log.info("Skipping transaction the version number of the EBS product ("+ ebsProduct.version +") is not compatible. Transaction ID: " + transaction.id);
+					continue;
+				}
+
 				// guard: check for hardcore protection and dangerous random events
-				if (ebsProduct.dangerous && plugin.isDangerousAccountType() && config.marketplaceProtectionEnabled())
+				if (ebsProduct.dangerous && !plugin.canPerformDangerousEffects())
 				{
 					log.info("Skipping transaction because it is deemed dangerous and protection is on: " + transaction.id);
 					continue;
+				}
+
+				// when stress testing override the timestamp to be now to simulate the transaction expiry
+				// to be later in the future for testing purposes.
+				if (isStressTesting())
+				{
+					transaction.timestamp = Instant.now().toString();
 				}
 
 				// create a new marketplace product where all the other products
@@ -380,6 +424,39 @@ public class MarketplaceManager {
 	}
 
 	/**
+	 * Rerun a transaction in full by removing the ID from the handled list and adjusting the timestamp it is received.
+	 */
+	public void rerunTransaction(TwitchTransaction transaction)
+	{
+
+		// guard: make sure the transaction is valid
+		if (transaction == null)
+		{
+			return;
+		}
+
+		String transactionId = transaction.id;
+
+		// guard: don't rerun the transaction when it is already active
+		for (MarketplaceProduct marketplaceProduct : activeProducts)
+		{
+			if (marketplaceProduct.getTransaction().id.equals(transactionId))
+			{
+				return;
+			}
+		}
+
+		log.info("A transaction is going to be rerun, transaction ID: "+ transactionId);
+
+		// update the timestamp so it appears to be a recent transaction
+		transaction.timestamp = Instant.now().toString();
+
+		// remove from the handled transactions and queue once again
+		handledTransactionIds.remove(transactionId);
+		queuedTransactions.add(transaction);
+	}
+
+	/**
 	 * Update the cooldown period of a streamer product that will block future usage for x seconds
 	 */
 	private void updateCooldown(StreamerProduct streamerProduct)
@@ -424,20 +501,22 @@ public class MarketplaceManager {
 	public void cleanExpiredProducts()
 	{
 		handleActiveProducts((marketplaceProduct) -> {
+			boolean skipDangerous = marketplaceProduct.isDangerous() && !plugin.canPerformDangerousEffects();
 
-			// guard: check if the product is not expired yet
-			if (!marketplaceProduct.isExpired())
+			// guard: check if the product is not expired yet and is allowed to stay active
+			if (!marketplaceProduct.isExpired() && !skipDangerous)
 			{
 				return;
 			}
 
-			marketplaceProduct.stop();
+			marketplaceProduct.stop(false);
 			activeProducts.remove(marketplaceProduct);
 			updateMarketplacePanel();
 
 			String transactionId = marketplaceProduct.getTransaction().id;
 			String ebsProductId = marketplaceProduct.getEbsProduct().id;
-			log.info("Cleaned an expired marketplace product ("+ ebsProductId +") for transaction: "+ transactionId);
+			int spawnAmount = marketplaceProduct.getSpawnAmount();
+			log.info("Cleaned an expired marketplace product (EBS ID: "+ ebsProductId +", spawn amount: "+ spawnAmount +") for transaction: "+ transactionId);
 		});
 	}
 
@@ -465,7 +544,7 @@ public class MarketplaceManager {
 			rawStreamerProducts.forEach((element) -> {
 				try {
 					JsonObject rawStreamerProduct = element.getAsJsonObject();
-					StreamerProduct streamerProduct = new Gson().fromJson(rawStreamerProduct, StreamerProduct.class);
+					StreamerProduct streamerProduct = gson.fromJson(rawStreamerProduct, StreamerProduct.class);
 					newStreamerProducts.add(streamerProduct);
 				} catch (Exception exception) {
 					// empty
@@ -492,7 +571,8 @@ public class MarketplaceManager {
 
 		// guard: skip updating the EBS products when there are no streamer products found
 		// this prevents requests to be made by streamers who have not configured the marketplace
-		// NOTE: we do allow an initial fetch to get an initial set of EBS products.
+		// NOTE: we do allow an initial fetch to get an initial set of EBS products in case the
+		// streamer products are still being fetched
 		if (streamerProducts.size() <= 0 && ebsProducts.size() > 0)
 		{
 			return;
@@ -520,7 +600,7 @@ public class MarketplaceManager {
 				// try-catch for every parse, to not let all products crash on one misconfiguration
 				products.forEach((element) -> {
 					try {
-						EbsProduct ebsProduct = new Gson().fromJson(element, EbsProduct.class);
+						EbsProduct ebsProduct = gson.fromJson(element, EbsProduct.class);
 						newEbsProducts.add(ebsProduct);
 					} catch (Exception exception) {
 						// empty?
@@ -618,7 +698,7 @@ public class MarketplaceManager {
 		}
 
 		// custom timer running on client ticks every x ms for more heavy things to be executed
-		// this is because the @Schedule is delaying now and then and some of the processes in here are time-sensitive
+		// this is because the @Schedule is delaying very often and some of the processes in here are time-sensitive
 		if (passTimerOnce(MarketplaceTimer.RESPAWNS, now))
 		{
 			// respawn all spawned objects that require it
@@ -670,6 +750,7 @@ public class MarketplaceManager {
 		widgetManager.onGameTick();
 		transmogManager.onGameTick();
 		animationManager.onGameTick();
+		spawnOverheadManager.onGameTick();
 	}
 
 	/**
@@ -701,6 +782,36 @@ public class MarketplaceManager {
 		}
 
 		return isPassed;
+	}
+
+	public StreamerProduct getStreamerProductByTransaction(TwitchTransaction transaction)
+	{
+		TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
+
+		// guard: make sure the twitch product is valid
+		if (twitchProduct == null)
+		{
+			return null;
+		}
+
+		String twitchProductSku = twitchProduct.sku;
+		StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
+
+		return streamerProduct;
+	}
+
+	public TwitchProduct getTwitchProductByTransaction(TwitchTransaction transaction)
+	{
+
+		// guard: make sure the transaction is valid
+		if (transaction == null)
+		{
+			return null;
+		}
+
+		TwitchProduct twitchProduct = transaction.product_data;
+
+		return twitchProduct;
 	}
 
 	private StreamerProduct getStreamerProductBySku(String twitchProductSku)
@@ -740,11 +851,13 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Stop all active products
+	 * Force stop all active products
 	 */
-	public void stopActiveProducts()
+	public void forceStopActiveProducts()
 	{
-		handleActiveProducts(MarketplaceProduct::stop);
+		handleActiveProducts((product) -> {
+			product.stop(true);
+		});
 	}
 
 	/**
@@ -779,16 +892,32 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Handle plugin shutdown / marketplace disable
+	 * Handle marketplace disable
 	 */
-	public void shutDown()
+	public void disable()
 	{
+		forceStopActiveProducts();
 		animationManager.forceCleanAllEffects();
 		transmogManager.forceCleanAllEffects();
 		menuManager.forceCleanAllEffects();
 		widgetManager.forceCleanAllEffects();
 		widgetManager.hideCoveringOverlays();
-		stopActiveProducts();
+		notificationManager.forceHideOverheadText();
+		spawnOverheadManager.forceCleanAllEffects();
+	}
+
+	/**
+	 * Handle plugin shutdown
+	 */
+	public void shutDown()
+	{
+		disable();
+		spawnOverheadManager.removeOverlay();
+	}
+
+	public boolean isStressTesting()
+	{
+		return IN_DEVELOPMENT && STRESS_TEST_ACTIVE_PRODUCTS_ENABLED;
 	}
 
 	public interface EmptyHandler {

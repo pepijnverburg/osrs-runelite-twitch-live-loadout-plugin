@@ -102,13 +102,21 @@ public class TwitchState {
 		currentState.addProperty(TwitchStateEntry.PLAYER_NAME.getKey(), playerName);
 	}
 
-	public void setAccountHash(long accountHash)
+	public void setAccountHash(Long accountHash)
 	{
 		currentState.addProperty(TwitchStateEntry.ACCOUNT_HASH.getKey(), accountHash);
 	}
 
 	public void setAccountType(AccountType accountType)
 	{
+
+		// guard: skip when account type is not valid
+		// this happens mainly when the client is booting up
+		if (accountType == null)
+		{
+			return;
+		}
+
 		currentState.addProperty(TwitchStateEntry.ACCOUNT_TYPE.getKey(), accountType.toString());
 	}
 
@@ -546,11 +554,17 @@ public class TwitchState {
 
 	private JsonObject verifyClientActivityStatus(JsonObject state)
 	{
-		// check whether this window is actually logged in
-		// and check for window focus to prevent syncing of multiple account
-		// if not we will clear the state but still send over a message
-		// because this can help to indicate a connection is made when setting up the extension
-		if (!plugin.isLoggedIn())
+		final JsonElement accountHashElement = state.get(TwitchStateEntry.ACCOUNT_HASH.getKey());
+		final Long accountHash = (accountHashElement == null ? -1 : accountHashElement.getAsLong());
+
+		// only sync this account when a valid account hash
+		if (accountHash == null || accountHash == -1)
+		{
+			state = new JsonObject();
+		}
+
+		// only sync this account when logged in
+		if (!plugin.isLoggedIn(true))
 		{
 			state = new JsonObject();
 		}
@@ -561,10 +575,11 @@ public class TwitchState {
 	private JsonObject addConnectionStatus(JsonObject state)
 	{
 		final JsonObject connectionStatus = new JsonObject();
+		final boolean isLoggedIn = plugin.isLoggedIn(true);
 
 		// for now always true?
 		connectionStatus.addProperty("status", true);
-		connectionStatus.addProperty("isLoggedIn", plugin.isLoggedIn());
+		connectionStatus.addProperty("isLoggedIn", isLoggedIn);
 
 		state.add(TwitchStateEntry.CONNECTION_STATUS.getKey(), connectionStatus);
 		return state;
@@ -593,11 +608,15 @@ public class TwitchState {
 		// clear everything when sync is not enabled to clear everything for all viewers
 		if (!config.syncEnabled())
 		{
-			state = new JsonObject();
 
 			// set null for all keys to make sure all viewers have their state cleared as well
 			for (TwitchStateEntry stateEntry : TwitchStateEntry.values())
 			{
+				if (!stateEntry.isNullable())
+				{
+					continue;
+				}
+
 				state.add(stateEntry.getKey(), null);
 			}
 		}

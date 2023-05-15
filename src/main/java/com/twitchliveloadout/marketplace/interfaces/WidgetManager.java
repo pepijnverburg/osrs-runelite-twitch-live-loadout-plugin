@@ -85,6 +85,12 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 			// guard: check if already existing
 			if (coveringOverlay != null)
 			{
+
+				// initialize the overlay in case it was set to hidden after shutdown
+				if (coveringOverlay.isHidden())
+				{
+					initializeCoveringOverlay(coveringOverlay);
+				}
 				return;
 			}
 
@@ -92,21 +98,33 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 			coveringOverlay = parent.createChild(WidgetType.RECTANGLE);
 			coveringOverlays.put(parent, coveringOverlay);
 
-			// set to default properties
-			coveringOverlay.setHidden(false);
-			coveringOverlay.setFilled(true);
-			coveringOverlay.setType(3);
-			coveringOverlay.setOpacity(255);
-			coveringOverlay.setWidthMode(1);
-			coveringOverlay.setHeightMode(1);
-			coveringOverlay.setXPositionMode(1);
-			coveringOverlay.setYPositionMode(1);
-			coveringOverlay.setModelType(1);
-			coveringOverlay.setModelId(-1);
-			coveringOverlay.setAnimationId(-1);
-			coveringOverlay.setModelZoom(1);
-			coveringOverlay.revalidate();
+			initializeCoveringOverlay(coveringOverlay);
 		});
+	}
+
+	private void initializeCoveringOverlay(Widget coveringOverlay)
+	{
+
+		// guard: make sure overlay is valid
+		if (coveringOverlay == null)
+		{
+			return;
+		}
+
+		// set to default properties
+		coveringOverlay.setHidden(false);
+		coveringOverlay.setFilled(true);
+		coveringOverlay.setType(3);
+		coveringOverlay.setOpacity(255);
+		coveringOverlay.setWidthMode(1);
+		coveringOverlay.setHeightMode(1);
+		coveringOverlay.setXPositionMode(1);
+		coveringOverlay.setYPositionMode(1);
+		coveringOverlay.setModelType(1);
+		coveringOverlay.setModelId(-1);
+		coveringOverlay.setAnimationId(-1);
+		coveringOverlay.setModelZoom(1);
+		coveringOverlay.revalidate();
 	}
 
 	@Override
@@ -127,6 +145,7 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 			registerOriginalWidget(widget);
 			String effectType = widgetFrame.effectType;
 			Integer widgetType = widgetFrame.widgetType;
+			Integer contentType = widgetFrame.contentType;
 			String text = widgetFrame.text;
 			Integer textColor = widgetFrame.textColor;
 			Integer opacity = widgetFrame.opacity;
@@ -148,6 +167,11 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 				if (widgetType != null)
 				{
 					widget.setType(widgetType);
+				}
+
+				if (contentType != null)
+				{
+					widget.setContentType(contentType);
 				}
 
 				if (text != null)
@@ -222,6 +246,7 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 			// restore the properties of the widget
 			widget.setHidden(originalWidget.getHidden());
 			widget.setType(originalWidget.getType());
+			widget.setContentType(originalWidget.getContentType());
 			widget.setText(originalWidget.getText());
 			widget.setTextColor(originalWidget.getTextColor());
 			widget.setOpacity(originalWidget.getOpacity());

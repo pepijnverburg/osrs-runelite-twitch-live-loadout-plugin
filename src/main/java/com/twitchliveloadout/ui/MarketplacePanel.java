@@ -23,6 +23,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class MarketplacePanel extends JPanel
 {
 	private static final String PLAYBACK_PANEL = "PLAYBACK_PANEL";
+	private final static String SUCCESS_TEXT_COLOR = "#00ff00";
+	private final static String WARNING_TEXT_COLOR = "#ffa500";
+	private final static String ERROR_TEXT_COLOR = "#ff0000";
 
 	private final GridBagConstraints constraints = new GridBagConstraints();
 	private final GridBagConstraints productListConstraints = new GridBagConstraints();
@@ -31,7 +34,7 @@ public class MarketplacePanel extends JPanel
 	private final JPanel wrapper = new JPanel(cardLayout);
 
 	private final GridBagConstraints playbackConstraints = new GridBagConstraints();
-	private final TextPanel statusPanel = new TextPanel("Status:", "<html><b color='orange'>SETTING UP</b></html>");
+	private final TextPanel statusPanel = new TextPanel("Status:", "<html><b color='"+ WARNING_TEXT_COLOR +"'>SETTING UP</b></html>");
 	private final TextPanel availableDonationsPanel = new TextPanel("Configured Donations:", "<html>No donations are configured.</html>");
 	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Donations:", "<html>No donations are queued.</html>");
 
@@ -178,7 +181,7 @@ public class MarketplacePanel extends JPanel
 		// initialize all the panel slots
 		for (int i = 0; i < MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY; i++)
 		{
-			TwitchTransactionPanel twitchTransactionPanel = new TwitchTransactionPanel();
+			TwitchTransactionPanel twitchTransactionPanel = new TwitchTransactionPanel(this, marketplaceManager);
 			transactionPanels.add(twitchTransactionPanel);
 			transactionListPanel.add(twitchTransactionPanel, transactionListConstraints);
 			transactionListConstraints.gridy++;
@@ -202,10 +205,10 @@ public class MarketplacePanel extends JPanel
 
 		// first clear all the panels
 		LambdaIterator.handleAll(productPanels, (productPanel) -> {
-			productPanel.setMarketplaceProduct(null);
+			productPanel.setEntity(null);
 		});
 		LambdaIterator.handleAll(transactionPanels, (transactionPanel) -> {
-			transactionPanel.setTwitchTransaction(null);
+			transactionPanel.setEntity(null);
 		});
 
 		// directly add all the products again in the new order
@@ -220,7 +223,7 @@ public class MarketplacePanel extends JPanel
 				break;
 			}
 
-			panel.setMarketplaceProduct(marketplaceProduct);
+			panel.setEntity(marketplaceProduct);
 			marketplaceProductPanelIndex ++;
 		}
 
@@ -236,7 +239,7 @@ public class MarketplacePanel extends JPanel
 				break;
 			}
 
-			panel.setTwitchTransaction(twitchTransaction);
+			panel.setEntity(twitchTransaction);
 			twitchTransactionPanelIndex ++;
 		}
 
@@ -271,17 +274,22 @@ public class MarketplacePanel extends JPanel
 		final int activeProductAmount = activeProducts.size();
 		final int archivedTransactionAmount = archivedTransactions.size();
 
-		String statusText = "<html><b color='green'>Receiving donations is ACTIVE</b></html>";
-		String availableDonationsText = "<html>You have <b color='green'>configured "+ streamerProductAmount +" donations</b>.</html>";
+		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving donations is ACTIVE</b></html>";
+		String availableDonationsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ streamerProductAmount +" donations</b>.</html>";
 
 		if (!marketplaceManager.isActive())
 		{
-			statusText = "<html><b color='red'>Donations are temporarily PAUSED</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Donations are temporarily PAUSED</b></html>";
+		}
+
+		if (!marketplaceManager.getConfig().marketplaceEnabled())
+		{
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event Donations are DISABLED in the plugin settings</b></html>";
 		}
 
 		if (streamerProductAmount <= 0)
 		{
-			availableDonationsText = "<html>There are <b color='red'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
+			availableDonationsText = "<html>There are <b color='"+ ERROR_TEXT_COLOR +"'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
 		}
 
 		statusPanel.setText(statusText);
@@ -330,12 +338,5 @@ public class MarketplacePanel extends JPanel
 
 	public interface ButtonCallback {
 		public void execute();
-	}
-
-	public static String humanizeDuration(Duration duration) {
-		return duration.toString()
-				.substring(2)
-				.replaceAll("(\\d[HMS])(?!$)", "$1 ")
-				.toLowerCase();
 	}
 }

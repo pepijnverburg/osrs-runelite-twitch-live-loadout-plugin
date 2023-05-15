@@ -105,6 +105,14 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 			currentEquipmentIds[slotId] = newEquipmentId;
 		}
 
+		// update any NPC transmogs
+		Integer npcId = equipmentFrame.npcId;
+
+		if (npcId != null && npcId >= 0)
+		{
+			composition.setTransformedNpcId(npcId);
+		}
+
 		// apply the new equipment
 		composition.setHash();
 	}
@@ -122,8 +130,16 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 
 		String playerName = player.getName();
 		PlayerComposition composition = player.getPlayerComposition();
+		EbsEquipmentFrame equipmentFrame = effect.getFrame();
 		int[] originalEquipmentIds = originalEquipmentIdsLookup.get(playerName);
 		int[] currentEquipmentIds = composition.getEquipmentIds();
+		Integer npcId = equipmentFrame.npcId;
+
+		// reset any NPC transmogs
+		if (npcId != null && npcId >= 0)
+		{
+			composition.setTransformedNpcId(-1);
+		}
 
 		// guard: make sure the equipment ids are valid
 		if (originalEquipmentIds == null || currentEquipmentIds == null)

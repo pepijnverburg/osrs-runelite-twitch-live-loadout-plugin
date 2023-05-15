@@ -3,6 +3,9 @@ package com.twitchliveloadout.marketplace.spawns;
 import com.google.common.collect.EvictingQueue;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
+import com.twitchliveloadout.marketplace.products.EbsModelPlacement;
+import com.twitchliveloadout.marketplace.products.EbsRandomRange;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -218,9 +221,9 @@ public class SpawnManager {
 		}
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
+	public SpawnPoint getOutwardSpawnPoint(int maxRadius, int radiusStepSize, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
-		return getOutwardSpawnPoint(1, 2, maxRadius, inLineOfSight, referenceWorldPoint);
+		return getOutwardSpawnPoint(1, radiusStepSize, maxRadius, inLineOfSight, referenceWorldPoint);
 	}
 
 	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
@@ -237,6 +240,53 @@ public class SpawnManager {
 		}
 
 		return null;
+	}
+
+	public SpawnPoint getSpawnPoint(EbsModelPlacement placement, SpawnedObject spawnedObject)
+	{
+
+		// make sure there are valid placement parameters
+		if (placement == null)
+		{
+			placement = new EbsModelPlacement();
+		}
+
+		EbsRandomRange radiusRange = placement.radiusRange;
+		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
+		int radiusStepSize  = placement.radiusStepSize;
+		String radiusType = placement.radiusType;
+		String locationType = placement.locationType;
+		Boolean inLineOfSight = placement.inLineOfSight;
+		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
+
+		// check if we should change the reference to the previous tile
+		// NOTE: current tile is not needed to be handled, because this is the default!
+		if (PREVIOUS_TILE_LOCATION_TYPE.equals(locationType))
+		{
+			referenceWorldPoint = getPreviousPlayerLocation();
+
+			if (referenceWorldPoint == null)
+			{
+				return null;
+			}
+		}
+
+		if (MODEL_TILE_LOCATION_TYPE.equals(locationType) && spawnedObject != null)
+		{
+			referenceWorldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+		}
+
+		if (NO_RADIUS_TYPE.equals(radiusType))
+		{
+			return new SpawnPoint(referenceWorldPoint);
+		}
+
+		if (OUTWARD_RADIUS_TYPE.equals(radiusType))
+		{
+			return getOutwardSpawnPoint(radius, radiusStepSize, inLineOfSight, referenceWorldPoint);
+		}
+
+		return getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
 	}
 
 	public SpawnPoint getSpawnPoint(int radius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
@@ -301,8 +351,8 @@ public class SpawnManager {
 				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
 				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
-				// guard: make sure the tile is in line of sight
-				if (inLineOfSight && !playerArea.hasLineOfSightTo(client, worldPoint))
+				// guard: check if this world point is already taken by another spawned object
+				if (objectPlacements.containsKey(worldPoint))
 				{
 					continue;
 				}
@@ -315,8 +365,8 @@ public class SpawnManager {
 					continue;
 				}
 
-				// guard: check if this world point is already taken by another spawned object
-				if (objectPlacements.containsKey(worldPoint))
+				// guard: make sure the tile is in line of sight
+				if (inLineOfSight && !playerArea.hasLineOfSightTo(client, worldPoint))
 				{
 					continue;
 				}

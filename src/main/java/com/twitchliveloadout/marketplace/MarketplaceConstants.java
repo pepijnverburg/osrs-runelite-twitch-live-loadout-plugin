@@ -1,16 +1,26 @@
 package com.twitchliveloadout.marketplace;
 
 public class MarketplaceConstants {
+	public static final int EBS_REQUIRED_PRODUCT_VERSION = 1;
+
+	public static final boolean STRESS_TEST_ACTIVE_PRODUCTS_ENABLED = false;
 	public static final int MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY = 50;
 	public static final int MAX_TRANSACTION_AMOUNT_IN_MEMORY = 50;
 	public static final int TRANSACTION_DELAY_CORRECTION_MS = 1 * 200;
+	public static final int TICK_DURATION_MS = 600;
 
 	public static final String CURRENT_TILE_LOCATION_TYPE = "current-tile";
 	public static final String PREVIOUS_TILE_LOCATION_TYPE = "previous-tile";
+	public static final String MODEL_TILE_LOCATION_TYPE = "model-tile";
+	public static final String INTERACTING_TILE_LOCATION_TYPE = "interacting-tile";
 
 	public static final String NONE_FOLLOW_TYPE = "none";
 	public static final String IN_RADIUS_FOLLOW_TYPE = "in-radius";
 	public static final String PREVIOUS_TILE_FOLLOW_TYPE = "behind-player";
+
+	public static final String TRANSLATE_X_AXIS = "x";
+	public static final String TRANSLATE_Y_AXIS = "y";
+	public static final String TRANSLATE_Z_AXIS = "z";
 
 	public static final double RUNELITE_OBJECT_RADIUS_PER_TILE = 60d;
 	public static final double RUNELITE_OBJECT_FULL_ROTATION = 2047d;
@@ -23,10 +33,15 @@ public class MarketplaceConstants {
 	public static final int ABSOLUTE_MAX_RADIUS = REGION_SIZE;
 	public static final String DEFAULT_RADIUS_TYPE = "radius";
 	public static final String OUTWARD_RADIUS_TYPE = "outward-radius";
+	public static final String NO_RADIUS_TYPE = "no-radius";
 
+	public static final String NO_ROTATION_TYPE = "none";
+	public static final String FIXED_ROTATION_TYPE = "fixed";
 	public static final String RANDOM_ROTATION_TYPE = "random";
 	public static final String PLAYER_ROTATION_TYPE = "player";
 	public static final String INTERACTING_ROTATION_TYPE = "interacting";
+	public static final String MIRROR_PLAYER_ROTATION_TYPE = "mirror-player";
+	public static final String MIRROR_INTERACTING_ROTATION_TYPE = "mirror-interacting";
 
 	public static final int PLAYER_TILE_HISTORY_SIZE = 10;
 
@@ -42,6 +57,7 @@ public class MarketplaceConstants {
 
 	public static final int WIDGET_EFFECT_MAX_SIZE = 100;
 	public static final int MENU_EFFECT_MAX_SIZE = 100;
+	public static final int SPAWN_OVERHEAD_EFFECT_MAX_SIZE = 100;
 	public static final String DISABLE_MENU_OPTION_TYPE = "disable";
 	public static final String DISABLE_INTERFACE_WIDGET_TYPE = "disable";
 	public static final String ALTER_INTERFACE_WIDGET_TYPE = "alter";
@@ -58,6 +74,11 @@ public class MarketplaceConstants {
 	public static final String INDIVIDUAL_SPAWN_POINT_TYPE = "individual";
 	public static final String GROUP_SPAWN_POINT_TYPE = "group";
 	public static final int MAX_MODEL_SCALE = 500;
+	public static final int MIN_MODEL_TRANSLATE = -1024;
+	public static final int MAX_MODEL_TRANSLATE = 1024;
+
+	public static final String PRODUCT_STATE_TYPE = "product";
+	public static final String OBJECT_STATE_TYPE = "object";
 
 	public static final int MOVEMENT_EFFECT_MAX_SIZE = 100;
 	public static final int TRANSMOG_EFFECT_MAX_SIZE = 100;

@@ -3,11 +3,13 @@ package com.twitchliveloadout.marketplace.notifications;
 import com.google.common.collect.EvictingQueue;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.MarketplaceDuration;
+import com.twitchliveloadout.marketplace.MarketplaceEffect;
+import com.twitchliveloadout.marketplace.MarketplaceMessages;
 import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
-import jdk.internal.jline.internal.Log;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -52,7 +54,7 @@ public class NotificationManager {
 		handleNotificationsQueue();
 	}
 
-	public void handleEbsNotifications(MarketplaceProduct marketplaceProduct, ArrayList<EbsNotification> ebsNotifications)
+	public void handleEbsNotifications(MarketplaceProduct marketplaceProduct, MarketplaceEffect marketplaceEffect, ArrayList<EbsNotification> ebsNotifications)
 	{
 		if (ebsNotifications == null)
 		{
@@ -63,7 +65,7 @@ public class NotificationManager {
 
 		for (EbsNotification ebsNotification : ebsNotifications)
 		{
-			Notification notification = new Notification(marketplaceProduct, ebsNotification);
+			Notification notification = new Notification(marketplaceProduct, marketplaceEffect, ebsNotification);
 
 			// guard: check if this is a notification that should be send immediately
 			if (!ebsNotification.queue)
@@ -174,10 +176,32 @@ public class NotificationManager {
 		lockNotificationsUntil(overheadTextDurationMs + OVERHEAD_NOTIFICATION_PAUSE_MS);
 	}
 
+	public void forceHideOverheadText()
+	{
+		Player player = client.getLocalPlayer();
+
+		// guard: skip on invalid player
+		if (player == null)
+		{
+			return;
+		}
+
+		// guard: skip when there is no overhead text at the moment
+		if (overheadResetTask == null || overheadResetTask.isDone())
+		{
+			return;
+		}
+
+		plugin.runOnClientThread(() -> {
+			player.setOverheadText("");
+		});
+	}
+
 	private String getMessage(Notification notification)
 	{
 		String message = notification.ebsNotification.message;
 		final MarketplaceProduct marketplaceProduct = notification.marketplaceProduct;
+		final MarketplaceEffect marketplaceEffect = notification.marketplaceEffect;
 
 		// guard: make sure the product is valid
 		if (marketplaceProduct == null)
@@ -185,7 +209,6 @@ public class NotificationManager {
 			return (message == null ? "Thank you for the donation!" : message);
 		}
 
-		final TwitchTransaction transaction = marketplaceProduct.getTransaction();
 		final TwitchProduct twitchProduct = marketplaceProduct.getTwitchProduct();
 
 		if (message == null)
@@ -197,29 +220,9 @@ public class NotificationManager {
 			}
 		}
 
-		String viewerName = "viewer";
-		String channelName = "broadcaster";
-		String currencyAmount = "";
-		String currencyType = "";
+		String formattedMessage = MarketplaceMessages.formatMessage(message, marketplaceProduct, marketplaceEffect);
 
-		if (transaction != null)
-		{
-			viewerName = transaction.user_name;
-			channelName = transaction.broadcaster_name;
-		}
-
-		if (twitchProduct != null)
-		{
-			currencyAmount = twitchProduct.cost.amount.toString();
-			currencyType = twitchProduct.cost.type;
-		}
-
-		message = message.replaceAll("\\{viewerName\\}", viewerName);
-		message = message.replaceAll("\\{channelName\\}", channelName);
-		message = message.replaceAll("\\{currencyAmount\\}", currencyAmount);
-		message = message.replaceAll("\\{currencyType\\}", currencyType);
-
-		return message;
+		return formattedMessage;
 	}
 
 	private boolean canSendNotification()

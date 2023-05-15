@@ -11,6 +11,7 @@ import net.runelite.api.*;
 import net.runelite.api.events.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -71,7 +72,7 @@ public class FightStateManager
 	public static final int NO_ANIMATION_ID = -1;
 	public static final int SINGLE_ANCIENT_ANIMATION_ID = 1978;
 	public static final int MULTI_ANCIENT_ANIMATION_ID = 1979;
-	public static final int ENTANGLE_ANIMATION_ID = 710;
+	public static final int ENTANGLE_ANIMATION_ID = 1161;
 
 	public enum FightGraphic {
 		ICE_BARRAGE(369, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
@@ -189,19 +190,27 @@ public class FightStateManager
 	{
 		final Actor eventActor = event.getActor();
 		final String eventActorName = getFormattedActorName(eventActor);
-		final int graphicId = eventActor.getGraphic();
+		final IterableHashTable<ActorSpotAnim> spotAnims = eventActor.getSpotAnims();
 
 		// NOTE: collect this here to make sure the varbit and other things are fetched on the client thread
 		final boolean isInMultiCombatArea = isInMultiCombatArea();
 		final boolean otherPlayersPresent = otherPlayersPresent(eventActor);
 
 		// guard: skip invalid graphics or actors
-		if (graphicId < 0 || eventActorName == null)
+		if (spotAnims == null || eventActorName == null)
 		{
 			return;
 		}
 
-		log.debug("Scheduling delayed onGraphicChanged, graphicId: {}", graphicId);
+		final ArrayList<Integer> graphicIds = new ArrayList();
+
+		// convert all the current graphic IDs to a fixed list
+		// because the spot anims will mutate over time after the delayed action
+		spotAnims.forEach((spotAnim) -> {
+			graphicIds.add(spotAnim.getId());
+		});
+
+		log.debug("Scheduling delayed onGraphicChanged, graphic amount: {}", graphicIds.size());
 
 		// delay the handler to make sure other events have time to also be triggered.
 		// For example some graphics are translated to statistics, but require a certain skill
@@ -212,7 +221,7 @@ public class FightStateManager
 			public void run()
 			{
 				try {
-					onGraphicChangedDelayed(eventActor, graphicId, isInMultiCombatArea, otherPlayersPresent);
+					onGraphicChangedDelayed(eventActor, graphicIds, isInMultiCombatArea, otherPlayersPresent);
 				} catch (Exception exception) {
 					log.warn("Could not handle an delayed graphic on changed due to the following error: ", exception);
 				}
@@ -225,12 +234,12 @@ public class FightStateManager
 		scheduledExecutor.getQueue().clear();
 	}
 
-	public void onGraphicChangedDelayed(Actor eventActor, int graphicId, boolean isInMultiCombatArea, boolean otherPlayersPresent)
+	public void onGraphicChangedDelayed(Actor eventActor, ArrayList<Integer> graphicIds, boolean isInMultiCombatArea, boolean otherPlayersPresent)
 	{
 		final Player localPlayer = client.getLocalPlayer();
 		final boolean isLocalPlayer = (eventActor == localPlayer);
 
-		log.debug("Handling delayed onGraphicChanged, graphic ID: {}", graphicId);
+		log.debug("Handling delayed onGraphicChanged, graphic amount: {}", graphicIds.size());
 
 		if (localPlayer == null)
 		{
@@ -256,7 +265,7 @@ public class FightStateManager
 			FightStatisticEntry entry = graphic.getEntry();
 
 			// Guard: check if this is the correct graphic
-			if (fightGraphicId != graphicId)
+			if (!graphicIds.contains(fightGraphicId))
 			{
 				continue;
 			}

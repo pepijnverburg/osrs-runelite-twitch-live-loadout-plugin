@@ -1,8 +1,10 @@
 package com.twitchliveloadout.ui;
 
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.marketplace.MarketplaceDuration;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProductCost;
+import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.ImageUtil;
@@ -14,96 +16,30 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
-public class MarketplaceProductPanel extends JPanel {
-	private MarketplaceProduct marketplaceProduct;
+public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduct> {
 
-	private static final ImageIcon DELETE_ICON;
-	private static final ImageIcon DELETE_HOVER_ICON;
-
-	private final JPanel wrapper = new JPanel(new GridBagLayout());
-	private final JLabel nameLabel = new JLabel();
-	private final JLabel deleteLabel = new JLabel();
-
-	static
-	{
-		final BufferedImage deleteImg = ImageUtil.loadImageResource(TwitchLiveLoadoutPlugin.class, "/delete_icon.png");
-		DELETE_ICON = new ImageIcon(deleteImg);
-		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
+	public MarketplaceProductPanel(JPanel parentPanel) {
+		super(
+			parentPanel,
+			"Invalid Random Event donation",
+			"Are you sure you want to stop the effects of this donation?",
+			"Stop Random Event",
+			EntityActionPanel.DELETE_ICON,
+			EntityActionPanel.DELETE_HOVER_ICON
+		);
 	}
 
-	public MarketplaceProductPanel(MarketplacePanel marketplacePanel)
-	{
-		setLayout(new BorderLayout());
-		setBorder(new EmptyBorder(0, 0, 10, 0));
-
-		Styles.styleBigLabel(nameLabel, "N/A");
-
-		deleteLabel.setIcon(DELETE_ICON);
-		deleteLabel.setToolTipText("Stop product effect");
-		deleteLabel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mousePressed(MouseEvent mouseEvent)
-			{
-				int confirm = JOptionPane.showConfirmDialog(MarketplaceProductPanel.this,
-						"Are you sure you want to stop the effects of this donation?",
-						"Warning", JOptionPane.OK_CANCEL_OPTION);
-
-				if (confirm == 0)
-				{
-					if (marketplaceProduct != null)
-					{
-						marketplaceProduct.stop();
-						marketplacePanel.rebuild();
-					}
-				}
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent mouseEvent)
-			{
-				deleteLabel.setIcon(DELETE_HOVER_ICON);
-				deleteLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-			}
-
-			@Override
-			public void mouseExited(MouseEvent mouseEvent)
-			{
-				deleteLabel.setIcon(DELETE_ICON);
-				deleteLabel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-			}
-		});
-
-		wrapper.setLayout(new BorderLayout());
-		wrapper.setBorder(new EmptyBorder(10, 10, 10, 10));
-		wrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		wrapper.add(nameLabel, BorderLayout.WEST);
-		wrapper.add(deleteLabel, BorderLayout.EAST);
-
-		add(wrapper, BorderLayout.NORTH);
-	}
-
-	public void setMarketplaceProduct(MarketplaceProduct marketplaceProduct)
-	{
-		this.marketplaceProduct = marketplaceProduct;
-	}
-
-	public void rebuild()
-	{
-
-		// guard: check if product is valid
-		if (marketplaceProduct == null)
-		{
-			nameLabel.setText("Invalid random event donation");
-			setVisible(false);
-			return;
-		}
-
+	@Override
+	protected String[] getLines() {
+		MarketplaceProduct marketplaceProduct = getEntity();
 		boolean isActive = marketplaceProduct.isActive();
 		boolean isExpired = marketplaceProduct.isExpired();
-		long expiresInSeconds = marketplaceProduct.getExpiresInMs() / 1000;
+		long expiresInMs = marketplaceProduct.getExpiresInMs();
 		String streamerProductName = marketplaceProduct.getStreamerProduct().name;
 		String viewerName = marketplaceProduct.getTransaction().user_name;
 		TwitchProductCost productCost = marketplaceProduct.getTwitchProduct().cost;
@@ -119,14 +55,23 @@ public class MarketplaceProductPanel extends JPanel {
 
 		String[] lines = {
 			statusLine,
-			streamerProductName,
-			"By <i>"+ viewerName + "</i>",
-			"For "+ costAmount +" "+ costCurrency,
-			"Expires in "+ MarketplacePanel.humanizeDuration(Duration.ofSeconds(expiresInSeconds)),
+			"<b>"+ streamerProductName +"</b>",
+			"Donation of <b color='yellow'>"+ costAmount +" "+ costCurrency +"</b>",
+			"By <b color='yellow'>"+ viewerName +"</b>",
+			"Expires in "+ MarketplaceDuration.humanizeDurationMs(expiresInMs),
 		};
-		String name = String.join("<br/>", lines);
+		return lines;
+	}
 
-		setVisible(true);
-		nameLabel.setText("<html>"+ name +"</html>");
+	@Override
+	protected void executeAction() {
+		MarketplaceProduct marketplaceProduct = getEntity();
+		MarketplacePanel marketplacePanel = (MarketplacePanel) parentPanel;
+		TwitchTransaction twitchTransaction = marketplaceProduct.getTransaction();
+		String transactionId = (twitchTransaction != null ? twitchTransaction.id : "unknown");
+
+		log.info("A marketplace product is manually requested to be stopped, transaction ID: "+ transactionId);
+		marketplaceProduct.stop(false);
+		marketplacePanel.rebuild();
 	}
 }

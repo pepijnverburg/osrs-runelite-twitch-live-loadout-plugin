@@ -35,7 +35,7 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 		marketplacePanel = new MarketplacePanel(marketplaceManager);
 
 		connectivityTab = new MaterialTab("Status", tabGroup, connectivityPanel);
-		marketplaceTab = new MaterialTab("Donations", tabGroup, marketplacePanel);
+		marketplaceTab = new MaterialTab("Donation", tabGroup, marketplacePanel);
 		combatTab = new MaterialTab("Combat", tabGroup, combatPanel);
 
 		tabGroup.setBorder(new EmptyBorder(5, 0, 0, 0));

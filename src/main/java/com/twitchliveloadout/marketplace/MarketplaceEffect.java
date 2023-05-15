@@ -2,9 +2,12 @@ package com.twitchliveloadout.marketplace;
 
 import com.twitchliveloadout.marketplace.products.EbsEffectFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
+import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
+import jdk.internal.jline.internal.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -25,6 +28,18 @@ public class MarketplaceEffect<K extends EbsEffectFrame> {
 	private final K frame;
 
 	/**
+	 * Optional spawned object this effect is applicable for.
+	 */
+	@Nullable
+	@Getter
+	private final SpawnedObject spawnedObject;
+
+	/**
+	 * The start time based on instancing of this class.
+	 */
+	private final Instant startedAt;
+
+	/**
 	 * The expiry based on either the custom duration or the one of the product.
 	 */
 	private final Instant expiresAt;
@@ -38,10 +53,12 @@ public class MarketplaceEffect<K extends EbsEffectFrame> {
 	@Setter
 	private boolean isApplied = false;
 
-	public MarketplaceEffect(MarketplaceProduct marketplaceProduct, K frame, Instant expiresAt)
+	public MarketplaceEffect(MarketplaceProduct marketplaceProduct, K frame, SpawnedObject spawnedObject, Instant expiresAt)
 	{
 		this.marketplaceProduct = marketplaceProduct;
 		this.frame = frame;
+		this.spawnedObject = spawnedObject;
+		this.startedAt = Instant.now();
 		this.expiresAt = expiresAt;
 	}
 
@@ -53,5 +70,23 @@ public class MarketplaceEffect<K extends EbsEffectFrame> {
 	public boolean isExpired()
 	{
 		return Instant.now().isAfter(expiresAt) || marketplaceProduct.isExpired();
+	}
+
+	/**
+	 * Calculate how long in milliseconds this effect is going to be active
+	 */
+	public Duration getDuration()
+	{
+		return Duration.between(startedAt, expiresAt);
+	}
+
+	/**
+	 * Calculate the amount of time in milliseconds this effect is still active
+	 */
+	public Duration getDurationLeft()
+	{
+		Instant now = Instant.now();
+
+		return Duration.between(now, expiresAt);
 	}
 }
