@@ -593,11 +593,11 @@ public class MarketplaceProduct
 		// guard: check if a valid option was selected
 		if (effectsOption == null)
 		{
-			log.error("Could not find valid effect behaviour option for product ("+ productId +")");
+			log.warn("Could not find valid effect behaviour option for product ("+ productId +")");
 			return;
 		}
 
-		log.debug("Executing effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
+		log.warn("Executing effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
 		lastEffectBehaviourAt = Instant.now().plusMillis(afterTriggerDelayMs);
 		effectBehaviourCounter += 1;
 
@@ -707,7 +707,7 @@ public class MarketplaceProduct
 		// guard: check if a valid option was selected
 		if (spawnOption == null)
 		{
-			log.error("Could not find valid spawn behaviour option for product ("+ productId +")");
+			log.warn("Could not find valid spawn behaviour option for product ("+ productId +")");
 			return;
 		}
 
@@ -719,7 +719,7 @@ public class MarketplaceProduct
 		// guard: make sure the spawn behaviours are valid
 		if (spawns == null)
 		{
-			log.error("Could not find valid spawn behaviours for product ("+ productId +")");
+			log.warn("Could not find valid spawn behaviours for product ("+ productId +")");
 			return;
 		}
 
@@ -795,7 +795,7 @@ public class MarketplaceProduct
 		// guard: make sure the selected model is valid
 		if (modelSet == null || modelSet.ids == null)
 		{
-			log.error("Could not find valid model set when triggering spawn behaviour!");
+			log.warn("Could not find valid model set when triggering spawn behaviour!");
 			return;
 		}
 

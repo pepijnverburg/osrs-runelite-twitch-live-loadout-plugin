@@ -639,6 +639,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	String advancedSection = "advanced";
 
 	@ConfigItem(
+			keyName = "supportDebugEnabled",
+			name = "Support debug mode",
+			description = "Enable more extensive logging for support purposes.",
+			position = 0,
+			section = advancedSection
+	)
+	default boolean supportDebugEnabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 			keyName = "twitchReviewModeEnabled",
 			name = "Twitch review mode",
 			description = "Force syncing of data while being logged out, meant for the Twitch review process.",

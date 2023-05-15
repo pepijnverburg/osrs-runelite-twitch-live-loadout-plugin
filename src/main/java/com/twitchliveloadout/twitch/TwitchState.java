@@ -251,7 +251,7 @@ public class TwitchState {
 			currentState.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), parsedRaidLevel);
 			plugin.setConfiguration(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, parsedRaidLevel);
 		} catch (Exception exception) {
-			log.warn("Could not set invocations raid level due to the following error:", exception);
+			plugin.logSupport("Could not set invocations raid level due to the following error:", exception);
 		}
 	}
 

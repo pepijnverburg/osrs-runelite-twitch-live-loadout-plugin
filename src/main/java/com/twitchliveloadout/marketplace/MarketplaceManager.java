@@ -177,7 +177,7 @@ public class MarketplaceManager {
 				// guard: check if the status is valid
 				if (!status)
 				{
-					log.debug("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
+					plugin.logSupport("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
 					return;
 				}
 
@@ -215,7 +215,7 @@ public class MarketplaceManager {
 							handledTransactionIds.remove(transactionId);
 						}
 					} catch (Exception exception) {
-						log.warn("Could not parse Twitch Extension transaction due to the following error: ", exception);
+						log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
 					}
 				});
 
@@ -553,7 +553,7 @@ public class MarketplaceManager {
 
 			streamerProducts = newStreamerProducts;
 		} catch (Exception exception) {
-			log.warn("Could not parse the raw streamer products to a valid set of products:", exception);
+			plugin.logSupport("Could not parse the raw streamer products to a valid set of products:", exception);
 		}
 	}
 
@@ -591,7 +591,7 @@ public class MarketplaceManager {
 				// if not we want to keep the old products intact
 				if (!status)
 				{
-					log.debug("Could not fetch EBS products from Twitch as the status is invalid with message: "+ message);
+					plugin.logSupport("Could not fetch EBS products from Twitch as the status is invalid with message: "+ message);
 					return;
 				}
 
@@ -603,7 +603,7 @@ public class MarketplaceManager {
 						EbsProduct ebsProduct = gson.fromJson(element, EbsProduct.class);
 						newEbsProducts.add(ebsProduct);
 					} catch (Exception exception) {
-						log.warn("Could not parse the raw EBS product to a valid product: ", exception);
+						plugin.logSupport("Could not parse the raw EBS product to a valid product: ", exception);
 					}
 				});
 
@@ -612,7 +612,7 @@ public class MarketplaceManager {
 				isFetchingEbsProducts = false;
 			});
 		} catch (Exception exception) {
-			log.debug("Could not fetch the new EBS products due to the following error: ", exception);
+			plugin.logSupport("Could not fetch the new EBS products due to the following error: ", exception);
 		}
 	}
 

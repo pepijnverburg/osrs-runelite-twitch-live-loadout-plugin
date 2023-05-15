@@ -144,7 +144,7 @@ public class TwitchApi
 				try {
 					sendAsyncPubSubState(state);
 				} catch (Exception exception) {
-					log.warn("Could not send the pub sub state due to the following error: ", exception);
+					plugin.logSupport("Could not send the pub sub state due to the following error: ", exception);
 				}
 			}
 		}, delay, TimeUnit.MILLISECONDS);
@@ -224,12 +224,12 @@ public class TwitchApi
 			sendAsyncPubSubMessage(data, (Response response) -> {
 				verifyStateUpdateResponse("PubSub", response, compressedState);
 			}, (exception) -> {
-				log.debug("Could not send pub sub state due to the following error: ", exception);
+				plugin.logSupport("Could not send pub sub state due to the following error: ", exception);
 			});
 
 			lastCompressedState = compressedState;
 		} catch (Exception exception) {
-			log.debug("Could not send pub sub state due to the following error: ", exception);
+			plugin.logSupport("Could not send pub sub state due to the following error: ", exception);
 			return false;
 		}
 
@@ -529,9 +529,9 @@ public class TwitchApi
 		httpClient.newCall(request).enqueue(new Callback() {
 			@Override
 			public void onFailure(Call call, IOException exception) {
-				log.debug("Could not send request to: "+ url);
-				log.debug("The error that occurred was: ");
-				log.debug(exception.getMessage());
+				plugin.logSupport("Could not send request to: "+ url);
+				plugin.logSupport("The error that occurred was: ");
+				plugin.logSupport(exception.getMessage());
 				errorHandler.execute(exception);
 			}
 
@@ -540,8 +540,8 @@ public class TwitchApi
 				try {
 					responseHandler.execute(response);
 				} catch (Exception exception) {
-					log.debug("Could not handle the response that was received from: "+ url);
-					log.debug(exception.getMessage());
+					plugin.logSupport("Could not handle the response that was received from: "+ url);
+					plugin.logSupport(exception.getMessage());
 				}
 
 				// always close the response to be sure there are no memory leaks
