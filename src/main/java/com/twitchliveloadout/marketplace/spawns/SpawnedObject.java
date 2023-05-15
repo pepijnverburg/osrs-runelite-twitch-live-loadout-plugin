@@ -400,7 +400,6 @@ public class SpawnedObject {
 			animation = client.loadAnimation(animationId);
 		}
 
-//		log.info("SET ANIMATION TRULY TO: "+ animationId);
 		object.setShouldLoop(shouldLoop);
 		object.setAnimation(animation);
 		currentAnimationId = animationId;

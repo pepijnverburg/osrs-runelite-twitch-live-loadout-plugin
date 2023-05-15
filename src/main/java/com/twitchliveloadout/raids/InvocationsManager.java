@@ -187,11 +187,6 @@ public class InvocationsManager {
 			int titleColor = titleWidget.getTextColor();
 			boolean isActive = (titleColor == INVOCATION_ACTIVE_TEXT_COLOR);
 
-			// log.info("Title of invocation title widget "+ titleWidgetIndex +" is:" + title);
-			// log.info("Title color of invocation title widget "+ titleWidgetIndex +" is:" + titleColor);
-			// log.info("Sprite of invocation icon widget "+ widgetIndex +" is:" +spriteId);
-			// log.info("State of invocation active widget "+ activeWidgetIndex +" is:"+ isActive);
-
 			JsonObject invocation = new JsonObject();
 			invocation.addProperty("title", title);
 			invocation.addProperty("spriteId", spriteId);

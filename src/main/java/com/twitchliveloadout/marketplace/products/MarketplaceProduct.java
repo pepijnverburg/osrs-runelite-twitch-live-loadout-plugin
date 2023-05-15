@@ -863,7 +863,6 @@ public class MarketplaceProduct
 		boolean blockingConditions = effect.blockingConditions;
 
 		// schedule all the individual effects
-//		log.info("SCHEDULE EFFECTS: "+ frameDelayMs +", at: "+ Instant.now().toEpochMilli());
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			int nextFrameDelayMs = durationMs;
 			int innerDelayMs = 0; // potentially handy in the future to delay a full effect
@@ -879,7 +878,6 @@ public class MarketplaceProduct
 			// guard: check if all the conditions for this effect are met
 			if (!conditionsVerified)
 			{
-//				log.info("CANCELLED EFFECTS: "+ Instant.now().toEpochMilli());
 				// when this is the last one make sure we still reset the model animations or hide them
 				if (isLast && resetModelAnimationHandler != null) {
 					resetModelAnimationHandler.execute(innerDelayMs);
@@ -887,7 +885,6 @@ public class MarketplaceProduct
 				return;
 			}
 
-//			log.info("TRIGGERED EFFECTS: "+ Instant.now().toEpochMilli());
 			triggerSpawnOptions(spawnedObject, effect.spawnOptions);
 			triggerModelExpired(spawnedObject, effect.modelExpired);
 			triggerModelAnimation(
