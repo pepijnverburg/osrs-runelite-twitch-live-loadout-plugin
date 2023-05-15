@@ -2,7 +2,9 @@ package com.twitchliveloadout.marketplace.spawns;
 
 import com.twitchliveloadout.marketplace.MarketplaceColors;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
+import com.twitchliveloadout.marketplace.MarketplaceMessages;
 import com.twitchliveloadout.marketplace.products.EbsModelOverheadFrame;
+import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
@@ -43,6 +45,13 @@ public class OverheadTextOverlay extends Overlay {
 			Integer textHeight = frame.textHeight;
 			Integer textColorHex = frame.textColorHex;
 			SpawnedObject spawnedObject = effect.getSpawnedObject();
+			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
+
+			// guard: ensure the effect is still active
+			if (!effect.isActive())
+			{
+				continue;
+			}
 
 			// guard: make sure text and location are valid
 			if (text == null || text.isEmpty() || textHeight == null || textColorHex == null || spawnedObject == null)
@@ -50,6 +59,7 @@ public class OverheadTextOverlay extends Overlay {
 				continue;
 			}
 
+			String formattedText = MarketplaceMessages.formatMessage(text, marketplaceProduct, effect);
 			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
 			Point textLocation = Perspective.localToCanvas(client, localPoint, client.getPlane(), textHeight);
 			Color textColor = MarketplaceColors.getColorByHex(textColorHex);
@@ -62,7 +72,7 @@ public class OverheadTextOverlay extends Overlay {
 
 			Font chatFont = FontManager.getRunescapeBoldFont();
 			FontMetrics metrics = graphics.getFontMetrics(chatFont);
-			Point centeredTextLocation = new Point(textLocation.getX() - (metrics.stringWidth(text) >>> 1), textLocation.getY());
+			Point centeredTextLocation = new Point(textLocation.getX() - (metrics.stringWidth(formattedText) >>> 1), textLocation.getY());
 
 			// guard: ensure a valid centered text location
 			if (centeredTextLocation == null)
@@ -71,7 +81,7 @@ public class OverheadTextOverlay extends Overlay {
 			}
 
 			graphics.setFont(chatFont);
-			OverlayUtil.renderTextLocation(graphics, centeredTextLocation, text, textColor);
+			OverlayUtil.renderTextLocation(graphics, centeredTextLocation, formattedText, textColor);
 		}
 
 		return null;

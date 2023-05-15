@@ -5,11 +5,11 @@ import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceDuration;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
+import com.twitchliveloadout.marketplace.MarketplaceMessages;
 import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
-import jdk.internal.jline.internal.Log;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -209,7 +209,6 @@ public class NotificationManager {
 			return (message == null ? "Thank you for the donation!" : message);
 		}
 
-		final TwitchTransaction transaction = marketplaceProduct.getTransaction();
 		final TwitchProduct twitchProduct = marketplaceProduct.getTwitchProduct();
 
 		if (message == null)
@@ -221,49 +220,9 @@ public class NotificationManager {
 			}
 		}
 
-		String viewerName = "viewer";
-		String channelName = "broadcaster";
-		String currencyAmount = "";
-		String currencyType = "";
-		String productDuration = "";
-		String productDurationLeft = "";
-		String effectDuration = "";
-		String effectDurationLeft = "";
+		String formattedMessage = MarketplaceMessages.formatMessage(message, marketplaceProduct, marketplaceEffect);
 
-		if (transaction != null)
-		{
-			viewerName = transaction.user_name;
-			channelName = transaction.broadcaster_name;
-		}
-
-		if (twitchProduct != null)
-		{
-			currencyAmount = twitchProduct.cost.amount.toString();
-			currencyType = twitchProduct.cost.type;
-		}
-
-		if (marketplaceEffect != null)
-		{
-			effectDuration = MarketplaceDuration.humanizeDurationRounded(marketplaceEffect.getDuration());
-			effectDurationLeft = MarketplaceDuration.humanizeDurationRounded(marketplaceEffect.getDurationLeft());
-		}
-
-		if (marketplaceProduct != null)
-		{
-			productDuration = MarketplaceDuration.humanizeDurationRounded(marketplaceProduct.getDuration());
-			productDurationLeft = MarketplaceDuration.humanizeDurationRounded(marketplaceProduct.getDurationLeft());
-		}
-
-		message = message.replaceAll("\\{viewerName\\}", viewerName);
-		message = message.replaceAll("\\{channelName\\}", channelName);
-		message = message.replaceAll("\\{currencyAmount\\}", currencyAmount);
-		message = message.replaceAll("\\{currencyType\\}", currencyType);
-		message = message.replaceAll("\\{productDuration\\}", productDuration);
-		message = message.replaceAll("\\{productDurationLeft\\}", productDurationLeft);
-		message = message.replaceAll("\\{effectDuration\\}", effectDuration);
-		message = message.replaceAll("\\{effectDurationLeft\\}", effectDurationLeft);
-
-		return message;
+		return formattedMessage;
 	}
 
 	private boolean canSendNotification()
