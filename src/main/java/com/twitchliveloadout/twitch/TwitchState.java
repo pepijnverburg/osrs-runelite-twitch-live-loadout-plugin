@@ -40,6 +40,7 @@ public class TwitchState {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
 	private final CanvasListener canvasListener;
+	private final Gson gson;
 
 	/**
 	 * Enable this if you want to test the state with all its limits
@@ -75,11 +76,12 @@ public class TwitchState {
 	private final static int WAS_IN_TOA_DEBOUNCE = 20 * 1000; // ms
 	private Instant lastWasInToA;
 
-	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, CanvasListener canvasListener)
+	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, CanvasListener canvasListener, Gson gson)
 	{
 		this.plugin = plugin;
 		this.config = config;
 		this.canvasListener = canvasListener;
+		this.gson = gson;
 
 		// initialize the states that are not directly synced with events
 		setOverlayTopPosition(config.overlayTopPosition());
@@ -764,7 +766,7 @@ public class TwitchState {
 			}
 		}
 
-		JsonArray json = new GsonBuilder().create().toJsonTree(copiedArray).getAsJsonArray();
+		JsonArray json = gson.toJsonTree(copiedArray).getAsJsonArray();
 		return json;
 	}
 
