@@ -3,7 +3,7 @@ package com.twitchliveloadout.marketplace;
 import com.twitchliveloadout.marketplace.products.EbsEffectFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
-import jdk.internal.jline.internal.Nullable;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 
