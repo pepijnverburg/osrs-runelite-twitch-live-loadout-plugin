@@ -8,9 +8,9 @@ Visit the landing page for more information:<br/>
 <a href="http://liveloadout.com/" target="_blank">http://liveloadout.com/</a>
 
 ## Introduction
-Let your Twitch viewers be fully immersed by showing them interactive and live information about `Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Quests`, `Looting Bag`, `Tombs of Amascut Invocations` and more!
+Immerse your Twitch viewers with interactive and real-time information about `Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Quests`, `Looting Bag`, `Tombs of Amascut Invocations` and more!
 
-Optionally engage with gameplay by letting viewers activate custom `Random Events`. There are many `Random Events` available by default. New ones can be requested in the [Discord](https://discord.gg/3Fjm5HTFGM).
+Optionally engage with gameplay by letting viewers activate custom `Random Events`. There's a wide range of default `Random Events` to choose from, and if you'd like additional ones, feel free to make requests in our [Discord](https://discord.gg/3Fjm5HTFGM) community.
 
 ![Summary](./docs/summary.gif "Summary")
 
