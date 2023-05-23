@@ -5,6 +5,7 @@ import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.ui.CanvasListener;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.vars.AccountType;
@@ -61,12 +62,14 @@ public class TwitchState {
 	/**
 	 * An additional cyclic state that cannot be sent out at once
 	 * due to Twitch limitations, currently the bank and the collection log
-	 * are sent in smaller parts via this state
+	 * are sent in smaller parts via this state.
+	 * NOTE: keep a minimum of 20% reserved for combat fights.
 	 */
-	private final static int MAX_BANK_ITEMS_PER_SLICE = 400;
-	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 400;
+	private final static int MAX_BANK_ITEMS_PER_SLICE = 300;
+	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 300;
 	private final static String COLLECTION_LOG_FILTER_SEPARATOR = ",";
 	private final JsonObject cyclicState = new JsonObject();
+	@Getter
 	private TwitchStateEntry currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 	private int currentCyclicSliceIndex = 0;
 
