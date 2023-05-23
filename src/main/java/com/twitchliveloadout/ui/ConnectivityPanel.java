@@ -29,6 +29,7 @@ import com.google.gson.JsonObject;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchApi;
+import com.twitchliveloadout.twitch.TwitchState;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.ImageUtil;
@@ -68,6 +69,7 @@ public class ConnectivityPanel extends JPanel
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchApi twitchApi;
+	private final TwitchState twitchState;
 	private final CanvasListener canvasListener;
 	private final TwitchLiveLoadoutConfig config;
 
@@ -78,12 +80,13 @@ public class ConnectivityPanel extends JPanel
 		WIKI_ICON = new ImageIcon(ImageUtil.loadImageResource(ConnectivityPanel.class, "/wiki_icon.png"));
 	}
 
-	public ConnectivityPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
+	public ConnectivityPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
 	{
 		super(new GridBagLayout());
 
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
+		this.twitchState = twitchState;
 		this.canvasListener = canvasListener;
 		this.config = config;
 
@@ -182,7 +185,8 @@ public class ConnectivityPanel extends JPanel
 		String state = twitchApi.getLastCompressedState();
 		byte[] stateBytes = state.getBytes();
 		float stateUsagePercentage = ((float) stateBytes.length) / ((float) TwitchApi.MAX_PAYLOAD_SIZE) * 100;
-		String stateText = String.format("%.2f", stateUsagePercentage) +"% used of Twitch storage.";
+		String currentCyclicState = twitchState.getCurrentCyclicEntry().getKey();
+		String stateText = String.format("%.2f", stateUsagePercentage) +"% used of Twitch storage for general data and part of "+ currentCyclicState +".";
 		String stateColor = DEFAULT_TEXT_COLOR;
 
 		if (twitchApi.isErrorResponseCode(responseCode))
@@ -193,7 +197,7 @@ public class ConnectivityPanel extends JPanel
 
 		if (stateUsagePercentage >= 100)
 		{
-			stateText += "<br/><br/>An error occurred: state is too large to send to Twitch. Please disable some synced information via the plugin settings in RuneLite and report this to the plugin maintainer via the linked Discord above.";
+			stateText += "<br/><br/>An error occurred: state is too large to send to Twitch (current slice: "+ currentCyclicState +"). Please disable some synced information via the plugin settings in RuneLite and report this to the plugin maintainer via the linked Discord above.";
 			stateColor = ERROR_TEXT_COLOR;
 		}
 
