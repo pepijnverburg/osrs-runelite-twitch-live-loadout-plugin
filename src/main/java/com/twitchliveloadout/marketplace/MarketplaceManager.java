@@ -163,6 +163,14 @@ public class MarketplaceManager {
 			return;
 		}
 
+		// guard: skip updating new transactions when no products are enabled
+		// fetching of new transactions in this case is useless anyways because
+		// the configurations for them are not available without products
+		if (streamerProducts.size() <= 0 || ebsProducts.size() <= 0)
+		{
+			return;
+		}
+
 		try {
 			isFetchingEbsTransactions = true;
 			twitchApi.fetchAsyncEbsTransactions(lastTransactionId, (Response response) -> {
