@@ -249,6 +249,11 @@ public class TwitchApi
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"/api/marketplace-products";
 		final JsonObject data = new JsonObject();
 
+		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
+		{
+			url = "http://localhost:3010/api/marketplace-products";
+		}
+
 		performPostRequest(url, data, ebsProductsHttpClient, responseHandler, errorHandler);
 	}
 
@@ -256,6 +261,11 @@ public class TwitchApi
 	{
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"/api/marketplace-transactions";
 		final JsonObject data = new JsonObject();
+
+		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
+		{
+			url = "http://localhost:3010/api/marketplace-transactions";
+		}
 
 		// only add last checked at when it is valid
 		if (lastTransactionId != null)
