@@ -358,7 +358,12 @@ public class MarketplaceProduct
 			ArrayList<EbsCondition> followConditions = modelPlacement.followConditions;
 			String validFollowType = (followType == null ? NONE_FOLLOW_TYPE : followType);
 			EbsRandomRange radiusRange = modelPlacement.radiusRange;
-			int maxRadius = radiusRange.max.intValue();
+			int maxRadius = DEFAULT_MAX_RADIUS;
+
+			if (radiusRange != null && radiusRange.max != null)
+			{
+				maxRadius = radiusRange.max.intValue();
+			}
 
 			// guard: skip when no follow type
 			if (validFollowType.equals(NONE_FOLLOW_TYPE))
