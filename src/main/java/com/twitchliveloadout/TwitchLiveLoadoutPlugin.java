@@ -38,11 +38,11 @@ import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
 import com.twitchliveloadout.ui.CanvasListener;
+import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
-import net.runelite.api.vars.AccountType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -68,7 +68,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP;
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
 
 /**
  * Manages polling and event listening mechanisms to synchronize the state
@@ -439,7 +439,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			// account type can only be fetched on client thread
 			runOnClientThread(() -> {
 				long accountHash = client.getAccountHash();
-				AccountType accountType = client.getAccountType();
+				AccountType accountType = getAccountType();
 				String playerName = getPlayerName();
 
 				// only handle on changes
@@ -806,7 +806,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			// always update on game state change as well to instantly react to logout and login
 			twitchState.setAccountHash(client.getAccountHash());
-			twitchState.setAccountType(client.getAccountType());
+			twitchState.setAccountType(getAccountType());
 
 			// update quests when logged in
 			if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
@@ -1119,8 +1119,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public boolean isDangerousAccountType()
 	{
 		JsonElement accountTypeRaw = twitchState.getState().get(TwitchStateEntry.ACCOUNT_TYPE.getKey());
-		String hardcoreRegular = AccountType.HARDCORE_IRONMAN.toString();
-		String hardcoreGroup = AccountType.HARDCORE_GROUP_IRONMAN.toString();
 
 		// guard: check if account type can be found
 		if (accountTypeRaw == null)
@@ -1136,7 +1134,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		// guard: check if regular HC or HCGIM
-		if (!accountType.equals(hardcoreRegular) && !accountType.equals(hardcoreGroup))
+		if (!accountType.equals(AccountType.HARDCORE_IRONMAN.getKey()) && !accountType.equals(AccountType.HARDCORE_GROUP_IRONMAN.getKey()))
 		{
 			return false;
 		}
@@ -1193,6 +1191,25 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get the account type enum from the varbit. Fallbacks to normal account.
+	 * @return AccountType
+	 */
+	public AccountType getAccountType()
+	{
+		int accountTypeId = client.getVarbitValue(Varbits.ACCOUNT_TYPE);
+
+		for (AccountType accountType : AccountType.values())
+		{
+			if (accountTypeId == accountType.getId())
+			{
+				return accountType;
+			}
+		}
+
+		return AccountType.NORMAL;
 	}
 
 	public void logSupport(String message)

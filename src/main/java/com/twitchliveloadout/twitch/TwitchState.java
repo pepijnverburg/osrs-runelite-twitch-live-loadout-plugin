@@ -5,10 +5,10 @@ import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.ui.CanvasListener;
+import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.vars.AccountType;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -122,7 +122,7 @@ public class TwitchState {
 			return;
 		}
 
-		currentState.addProperty(TwitchStateEntry.ACCOUNT_TYPE.getKey(), accountType.toString());
+		currentState.addProperty(TwitchStateEntry.ACCOUNT_TYPE.getKey(), accountType.getKey());
 	}
 
 	public void setOverlayTopPosition(int overlayTopPosition)
