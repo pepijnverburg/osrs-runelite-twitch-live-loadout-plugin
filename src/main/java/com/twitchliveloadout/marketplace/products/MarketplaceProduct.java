@@ -1458,6 +1458,10 @@ public class MarketplaceProduct
 			int endHeight = projectileFrame.endHeight;
 			int durationMs = projectileFrame.durationMs;
 			int durationCycles = (durationMs / 25); // how to go from ms to cycles? this is an approximation
+			int plane = client.getPlane();
+			int sceneX = startLocation.getSceneX();
+			int sceneY = startLocation.getSceneY();
+			int tileHeight = client.getTileHeights()[plane][sceneX][sceneY];
 
 			// guard: make sure the parameters are valid
 			if (projectileId == null || durationCycles <= 0 || startLocation == null || endLocation == null)
@@ -1475,7 +1479,7 @@ public class MarketplaceProduct
 					client.getPlane(),
 					startLocation.getX(),
 					startLocation.getY(),
-					startZ,
+			    tileHeight + startZ, // correct for the starting tile height
 					startCycle,
 					endCycle,
 					slope,
