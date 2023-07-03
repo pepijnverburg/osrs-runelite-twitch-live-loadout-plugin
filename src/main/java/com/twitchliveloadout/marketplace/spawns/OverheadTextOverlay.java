@@ -61,6 +61,15 @@ public class OverheadTextOverlay extends Overlay {
 
 			String formattedText = MarketplaceMessages.formatMessage(text, marketplaceProduct, effect);
 			LocalPoint localPoint = spawnedObject.getSpawnPoint().getLocalPoint(client);
+
+			// guard: check if the local point is still valid
+			// it is possible it became invalid while the player is
+			// teleporting and the spawned object is still in in its old place
+			if (localPoint == null)
+			{
+				continue;
+			}
+
 			Point textLocation = Perspective.localToCanvas(client, localPoint, client.getPlane(), textHeight);
 			Color textColor = MarketplaceColors.getColorByHex(textColorHex);
 
