@@ -358,11 +358,13 @@ public class MarketplaceProduct
 			ArrayList<EbsCondition> followConditions = modelPlacement.followConditions;
 			String validFollowType = (followType == null ? NONE_FOLLOW_TYPE : followType);
 			EbsRandomRange radiusRange = modelPlacement.radiusRange;
-			int maxRadius = DEFAULT_MAX_RADIUS;
+			int followRadius = DEFAULT_MAX_RADIUS;
 
-			if (radiusRange != null && radiusRange.max != null)
-			{
-				maxRadius = radiusRange.max.intValue();
+			// override the follow radius with a set oe or the max in the radius range
+			if (modelPlacement.followRadius != null) {
+				followRadius = modelPlacement.followRadius;
+			} else if (radiusRange != null && radiusRange.max != null) {
+				followRadius = radiusRange.max.intValue();
 			}
 
 			// guard: skip when no follow type
@@ -381,7 +383,7 @@ public class MarketplaceProduct
 			if (validFollowType.equals(IN_RADIUS_FOLLOW_TYPE)) {
 
 				// guard: skip this behaviour if it is already in the scene
-				if (spawnedObject.isInView(maxRadius))
+				if (spawnedObject.isInView(followRadius))
 				{
 					continue;
 				}
