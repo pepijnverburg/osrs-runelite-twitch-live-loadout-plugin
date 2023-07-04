@@ -70,7 +70,7 @@ public class NotificationManager {
 			{
 				log.debug("Sending a notification instantly: "+ notification.ebsNotification.message);
 				sendNotification(notification);
-				return;
+				continue;
 			}
 
 			log.debug("Queueing a notification: "+ notification.ebsNotification.message);
