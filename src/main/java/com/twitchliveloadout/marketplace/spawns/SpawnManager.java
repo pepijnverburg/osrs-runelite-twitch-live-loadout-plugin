@@ -221,18 +221,13 @@ public class SpawnManager {
 		}
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int maxRadius, int radiusStepSize, boolean inLineOfSight, WorldPoint referenceWorldPoint)
+	public SpawnPoint getOutwardSpawnPoint(int minRadius, int radiusStepSize, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
-		return getOutwardSpawnPoint(1, radiusStepSize, maxRadius, inLineOfSight, referenceWorldPoint);
-	}
-
-	public SpawnPoint getOutwardSpawnPoint(int startRadius, int radiusStepSize, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
-	{
-		for (int radius = startRadius; radius <= maxRadius; radius++)
+		for (int radius = minRadius; radius <= maxRadius; radius++)
 		{
 			int randomizedRadius = radius + (int) Math.round(Math.random() * ((float) radiusStepSize));
 			int usedRadius = Math.min(randomizedRadius, maxRadius);
-			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, inLineOfSight, referenceWorldPoint);
+			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, usedRadius, inLineOfSight, referenceWorldPoint);
 
 			if (candidateSpawnPoint != null) {
 				return candidateSpawnPoint;
@@ -252,7 +247,8 @@ public class SpawnManager {
 		}
 
 		EbsRandomRange radiusRange = placement.radiusRange;
-		int radius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
+		int minRadius = (int) (radiusRange == null ? DEFAULT_MIN_RADIUS : radiusRange.min);
+		int maxRadius = (int) MarketplaceRandomizers.getValidRandomNumberByRange(radiusRange, DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS, ABSOLUTE_MIN_RADIUS, ABSOLUTE_MAX_RADIUS);
 		int radiusStepSize  = placement.radiusStepSize;
 		String radiusType = placement.radiusType;
 		String locationType = placement.locationType;
@@ -283,13 +279,13 @@ public class SpawnManager {
 
 		if (OUTWARD_RADIUS_TYPE.equals(radiusType))
 		{
-			return getOutwardSpawnPoint(radius, radiusStepSize, inLineOfSight, referenceWorldPoint);
+			return getOutwardSpawnPoint(minRadius, maxRadius, radiusStepSize, inLineOfSight, referenceWorldPoint);
 		}
 
-		return getSpawnPoint(radius, inLineOfSight, referenceWorldPoint);
+		return getSpawnPoint(minRadius, maxRadius, inLineOfSight, referenceWorldPoint);
 	}
 
-	public SpawnPoint getSpawnPoint(int radius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
+	public SpawnPoint getSpawnPoint(int minRadius, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
 		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList<>();
 		final int[][] collisionFlags = getSceneCollisionFlags();
@@ -320,10 +316,16 @@ public class SpawnManager {
 
 		// loop all the possible tiles for the requested radius and look for
 		// the candidate tiles to spawn the object on
-		for (int deltaX = -1 * radius; deltaX <= radius; deltaX++) {
-			for (int deltaY = -1 * radius; deltaY <= radius; deltaY++) {
+		for (int deltaX = -1 * maxRadius; deltaX <= maxRadius; deltaX++) {
+			for (int deltaY = -1 * maxRadius; deltaY <= maxRadius; deltaY++) {
 				int sceneAttemptX = sceneX + deltaX;
 				int sceneAttemptY = sceneY + deltaY;
+
+				// guard: skip all tiles that are not distant enough
+				if (Math.abs(deltaX) < minRadius && Math.abs(deltaY) < minRadius)
+				{
+					continue;
+				}
 
 				// guard: make sure the tile has collision flags
 				if (
