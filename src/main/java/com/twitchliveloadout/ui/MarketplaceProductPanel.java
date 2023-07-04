@@ -27,6 +27,7 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 		super(
 			parentPanel,
 			"Invalid Random Event donation",
+			false,
 			"Are you sure you want to stop the effects of this donation?",
 			"Stop Random Event",
 			EntityActionPanel.DELETE_ICON,

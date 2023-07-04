@@ -29,6 +29,7 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 		super(
 			parentPanel,
 			"Invalid Twitch Transaction",
+			false,
 			"Are you sure you want to rerun this donation Random Event?",
 			"Rerun Random Event",
 			EntityActionPanel.RERUN_ICON,

@@ -41,7 +41,7 @@ public abstract class EntityActionPanel<EntityType> extends JPanel {
 		RERUN_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(rerunImg, -100));
 	}
 
-	public EntityActionPanel(JPanel parentPanel, String invalidText, String confirmText, String actionTooltipText, ImageIcon actionIcon, ImageIcon actionHoverIcon)
+	public EntityActionPanel(JPanel parentPanel, String invalidText, boolean enableConfirm, String confirmText, String actionTooltipText, ImageIcon actionIcon, ImageIcon actionHoverIcon)
 	{
 		this.parentPanel = parentPanel;
 		this.invalidText = invalidText;
@@ -62,6 +62,13 @@ public abstract class EntityActionPanel<EntityType> extends JPanel {
 				// guard: check if we should skip this action
 				if (entity == null)
 				{
+					return;
+				}
+
+				// guard: immediately skip the confirm when disabled
+				if (!enableConfirm)
+				{
+					executeAction();
 					return;
 				}
 
