@@ -9,7 +9,7 @@ public class MarketplaceRandomizers {
 
 	public static <T> T getRandomEntryFromList(ArrayList<T> list)
 	{
-		if (list == null || list.size() < 0)
+		if (list == null || list.size() <= 0)
 		{
 			return null;
 		}
