@@ -287,6 +287,11 @@ public class MarketplacePanel extends JPanel
 			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event Donations are DISABLED in the plugin settings</b></html>";
 		}
 
+		if (marketplaceManager.isFetchingEbsTransactionsErrored())
+		{
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event Donations are NOT AVAILABLE right now and therefore disabled.</b></html>";
+		}
+
 		if (streamerProductAmount <= 0)
 		{
 			availableDonationsText = "<html>There are <b color='"+ ERROR_TEXT_COLOR +"'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";

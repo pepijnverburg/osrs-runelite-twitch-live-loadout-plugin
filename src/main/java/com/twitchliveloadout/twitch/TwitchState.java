@@ -598,7 +598,7 @@ public class TwitchState {
 		// state also to this class. NOTE: check whether it is not null because this class is initialized first.
 		MarketplaceManager marketplaceManager = plugin.getMarketplaceManager();
 		boolean isEnabled = config.marketplaceEnabled();
-		boolean isActive = marketplaceManager != null && marketplaceManager.isActive();
+		boolean isActive = marketplaceManager != null && marketplaceManager.isActive() && !marketplaceManager.isFetchingEbsTransactionsErrored();
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ACTIVE.getKey(), isActive);

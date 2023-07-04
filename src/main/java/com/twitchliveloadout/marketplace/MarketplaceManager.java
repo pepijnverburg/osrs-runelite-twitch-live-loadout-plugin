@@ -125,6 +125,8 @@ public class MarketplaceManager {
 	 */
 	private boolean isFetchingEbsTransactions = false;
 	private boolean isFetchingEbsProducts = false;
+	@Getter
+	private boolean fetchingEbsTransactionsErrored = false;
 
 	/**
 	 * Lookup to see until when a certain product is cooled down and should stay in the queue if there are any
@@ -175,6 +177,7 @@ public class MarketplaceManager {
 			isFetchingEbsTransactions = true;
 			twitchApi.fetchAsyncEbsTransactions(lastTransactionId, (Response response) -> {
 				isFetchingEbsTransactions = false;
+				fetchingEbsTransactionsErrored = false;
 				JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
 				boolean status = result.get("status").getAsBoolean();
 				String message = result.get("message").getAsString();
@@ -186,6 +189,7 @@ public class MarketplaceManager {
 				if (!status)
 				{
 					plugin.logSupport("Could not fetch EBS transactions from Twitch as the status is invalid with message: "+ message);
+					fetchingEbsTransactionsErrored = true;
 					return;
 				}
 
@@ -250,12 +254,13 @@ public class MarketplaceManager {
 				}
 			}, (exception) -> {
 				isFetchingEbsTransactions = false;
+				fetchingEbsTransactionsErrored = true;
 			});
 		} catch (Exception exception) {
 			// empty
 		}
 
-		// always set to false when there is an error
+		// always set to false, also when there is an error
 		isFetchingEbsTransactions = false;
 	}
 
