@@ -221,7 +221,7 @@ public class SpawnManager {
 		}
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int minRadius, int radiusStepSize, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
+	public SpawnPoint getOutwardSpawnPoint(int minRadius, int maxRadius, int radiusStepSize, boolean inLineOfSight, WorldPoint referenceWorldPoint)
 	{
 		for (int radius = minRadius; radius <= maxRadius; radius++)
 		{
