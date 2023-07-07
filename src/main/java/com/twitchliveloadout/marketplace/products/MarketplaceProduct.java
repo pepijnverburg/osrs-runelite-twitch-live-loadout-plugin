@@ -349,7 +349,7 @@ public class MarketplaceProduct
 			}
 
 			// make sure the selected model placement is always valid
-			if (modelPlacement  == null)
+			if (modelPlacement == null)
 			{
 				modelPlacement = new EbsModelPlacement();
 			}
@@ -450,6 +450,7 @@ public class MarketplaceProduct
 			SpawnedObject spawnedObject = spawnedObjectIterator.next();
 			Instant spawnedAt = spawnedObject.getSpawnedAt();
 			Instant lastRandomEffectAt = spawnedObject.getLastRandomEffectAt();
+			boolean hasTriggeredAtLeastOnce = lastRandomEffectAt != null;
 			EbsSpawn spawn = spawnedObject.getSpawn();
 			EbsInterval randomInterval = spawn.randomEffectsInterval;
 			ArrayList<ArrayList<EbsEffect>> randomEffectsOptions = spawn.randomEffectsOptions;
@@ -464,15 +465,9 @@ public class MarketplaceProduct
 			Integer startDelayMs = randomInterval.startDelayMs;
 			Integer repeatAmount = randomInterval.repeatAmount;
 			Integer delayMs = randomInterval.delayMs;
+			Instant delayReferenceTime = (lastRandomEffectAt == null ? spawnedAt : lastRandomEffectAt);
 			Double chance = randomInterval.chance;
 			ArrayList<EbsCondition> conditions = randomInterval.conditions;
-
-			// when no trigger on spawn is requested we set the interval delay
-			// as the minimum time that should pass after spawning before the random effects are triggered
-			if (startDelayMs <= 0 && !triggerOnStart)
-			{
-				startDelayMs = delayMs;
-			}
 
 			// guard: check if the max repeat amount is exceeded
 			// NOTE: -1 repeat amount if infinity!
@@ -482,9 +477,13 @@ public class MarketplaceProduct
 			}
 
 			// guard: check if enough time has passed
-			if (lastRandomEffectAt != null && lastRandomEffectAt.plusMillis(delayMs).isAfter(now))
+			// NOTE: allow trigger when trigger on start is requested
+			if (delayReferenceTime.plusMillis(delayMs).isAfter(now))
 			{
-				continue;
+				if (hasTriggeredAtLeastOnce || !triggerOnStart)
+				{
+					continue;
+				}
 			}
 
 			// guard: skip when this spawned object is not in the region,
@@ -501,13 +500,13 @@ public class MarketplaceProduct
 				continue;
 			}
 
-			// update the last timestamp because a roll or a skip due to recent spawning
-			// should count to delay with the configured delay time
-			spawnedObject.updateLastRandomEffectAt(false);
+//			// update the last timestamp because a roll or a skip due to recent spawning
+//			// should count to delay with the configured delay time
+//			spawnedObject.updateLastRandomEffectAt(false);
 
 			// guard: skip when the first random effect delay has not yet passed after the spawn
 			// this prevents the random effect to instantly be triggered on spawn
-			if (spawnedAt.plusMillis(startDelayMs).isAfter(now))
+			if (startDelayMs > 0 && spawnedAt.plusMillis(startDelayMs).isAfter(now))
 			{
 				continue;
 			}
@@ -656,26 +655,23 @@ public class MarketplaceProduct
 		int startDelayMs = spawnInterval.startDelayMs;
 		int afterTriggerDelayMs = spawnInterval.afterTriggerDelayMs;
 		int delayMs = spawnInterval.delayMs;
+		Instant delayReferenceTime = (lastSpawnBehaviourAt == null ? startedAt : lastSpawnBehaviourAt);
 		ArrayList<EbsCondition> conditions = spawnInterval.conditions;
 
-		// when no trigger on spawn is requested we set the interval delay
-		// as the minimum time that should pass after spawning before the new spawns are triggered
-		if (startDelayMs <= 0 && !triggerOnStart)
-		{
-			startDelayMs = delayMs;
-		}
-
 		// guard: check if the amount has passed
-		// NOTE: -1 repeat amount if infinity!
+		// NOTE: -1 repeat amount for infinity!
 		if (repeatAmount >= 0 && spawnBehaviourCounter >= repeatAmount)
 		{
 			return;
 		}
 
 		// guard: check if the interval has not passed
-		if (hasSpawnedAtLeastOnce && lastSpawnBehaviourAt.plusMillis(delayMs).isAfter(now))
+		// this interval can be skipped the initial time when requested
+		if (delayReferenceTime.plusMillis(delayMs).isAfter(now))
 		{
-			return;
+			if (hasSpawnedAtLeastOnce || !triggerOnStart) {
+				return;
+			}
 		}
 
 		// guard: check if the minimum required time after the creation time has not passed
@@ -1184,7 +1180,7 @@ public class MarketplaceProduct
 		}
 
 		spawnedObject.setModelSet(modelSet);
-		spawnedObject.updateModelSet();
+		spawnedObject.updateModelSet(true);
 	}
 
 	private void triggerModelExpired(SpawnedObject spawnedObject, Boolean modelExpired)
