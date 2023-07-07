@@ -450,7 +450,7 @@ public class MarketplaceProduct
 			SpawnedObject spawnedObject = spawnedObjectIterator.next();
 			Instant spawnedAt = spawnedObject.getSpawnedAt();
 			Instant lastRandomEffectAt = spawnedObject.getLastRandomEffectAt();
-			boolean hasTriggeredAtLeastOnce = lastRandomEffectAt != null;
+			int randomEffectCounter = spawnedObject.getRandomEffectCounter();
 			EbsSpawn spawn = spawnedObject.getSpawn();
 			EbsInterval randomInterval = spawn.randomEffectsInterval;
 			ArrayList<ArrayList<EbsEffect>> randomEffectsOptions = spawn.randomEffectsOptions;
@@ -462,28 +462,12 @@ public class MarketplaceProduct
 			}
 
 			Boolean triggerOnStart = randomInterval.triggerOnStart;
-			Integer startDelayMs = randomInterval.startDelayMs;
-			Integer repeatAmount = randomInterval.repeatAmount;
-			Integer delayMs = randomInterval.delayMs;
-			Instant delayReferenceTime = (lastRandomEffectAt == null ? spawnedAt : lastRandomEffectAt);
 			Double chance = randomInterval.chance;
 			ArrayList<EbsCondition> conditions = randomInterval.conditions;
 
-			// guard: check if the max repeat amount is exceeded
-			// NOTE: -1 repeat amount if infinity!
-			if (repeatAmount >= 0 && spawnedObject.getRandomEffectCounter() >= repeatAmount)
-			{
+			// guard: check whether the interval is allowed
+			if (!verifyIntervalDelay(randomInterval, lastRandomEffectAt, spawnedAt, randomEffectCounter)) {
 				continue;
-			}
-
-			// guard: check if enough time has passed
-			// NOTE: allow trigger when trigger on start is requested
-			if (delayReferenceTime.plusMillis(delayMs).isAfter(now))
-			{
-				if (hasTriggeredAtLeastOnce || !triggerOnStart)
-				{
-					continue;
-				}
 			}
 
 			// guard: skip when this spawned object is not in the region,
@@ -496,17 +480,6 @@ public class MarketplaceProduct
 
 			// guard: make sure the conditions are met
 			if (!verifyConditions(conditions, spawnedObject))
-			{
-				continue;
-			}
-
-//			// update the last timestamp because a roll or a skip due to recent spawning
-//			// should count to delay with the configured delay time
-//			spawnedObject.updateLastRandomEffectAt(false);
-
-			// guard: skip when the first random effect delay has not yet passed after the spawn
-			// this prevents the random effect to instantly be triggered on spawn
-			if (startDelayMs > 0 && spawnedAt.plusMillis(startDelayMs).isAfter(now))
 			{
 				continue;
 			}
@@ -550,7 +523,6 @@ public class MarketplaceProduct
 			return;
 		}
 
-		Instant now = Instant.now();
 		String transactionId = transaction.id;
 		String productId = ebsProduct.id;
 		EbsInterval effectsInterval = behaviour.effectsInterval;
@@ -566,20 +538,11 @@ public class MarketplaceProduct
 			effectsInterval.repeatAmount = 1;
 		}
 
-		int repeatAmount = effectsInterval.repeatAmount;
 		ArrayList<EbsCondition> conditions = effectsInterval.conditions;
 		int afterTriggerDelayMs = effectsInterval.afterTriggerDelayMs;
 
-		// guard: check if the amount has passed
-		// NOTE: -1 repeat amount if infinity!
-		if (repeatAmount >= 0 && effectBehaviourCounter >= repeatAmount)
-		{
-			return;
-		}
-
-		// guard: check if the interval has not passed
-		if (lastEffectBehaviourAt != null && lastEffectBehaviourAt.plusMillis(effectsInterval.delayMs).isAfter(now))
-		{
+		// guard: check whether the interval is allowed
+		if (!verifyIntervalDelay(effectsInterval, lastEffectBehaviourAt, startedAt, effectBehaviourCounter)) {
 			return;
 		}
 
@@ -650,33 +613,11 @@ public class MarketplaceProduct
 			spawnInterval.repeatAmount = 1;
 		}
 
-		boolean triggerOnStart = spawnInterval.triggerOnStart;
-		int repeatAmount = spawnInterval.repeatAmount;
-		int startDelayMs = spawnInterval.startDelayMs;
 		int afterTriggerDelayMs = spawnInterval.afterTriggerDelayMs;
-		int delayMs = spawnInterval.delayMs;
-		Instant delayReferenceTime = (lastSpawnBehaviourAt == null ? startedAt : lastSpawnBehaviourAt);
 		ArrayList<EbsCondition> conditions = spawnInterval.conditions;
 
-		// guard: check if the amount has passed
-		// NOTE: -1 repeat amount for infinity!
-		if (repeatAmount >= 0 && spawnBehaviourCounter >= repeatAmount)
-		{
-			return;
-		}
-
-		// guard: check if the interval has not passed
-		// this interval can be skipped the initial time when requested
-		if (delayReferenceTime.plusMillis(delayMs).isAfter(now))
-		{
-			if (hasSpawnedAtLeastOnce || !triggerOnStart) {
-				return;
-			}
-		}
-
-		// guard: check if the minimum required time after the creation time has not passed
-		if (startDelayMs > 0 && startedAt.plusMillis(startDelayMs).isAfter(now))
-		{
+		// guard: check whether the interval is allowed
+		if (!verifyIntervalDelay(spawnInterval, lastSpawnBehaviourAt, startedAt, spawnBehaviourCounter)) {
 			return;
 		}
 
@@ -934,6 +875,42 @@ public class MarketplaceProduct
 			false,
 			null
 		);
+	}
+
+	private boolean verifyIntervalDelay(EbsInterval interval, Instant lastTriggeredAt, Instant startedAt, int triggeredAmount)
+	{
+		Instant now = Instant.now();
+		boolean triggerOnStart = interval.triggerOnStart;
+		int repeatAmount = interval.repeatAmount;
+		int startDelayMs = interval.startDelayMs;
+		int delayMs = interval.delayMs;
+		Instant delayReferenceTime = (lastTriggeredAt == null ? startedAt : lastTriggeredAt);
+		boolean hasTriggeredAtLeastOnce = (lastTriggeredAt != null);
+
+		// guard: check if the amount has passed
+		// NOTE: -1 repeat amount for infinity!
+		if (repeatAmount >= 0 && triggeredAmount >= repeatAmount)
+		{
+			return false;
+		}
+
+		// guard: check if the interval has not passed
+		// this interval can be skipped the initial time when requested
+		if (delayReferenceTime != null && delayReferenceTime.plusMillis(delayMs).isAfter(now))
+		{
+			if (hasTriggeredAtLeastOnce || !triggerOnStart)
+			{
+				return false;
+			}
+		}
+
+		// guard: check if the minimum required time after the creation time has not passed
+		if (startDelayMs > 0 && startedAt.plusMillis(startDelayMs).isAfter(now))
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	private boolean verifyConditions(ArrayList<EbsCondition> conditions)
