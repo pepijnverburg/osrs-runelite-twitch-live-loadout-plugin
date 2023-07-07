@@ -59,6 +59,9 @@ public class SpawnedObject {
 
 	private double currentScale = -1;
 	private double currentRotationDegrees = 0;
+	private int currentTranslateX = 0;
+	private int currentTranslateY = 0;
+	private int currentTranslateZ = 0;
 	private int currentAnimationId;
 	private Instant lockAnimationUntil;
 
@@ -77,7 +80,7 @@ public class SpawnedObject {
 
 		// first initialize the model set so we have proper model data
 		// for the next initialisation methods
-		updateModelSet();
+		updateModelSet(false);
 
 		// setup one time settings
 		initializeObject();
@@ -101,7 +104,7 @@ public class SpawnedObject {
 		this.modelSet = modelSet;
 	}
 
-	public void updateModelSet()
+	public void updateModelSet(boolean preserveTransforms)
 	{
 
 		// guard: make sure the selected model set is valid
@@ -161,21 +164,22 @@ public class SpawnedObject {
 		}
 
 		// scale model
-		if (shouldScaleModel)
-		{
-			scale(modelScale);
+		// NOTE: don't include with preserve transform, because different model IDs might require a different scale
+		if (shouldScaleModel) {
+			scale(modelScale, false);
 		}
 
 		// rotate model
-		if (shouldRotateModel)
-		{
-			rotate(modelRotationDegrees);
+		if (preserveTransforms) {
+			rotate(currentRotationDegrees, true);
+		} else if (shouldRotateModel) {
+			rotate(modelRotationDegrees, false);
 		}
 
-		// set the height
-		if (shouldTranslateModel)
-		{
-			translate(translateX, translateY, translateZ);
+		// set the position
+		// NOTE: don't include with preserve transform, because different model IDs might require a different scale
+		if (shouldTranslateModel) {
+			translate(translateX, translateY, translateZ, false);
 		}
 
 		// re-render after changes
@@ -235,20 +239,31 @@ public class SpawnedObject {
 		double angleRadians = Math.atan2(deltaX, deltaY);
 		double angleDegrees = Math.toDegrees(angleRadians);
 
-		rotate(angleDegrees);
+		rotate(angleDegrees, false);
 	}
 
-	public void translate(int x, int y, int z)
+	public void translate(int x, int y, int z, boolean forceUpdate)
 	{
+
+		// guard: skip when there are no changes
+		if (currentTranslateX == x && currentTranslateY == y && currentTranslateZ == z && !forceUpdate)
+		{
+			return;
+		}
+
+		currentTranslateX = x;
+		currentTranslateY = y;
+		currentTranslateZ = z;
+
 		modelData.cloneVertices();
 		modelData.translate(x, y, z);
 	}
 
-	public void rotate(double angleDegrees)
+	public void rotate(double angleDegrees, boolean forceUpdate)
 	{
 
 		// guard: skip rotation if already rotated like this for performance
-		if (currentRotationDegrees == angleDegrees)
+		if (currentRotationDegrees == angleDegrees && !forceUpdate)
 		{
 			return;
 		}
@@ -274,12 +289,12 @@ public class SpawnedObject {
 		object.setOrientation(orientation);
 	}
 
-	public void scale(double scale)
+	public void scale(double scale, boolean forceUpdate)
 	{
 		int roundedScale = (int) scale;
 
 		// guard: check if the scale is valid and changed
-		if (roundedScale < 0 || scale == currentScale)
+		if (roundedScale < 0 || (scale == currentScale && !forceUpdate))
 		{
 			return;
 		}
