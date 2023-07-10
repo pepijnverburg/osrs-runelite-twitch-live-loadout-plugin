@@ -65,8 +65,8 @@ public class TwitchState {
 	 * are sent in smaller parts via this state.
 	 * NOTE: keep a minimum of 20% reserved for combat fights.
 	 */
-	private final static int MAX_BANK_ITEMS_PER_SLICE = 300;
-	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 300;
+	private final static int MAX_BANK_ITEMS_PER_SLICE = 250;
+	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 250;
 	private final static String COLLECTION_LOG_FILTER_SEPARATOR = ",";
 	private final JsonObject cyclicState = new JsonObject();
 	@Getter
@@ -245,7 +245,7 @@ public class TwitchState {
 
 	public void setInvocations(JsonArray invocations)
 	{
-		currentState.add(TwitchStateEntry.INVOCATIONS.getKey(), invocations);
+		cyclicState.add(TwitchStateEntry.INVOCATIONS.getKey(), invocations);
 		plugin.setConfiguration(INVOCATIONS_CONFIG_KEY, invocations);
 	}
 
@@ -253,7 +253,7 @@ public class TwitchState {
 	{
 		try {
 			int parsedRaidLevel = Integer.parseInt(raidLevel);
-			currentState.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), parsedRaidLevel);
+			cyclicState.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), parsedRaidLevel);
 			plugin.setConfiguration(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, parsedRaidLevel);
 		} catch (Exception exception) {
 			plugin.logSupport("Could not set invocations raid level due to the following error:", exception);
@@ -476,6 +476,16 @@ public class TwitchState {
 			state.add(TwitchStateEntry.QUESTS.getKey(), quests);
 		}
 
+		if (currentCyclicEntry == TwitchStateEntry.INVOCATIONS)
+		{
+			// add all the invocations in one go
+			JsonArray invocations = cyclicState.getAsJsonArray(TwitchStateEntry.INVOCATIONS.getKey());
+			JsonElement invocationsRaidLevelElement = cyclicState.get(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey());
+			Integer invocationsRaidLevel = (invocationsRaidLevelElement == null ? null : invocationsRaidLevelElement.getAsInt());
+			state.add(TwitchStateEntry.INVOCATIONS.getKey(), invocations);
+			state.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), invocationsRaidLevel);
+		}
+
 		return state;
 	}
 
@@ -549,8 +559,15 @@ public class TwitchState {
 			}
 		}
 
-		// after quests we go back to the bank
+		// after quests we go to invocations
 		else if (currentCyclicEntry == TwitchStateEntry.QUESTS)
+		{
+			currentCyclicEntry = TwitchStateEntry.INVOCATIONS;
+			currentCyclicSliceIndex = 0;
+		}
+
+		// after invocations we go back to the bank
+		else if (currentCyclicEntry == TwitchStateEntry.INVOCATIONS)
 		{
 			currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 			currentCyclicSliceIndex = 0;
@@ -840,10 +857,12 @@ public class TwitchState {
 		cyclicState.remove(TwitchStateEntry.COLLECTION_LOG.getKey());
 		cyclicState.remove(TwitchStateEntry.BANK_TABBED_ITEMS.getKey());
 		cyclicState.remove(TwitchStateEntry.BANK_PRICE.getKey());
+		cyclicState.remove(TwitchStateEntry.QUESTS.getKey());
+		cyclicState.remove(TwitchStateEntry.INVOCATIONS.getKey());
+		cyclicState.remove(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey());
+
 		currentState.add(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), null);
 		currentState.addProperty(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), 0);
-		currentState.add(TwitchStateEntry.INVOCATIONS.getKey(), null);
-		currentState.add(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), null);
 
 		loadDataFromCache(COLLECTION_LOG_CONFIG_KEY, (String rawCollectionLog) -> {
 			JsonObject parsedCollectionLog = new JsonParser().parse(rawCollectionLog).getAsJsonObject();
@@ -875,7 +894,7 @@ public class TwitchState {
 
 		loadDataFromCache(INVOCATIONS_CONFIG_KEY, (String rawInvocations) -> {
 			JsonArray parsedInvocations = new JsonParser().parse(rawInvocations).getAsJsonArray();
-			setItems(TwitchStateEntry.INVOCATIONS.getKey(), parsedInvocations);
+			setInvocations(parsedInvocations);
 		});
 
 		loadDataFromCache(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, (String raidLevel) -> {
