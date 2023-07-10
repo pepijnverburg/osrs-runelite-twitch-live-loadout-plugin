@@ -162,7 +162,7 @@ public class TransmogManager extends MarketplaceEffectManager<EbsEquipmentFrame>
 	protected void onAddEffect(MarketplaceEffect effect)
 	{
 		// update immediately when effect is added
-		// because this manager is not updating periodically, but event based
+		// because this manager is not updating periodically, but is event based
 		applyActiveEffects();
 	}
 

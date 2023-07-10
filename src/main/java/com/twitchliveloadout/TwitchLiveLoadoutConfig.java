@@ -675,4 +675,58 @@ public interface TwitchLiveLoadoutConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+			keyName = "testRandomEvents",
+			name = "Test Random Events",
+			description = "Periodically spawn a random event and move to the next one.",
+			position = 6,
+			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			section = advancedSection
+	)
+	default boolean testRandomEventsEnabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "testRandomEventsRandomly",
+			name = "Test Randomly",
+			description = "True when selecting randomly instead of cyclic.",
+			position = 8,
+			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			section = advancedSection
+	)
+	default boolean testRandomEventsRandomly()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "testRandomEventsDuration",
+			name = "Test Duration",
+			description = "Duration of a single Random Event while testing.",
+			position = 10,
+			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			section = advancedSection
+	)
+	@Units(Units.SECONDS)
+	default int testRandomEventsDuration()
+	{
+		return 10;
+	}
+
+	@ConfigItem(
+			keyName = "testRandomEventsDelay",
+			name = "Test Delay",
+			description = "The amount of time before the next Random Event is tested.",
+			position = 12,
+			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			section = advancedSection
+	)
+	@Units(Units.SECONDS)
+	default int testRandomEventsDelay()
+	{
+		return 5;
+	}
 }

@@ -3,10 +3,10 @@ package com.twitchliveloadout.marketplace;
 public class MarketplaceConstants {
 	public static final int EBS_REQUIRED_PRODUCT_VERSION = 1;
 
-	public static final boolean STRESS_TEST_ACTIVE_PRODUCTS_ENABLED = false;
 	public static final int MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY = 50;
 	public static final int MAX_TRANSACTION_AMOUNT_IN_MEMORY = 50;
 	public static final int TRANSACTION_DELAY_CORRECTION_MS = 1 * 200;
+	public static final int TRANSACTION_EXPIRY_CLOCK_TOLERANCE_MS = 30 * 1000;
 	public static final int TICK_DURATION_MS = 600;
 
 	public static final String CURRENT_TILE_LOCATION_TYPE = "current-tile";

@@ -34,15 +34,12 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import okhttp3.Response;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutPlugin.IN_DEVELOPMENT;
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.STRESS_TEST_ACTIVE_PRODUCTS_ENABLED;
 
 @Slf4j
 public class MarketplaceManager {
@@ -135,6 +132,12 @@ public class MarketplaceManager {
 	private final ConcurrentHashMap<String, Instant> streamerProductCooldownUntil = new ConcurrentHashMap<>();
 	private Instant sharedCooldownUntil;
 
+	/**
+	 * Testing variables for the end-to-end testing of marketplace products
+	 */
+	private int currentTestEbsProductIndex = 0;
+	private Instant lastEbsProductTestedAt;
+
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson)
 	{
 		this.plugin = plugin;
@@ -220,12 +223,6 @@ public class MarketplaceManager {
 						handledTransactionIds.add(transactionId);
 						newTransactions.add(twitchTransaction);
 						log.info("Queued a new Twitch transaction with ID: " + transactionId);
-
-						// when stress testing we remove the transaction ID, so it can be triggered again
-						if (isStressTesting())
-						{
-							handledTransactionIds.remove(transactionId);
-						}
 					} catch (Exception exception) {
 						log.error("Could not parse Twitch Extension transaction due to the following error: ", exception);
 					}
@@ -382,13 +379,6 @@ public class MarketplaceManager {
 					continue;
 				}
 
-				// when stress testing override the timestamp to be now to simulate the transaction expiry
-				// to be later in the future for testing purposes.
-				if (isStressTesting())
-				{
-					transaction.timestamp = Instant.now().toString();
-				}
-
 				// create a new marketplace product where all the other products
 				// are merged together in one instance for reference
 				MarketplaceProduct newProduct = new MarketplaceProduct(
@@ -407,6 +397,16 @@ public class MarketplaceManager {
 				// some of the behaviours are triggered right before removing it immediately.
 				if (newProduct.isExpired())
 				{
+
+					// in case there are system clock differences we can handle some degree of offsets and
+					// adjust the timestamp of the transaction to now if it falls within the tolerance
+					// this is only an issue when the clock is AHEAD of time
+					if (!newProduct.isExpired(-1 * MarketplaceConstants.TRANSACTION_EXPIRY_CLOCK_TOLERANCE_MS)) {
+						transaction.timestamp = Instant.now().toString();
+						log.info("Transaction falls within the clock tolerance settings and is therefore requeued with a new timestamp: " + transaction.timestamp);
+						queuedTransactions.add(transaction);
+					}
+
 					log.info("It is skipped, because it has already expired at: " + newProduct.getExpiredAt());
 					continue;
 				}
@@ -467,6 +467,115 @@ public class MarketplaceManager {
 		// remove from the handled transactions and queue once again
 		handledTransactionIds.remove(transactionId);
 		queuedTransactions.add(transaction);
+	}
+
+	/**
+	 * Cyclic method to cycle through all the available EBS products and test them one by one at a configurable interval
+	 */
+	public void testNextEbsProduct()
+	{
+		Instant now = Instant.now();
+
+		// guard: check if enough time has passed for the next product to be tested
+		if (lastEbsProductTestedAt != null && lastEbsProductTestedAt.plusSeconds(config.testRandomEventsDelay()).isAfter(now))
+		{
+			return;
+		}
+
+		// guard: skip when there are no products loaded yet
+		if (ebsProducts.size() <= 0)
+		{
+			return;
+		}
+
+		// make sure the index is valid
+		if (currentTestEbsProductIndex >= ebsProducts.size() || currentTestEbsProductIndex < 0)
+		{
+			currentTestEbsProductIndex = 0;
+		}
+
+		EbsProduct ebsProduct = ebsProducts.get(currentTestEbsProductIndex);
+
+		// check if a random one should be selected rather than selecting it in a cyclic way
+		if (config.testRandomEventsRandomly())
+		{
+			ArrayList<EbsProduct> newEbsProducts = new ArrayList<>();
+			newEbsProducts.addAll(ebsProducts);
+			ebsProduct = MarketplaceRandomizers.getRandomEntryFromList(newEbsProducts);
+		}
+
+		// test this single product
+		testEbsProduct(ebsProduct);
+
+		// move to the next products and delay
+		currentTestEbsProductIndex += 1;
+		lastEbsProductTestedAt = now;
+	}
+
+	/**
+	 * Test an EBS product by manually creating a fake Twitch donation and queueing it.
+	 * NOTE: this is only available in development.
+	 */
+	private void testEbsProduct(EbsProduct ebsProduct)
+	{
+
+		// guard: skip this when not in development
+		if (!IN_DEVELOPMENT || !config.testRandomEventsEnabled())
+		{
+			return;
+		}
+
+		TwitchTransaction twitchTransaction = new TwitchTransaction();
+		TwitchProduct twitchProduct = new TwitchProduct();
+		StreamerProduct streamerProduct = new StreamerProduct();
+		TwitchProductCost twitchProductCost = new TwitchProductCost();
+		String transactionId = generateRandomTestId();
+		String streamerProductId = generateRandomTestId();
+		String twitchSku = generateRandomTestId();
+		int currencyAmount = 100;
+		String currencyType = "bits";
+
+		twitchProductCost.amount = currencyAmount;
+		twitchProductCost.type = currencyType;
+
+		twitchProduct.sku = twitchSku;
+		twitchProduct.domain = "test.ext.twitch.tv";
+		twitchProduct.cost = twitchProductCost;
+		twitchProduct.inDevelopment = true;
+		twitchProduct.displayName = currencyAmount +" "+ currencyType;
+		twitchProduct.expiration = "";
+		twitchProduct.broadcast = true;
+
+		twitchTransaction.id = transactionId;
+		twitchTransaction.timestamp = Instant.now().toString();
+		twitchTransaction.broadcaster_id = "0";
+		twitchTransaction.broadcaster_login = "test-streamer";
+		twitchTransaction.broadcaster_name = "Test Streamer";
+		twitchTransaction.user_id = "0";
+		twitchTransaction.user_login = "test-viewer";
+		twitchTransaction.user_name = "Test Viewer";
+		twitchTransaction.product_type = "BITS_IN_EXTENSION";
+		twitchTransaction.product_data = twitchProduct;
+		twitchTransaction.handled_at = Instant.now().toString();
+
+		streamerProduct.id = streamerProductId;
+		streamerProduct.ebsProductId = ebsProduct.id;
+		streamerProduct.twitchProductSku = twitchSku;
+		streamerProduct.name = "[TEST] "+ ebsProduct.name;
+		streamerProduct.duration = config.testRandomEventsDuration();
+		streamerProduct.cooldown = 0;
+
+		// register the unique streamer product for this single transaction
+		// and queue the transaction as we now have all the information configured
+		// to properly the Random Event in game
+
+		streamerProducts.add(streamerProduct);
+		queuedTransactions.add(twitchTransaction);
+	}
+
+	private String generateRandomTestId()
+	{
+		return "test_"+ UUID.randomUUID();
 	}
 
 	/**
@@ -531,6 +640,21 @@ public class MarketplaceManager {
 			int spawnAmount = marketplaceProduct.getSpawnAmount();
 			log.info("Cleaned an expired marketplace product (EBS ID: "+ ebsProductId +", spawn amount: "+ spawnAmount +") for transaction: "+ transactionId);
 		});
+
+		// fail-safe to check any spawned objects that are expired, but not properly cleaned up
+		spawnManager.handleAllSpawnedObjects((spawnedObject) -> {
+			MarketplaceProduct product = spawnedObject.getProduct();
+
+			// guard: check if spawned object is not expired
+			if (!spawnedObject.isExpired() || activeProducts.contains(product))
+			{
+				return;
+			}
+
+			// hide and free up the tile
+			spawnedObject.hide();
+			spawnManager.deregisterSpawnedObjectPlacement(spawnedObject);
+		});
 	}
 
 	/**
@@ -540,7 +664,14 @@ public class MarketplaceManager {
 	{
 		JsonObject segmentContent = twitchApi.getConfigurationSegmentContent(TwitchSegmentType.BROADCASTER);
 
+		// guard: skip when invalid configuration service content
 		if (segmentContent == null)
+		{
+			return;
+		}
+
+		// guard: don't update the streamer products when in testing mode
+		if (IN_DEVELOPMENT && config.testRandomEventsEnabled())
 		{
 			return;
 		}
@@ -926,11 +1057,6 @@ public class MarketplaceManager {
 	{
 		disable();
 		spawnOverheadManager.removeOverlay();
-	}
-
-	public boolean isStressTesting()
-	{
-		return IN_DEVELOPMENT && STRESS_TEST_ACTIVE_PRODUCTS_ENABLED;
 	}
 
 	public interface EmptyHandler {
