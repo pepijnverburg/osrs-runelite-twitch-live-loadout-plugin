@@ -575,6 +575,22 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
+	 * Polling mechanism to trigger automated end-to-end tests for the marketplace products
+	 */
+	@Schedule(period = 1, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void testMarketplaceProducts()
+	{
+		try {
+			if (IN_DEVELOPMENT && config.testRandomEventsEnabled())
+			{
+				marketplaceManager.testNextEbsProduct();
+			}
+		} catch (Exception exception) {
+			logSupport("Could not test marketplace products: ", exception);
+		}
+	}
+
+	/**
 	 * Simulate game ticks when not logged in to still register for idling fight time when not logged in
 	 */
 	@Schedule(period = 600, unit = ChronoUnit.MILLIS, asynchronous = true)
@@ -927,6 +943,31 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+
+//	@Subscribe
+//	public void onProjectileMoved(ProjectileMoved projectileMoved)
+//	{
+//		Projectile projectile = projectileMoved.getProjectile();
+//		log.info("----- NEW PROJECTILE -----");
+//		log.info("getId: "+ projectile.getId());
+//		log.info("getFloor: "+ projectile.getFloor());
+//		log.info("getX1: "+ projectile.getAnimation());
+//		log.info("getY1: "+ projectile.getY1());
+//		log.info("getHeight: "+ projectile.getHeight());
+//		log.info("getStartCycle: "+ projectile.getStartCycle());
+//		log.info("getEndCycle: "+ projectile.getEndCycle());
+//		log.info("getSlope: "+ projectile.getSlope());
+//		log.info("getStartHeight: "+ projectile.getStartHeight());
+//		log.info("getEndHeight: "+ projectile.getEndHeight());
+//
+//		int plane = client.getPlane();
+//		int sceneX = client.getLocalPlayer().getLocalLocation().getSceneX();
+//		int sceneY = client.getLocalPlayer().getLocalLocation().getSceneY();
+//		int tileHeight = client.getTileHeights()[plane][sceneX][sceneY];
+//		log.info("tileHeight: "+ tileHeight);
+//		log.info("trueProjectileHeight: "+ (projectile.getHeight() - tileHeight));
+//	}
+
 	/**
 	 * Periodically update the connectivity panel to show the latest status
 	 */
@@ -1199,7 +1240,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 */
 	public AccountType getAccountType()
 	{
-		int accountTypeId = client.getVarbitValue(Varbits.ACCOUNT_TYPE);
+		// not using primitive, because it can be null while booting
+		Integer accountTypeId = client.getVarbitValue(Varbits.ACCOUNT_TYPE);
 
 		for (AccountType accountType : AccountType.values())
 		{
