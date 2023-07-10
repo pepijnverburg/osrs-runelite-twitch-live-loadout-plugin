@@ -565,7 +565,7 @@ public class MarketplaceProduct
 			return;
 		}
 
-		log.warn("Executing effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
+//		log.warn("Executing effect behaviours for product ("+ productId +") and transaction ("+ transactionId +")");
 		lastEffectBehaviourAt = Instant.now().plusMillis(afterTriggerDelayMs);
 		effectBehaviourCounter += 1;
 
@@ -1597,6 +1597,7 @@ public class MarketplaceProduct
 			if (hideEffects == null || hideEffects.size() <= 0)
 			{
 				spawnedObject.hide();
+				manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
 				return;
 			}
 
@@ -1610,6 +1611,7 @@ public class MarketplaceProduct
 				(resetDelayMs) -> {
 					handleSpawnedObject(spawnedObject, resetDelayMs, () -> {
 						spawnedObject.hide();
+						manager.getSpawnManager().deregisterSpawnedObjectPlacement(spawnedObject);
 					});
 				}
 			);
