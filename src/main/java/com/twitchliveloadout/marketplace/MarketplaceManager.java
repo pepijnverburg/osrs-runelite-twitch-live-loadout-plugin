@@ -644,9 +644,11 @@ public class MarketplaceManager {
 		// fail-safe to check any spawned objects that are expired, but not properly cleaned up
 		spawnManager.handleAllSpawnedObjects((spawnedObject) -> {
 			MarketplaceProduct product = spawnedObject.getProduct();
+			boolean hasExpiry = spawnedObject.getExpiredAt() != null;
 
 			// guard: check if spawned object is not expired
-			if (!spawnedObject.isExpired() || activeProducts.contains(product))
+			// NOTE: when there is no expiry set it is required the product is still active
+			if ((hasExpiry && !spawnedObject.isExpired()) || activeProducts.contains(product))
 			{
 				return;
 			}
