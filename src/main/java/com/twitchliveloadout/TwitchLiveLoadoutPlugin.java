@@ -42,6 +42,7 @@ import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -69,6 +70,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.GAME_CYCLE_DURATION_MS;
 
 /**
  * Manages polling and event listening mechanisms to synchronize the state
@@ -90,7 +92,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Debugging flags
 	 */
-	public static final boolean IN_DEVELOPMENT = false;
+	public static final boolean IN_DEVELOPMENT = true;
 
 	@Inject
 	private TwitchLiveLoadoutConfig config;
@@ -410,6 +412,82 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		} catch (Exception exception) {
 			logSupport("Could not update the fight statistics due to the following error: ", exception);
 		}
+	}
+
+	/**
+	 * Temporary for testing
+	 */
+	@Schedule(period = 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void testProjectilesTargets()
+	{
+		Player player = client.getLocalPlayer();
+
+		if (player == null)
+		{
+			return;
+		}
+
+		Actor interacting = player.getInteracting();
+
+		if (interacting == null)
+		{
+			return;
+		}
+
+		LocalPoint startLocation = player.getLocalLocation();
+		LocalPoint endLocation = interacting.getLocalLocation();
+
+		int cakeProjectileId = 602;
+		int msbProjectileId = 249;
+		int startZ = -170;
+		int slope = 2;
+		int startHeight = 11;
+		int endHeight = 140;
+		int durationMs = 1000;
+		int durationCycles = (durationMs / 20);
+		int plane = client.getPlane();
+		int sceneX = startLocation.getSceneX();
+		int sceneY = startLocation.getSceneY();
+		int tileHeight = client.getTileHeights()[plane][sceneX][sceneY];
+		int correctedStartZ = tileHeight + startZ; // correct for the starting tile height
+		int startCycle = client.getGameCycle();
+		int endCycle = startCycle + durationCycles;
+
+		// create a projectile following the actor
+		Projectile actorProjectile = client.createProjectile(
+				cakeProjectileId,
+				client.getPlane(),
+				startLocation.getX(),
+				startLocation.getY(),
+				correctedStartZ,
+				startCycle,
+				endCycle,
+				slope,
+				startHeight,
+				endHeight,
+				interacting,
+				endLocation.getX(),
+				endLocation.getY()
+		);
+		client.getProjectiles().addLast(actorProjectile);
+
+		// create a projectile targeting the tile
+		Projectile tileProjectile = client.createProjectile(
+				msbProjectileId,
+				client.getPlane(),
+				startLocation.getX(),
+				startLocation.getY(),
+				correctedStartZ,
+				startCycle,
+				endCycle,
+				slope,
+				startHeight,
+				endHeight,
+				null, // no actor
+				endLocation.getX(),
+				endLocation.getY()
+		);
+		client.getProjectiles().addLast(tileProjectile);
 	}
 
 	/**
