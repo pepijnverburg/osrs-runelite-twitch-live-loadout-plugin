@@ -8,6 +8,7 @@ public class MarketplaceConstants {
 	public static final int TRANSACTION_DELAY_CORRECTION_MS = 1 * 200;
 	public static final int TRANSACTION_EXPIRY_CLOCK_TOLERANCE_MS = 30 * 1000;
 	public static final int TICK_DURATION_MS = 600;
+	public static final int GAME_CYCLE_DURATION_MS = 20; // refer to client.getGameCycle()
 
 	public static final String CURRENT_TILE_LOCATION_TYPE = "current-tile";
 	public static final String PREVIOUS_TILE_LOCATION_TYPE = "previous-tile";

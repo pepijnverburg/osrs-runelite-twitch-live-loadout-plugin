@@ -396,7 +396,8 @@ public class MarketplaceProduct
 				if (newSpawnPoints.containsKey(worldPoint)) {
 					newInSceneSpawnPoint = newSpawnPoints.get(worldPoint);
 				} else {
-					newInSceneSpawnPoint = spawnManager.getSpawnPoint(modelPlacement, spawnedObject);
+					WorldPoint modelWorldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+					newInSceneSpawnPoint = spawnManager.getSpawnPoint(modelPlacement, modelWorldPoint);
 					newSpawnPoints.put(worldPoint, newInSceneSpawnPoint);
 				}
 
@@ -635,6 +636,17 @@ public class MarketplaceProduct
 
 	private void triggerSpawnOptions(SpawnedObject spawnedObject, ArrayList<EbsSpawnOption> spawnOptions)
 	{
+		WorldPoint worldPoint = null;
+
+		if (spawnedObject !=  null) {
+			worldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+		}
+
+		triggerSpawnOptionsAtWorldPoint(worldPoint, spawnOptions);
+	}
+
+	private void triggerSpawnOptionsAtWorldPoint(WorldPoint modelWorldPoint, ArrayList<EbsSpawnOption> spawnOptions)
+	{
 
 		// guard: make sure the spawn options are valid
 		if (spawnOptions == null || spawnOptions.size() <= 0)
@@ -699,7 +711,7 @@ public class MarketplaceProduct
 						// or if we should generate a new one
 						if (spawnPoint == null || INDIVIDUAL_SPAWN_POINT_TYPE.equals(spawnPointType))
 						{
-							spawnPoint = spawnManager.getSpawnPoint(placement, spawnedObject);
+							spawnPoint = spawnManager.getSpawnPoint(placement, modelWorldPoint);
 						}
 
 						triggerSpawn(spawn, spawnPoint, spawnDelayMs);
@@ -1423,19 +1435,31 @@ public class MarketplaceProduct
 			Integer projectileId = projectileFrame.id;
 			String startLocationType = projectileFrame.startLocationType;
 			String endLocationType = projectileFrame.endLocationType;
-			Actor endActor = getActorByLocationType(endLocationType);
-			LocalPoint startLocation = getLocalPointByLocationType(startLocationType, spawnedObject);
-			LocalPoint endLocation = getLocalPointByLocationType(endLocationType, spawnedObject);
+			Boolean followEndLocation = projectileFrame.followEndLocation;
+			Boolean inLineOfSight = projectileFrame.inLineOfSight;
+			Boolean avoidExistingSpawns = projectileFrame.avoidExistingSpawns;
+			Boolean avoidPlayerLocation = projectileFrame.avoidPlayerLocation;
+			Actor endActor = followEndLocation ? getActorByLocationType(endLocationType) : null;
+			LocalPoint startReferenceLocation = getLocalPointByLocationType(startLocationType, spawnedObject);
+			LocalPoint endReferenceLocation = getLocalPointByLocationType(endLocationType, spawnedObject);
+
+			// offset the locations with possible radiuses
+			LocalPoint startLocation = offsetLocalPointByRadius(startReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, projectileFrame.startLocationRadiusRange);
+			LocalPoint endLocation = offsetLocalPointByRadius(endReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, projectileFrame.endLocationRadiusRange);
+			WorldPoint startWorldLocation = WorldPoint.fromLocal(client, startLocation);
+			WorldPoint endWorldLocation = WorldPoint.fromLocal(client, endLocation);
+
 			int startZ = projectileFrame.startZ;
 			int slope = projectileFrame.slope;
 			int startHeight = projectileFrame.startHeight;
 			int endHeight = projectileFrame.endHeight;
 			int durationMs = projectileFrame.durationMs;
-			int durationCycles = (durationMs / 25); // how to go from ms to cycles? this is an approximation
+			int durationCycles = (durationMs / GAME_CYCLE_DURATION_MS);
 			int plane = client.getPlane();
 			int sceneX = startLocation.getSceneX();
 			int sceneY = startLocation.getSceneY();
 			int tileHeight = client.getTileHeights()[plane][sceneX][sceneY];
+			int correctedStartZ = tileHeight + startZ; // correct for the starting tile height
 
 			// guard: make sure the parameters are valid
 			if (projectileId == null || durationCycles <= 0 || startLocation == null || endLocation == null)
@@ -1448,12 +1472,15 @@ public class MarketplaceProduct
 				int startCycle = client.getGameCycle();
 				int endCycle = startCycle + durationCycles;
 
+				// trigger start spawns
+				triggerSpawnOptionsAtWorldPoint(startWorldLocation, projectileFrame.startSpawnOptions);
+
 				Projectile projectile = client.createProjectile(
 					projectileId,
 					client.getPlane(),
 					startLocation.getX(),
 					startLocation.getY(),
-			    tileHeight + startZ, // correct for the starting tile height
+			    	correctedStartZ,
 					startCycle,
 					endCycle,
 					slope,
@@ -1463,8 +1490,12 @@ public class MarketplaceProduct
 					endLocation.getX(),
 					endLocation.getY()
 				);
-
 				client.getProjectiles().addLast(projectile);
+
+				// trigger end spawns
+				manager.getPlugin().scheduleOnClientThread(() -> {
+					triggerSpawnOptionsAtWorldPoint(endWorldLocation, projectileFrame.endSpawnOptions);
+				}, durationMs);
 			}, delayMs + projectileDelayMs);
 		}
 	}
@@ -1521,6 +1552,38 @@ public class MarketplaceProduct
 		}
 
 		return null;
+	}
+
+	private LocalPoint offsetLocalPointByRadius(LocalPoint localPoint, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, EbsRandomRange radiusRange)
+	{
+
+		// guard: ensure valid parameters
+		if (localPoint == null || radiusRange == null)
+		{
+			return localPoint;
+		}
+
+		Client client = manager.getClient();
+		WorldPoint worldPoint =  WorldPoint.fromLocal(client, localPoint);
+		int minRadius = radiusRange.min.intValue();
+		int maxRadius = radiusRange.max.intValue();
+
+		SpawnPoint spawnPoint = manager.getSpawnManager().getSpawnPoint(
+				minRadius,
+				maxRadius,
+				inLineOfSight,
+				avoidExistingSpawns,
+				avoidPlayerLocation,
+				worldPoint
+		);
+
+		// guard: its possible no candidate can be found and if so we just pick the original point
+		if (spawnPoint == null)
+		{
+			return localPoint;
+		}
+
+		return spawnPoint.getLocalPoint(client);
 	}
 
 	private void handleEffectFrame(EbsEffectFrame effect, int baseDelayMs, StartEffectHandler startHandler, ResetEffectHandler resetHandler)

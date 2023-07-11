@@ -221,13 +221,13 @@ public class SpawnManager {
 		}
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int minRadius, int maxRadius, int radiusStepSize, boolean inLineOfSight, WorldPoint referenceWorldPoint)
+	public SpawnPoint getOutwardSpawnPoint(int minRadius, int maxRadius, int radiusStepSize, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, WorldPoint referenceWorldPoint)
 	{
 		for (int radius = minRadius; radius <= maxRadius; radius++)
 		{
 			int randomizedRadius = radius + (int) Math.round(Math.random() * ((float) radiusStepSize));
 			int usedRadius = Math.min(randomizedRadius, maxRadius);
-			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, usedRadius, inLineOfSight, referenceWorldPoint);
+			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, usedRadius, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, referenceWorldPoint);
 
 			if (candidateSpawnPoint != null) {
 				return candidateSpawnPoint;
@@ -237,7 +237,7 @@ public class SpawnManager {
 		return null;
 	}
 
-	public SpawnPoint getSpawnPoint(EbsModelPlacement placement, SpawnedObject spawnedObject)
+	public SpawnPoint getSpawnPoint(EbsModelPlacement placement, WorldPoint modelWorldPoint)
 	{
 
 		// make sure there are valid placement parameters
@@ -253,6 +253,8 @@ public class SpawnManager {
 		String radiusType = placement.radiusType;
 		String locationType = placement.locationType;
 		Boolean inLineOfSight = placement.inLineOfSight;
+		Boolean avoidExistingSpawns = placement.avoidExistingSpawns;
+		Boolean avoidPlayerLocation = placement.avoidPlayerLocation;
 		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
 
 		// check if we should change the reference to the previous tile
@@ -267,9 +269,9 @@ public class SpawnManager {
 			}
 		}
 
-		if (MODEL_TILE_LOCATION_TYPE.equals(locationType) && spawnedObject != null)
+		if (MODEL_TILE_LOCATION_TYPE.equals(locationType) && modelWorldPoint != null)
 		{
-			referenceWorldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+			referenceWorldPoint = modelWorldPoint;
 		}
 
 		if (NO_RADIUS_TYPE.equals(radiusType))
@@ -279,13 +281,13 @@ public class SpawnManager {
 
 		if (OUTWARD_RADIUS_TYPE.equals(radiusType))
 		{
-			return getOutwardSpawnPoint(minRadius, maxRadius, radiusStepSize, inLineOfSight, referenceWorldPoint);
+			return getOutwardSpawnPoint(minRadius, maxRadius, radiusStepSize, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, referenceWorldPoint);
 		}
 
-		return getSpawnPoint(minRadius, maxRadius, inLineOfSight, referenceWorldPoint);
+		return getSpawnPoint(minRadius, maxRadius, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, referenceWorldPoint);
 	}
 
-	public SpawnPoint getSpawnPoint(int minRadius, int maxRadius, boolean inLineOfSight, WorldPoint referenceWorldPoint)
+	public SpawnPoint getSpawnPoint(int minRadius, int maxRadius, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, WorldPoint referenceWorldPoint)
 	{
 		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList<>();
 		final int[][] collisionFlags = getSceneCollisionFlags();
@@ -297,6 +299,12 @@ public class SpawnManager {
 		if (referenceWorldPoint == null)
 		{
 			referenceWorldPoint = playerWorldPoint;
+		}
+
+		// make sure the max radius is valid
+		if (maxRadius < minRadius)
+		{
+			maxRadius = minRadius;
 		}
 
 		LocalPoint referenceLocalPoint = LocalPoint.fromWorld(client, referenceWorldPoint);
@@ -354,7 +362,7 @@ public class SpawnManager {
 				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
 				// guard: check if this world point is already taken by another spawned object
-				if (objectPlacements.containsKey(worldPoint))
+				if (avoidExistingSpawns && objectPlacements.containsKey(worldPoint))
 				{
 					continue;
 				}
@@ -362,7 +370,7 @@ public class SpawnManager {
 				// guard: skip candidates that are the current player location
 				// because when rendering the model it is always on top of the player
 				// which is almost always not looking very nice
-				if (worldPoint.equals(playerWorldPoint))
+				if (avoidPlayerLocation && worldPoint.equals(playerWorldPoint))
 				{
 					continue;
 				}

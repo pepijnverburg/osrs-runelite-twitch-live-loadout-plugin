@@ -10,6 +10,8 @@ public class EbsModelPlacement {
 	public ArrayList<EbsCondition> followConditions;
 	public String radiusType = OUTWARD_RADIUS_TYPE;
 	public Boolean inLineOfSight = false;
+	public Boolean avoidExistingSpawns = true;
+	public Boolean avoidPlayerLocation = true;
 	public EbsRandomRange radiusRange = new EbsRandomRange(DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS);
 	public Integer followRadius;
 	public Integer radiusStepSize = 2;
