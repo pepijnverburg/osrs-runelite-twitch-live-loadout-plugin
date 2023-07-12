@@ -979,9 +979,16 @@ public class MarketplaceProduct
 		String stateType = condition.stateType;
 		String stateKey = condition.stateKey;
 		String stateValue = condition.stateValue;
+		Double chance = condition.chance;
 		ArrayList<EbsCondition> orConditions = condition.or;
 		ArrayList<EbsCondition> andConditions = condition.and;
 		boolean orConditionsVerified = false;
+
+		// guard: check if the chance is passed
+		if (!MarketplaceRandomizers.rollChance(chance))
+		{
+			return false;
+		}
 
 		// guard: check if the required state is valid
 		if (!verifyStateValue(stateType, stateKey, stateValue, spawnedObject))

@@ -20,6 +20,7 @@ public class EbsCondition {
 	public String stateType = PRODUCT_STATE_TYPE;
 	public String stateKey = null;
 	public String stateValue = null;
+	public Double chance = 1d;
 	public ArrayList<EbsCondition> or;
 	public ArrayList<EbsCondition> and;
 }
