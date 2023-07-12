@@ -2,8 +2,7 @@ package com.twitchliveloadout.marketplace.products;
 
 import java.util.ArrayList;
 
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.CHUNK_SIZE;
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.PRODUCT_STATE_TYPE;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 public class EbsCondition {
 	public Integer varbitId = -1;
@@ -18,6 +17,8 @@ public class EbsCondition {
 	public Integer minSpawnsInViewRadius = CHUNK_SIZE;
 	public Integer spawnInViewRadius = -1;
 	public String stateType = PRODUCT_STATE_TYPE;
+	public String stateFormat = STRING_STATE_FORMAT;
+	public String stateComparator = EQUAL_STATE_COMPARISON;
 	public String stateKey = null;
 	public String stateValue = null;
 	public Double chance = 1d;

@@ -81,6 +81,21 @@ public class MarketplaceConstants {
 	public static final String PRODUCT_STATE_TYPE = "product";
 	public static final String OBJECT_STATE_TYPE = "object";
 
+	public static final String STRING_STATE_FORMAT = "string";
+	public static final String INTEGER_STATE_FORMAT = "integer";
+
+	public static final String SET_STATE_OPERATION = "set";
+	public static final String ADD_STATE_OPERATION = "add";
+	public static final String SUBTRACT_STATE_OPERATION = "subtract";
+	public static final String MULTIPLY_STATE_OPERATION = "multiply";
+	public static final String DIVIDE_STATE_OPERATION = "divide";
+
+	public static final String EQUAL_STATE_COMPARISON = "equal";
+	public static final String LARGER_THAN_STATE_COMPARISON = "larger-than";
+	public static final String LARGER_EQUAL_THAN_STATE_COMPARISON = "larger-equal-than";
+	public static final String SMALLER_THAN_STATE_COMPARISON = "smaller-than";
+	public static final String SMALLER_EQUAL_THAN_STATE_COMPARISON = "smaller-equal-than";
+
 	public static final int MOVEMENT_EFFECT_MAX_SIZE = 100;
 	public static final int TRANSMOG_EFFECT_MAX_SIZE = 100;
 

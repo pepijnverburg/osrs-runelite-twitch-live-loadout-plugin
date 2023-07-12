@@ -151,7 +151,11 @@ public class MarketplaceProduct
 	public void start()
 	{
 		play();
-		triggerEffectsOptions(ebsProduct.behaviour.startEffectsOptions);
+		triggerEffectsOptions(
+			ebsProduct.behaviour.startEffectsOptions,
+			null,
+			0
+		);
 	}
 
 	public void play()
@@ -194,7 +198,11 @@ public class MarketplaceProduct
 		// do this before setting active to FALSE, otherwise some effects are skipped
 		if (!force)
 		{
-			triggerEffectsOptions(ebsProduct.behaviour.stopEffectsOptions);
+			triggerEffectsOptions(
+				ebsProduct.behaviour.stopEffectsOptions,
+				null,
+				0
+			);
 		}
 
 		// start with disabling all behaviours
@@ -815,17 +823,20 @@ public class MarketplaceProduct
 		boolean isLast = !effectIterator.hasNext();
 		int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(effect.durationMs, 0, 0);
 		ArrayList<EbsCondition> conditions = effect.conditions;
-		boolean blockingConditions = effect.blockingConditions;
+		boolean breakOnInvalidConditions = effect.breakOnInvalidConditions;
+		boolean breakOnValidConditions = effect.breakOnValidConditions;
 
 		// schedule all the individual effects
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			int nextFrameDelayMs = durationMs;
 			int innerDelayMs = 0; // potentially handy in the future to delay a full effect
 			boolean conditionsVerified = verifyConditions(conditions, spawnedObject);
+			boolean satisfiedInvalidBreak = conditionsVerified || !breakOnInvalidConditions;
+			boolean satisfiedValidBreak = !conditionsVerified || !breakOnValidConditions;
 
 			// check if we should schedule the next frame
 			// this is allowed when there are no blocking conditions or when the conditions of this frame are okay
-			if (!blockingConditions || conditionsVerified)
+			if (satisfiedInvalidBreak && satisfiedValidBreak)
 			{
 				triggerEffect(effectIterator, nextFrameDelayMs, spawnedObject, marketplaceEffect, forceModelAnimation, resetModelAnimationHandler);
 			}
@@ -866,22 +877,23 @@ public class MarketplaceProduct
 			triggerStateChange(spawnedObject, effect.stateChange, innerDelayMs);
 			triggerNotifications(marketplaceEffect, effect.notifications, innerDelayMs);
 			triggerProjectiles(spawnedObject, effect.projectiles, innerDelayMs);
+			triggerEffectsOptions(effect.effectsOptions, spawnedObject, innerDelayMs);
 		}, frameDelayMs);
 	}
 
-	public void triggerEffectsOptions(ArrayList<ArrayList<EbsEffect>> effectsOptions)
+	public void triggerEffectsOptions(ArrayList<ArrayList<EbsEffect>> effectsOptions, SpawnedObject spawnedObject, int startDelayMs)
 	{
 		// trigger the animations on this single spawned object
 		ArrayList<EbsEffect> effects = MarketplaceRandomizers.getRandomEntryFromList(effectsOptions);
-		triggerEffects(effects);
+		triggerEffects(effects, spawnedObject, startDelayMs);
 	}
 
-	public void triggerEffects(ArrayList<EbsEffect> effects)
+	public void triggerEffects(ArrayList<EbsEffect> effects, SpawnedObject spawnedObject, int startDelayMs)
 	{
 		triggerEffects(
 			effects,
-			0,
-			null,
+			startDelayMs,
+			spawnedObject,
 			null,
 			false,
 			null
@@ -977,6 +989,8 @@ public class MarketplaceProduct
 		Integer minSpawnsInViewRadius = condition.minSpawnsInViewRadius;
 		Integer spawnInViewRadius = condition.spawnInViewRadius;
 		String stateType = condition.stateType;
+		String stateFormat = condition.stateFormat;
+		String stateComparator = condition.stateComparator;
 		String stateKey = condition.stateKey;
 		String stateValue = condition.stateValue;
 		Double chance = condition.chance;
@@ -991,7 +1005,7 @@ public class MarketplaceProduct
 		}
 
 		// guard: check if the required state is valid
-		if (!verifyStateValue(stateType, stateKey, stateValue, spawnedObject))
+		if (!verifyStateValue(stateType, stateFormat, stateComparator, stateKey, stateValue, spawnedObject))
 		{
 			return false;
 		}
@@ -1066,7 +1080,7 @@ public class MarketplaceProduct
 		return true;
 	}
 
-	private boolean verifyStateValue(String stateType, String stateKey, String stateValue, SpawnedObject spawnedObject)
+	private boolean verifyStateValue(String stateType, String stateFormat, String stateComparator, String stateKey, String comparedStateValue, SpawnedObject spawnedObject)
 	{
 
 		// guard: make sure the state check is valid
@@ -1088,15 +1102,33 @@ public class MarketplaceProduct
 		// it might be possible a NULL state is requested, so it can still be verified
 		if (currentStateValue == null)
 		{
-			if (stateValue == null) {
+			if (comparedStateValue == null) {
 				return true;
 			} else {
 				return false;
 			}
 		}
 
+		// guard: check for other formats
+		try {
+			if (INTEGER_STATE_FORMAT.equals(stateFormat)) {
+				int currentValue = (currentStateValue == null ? 0 : Integer.parseInt(currentStateValue));
+				int comparedValue = (comparedStateValue == null ? 0 : Integer.parseInt(comparedStateValue));
+
+				switch (stateComparator) {
+					case EQUAL_STATE_COMPARISON: return currentValue == comparedValue;
+					case LARGER_EQUAL_THAN_STATE_COMPARISON: return currentValue >= comparedValue;
+					case LARGER_THAN_STATE_COMPARISON: return currentValue > comparedValue;
+					case SMALLER_EQUAL_THAN_STATE_COMPARISON: return currentValue <= comparedValue;
+					case SMALLER_THAN_STATE_COMPARISON: return currentValue < comparedValue;
+				}
+			}
+		} catch (Exception exception) {
+			return false;
+		}
+
 		// make the null-safe comparison
-		return currentStateValue.equals(stateValue);
+		return currentStateValue.equals(comparedStateValue);
 	}
 
 	/**
@@ -1381,7 +1413,6 @@ public class MarketplaceProduct
 
 		String stateType = stateFrame.type;
 		String stateKey = stateFrame.key;
-		String stateValue = stateFrame.value;
 		Integer delayMs = stateFrame.delayMs;
 
 		// guard: make sure the properties are valid
@@ -1392,11 +1423,66 @@ public class MarketplaceProduct
 
 		manager.getPlugin().scheduleOnClientThread(() -> {
 			if (PRODUCT_STATE_TYPE.equals(stateType)) {
-				stateFrameValues.put(stateKey, stateValue);
+				String currentStateValue = stateFrameValues.get(stateKey);
+				String newStateValue = calculateNewStateValue(currentStateValue, stateFrame);
+				stateFrameValues.put(stateKey, newStateValue);
 			} else if (OBJECT_STATE_TYPE.equals(stateType) && spawnedObject != null) {
-				spawnedObject.setStateFrameValue(stateKey, stateValue);
+				String currentStateValue = spawnedObject.getStateFrameValue(stateKey);
+				String newStateValue = calculateNewStateValue(currentStateValue, stateFrame);
+				spawnedObject.setStateFrameValue(stateKey, newStateValue);
 			}
 		}, baseDelayMs + delayMs);
+	}
+
+	private String calculateNewStateValue(String currentStateValue, EbsStateFrame stateFrame)
+	{
+
+		// guard: make sure the state change is valid
+		if (stateFrame == null)
+		{
+			return null;
+		}
+
+		String stateFormat = stateFrame.format;
+		String stateOperation = stateFrame.operation;
+		String stateDeltaValue = stateFrame.value;
+		String newStateValue = stateDeltaValue;
+
+		// due to some operations that can be done here make sure we fallback to the current value
+		// when something goes wrong here, because things like division by 0 can happen
+		try {
+			// for integers use different handler
+			if (INTEGER_STATE_FORMAT.equals(stateFormat)) {
+				int currentValue = (currentStateValue == null ? 0 : Integer.parseInt(currentStateValue));
+				int deltaValue = (stateDeltaValue == null ? 0 : Integer.parseInt(stateDeltaValue));
+				int newValue = deltaValue;
+
+				switch (stateOperation) {
+					case SET_STATE_OPERATION:
+						// empty
+						break;
+					case ADD_STATE_OPERATION:
+						newValue = currentValue + deltaValue;
+						break;
+					case SUBTRACT_STATE_OPERATION:
+						newValue = currentValue - deltaValue;
+						break;
+					case DIVIDE_STATE_OPERATION:
+						newValue = currentValue / deltaValue;
+						break;
+					case MULTIPLY_STATE_OPERATION:
+						newValue = currentValue * deltaValue;
+						break;
+				}
+
+				newStateValue = String.valueOf(newValue);
+			}
+		} catch (Exception exception) {
+			log.error("Could not calculate new state value because of error:", exception);
+			return currentStateValue;
+		}
+
+		return newStateValue;
 	}
 
 	private void triggerNotifications(MarketplaceEffect marketplaceEffect, ArrayList<EbsNotification> notifications, int delayMs)
@@ -1487,7 +1573,7 @@ public class MarketplaceProduct
 					client.getPlane(),
 					startLocation.getX(),
 					startLocation.getY(),
-			    	correctedStartZ,
+			    correctedStartZ,
 					startCycle,
 					endCycle,
 					slope,
