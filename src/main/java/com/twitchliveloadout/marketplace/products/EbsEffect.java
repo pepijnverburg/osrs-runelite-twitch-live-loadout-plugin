@@ -9,6 +9,7 @@ public class EbsEffect {
 	public EbsRandomRange durationMs;
 	public ArrayList<EbsSpawnOption> spawnOptions;
 	public Boolean modelExpired = false;
+	public Boolean productExpired = false;
 	public EbsAnimationFrame modelAnimation;
 	public EbsModelOverheadFrame modelOverhead;
 	public EbsModelSet modelSet;
