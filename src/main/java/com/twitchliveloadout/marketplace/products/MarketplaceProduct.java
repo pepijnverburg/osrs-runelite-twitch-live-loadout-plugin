@@ -823,7 +823,8 @@ public class MarketplaceProduct
 		boolean isLast = !effectIterator.hasNext();
 		int durationMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(effect.durationMs, 0, 0);
 		ArrayList<EbsCondition> conditions = effect.conditions;
-		boolean breakOnInvalidConditions = effect.breakOnInvalidConditions;
+		boolean blockingConditions = effect.blockingConditions; // TMP: for backwards compatibility, remove after full update
+		boolean breakOnInvalidConditions = effect.breakOnInvalidConditions || blockingConditions;
 		boolean breakOnValidConditions = effect.breakOnValidConditions;
 
 		// schedule all the individual effects

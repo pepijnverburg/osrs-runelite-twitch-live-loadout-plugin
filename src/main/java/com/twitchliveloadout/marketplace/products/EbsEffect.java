@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class EbsEffect {
 	public ArrayList<EbsCondition> conditions;
+	public Boolean blockingConditions = false; // TMP: for backwards compatibility, remove after full update
 	public Boolean breakOnInvalidConditions = false;
 	public Boolean breakOnValidConditions = false;
 	public EbsRandomRange durationMs;
