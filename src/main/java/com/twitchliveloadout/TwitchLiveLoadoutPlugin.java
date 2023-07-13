@@ -42,7 +42,6 @@ import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -70,7 +69,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
-import static com.twitchliveloadout.marketplace.MarketplaceConstants.GAME_CYCLE_DURATION_MS;
 
 /**
  * Manages polling and event listening mechanisms to synchronize the state

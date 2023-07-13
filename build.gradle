@@ -36,7 +36,7 @@ dependencies {
 }
 
 group = 'com.twitchliveloadout'
-version = '2.0.1'
+version = '2.1.0'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
