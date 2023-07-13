@@ -19,7 +19,7 @@ repositories {
 	mavenCentral()
 }
 
-// def runeLiteVersion = '1.9.15.3'
+//  def runeLiteVersion = '1.10.8-SNAPSHOT'
 def runeLiteVersion = 'latest.release'
 
 dependencies {
@@ -36,7 +36,7 @@ dependencies {
 }
 
 group = 'com.twitchliveloadout'
-version = '2.0.0'
+version = '2.0.1'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
