@@ -533,7 +533,7 @@ public class MarketplaceManager {
 		String streamerProductId = generateRandomTestId();
 		String twitchSku = generateRandomTestId();
 		int currencyAmount = 100;
-		String currencyType = "bits";
+		String currencyType = "gp";
 
 		twitchProductCost.amount = currencyAmount;
 		twitchProductCost.type = currencyType;
@@ -554,7 +554,7 @@ public class MarketplaceManager {
 		twitchTransaction.user_id = "0";
 		twitchTransaction.user_login = "test-viewer";
 		twitchTransaction.user_name = "Test Viewer";
-		twitchTransaction.product_type = "BITS_IN_EXTENSION";
+		twitchTransaction.product_type = "TEST";
 		twitchTransaction.product_data = twitchProduct;
 		twitchTransaction.handled_at = Instant.now().toString();
 
