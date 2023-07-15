@@ -289,7 +289,7 @@ public class MarketplacePanel extends JPanel
 
 		if (marketplaceManager.isFetchingEbsTransactionsErrored())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event Donations are NOT AVAILABLE right now and therefore disabled.</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event Donations are NOT AVAILABLE right now and therefore disabled. Contact support if the issue persists.</b></html>";
 		}
 
 		if (streamerProductAmount <= 0)
