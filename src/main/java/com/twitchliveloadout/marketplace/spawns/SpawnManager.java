@@ -328,9 +328,10 @@ public class SpawnManager {
 			for (int deltaY = -1 * maxRadius; deltaY <= maxRadius; deltaY++) {
 				int sceneAttemptX = sceneX + deltaX;
 				int sceneAttemptY = sceneY + deltaY;
+				double deltaDiagonal = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
 
 				// guard: skip all tiles that are not distant enough
-				if (Math.abs(deltaX) < minRadius && Math.abs(deltaY) < minRadius)
+				if (Math.abs(deltaX) < minRadius && Math.abs(deltaY) < minRadius && deltaDiagonal < minRadius)
 				{
 					continue;
 				}
