@@ -4,6 +4,7 @@ import com.google.common.collect.EvictingQueue;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
+import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.MarketplaceMessages;
 import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
@@ -29,6 +30,7 @@ public class NotificationManager {
 	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
 	private final Client client;
+	private final MarketplaceManager manager;
 	private Instant notificationsLockedUntil;
 	private ScheduledFuture overheadResetTask;
 
@@ -39,12 +41,13 @@ public class NotificationManager {
 	 */
 	private final EvictingQueue<ArrayList<Notification>> notificationGroupQueue = EvictingQueue.create(NOTIFICATION_QUEUE_MAX_SIZE);
 
-	public NotificationManager(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, Client client)
+	public NotificationManager(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, Client client, MarketplaceManager manager)
 	{
 		this.plugin = plugin;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
 		this.client = client;
+		this.manager = manager;
 	}
 
 	public void onGameTick()
@@ -90,6 +93,12 @@ public class NotificationManager {
 
 	private void handleNotificationsQueue()
 	{
+
+		// guard: make sure the marketplace is active
+		if (!manager.isActive())
+		{
+			return;
+		}
 
 		// guard: check if we can send a new notification
 		if (!canSendNotification())
