@@ -274,27 +274,27 @@ public class MarketplacePanel extends JPanel
 		final int activeProductAmount = activeProducts.size();
 		final int archivedTransactionAmount = archivedTransactions.size();
 
-		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving donations is ACTIVE</b></html>";
-		String availableDonationsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ streamerProductAmount +" donations</b>.</html>";
+		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving donations and activating Random Events is ACTIVE</b></html>";
+		String availableDonationsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ streamerProductAmount +" Random Event donations</b>.</html>";
 
 		if (!marketplaceManager.isActive())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Donations are temporarily PAUSED</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event donations are temporarily PAUSED</b></html>";
 		}
 
 		if (!marketplaceManager.getConfig().marketplaceEnabled())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event Donations are DISABLED in the plugin settings</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event donations are DISABLED in the plugin settings</b></html>";
 		}
 
 		if (marketplaceManager.isFetchingEbsTransactionsErrored())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event Donations are NOT AVAILABLE right now and therefore disabled. Contact support if the issue persists.</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event donations are NOT AVAILABLE right now and therefore disabled. Contact support if the issue persists.</b></html>";
 		}
 
 		if (streamerProductAmount <= 0)
 		{
-			availableDonationsText = "<html>There are <b color='"+ ERROR_TEXT_COLOR +"'>no donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
+			availableDonationsText = "<html>There are <b color='"+ ERROR_TEXT_COLOR +"'>no Random Event donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
 		}
 
 		statusPanel.setText(statusText);
