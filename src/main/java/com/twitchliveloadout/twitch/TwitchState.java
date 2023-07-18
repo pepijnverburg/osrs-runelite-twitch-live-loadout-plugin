@@ -48,7 +48,7 @@ public class TwitchState {
 	 * where we will fill the combat stats, item quantities, etc. with maxed out integers.
 	 * This will help us gain insights in how many bank items and combat fights we can allow.
 	 */
-	public final static boolean STATE_STRESS_TEST_ENABLED = false;
+	public final static boolean STATE_STRESS_TEST_ENABLED = false && TwitchLiveLoadoutPlugin.IN_DEVELOPMENT;
 	public final static int MAX_ITEM_QUANTITY = 8000;
 	public final static int MAX_FIGHT_STATISTIC_VALUE = 700;
 	public final static int MAX_SKILL_EXPERIENCE = 200000000;
