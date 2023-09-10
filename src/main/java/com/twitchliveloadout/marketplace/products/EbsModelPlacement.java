@@ -12,6 +12,7 @@ public class EbsModelPlacement {
 	public Boolean inLineOfSight = false;
 	public Boolean avoidExistingSpawns = true;
 	public Boolean avoidPlayerLocation = true;
+	public boolean avoidInvalidOverlay = true;
 	public EbsRandomRange radiusRange = new EbsRandomRange(DEFAULT_MIN_RADIUS, DEFAULT_MAX_RADIUS);
 	public Integer followRadius;
 	public Integer radiusStepSize = 2;

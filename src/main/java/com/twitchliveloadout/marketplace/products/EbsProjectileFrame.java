@@ -13,6 +13,7 @@ public class EbsProjectileFrame extends EbsEffectFrame {
 	public Boolean inLineOfSight = false;
 	public Boolean avoidExistingSpawns = false;
 	public Boolean avoidPlayerLocation = false;
+	public Boolean avoidInvalidOverlay = false;
 
 	// defaults are based on cannonballs
 	public Integer startZ = -170;

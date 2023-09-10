@@ -350,6 +350,7 @@ public class MarketplaceManager {
 					// guard: continue with the queue and don't remove from queue because we will wait for a valid spawn point
 					if (spawnPoint == null)
 					{
+						//log.info("Skipping transaction because required model placement could not be satisfied: "+ transaction.id);
 						continue;
 					}
 				}

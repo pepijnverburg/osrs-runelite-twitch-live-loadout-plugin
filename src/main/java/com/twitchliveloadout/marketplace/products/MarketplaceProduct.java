@@ -125,7 +125,8 @@ public class MarketplaceProduct
 		// compared to when the transaction was made. With this mechanism we still allow
 		// queued transactions to be handled while a streamer is logged out for 30 seconds while keeping RL open.
 		// but we will not handle transactions that RL will load when booting up without any in the queue.
-		Instant transactionExpiredAt = transactionAt.plusSeconds(duration);
+		int transactionExpiryToleranceS = 30;
+		Instant transactionExpiredAt = transactionAt.plusSeconds(duration + transactionExpiryToleranceS);
 		Instant transactionLoadedAt = Instant.parse(transaction.loaded_at);
 		boolean loadedTooLate = transactionLoadedAt.isAfter(transactionExpiredAt);
 
@@ -1551,13 +1552,14 @@ public class MarketplaceProduct
 				Boolean inLineOfSight = projectileFrame.inLineOfSight;
 				Boolean avoidExistingSpawns = projectileFrame.avoidExistingSpawns;
 				Boolean avoidPlayerLocation = projectileFrame.avoidPlayerLocation;
+				Boolean avoidInvalidOverlay = projectileFrame.avoidInvalidOverlay;
 				Actor endActor = followEndLocation ? getActorByLocationType(endLocationType) : null;
 				LocalPoint startReferenceLocation = getLocalPointByLocationType(startLocationType, spawnedObject);
 				LocalPoint endReferenceLocation = getLocalPointByLocationType(endLocationType, spawnedObject);
 
 				// offset the locations with possible radiuses
-				LocalPoint startLocation = offsetLocalPointByRadius(startReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, projectileFrame.startLocationRadiusRange);
-				LocalPoint endLocation = offsetLocalPointByRadius(endReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, projectileFrame.endLocationRadiusRange);
+				LocalPoint startLocation = offsetLocalPointByRadius(startReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, avoidInvalidOverlay, projectileFrame.startLocationRadiusRange);
+				LocalPoint endLocation = offsetLocalPointByRadius(endReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, avoidInvalidOverlay, projectileFrame.endLocationRadiusRange);
 				WorldPoint startWorldLocation = WorldPoint.fromLocal(client, startLocation);
 				WorldPoint endWorldLocation = WorldPoint.fromLocal(client, endLocation);
 
@@ -1663,7 +1665,7 @@ public class MarketplaceProduct
 		return null;
 	}
 
-	private LocalPoint offsetLocalPointByRadius(LocalPoint localPoint, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, EbsRandomRange radiusRange)
+	private LocalPoint offsetLocalPointByRadius(LocalPoint localPoint, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, boolean avoidInvalidOverlay, EbsRandomRange radiusRange)
 	{
 
 		// guard: ensure valid parameters
@@ -1683,6 +1685,7 @@ public class MarketplaceProduct
 				inLineOfSight,
 				avoidExistingSpawns,
 				avoidPlayerLocation,
+				avoidInvalidOverlay,
 				worldPoint
 		);
 
