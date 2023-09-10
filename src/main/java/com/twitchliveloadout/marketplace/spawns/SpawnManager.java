@@ -221,13 +221,13 @@ public class SpawnManager {
 		}
 	}
 
-	public SpawnPoint getOutwardSpawnPoint(int minRadius, int maxRadius, int radiusStepSize, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, WorldPoint referenceWorldPoint)
+	public SpawnPoint getOutwardSpawnPoint(int minRadius, int maxRadius, int radiusStepSize, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, boolean avoidInvalidOverlay, WorldPoint referenceWorldPoint)
 	{
 		for (int radius = minRadius; radius <= maxRadius; radius++)
 		{
 			int randomizedRadius = radius + (int) Math.round(Math.random() * ((float) radiusStepSize));
 			int usedRadius = Math.min(randomizedRadius, maxRadius);
-			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, usedRadius, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, referenceWorldPoint);
+			SpawnPoint candidateSpawnPoint = getSpawnPoint(usedRadius, usedRadius, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, avoidInvalidOverlay, referenceWorldPoint);
 
 			if (candidateSpawnPoint != null) {
 				return candidateSpawnPoint;
@@ -255,6 +255,7 @@ public class SpawnManager {
 		Boolean inLineOfSight = placement.inLineOfSight;
 		Boolean avoidExistingSpawns = placement.avoidExistingSpawns;
 		Boolean avoidPlayerLocation = placement.avoidPlayerLocation;
+		Boolean avoidInvalidOverlay = placement.avoidInvalidOverlay;
 		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
 
 		// check if we should change the reference to the previous tile
@@ -281,13 +282,13 @@ public class SpawnManager {
 
 		if (OUTWARD_RADIUS_TYPE.equals(radiusType))
 		{
-			return getOutwardSpawnPoint(minRadius, maxRadius, radiusStepSize, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, referenceWorldPoint);
+			return getOutwardSpawnPoint(minRadius, maxRadius, radiusStepSize, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, avoidInvalidOverlay, referenceWorldPoint);
 		}
 
-		return getSpawnPoint(minRadius, maxRadius, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, referenceWorldPoint);
+		return getSpawnPoint(minRadius, maxRadius, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, avoidInvalidOverlay, referenceWorldPoint);
 	}
 
-	public SpawnPoint getSpawnPoint(int minRadius, int maxRadius, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, WorldPoint referenceWorldPoint)
+	public SpawnPoint getSpawnPoint(int minRadius, int maxRadius, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, boolean avoidInvalidOverlay, WorldPoint referenceWorldPoint)
 	{
 		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList<>();
 		final int[][] collisionFlags = getSceneCollisionFlags();
@@ -315,6 +316,8 @@ public class SpawnManager {
 			referenceLocalPoint = client.getLocalPlayer().getLocalLocation();
 		}
 
+		// always use the player plane because the reference world point can be
+		// an original spawn point on a different plane which is outdated
 		final int plane = referenceWorldPoint.getPlane();
 		final Scene scene = client.getScene();
 		final short[][][] overlayIds = scene.getOverlayIds();
@@ -349,8 +352,11 @@ public class SpawnManager {
 				int flagData = collisionFlags[sceneAttemptX][sceneAttemptY];
 				int blockedFlags = CollisionDataFlag.BLOCK_MOVEMENT_FULL;
 				boolean isWalkable = (flagData & blockedFlags) == 0;
-				short underlayId = underlayIds[plane][sceneAttemptX][sceneAttemptY];
-				short overlayId = overlayIds[plane][sceneAttemptX][sceneAttemptY];
+				int underlayOverlayIdOffset = (Constants.EXTENDED_SCENE_SIZE - Constants.SCENE_SIZE) / 2;
+				int underlayOverlayAttemptX = sceneAttemptX + underlayOverlayIdOffset;
+				int underlayOverlayAttemptY = sceneAttemptY + underlayOverlayIdOffset;
+				short underlayId = underlayIds[plane][underlayOverlayAttemptX][underlayOverlayAttemptY];
+				short overlayId = overlayIds[plane][underlayOverlayAttemptX][underlayOverlayAttemptY];
 				boolean isBlackOnMinimap = (underlayId == 0 && overlayId == 0);
 
 				// guard: make sure the tile is walkable
