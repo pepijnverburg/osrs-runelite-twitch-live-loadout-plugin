@@ -315,9 +315,7 @@ public class SpawnManager {
 		{
 			referenceLocalPoint = client.getLocalPlayer().getLocalLocation();
 		}
-
-		// always use the player plane because the reference world point can be
-		// an original spawn point on a different plane which is outdated
+		
 		final int plane = referenceWorldPoint.getPlane();
 		final Scene scene = client.getScene();
 		final short[][][] overlayIds = scene.getOverlayIds();
