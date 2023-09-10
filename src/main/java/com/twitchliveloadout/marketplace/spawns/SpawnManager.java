@@ -355,7 +355,7 @@ public class SpawnManager {
 				int underlayOverlayAttemptY = sceneAttemptY + underlayOverlayIdOffset;
 				short underlayId = underlayIds[plane][underlayOverlayAttemptX][underlayOverlayAttemptY];
 				short overlayId = overlayIds[plane][underlayOverlayAttemptX][underlayOverlayAttemptY];
-				boolean isBlackOnMinimap = (underlayId == 0 && overlayId == 0);
+				boolean isBlackOnMinimap = (avoidInvalidOverlay && underlayId == 0 && overlayId == 0);
 
 				// guard: make sure the tile is walkable
 				if (!isWalkable || isBlackOnMinimap)
