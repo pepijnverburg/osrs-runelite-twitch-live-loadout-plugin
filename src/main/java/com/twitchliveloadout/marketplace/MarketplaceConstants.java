@@ -51,10 +51,11 @@ public class MarketplaceConstants {
 	public static final String NONE_NOTIFICATION_MESSAGE_TYPE = "none";
 	public static final String CHAT_NOTIFICATION_MESSAGE_TYPE = "chat";
 	public static final String OVERHEAD_NOTIFICATION_MESSAGE_TYPE = "overhead";
-	public static final String TILE_MARKER_NOTIFICATION_MESSAGE_TYPE = "tile-marker";
+	public static final String POPUP_NOTIFICATION_MESSAGE_TYPE = "popup";
 
-	public static final String START_NOTIFICATION_TIMING_TYPE = "start";
-	public static final String END_NOTIFICATION_TIMING_TYPE = "end";
+	public static final String POPUP_NOTIFICATION_TITLE = "Live Loadout";
+
+	public static final String TILE_MARKER_NOTIFICATION_MESSAGE_TYPE = "tile-marker";
 
 	public static final int WIDGET_EFFECT_MAX_SIZE = 100;
 	public static final int MENU_EFFECT_MAX_SIZE = 100;
