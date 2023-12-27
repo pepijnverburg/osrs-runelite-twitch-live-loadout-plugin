@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
+import net.runelite.api.WidgetNode;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetModalMode;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
@@ -68,7 +71,7 @@ public class NotificationManager {
 		{
 			Notification notification = new Notification(marketplaceProduct, marketplaceEffect, ebsNotification);
 
-			// guard: check if this is a notification that should be send immediately
+			// guard: check if this is a notification that should be sent immediately
 			if (!ebsNotification.queue)
 			{
 				log.debug("Sending a notification instantly: "+ notification.ebsNotification.message);
@@ -137,10 +140,21 @@ public class NotificationManager {
 		{
 			sendOverheadNotification(notification);
 		}
+		else if (POPUP_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+		{
+			sendPopupNotification(notification);
+		}
 	}
 
 	private void sendChatNotification(Notification notification)
 	{
+
+		// guard: skip when the chat donation message is disabled
+		if (notification.isDonationMessage() && !config.chatDonationMessageEnabled())
+		{
+			return;
+		}
+
 		String message = getMessage(notification);
 
 		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
@@ -158,6 +172,13 @@ public class NotificationManager {
 
 	private void sendOverheadNotification(Notification notification)
 	{
+
+		// guard: skip when the overhead donation message is disabled
+		if (notification.isDonationMessage() && !config.overheadDonationMessageEnabled())
+		{
+			return;
+		}
+
 		Player player = client.getLocalPlayer();
 		String message = getMessage(notification);
 		int overheadTextDurationMs = config.marketplaceOverheadTextDurationS() * 1000;
@@ -181,6 +202,35 @@ public class NotificationManager {
 			player.setOverheadText("");
 		}, overheadTextDurationMs);
 		lockNotificationsUntil(overheadTextDurationMs + OVERHEAD_NOTIFICATION_PAUSE_MS);
+	}
+
+	private void sendPopupNotification(Notification notification)
+	{
+
+		// guard: skip when the popup donation message is disabled
+		if (notification.isDonationMessage() && !config.popupDonationMessageEnabled())
+		{
+			return;
+		}
+
+		plugin.runOnClientThread(() -> {
+			try {
+				String message = getMessage(notification);
+				WidgetNode widgetNode = client.openInterface((161 << 16) | 13, 660, WidgetModalMode.MODAL_CLICKTHROUGH);
+				client.runScript(3343, POPUP_NOTIFICATION_TITLE, message, -1);
+
+				plugin.runOnClientThread(() -> {
+					Widget w = client.getWidget(660, 1);
+					if (w.getWidth() > 0) {
+						return;
+					}
+
+					client.closeInterface(widgetNode, true);
+				});
+			} catch (Exception exception) {
+				// empty
+			}
+		});
 	}
 
 	public void forceHideOverheadText()

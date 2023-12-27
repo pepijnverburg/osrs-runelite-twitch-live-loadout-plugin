@@ -650,6 +650,42 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return "Thank you {viewerName} for donating {currencyAmount} {currencyType}!";
 	}
 
+	@ConfigItem(
+			keyName = "overheadDonationMessageEnabled",
+			name = "Overhead donation message",
+			description = "Enable donation message as overhead text.",
+			position = 22,
+			section = marketplaceSection
+	)
+	default boolean overheadDonationMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "chatDonationMessageEnabled",
+			name = "Chat donation message",
+			description = "Enable donation message as a chat message.",
+			position = 24,
+			section = marketplaceSection
+	)
+	default boolean chatDonationMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "popupDonationMessageEnabled",
+			name = "Pop-up donation message",
+			description = "Enable donation message as a pop-up.",
+			position = 26,
+			section = marketplaceSection
+	)
+	default boolean popupDonationMessageEnabled()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 			name = "Advanced",
 			description = "Settings for advanced usage",

@@ -15,4 +15,9 @@ public class Notification {
 		this.marketplaceEffect = marketplaceEffect;
 		this.ebsNotification = ebsNotification;
 	}
+
+	public boolean isDonationMessage()
+	{
+		return ebsNotification.message == null || ebsNotification.message.isEmpty();
+	}
 }
