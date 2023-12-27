@@ -32,6 +32,7 @@ import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.minimap.MinimapManager;
 import com.twitchliveloadout.quests.QuestManager;
 import com.twitchliveloadout.raids.InvocationsManager;
+import com.twitchliveloadout.seasonals.LeagueManager;
 import com.twitchliveloadout.skills.SkillStateManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
@@ -64,6 +65,8 @@ import okhttp3.OkHttpClient;
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +93,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Debugging flags
 	 */
-	public static final boolean IN_DEVELOPMENT = false;
+	public static final boolean IN_DEVELOPMENT = true;
 
 	@Inject
 	private TwitchLiveLoadoutConfig config;
@@ -187,9 +190,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private QuestManager questManager;
 
 	/**
-	 * Cache to check for player name changes as game state is not reliable for this
+	 * Dedicated manager for league information.
 	 */
-	private String lastPlayerName = null;
+	private LeagueManager leagueManager;
+
+	/**
+	 * Cache to check for account identifiers (hash + world type) changes as game state is not reliable for this
+	 */
+	private String lastAccountIdentifier = null;
 
 	/**
 	 * Listener for any events of the canvas (e.g. focus and unfocus)
@@ -202,12 +210,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private final static boolean ENABLE_MINIMAP = false;
 
 	/**
+	 * List of world types that should result in a unique profile of persistent data
+	 */
+	private final ArrayList<WorldType> distinctiveWorldTypes = new ArrayList<>();
+
+	/**
 	 * Initialize this plugin
 	 */
 	@Override
 	protected void startUp() throws Exception
 	{
 		super.startUp();
+		initializeDistinctiveWorldTypes();
 		initializeExecutors();
 		initializeCanvasListeners();
 		initializeTwitch();
@@ -223,6 +237,17 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		skillStateManager.updateSkills();
 		syncPlayerInfo();
 		log.info("Twitch Live Loadout has started!");
+	}
+
+	private void initializeDistinctiveWorldTypes()
+	{
+		distinctiveWorldTypes.add(WorldType.BETA_WORLD);
+		distinctiveWorldTypes.add(WorldType.SEASONAL);
+		distinctiveWorldTypes.add(WorldType.DEADMAN);
+		distinctiveWorldTypes.add(WorldType.FRESH_START_WORLD);
+		distinctiveWorldTypes.add(WorldType.TOURNAMENT_WORLD);
+		distinctiveWorldTypes.add(WorldType.QUEST_SPEEDRUNNING);
+		distinctiveWorldTypes.add(WorldType.PVP_ARENA);
 	}
 
 	private void initializeExecutors()
@@ -255,6 +280,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 			questManager = new QuestManager(this, twitchState, client);
+			leagueManager = new LeagueManager(this, twitchState, client, gson);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing the managers: ", exception);
 		}
@@ -438,20 +464,21 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			// account type can only be fetched on client thread
 			runOnClientThread(() -> {
+				String accountIdentifier = getAccountIdentifier();
 				long accountHash = client.getAccountHash();
 				AccountType accountType = getAccountType();
 				String playerName = getPlayerName();
 
-				// only handle on changes
-				if (playerName != null && !playerName.equals(lastPlayerName))
+				// only handle on account change
+				if (!accountIdentifier.isEmpty() && !accountIdentifier.equals(lastAccountIdentifier))
 				{
 					if (config.playerInfoEnabled())
 					{
 						twitchState.setPlayerName(playerName);
 					}
 
-					twitchState.onPlayerNameChanged(playerName);
-					lastPlayerName = playerName;
+					twitchState.onAccountChanged();
+					lastAccountIdentifier = accountIdentifier;
 				}
 
 				// update this information periodically because it is possible the plugin
@@ -525,7 +552,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to get new Twitch transactions
 	 */
-	@Schedule(period = 4, unit = ChronoUnit.SECONDS, asynchronous = false)
+	@Schedule(period = 3, unit = ChronoUnit.SECONDS, asynchronous = false)
 	public void fetchMarketplaceTransactions()
 	{
 		try {
@@ -882,6 +909,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onWidgetLoaded(WidgetLoaded widgetLoaded)
+	{
+		try {
+			if (config.seasonalsEnabled() && isSeasonal())
+			{
+				leagueManager.onWidgetLoaded(widgetLoaded);
+			}
+		} catch (Exception exception) {
+			logSupport("Could not handle on widget loaded event: ", exception);
+		}
+	}
+
+	@Subscribe
 	public void onVarbitChanged(VarbitChanged varbitChanged)
 	{
 		try {
@@ -1081,8 +1121,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void setConfiguration(String configKey, Object payload)
 	{
 		try {
-			String accountHash = Long.toString(client.getAccountHash());
-			String scopedConfigKey = getScopedConfigKey(accountHash, configKey);
+			String accountIdentifier = getAccountIdentifier();
+			String scopedConfigKey = getScopedConfigKey(accountIdentifier, configKey);
 			configManager.setConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey, payload);
 		} catch (Exception exception) {
 			log.warn("Could not set the configuration due to the following error: ", exception);
@@ -1093,14 +1133,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			String playerName = getPlayerName();
-			String accountHash = Long.toString(client.getAccountHash());
+			String accountIdentifier = getAccountIdentifier();
 
 			if (playerName == null)
 			{
 				playerName = "unknown";
 			}
 
-			String scopedConfigKey = getScopedConfigKey(accountHash, configKey);
+			String scopedConfigKey = getScopedConfigKey(accountIdentifier, configKey);
 			String configuration = configManager.getConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey);
 
 			// MIGRATION TO ACCOUNT HASH FROM PLAYER NAME
@@ -1126,6 +1166,43 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return null;
+	}
+
+	/**
+	 * Get the account identifier based on the account hash and whether there is a world type being used
+	 * which requires the account identifier to be unique as well (in the case of a dedicated OSRS profile save).
+	 */
+	private String getAccountIdentifier() {
+		String accountHash = Long.toString(client.getAccountHash());
+		String worldTypeIdentifier = getWorldTypeIdentifier();
+
+		return accountHash + worldTypeIdentifier;
+	}
+
+	/**
+	 * Get an identifier based on in which type of world the account is logged is
+	 */
+	public String getWorldTypeIdentifier()
+	{
+		StringBuilder identifier = new StringBuilder();
+
+		try {
+			EnumSet<WorldType> worldTypes = client.getWorldType();
+
+			for (WorldType worldType : worldTypes)
+			{
+				if (!distinctiveWorldTypes.contains(worldType))
+				{
+					continue;
+				}
+
+				identifier.append(worldType.name());
+			}
+		} catch (Exception error) {
+			// empty
+		}
+
+		return identifier.toString();
 	}
 
 	private String getScopedConfigKey(String accountIdentifier, String configKey)
@@ -1240,18 +1317,31 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 */
 	public AccountType getAccountType()
 	{
-		// not using primitive, because it can be null while booting
-		Integer accountTypeId = client.getVarbitValue(Varbits.ACCOUNT_TYPE);
+		try {
+			// not using primitive, because it can be null while booting
+			Integer accountTypeId = client.getVarbitValue(Varbits.ACCOUNT_TYPE);
 
-		for (AccountType accountType : AccountType.values())
-		{
-			if (accountTypeId == accountType.getId())
-			{
-				return accountType;
+			for (AccountType accountType : AccountType.values()) {
+				if (accountTypeId == accountType.getId()) {
+					return accountType;
+				}
 			}
+		} catch (Exception error) {
+			// empty
 		}
 
 		return AccountType.NORMAL;
+	}
+
+	public boolean isSeasonal()
+	{
+		try {
+			return client.getWorldType().contains(WorldType.SEASONAL);
+		} catch (Exception error) {
+			// empty
+		}
+
+		return false;
 	}
 
 	public void logSupport(String message)

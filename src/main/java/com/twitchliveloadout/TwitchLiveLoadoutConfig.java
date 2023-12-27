@@ -445,6 +445,25 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigSection(
+			name = "Seasonals",
+			description = "Syncing of seasonal stats",
+			position = 9
+	)
+	String seasonalsSection = "seasonals";
+
+	@ConfigItem(
+			keyName = "seasonalsEnabled",
+			name = "Sync seasonals",
+			description = "Synchronize leagues/DMM info, such as regions and relics.",
+			position = 2,
+			section = seasonalsSection
+	)
+	default boolean seasonalsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigSection(
 			name = "General info",
 			description = "Syncing of display name, player weight, etc.",
 			position = 10
