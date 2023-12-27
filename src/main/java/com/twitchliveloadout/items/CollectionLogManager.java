@@ -20,6 +20,9 @@ public class CollectionLogManager {
 	private final TwitchState twitchState;
 	private final Client client;
 
+	private static final int COLLECTION_LOG_ID = 621;
+	private static final int COLLECTION_LOG_ITEM_CONTAINER_ID = 36;
+	private static final int COLLECTION_LOG_CATEGORY_ID = 19;
 	private static final int COLLECTION_LOG_TITLE = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
 	private static final int COLLECTION_LOG_RAIDS_TAB = 5;
@@ -84,7 +87,7 @@ public class CollectionLogManager {
 
 	private Widget getCategoryHead()
 	{
-		Widget categoryHead = client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY_HEADER);
+		Widget categoryHead = client.getWidget(COLLECTION_LOG_ID, COLLECTION_LOG_CATEGORY_ID);
 
 		return categoryHead;
 	}
@@ -117,7 +120,7 @@ public class CollectionLogManager {
 	{
 		for (int tabId : COLLECTION_LOG_TABS)
 		{
-			final Widget tabWidget = client.getWidget(WidgetID.COLLECTION_LOG_ID, tabId);
+			final Widget tabWidget = client.getWidget(COLLECTION_LOG_ID, tabId);
 
 			if (tabWidget == null)
 			{
@@ -198,7 +201,7 @@ public class CollectionLogManager {
 
 	private CopyOnWriteArrayList<CollectionLogItem> getCurrentItems()
 	{
-		final Widget itemsContainer = client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY_ITEMS);
+		final Widget itemsContainer = client.getWidget(COLLECTION_LOG_ID, COLLECTION_LOG_ITEM_CONTAINER_ID);
 
 		if (itemsContainer == null)
 		{
