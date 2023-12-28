@@ -240,6 +240,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return "";
 	}
 
+	@ConfigItem(
+			keyName = "collectionLogSkipEmpty",
+			name = "Skip empty collection logs",
+			description = "Skip collection log pages where no items are logged yet.",
+			position = 16,
+			section = itemsSection
+	)
+	default boolean collectionLogSkipEmpty()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 			name = "Combat",
 			description = "Syncing of weapon damage, smite drains, poison damage, etc. per enemy.",

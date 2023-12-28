@@ -446,7 +446,7 @@ public class TwitchState {
 					}
 
 					// guard: skip any categories that should not be included because of the filter
-					if (!shouldIncludeInCollectionLog(tabTitle, categoryTitle))
+					if (!shouldIncludeInCollectionLog(tabTitle, categoryTitle, items))
 					{
 						return;
 					}
@@ -514,12 +514,35 @@ public class TwitchState {
 		return state;
 	}
 
-	private boolean shouldIncludeInCollectionLog(String tabTitle, String categoryTitle)
+	private boolean shouldIncludeInCollectionLog(String tabTitle, String categoryTitle, JsonArray items)
 	{
 		final String filter = config.collectionLogFilter().trim().toLowerCase();
 		final String[] filterPieces = filter.split(COLLECTION_LOG_FILTER_SEPARATOR);
 		final String trimmedTabTitle = tabTitle.trim().toLowerCase();
 		final String trimmedCategoryTitle = categoryTitle.trim().toLowerCase();
+
+		if (config.collectionLogSkipEmpty())
+		{
+			boolean foundItem = false;
+
+			// check all items whether something is obtained
+			for (JsonElement rawItem : items)
+			{
+				JsonArray item = rawItem.getAsJsonArray();
+				int itemQuantity = item.get(1).getAsInt();
+
+				if (itemQuantity > 0)
+				{
+					foundItem = true;
+				}
+			}
+
+			// guard: when none is found skip this log page
+			if (!foundItem)
+			{
+				return false;
+			}
+		}
 
 		if (filter.equals(""))
 		{
@@ -838,7 +861,7 @@ public class TwitchState {
 				}
 
 				// guard: skip any categories that should not be included because of the filter
-				if (!shouldIncludeInCollectionLog(tabTitle, categoryTitle))
+				if (!shouldIncludeInCollectionLog(tabTitle, categoryTitle, items))
 				{
 					return;
 				}
