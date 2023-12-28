@@ -215,6 +215,7 @@ public class SeasonalManager {
             ArrayList<SeasonalItem> newActiveRelics = gson.fromJson(data, new TypeToken<ArrayList<SeasonalItem>>(){}.getType());
             activeRelics.clear();
             activeRelics.addAll(newActiveRelics);
+            updateSeasonalItems();
         });
     }
 
@@ -224,6 +225,7 @@ public class SeasonalManager {
             ArrayList<SeasonalItem> newActiveAreas = gson.fromJson(data, new TypeToken<ArrayList<SeasonalItem>>(){}.getType());
             activeAreas.clear();
             activeAreas.addAll(newActiveAreas);
+            updateSeasonalItems();
         });
     }
 
