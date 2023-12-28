@@ -891,18 +891,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
-	private ArrayList<Integer> scriptIdCache = new ArrayList<>();
-
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
 	{
-
-		int scriptId = scriptPostFired.getScriptId();
-
-		if (!scriptIdCache.contains(scriptId)) {
-			System.out.println("scriptPostFired.getScriptId(): "+ scriptPostFired.getScriptId());
-			scriptIdCache.add(scriptId);
-		}
 		try {
 			if (config.collectionLogEnabled())
 			{
