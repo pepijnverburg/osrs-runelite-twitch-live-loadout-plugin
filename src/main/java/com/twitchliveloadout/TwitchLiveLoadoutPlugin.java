@@ -32,7 +32,7 @@ import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.minimap.MinimapManager;
 import com.twitchliveloadout.quests.QuestManager;
 import com.twitchliveloadout.raids.InvocationsManager;
-import com.twitchliveloadout.seasonals.LeagueManager;
+import com.twitchliveloadout.seasonals.SeasonalManager;
 import com.twitchliveloadout.skills.SkillStateManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
@@ -192,7 +192,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Dedicated manager for league information.
 	 */
-	private LeagueManager leagueManager;
+	private SeasonalManager seasonalManager;
 
 	/**
 	 * Cache to check for account identifiers (hash + world type) changes as game state is not reliable for this
@@ -280,7 +280,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 			questManager = new QuestManager(this, twitchState, client);
-			leagueManager = new LeagueManager(this, twitchState, client, gson);
+			seasonalManager = new SeasonalManager(this, twitchState, client, gson);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing the managers: ", exception);
 		}
@@ -478,6 +478,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					}
 
 					twitchState.onAccountChanged();
+					seasonalManager.onAccountChanged();
 					lastAccountIdentifier = accountIdentifier;
 				}
 
@@ -890,13 +891,27 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+	private ArrayList<Integer> scriptIdCache = new ArrayList<>();
+
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
 	{
+
+		int scriptId = scriptPostFired.getScriptId();
+
+		if (!scriptIdCache.contains(scriptId)) {
+			System.out.println("scriptPostFired.getScriptId(): "+ scriptPostFired.getScriptId());
+			scriptIdCache.add(scriptId);
+		}
 		try {
 			if (config.collectionLogEnabled())
 			{
 				collectionLogManager.onScriptPostFired(scriptPostFired);
+			}
+
+			if (config.seasonalsEnabled() && isSeasonal())
+			{
+				seasonalManager.onScriptPostFired(scriptPostFired);
 			}
 
 			if (config.invocationsEnabled())
@@ -905,19 +920,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 		} catch (Exception exception) {
 			logSupport("Could not handle script post fired event:", exception);
-		}
-	}
-
-	@Subscribe
-	public void onWidgetLoaded(WidgetLoaded widgetLoaded)
-	{
-		try {
-			if (config.seasonalsEnabled() && isSeasonal())
-			{
-				leagueManager.onWidgetLoaded(widgetLoaded);
-			}
-		} catch (Exception exception) {
-			logSupport("Could not handle on widget loaded event: ", exception);
 		}
 	}
 
@@ -1166,6 +1168,27 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return null;
+	}
+
+	public void loadFromConfiguration(String cacheKey, ConfigurationDataHandler handler)
+	{
+		String rawCacheData = getConfiguration(cacheKey);
+
+		// guard: check if any data was found
+		if (rawCacheData == null || rawCacheData.trim().isEmpty())
+		{
+			return;
+		}
+
+		try {
+			handler.execute(rawCacheData);
+		} catch (Exception exception) {
+			log.warn("Could not handle cache data with from cache key '"+ cacheKey +"': ", exception);
+		}
+	}
+
+	public interface ConfigurationDataHandler {
+		void execute(String data);
 	}
 
 	/**

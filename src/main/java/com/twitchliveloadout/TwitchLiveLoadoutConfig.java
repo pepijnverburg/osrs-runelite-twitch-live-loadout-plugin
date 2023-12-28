@@ -42,6 +42,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String INVOCATIONS_CONFIG_KEY = "invocations";
 	public final static String INVOCATIONS_RAID_LEVEL_CONFIG_KEY = "invocations-raid-level";
 	public final static String QUESTS_CONFIG_KEY = "quests";
+	public final static String SEASONAL_RELICS_CONFIG_KEY = "seasonal-relics";
+	public final static String SEASONAL_AREAS_CONFIG_KEY = "seasonal-areas";
 
 	public final static int MIN_OVERLAY_TOP_POSITION = 25;
 	public final static int MAX_OVERLAY_TOP_POSITION = 75;

@@ -306,6 +306,11 @@ public class TwitchState {
 		plugin.setConfiguration(QUESTS_CONFIG_KEY, quests);
 	}
 
+	public void setSeasonalItems(JsonArray seasonalItems)
+	{
+		currentState.add(TwitchStateEntry.SEASONAL_ITEMS.getKey(), seasonalItems);
+	}
+
 	public JsonObject getCollectionLog()
 	{
 		return cyclicState.getAsJsonObject(TwitchStateEntry.COLLECTION_LOG.getKey());
@@ -347,6 +352,19 @@ public class TwitchState {
 		filteredState = removeDisabledState(filteredState);
 
 		return filteredState;
+	}
+
+	public JsonObject addSeasonalState(JsonObject state)
+	{
+
+		// guard: skip when not seasonal world
+		if (!plugin.isSeasonal()) {
+			return state;
+		}
+
+
+
+		return state;
 	}
 
 	public JsonObject addCyclicState(JsonObject state)
@@ -724,6 +742,11 @@ public class TwitchState {
 			state.add(TwitchStateEntry.QUESTS.getKey(), null);
 		}
 
+		if (!config.seasonalsEnabled() || !plugin.isSeasonal())
+		{
+			state.add(TwitchStateEntry.SEASONAL_ITEMS.getKey(), null);
+		}
+
 		// reset the invocations for the current viewers when we are not in ToA anymore
 		// note that this should only be done for the window that is active long enough
 		// otherwise it is possible to have an alt window resetting the invocations for the main window
@@ -845,12 +868,12 @@ public class TwitchState {
 		return amount;
 	}
 
-	public void onPlayerNameChanged(String playerName)
+	public void onAccountChanged()
 	{
-		reloadCache();
+		reloadConfiguration();
 	}
 
-	private void reloadCache()
+	private void reloadConfiguration()
 	{
 		// when another account logs in the cache should be updated to that account
 		// first we reset the data and after that check the cache
@@ -864,59 +887,42 @@ public class TwitchState {
 		currentState.add(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), null);
 		currentState.addProperty(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), 0);
 
-		loadDataFromCache(COLLECTION_LOG_CONFIG_KEY, (String rawCollectionLog) -> {
+		plugin.loadFromConfiguration(COLLECTION_LOG_CONFIG_KEY, (String rawCollectionLog) -> {
 			JsonObject parsedCollectionLog = new JsonParser().parse(rawCollectionLog).getAsJsonObject();
 			setCollectionLog(parsedCollectionLog);
 		});
 
-		loadDataFromCache(BANK_TABBED_ITEMS_CONFIG_KEY, (String rawItems) -> {
+		plugin.loadFromConfiguration(BANK_TABBED_ITEMS_CONFIG_KEY, (String rawItems) -> {
 			JsonArray parsedTabbedItems = new JsonParser().parse(rawItems).getAsJsonArray();
 			setBankItems(parsedTabbedItems);
 		});
 
-		loadDataFromCache(BANK_PRICE_CONFIG_KEY, (String price) -> {
+		plugin.loadFromConfiguration(BANK_PRICE_CONFIG_KEY, (String price) -> {
 			setBankItemsPrice(Long.parseLong(price));
 		});
 
-		loadDataFromCache(QUESTS_CONFIG_KEY, (String rawQuests) -> {
+		plugin.loadFromConfiguration(QUESTS_CONFIG_KEY, (String rawQuests) -> {
 			JsonArray parsedQuests = new JsonParser().parse(rawQuests).getAsJsonArray();
 			setQuests(parsedQuests);
 		});
 
-		loadDataFromCache(LOOTING_BAG_ITEMS_CONFIG_KEY, (String rawItems) -> {
+		plugin.loadFromConfiguration(LOOTING_BAG_ITEMS_CONFIG_KEY, (String rawItems) -> {
 			JsonArray parsedItems = new JsonParser().parse(rawItems).getAsJsonArray();
 			setItems(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), parsedItems);
 		});
 
-		loadDataFromCache(LOOTING_BAG_PRICE_CONFIG_KEY, (String price) -> {
+		plugin.loadFromConfiguration(LOOTING_BAG_PRICE_CONFIG_KEY, (String price) -> {
 			setItemsPrice(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), price);
 		});
 
-		loadDataFromCache(INVOCATIONS_CONFIG_KEY, (String rawInvocations) -> {
+		plugin.loadFromConfiguration(INVOCATIONS_CONFIG_KEY, (String rawInvocations) -> {
 			JsonArray parsedInvocations = new JsonParser().parse(rawInvocations).getAsJsonArray();
 			setInvocations(parsedInvocations);
 		});
 
-		loadDataFromCache(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, (String raidLevel) -> {
+		plugin.loadFromConfiguration(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, (String raidLevel) -> {
 			setInvocationsRaidLevel(raidLevel);
 		});
-	}
-
-	private void loadDataFromCache(String cacheKey, CacheDataHandler handler)
-	{
-		String rawCacheData = plugin.getConfiguration(cacheKey);
-
-		// guard: check if any data was found
-		if (rawCacheData == null || rawCacheData.trim().isEmpty())
-		{
-			return;
-		}
-
-		try {
-			handler.execute(rawCacheData);
-		} catch (Exception exception) {
-			log.warn("Could not handle cache data with from cache key '"+ cacheKey +"': ", exception);
-		}
 	}
 
 	public void setInToA(boolean isInToA)
@@ -935,9 +941,5 @@ public class TwitchState {
 		}
 
 		return Instant.now().minusMillis(WAS_IN_TOA_DEBOUNCE).isBefore(lastWasInToA);
-	}
-
-	public interface CacheDataHandler {
-		void execute(String data);
 	}
 }
