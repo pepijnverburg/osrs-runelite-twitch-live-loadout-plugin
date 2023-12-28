@@ -835,7 +835,7 @@ public class FightStateManager
 		Fight fight = getFight(actor);
 		Instant now = Instant.now();
 		Instant lastUpdate = fight.getLastUpdate();
-		long expiryTime = config.fightStatisticsExpiryTime() * 60;
+		long expiryTime = config.fightStatisticsExpiryTime() * 60L;
 
 		// refresh when fight is expired and the statistics will be non-representative
 		if (lastUpdate != null)

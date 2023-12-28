@@ -264,7 +264,7 @@ public class MarketplaceManager {
 
 	/**
 	 * Check for new products that should be applied. This process is a little bit more complex
-	 * then you would expect at first, because we need to hook in to the Twitch product configuration and
+	 * than you would expect at first, because we need to hook in to the Twitch product configuration and
 	 * transactions. From the transaction we can fetch the Twitch product (by SKU). Then we can check
 	 * whether the streamer really configured this product to have a specific effect (done in the configuration service).
 	 * If yes, we have a Streamer product containing a reference to the Ebs Product, which contains the effect information.
@@ -463,7 +463,7 @@ public class MarketplaceManager {
 
 		log.info("A transaction is going to be rerun, transaction ID: "+ transactionId);
 
-		// update the timestamp so it appears to be a recent transaction
+		// update the timestamp, so it appears to be a recent transaction
 		transaction.timestamp = Instant.now().toString();
 
 		// remove from the handled transactions and queue once again
