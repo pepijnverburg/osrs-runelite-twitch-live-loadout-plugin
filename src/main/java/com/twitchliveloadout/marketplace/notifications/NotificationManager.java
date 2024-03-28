@@ -213,11 +213,12 @@ public class NotificationManager {
 			return;
 		}
 
+		var hasCustomTitle = null != notification.ebsNotification.popupTitle;
 		plugin.runOnClientThread(() -> {
 			try {
 				String message = getMessage(notification);
 				WidgetNode widgetNode = client.openInterface((161 << 16) | 13, 660, WidgetModalMode.MODAL_CLICKTHROUGH);
-				client.runScript(3343, POPUP_NOTIFICATION_TITLE, message, -1);
+				client.runScript(3343, hasCustomTitle ? notification.ebsNotification.popupTitle : POPUP_NOTIFICATION_TITLE, message, -1);
 
 				plugin.runOnClientThread(() -> {
 					Widget w = client.getWidget(660, 1);
