@@ -270,7 +270,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			twitchState = new TwitchState(this, config, canvasListener, gson);
 			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient);
-			twitchEventSubClient = new TwitchEventSubClient(gson, config, httpClient);
+			twitchEventSubClient = new TwitchEventSubClient(this, config, twitchApi, gson, httpClient);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}
@@ -657,11 +657,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				return;
 			}
 
-			if (twitchEventSubClient.isConnected()) {
-				twitchEventSubClient.pingCheck();
-			} else {
-				log.debug("Reconnecting ...");
-				ensureTwitchPubSubClient();
+			if (!twitchEventSubClient.isConnected()) {
+				twitchEventSubClient.reconnect();
 			}
 		} catch (Exception exception) {
 			log.warn("Could not check the Twitch Event Sub client connection: ", exception);
@@ -995,7 +992,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					break;
 				case "twitchOAuthAccessToken":
 				case "twitchOAuthRefreshToken":
-					ensureTwitchPubSubClient();
+					twitchEventSubClient.reconnect();
 					break;
 			}
 
@@ -1389,16 +1386,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return false;
-	}
-
-	private synchronized void ensureTwitchPubSubClient()
-	{
-		if (twitchEventSubClient.isConnected())
-		{
-			twitchEventSubClient.disconnect();
-		}
-
-		twitchEventSubClient.connect();
 	}
 
 	public void logSupport(String message)
