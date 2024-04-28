@@ -316,6 +316,11 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 				return widget;
 			}
 
+			if (widget == null)
+			{
+				return null;
+			}
+
 			return widget.getChild(listIndex);
 		} catch (Exception exception) {
 			plugin.logSupport("Could not get a widget by widget frame, due to the following error:", exception);
