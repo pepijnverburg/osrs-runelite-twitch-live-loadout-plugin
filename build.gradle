@@ -20,6 +20,7 @@ repositories {
 }
 
 //def runeLiteVersion = '1.10.8-SNAPSHOT'
+//def runeLiteVersion = '1.10.20-SNAPSHOT'
 def runeLiteVersion = 'latest.release'
 
 dependencies {
@@ -34,7 +35,7 @@ dependencies {
 }
 
 group = 'com.twitchliveloadout'
-version = '2.1.1'
+version = '2.2.0'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
