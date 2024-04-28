@@ -38,6 +38,7 @@ import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import com.twitchliveloadout.ui.CanvasListener;
 import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
@@ -147,6 +148,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Twitch Configuration Service API end-point helpers.
 	 */
 	private TwitchApi twitchApi;
+
+	/**
+	 * Twitch EventSub client
+	 */
+	private TwitchEventSubClient twitchEventSubClient;
 
 	/**
 	 * Dedicated manager for all fight information.
@@ -264,6 +270,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			twitchState = new TwitchState(this, config, canvasListener, gson);
 			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient);
+			twitchEventSubClient = new TwitchEventSubClient(gson, config, httpClient);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}
@@ -289,7 +296,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializePanel()
 	{
 		try {
-			pluginPanel = new TwitchLiveLoadoutPanel(this, twitchApi, twitchState, fightStateManager, marketplaceManager, canvasListener, config);
+			pluginPanel = new TwitchLiveLoadoutPanel(this, twitchApi, twitchEventSubClient, twitchState, fightStateManager, marketplaceManager, canvasListener, config);
 			pluginPanel.rebuild();
 
 			final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
@@ -639,6 +646,28 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Periodically check whether we are still connected to the Twitch EventSub API.
+	 */
+	@Schedule(period = 30, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void checkTwitchEventSubConnection()
+	{
+		try {
+			if (twitchEventSubClient == null) {
+				return;
+			}
+
+			if (twitchEventSubClient.isConnected()) {
+				twitchEventSubClient.pingCheck();
+			} else {
+				log.debug("Reconnecting ...");
+				ensureTwitchPubSubClient();
+			}
+		} catch (Exception exception) {
+			log.warn("Could not check the Twitch Event Sub client connection: ", exception);
+		}
+	}
+
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
@@ -963,6 +992,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					{
 						marketplaceManager.disable();
 					}
+					break;
+				case "twitchOAuthAccessToken":
+				case "twitchOAuthRefreshToken":
+					ensureTwitchPubSubClient();
 					break;
 			}
 
@@ -1356,6 +1389,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return false;
+	}
+
+	private synchronized void ensureTwitchPubSubClient()
+	{
+		if (twitchEventSubClient.isConnected())
+		{
+			twitchEventSubClient.disconnect();
+		}
+
+		twitchEventSubClient.connect();
 	}
 
 	public void logSupport(String message)

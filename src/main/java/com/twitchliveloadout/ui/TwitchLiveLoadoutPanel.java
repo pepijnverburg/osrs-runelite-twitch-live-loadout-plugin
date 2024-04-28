@@ -10,6 +10,7 @@ import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchState;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.materialtabs.MaterialTab;
 import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
@@ -26,13 +27,13 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 	private final CombatPanel combatPanel;
 	private final MarketplacePanel marketplacePanel;
 
-	public TwitchLiveLoadoutPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, FightStateManager fightStateManager, MarketplaceManager marketplaceManager, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
+	public TwitchLiveLoadoutPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchEventSubClient twitchEventSubClient, TwitchState twitchState, FightStateManager fightStateManager, MarketplaceManager marketplaceManager, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
 	{
 		super(true);
 		setLayout(new BorderLayout());
 
 		combatPanel = new CombatPanel(fightStateManager);
-		connectivityPanel = new ConnectivityPanel(plugin, twitchApi, twitchState, canvasListener, config);
+		connectivityPanel = new ConnectivityPanel(plugin, twitchApi, twitchEventSubClient, twitchState, canvasListener, config);
 		marketplacePanel = new MarketplacePanel(marketplaceManager);
 
 		connectivityTab = new MaterialTab("Status", tabGroup, connectivityPanel);

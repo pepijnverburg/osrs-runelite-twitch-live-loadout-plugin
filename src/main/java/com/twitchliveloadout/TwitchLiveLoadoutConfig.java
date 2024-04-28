@@ -49,7 +49,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static int MAX_OVERLAY_TOP_POSITION = 75;
 
 	@ConfigSection(
-			name = "Twitch Extension & Token",
+			name = "Twitch Extension & Tokens",
 			description = "Authentication and extension configuration.",
 			position = 0
 	)
@@ -57,8 +57,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "twitchToken",
-			name = "Your copied Twitch Extension Token",
-			description = "Your token can be found when configuring the Twitch Extension.",
+			name = "<html><body style=\"color: #fdff00;\">Your copied Twitch Extension Token</body></html>",
+			description = "This token is copied when configuring the Twitch Extension.",
 			secret = true,
 			position = 2,
 			section = twitchSection
@@ -95,6 +95,33 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default TwitchThemeEntry twitchTheme()
 	{
 		return TwitchThemeEntry.LIGHT;
+	}
+
+
+	@ConfigItem(
+			keyName = "twitchOAuthAccessToken",
+			name = "Twitch Channel Token (optional)",
+			description = "Optional token to access events such as channel point redeems, subscriptions, etc.",
+			secret = true,
+			position = 8,
+			section = twitchSection
+	)
+	default String twitchOAuthAccessToken()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+			keyName = "twitchOAuthRefreshToken",
+			name = "Twitch Channel Refresh Token (optional)",
+			description = "Optional refresh token to access events such as channel point redeems, subscriptions, etc.",
+			secret = true,
+			position = 10,
+			section = twitchSection
+	)
+	default String twitchOAuthRefreshToken()
+	{
+		return "";
 	}
 
 	@ConfigSection(
@@ -573,7 +600,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Correct transaction delay",
 			description = "Base the expiry of the effects when it is received and not the transaction time, which can have delays.",
 			position = 10,
-			hidden = false,
+			hidden = true,
 			section = marketplaceSection
 	)
 	default boolean marketplaceStartOnLoadedAt()

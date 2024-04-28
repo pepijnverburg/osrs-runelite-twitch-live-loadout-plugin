@@ -30,6 +30,7 @@ import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchState;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.ImageUtil;
@@ -43,6 +44,7 @@ import java.awt.event.MouseEvent;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class ConnectivityPanel extends JPanel
 {
@@ -62,6 +64,8 @@ public class ConnectivityPanel extends JPanel
 
 	private final TextPanel syncingStatusPanel = new TextPanel("Syncing status", "N/A");
 	private final TextPanel twitchStatusPanel = new TextPanel("Twitch Status", "N/A");
+	private final TextPanel twitchEventSubStatusPanel = new TextPanel("Twitch Live Events Status", "N/A");
+
 	private final TextPanel authPanel = new TextPanel("Twitch Token Validity", "N/A");
 	private final TextPanel rateLimitPanel = new TextPanel("Twitch API Limit", "N/A");
 	private final TextPanel statePanel = new TextPanel("Loadout State Size", "N/A");
@@ -69,6 +73,7 @@ public class ConnectivityPanel extends JPanel
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchApi twitchApi;
+	private final TwitchEventSubClient twitchEventSubClient;
 	private final TwitchState twitchState;
 	private final CanvasListener canvasListener;
 	private final TwitchLiveLoadoutConfig config;
@@ -80,12 +85,13 @@ public class ConnectivityPanel extends JPanel
 		WIKI_ICON = new ImageIcon(ImageUtil.loadImageResource(ConnectivityPanel.class, "/wiki_icon.png"));
 	}
 
-	public ConnectivityPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
+	public ConnectivityPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchEventSubClient twitchEventSubClient, TwitchState twitchState, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
 	{
 		super(new GridBagLayout());
 
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
+		this.twitchEventSubClient = twitchEventSubClient;
 		this.twitchState = twitchState;
 		this.canvasListener = canvasListener;
 		this.config = config;
@@ -111,6 +117,8 @@ public class ConnectivityPanel extends JPanel
 		wrapper.add(actionsContainer);
 		constraints.gridy += 2;
 		wrapper.add(twitchStatusPanel, constraints);
+		constraints.gridy++;
+		wrapper.add(twitchEventSubStatusPanel, constraints);
 		constraints.gridy++;
 		wrapper.add(syncingStatusPanel, constraints);
 		constraints.gridy++;
@@ -153,6 +161,10 @@ public class ConnectivityPanel extends JPanel
 			syncingStatusText = "This client is currently not logged into an account. Twitch only receives connectivity updates without any loadout information.";
 			syncingStatusColor = WARNING_TEXT_COLOR;
 		}
+
+		var twitchPubSubStatus = getTwitchPubSubStatus();
+		String twitchPubSubStatusText = twitchPubSubStatus.getLeft();
+		String twitchPubSubStatusColor = twitchPubSubStatus.getRight();
 
 		try {
 			final JsonObject decodedToken = twitchApi.getDecodedToken();
@@ -209,6 +221,7 @@ public class ConnectivityPanel extends JPanel
 
 		syncingStatusPanel.setText(getTextInColor(syncingStatusText, syncingStatusColor));
 		twitchStatusPanel.setText(getTextInColor(twitchStatusText, twitchStatusColor));
+		twitchEventSubStatusPanel.setText(getTextInColor(twitchPubSubStatusText, twitchPubSubStatusColor));
 		authPanel.setText(getTextInColor(authText, authColor));
 		rateLimitPanel.setText(getTextInColor(rateLimitText, rateLimitColor));
 		statePanel.setText(getTextInColor(stateText, stateColor));
@@ -291,5 +304,34 @@ public class ConnectivityPanel extends JPanel
 		container.add(arrowLabel, BorderLayout.EAST);
 
 		return container;
+	}
+
+	private Pair<String, String> getTwitchPubSubStatus()
+	{
+
+		if (config.twitchOAuthAccessToken().isBlank() || config.twitchOAuthRefreshToken().isBlank()) {
+			return Pair.of(
+					"Twitch Channel tokens are not provided. Will not connect.",
+					DEFAULT_TEXT_COLOR
+			);
+		}
+
+		if (twitchEventSubClient != null) {
+			if (twitchEventSubClient.awaitingPing()) {
+				return Pair.of(
+						"Waiting for confirmation from Twitch.",
+						WARNING_TEXT_COLOR
+				);
+			}
+
+			if (twitchEventSubClient.isConnected()) {
+				return Pair.of(
+						"Connected to Twitch Live Events API.",
+						SUCCESS_TEXT_COLOR
+				);
+			}
+		}
+
+		return Pair.of("Could not connect to Twitch Live Events API.", ERROR_TEXT_COLOR);
 	}
 }
