@@ -3,11 +3,9 @@ package com.twitchliveloadout.twitch.eventsub;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchApi;
-import com.twitchliveloadout.twitch.eventsub.messages.*;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
@@ -19,8 +17,8 @@ import static net.runelite.http.api.RuneLiteAPI.JSON;
 
 @Slf4j
 public class TwitchEventSubClient {
-    private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
-//    private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "ws://127.0.0.1:8080/ws";
+   private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
+    // private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "ws://127.0.0.1:8080/ws";
     private final static String TWITCH_CREATE_SUBSCRIPTION_URL = "https://api.twitch.tv/helix/eventsub/subscriptions";
     public final static String DEFAULT_APP_CLIENT_ID = "qaljqu9cfow8biixuat6rbr303ocp2";
     private final static String USER_AGENT = "RuneLite";
@@ -38,10 +36,9 @@ public class TwitchEventSubClient {
     private String sessionId = "";
     private int keepAliveTimeoutS = 10;
     private Instant lastKeepAliveAt = Instant.now();
-    private boolean shouldReconnect = true;
     private boolean socketOpen = false;
 
-    private final SocketListener socketListener;
+    private final TwitchEventSubListener listener;
 
     public TwitchEventSubClient(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, TwitchApi twitchApi, Gson gson, OkHttpClient httpClientTemplate)
     {
@@ -52,32 +49,27 @@ public class TwitchEventSubClient {
         this.httpClientTemplate = httpClientTemplate;
         this.createSubscriptionHttpClient = createHttpClient(CREATE_SUBSCRIPTION_TIMEOUT_MS);
 
-        socketListener = new SocketListener()
+        listener = new TwitchEventSubListener()
         {
             @Override
             public void onReady() {
 
                 // once the socket is ready we can create the subscriptions
-                createSubscriptions();
+                createSubscription(TwitchEventSubType.CHANNEL_POINTS_REDEEM);
+                // createSubscription("channel.subscribe", 1);
             }
 
             @Override
-            public void onMessage(String type, JsonObject payload) {
-                log.info("Received new subscription event: {}: {}", type, payload);
+            public void onEvent(String type, JsonObject payload) {
 
-                if (type.equals("reward-redeemed")) {
-                    // HANDLE
+                if (TwitchEventSubType.CHANNEL_POINTS_REDEEM.getType().equals(type)) {
+                    log.info("CHANNEL POINT REDEEM {}", payload);
                 }
             }
         };
 
         // instantly attempt to connect
         connect();
-    }
-
-    public boolean isConnected()
-    {
-        return webSocket != null && socketOpen && !sessionId.isEmpty() && Instant.now().minusSeconds(keepAliveTimeoutS).isBefore(lastKeepAliveAt);
     }
 
     private synchronized void connect()
@@ -92,7 +84,6 @@ public class TwitchEventSubClient {
         OkHttpClient client = createHttpClient(10_000);
         Request request = new Request.Builder().url(websocketUrl).build();
         webSocket = client.newWebSocket(request, webSocketListener);
-        shouldReconnect = true;
     }
 
     public synchronized void reconnect()
@@ -100,31 +91,11 @@ public class TwitchEventSubClient {
         connect();
     }
 
-    public <T extends MessageData> void sendMessage(Message<T> message) throws IOException, RuntimeException
-    {
-
-        // guard: skip when not connected
-        if (!isConnected()) {
-            return;
-        }
-
-        var type = new TypeToken<Message<T>>() {}.getType();
-        if (message.data instanceof INeedAuth) {
-            ((INeedAuth) message.data).setAuthToken(config.twitchOAuthAccessToken());
-        }
-
-        var jsonMessage = gson.toJson(message, type);
-
-        log.info("Send Twitch websocket message: {}", jsonMessage);
-        webSocket.send(jsonMessage);
-    }
-
     public void disconnect()
     {
         if (socketOpen) {
             webSocket.close(1000, null);
         }
-        shouldReconnect = false;
     }
 
     private final WebSocketListener webSocketListener = new WebSocketListener() {
@@ -155,7 +126,7 @@ public class TwitchEventSubClient {
                         keepAliveTimeoutS = session.get("keepalive_timeout_seconds").getAsInt();
 
                         // the socket is ready when a session ID has been received
-                        socketListener.onReady();
+                        listener.onReady();
                     }
 
                     // keepalive message from the server to show it is still a valid connection
@@ -175,9 +146,9 @@ public class TwitchEventSubClient {
 
                     // message for an event we've been subscribed to
                     case "notification" -> {
-                        String subscriptionType = metadata.get("subscription_type").getAsString();
-                        JsonObject subscriptionPayload = payload.getAsJsonObject("event");
-                        socketListener.onMessage(subscriptionType, subscriptionPayload);
+                        String eventType = metadata.get("subscription_type").getAsString();
+                        JsonObject eventPayload = payload.getAsJsonObject("event");
+                        listener.onEvent(eventType, eventPayload);
                     }
                 }
             } catch (Exception exception) {
@@ -202,12 +173,11 @@ public class TwitchEventSubClient {
         }
     };
 
-    private void createSubscriptions() {
-        createSubscription("channel.channel_points_custom_reward_redemption.add", 1);
-        // createSubscription("channel.subscribe", 1);
+    public void createSubscription(TwitchEventSubType subscriptionType) {
+        createSubscription(subscriptionType.getType(), subscriptionType.getVersion());
     }
 
-    private void createSubscription(String type, int version)
+    public void createSubscription(String type, int version)
     {
         final String channelId = twitchApi.getChannelId();
         final String token = config.twitchOAuthAccessToken();
@@ -260,6 +230,11 @@ public class TwitchEventSubClient {
                 response.close();
             }
         });
+    }
+
+    public boolean isConnected()
+    {
+        return webSocket != null && socketOpen && !sessionId.isEmpty() && Instant.now().minusSeconds(keepAliveTimeoutS).isBefore(lastKeepAliveAt);
     }
 
     private OkHttpClient createHttpClient(int timeoutMs)

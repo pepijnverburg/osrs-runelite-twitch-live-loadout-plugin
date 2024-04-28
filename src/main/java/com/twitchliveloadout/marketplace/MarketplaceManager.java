@@ -570,7 +570,6 @@ public class MarketplaceManager {
 		// register the unique streamer product for this single transaction
 		// and queue the transaction as we now have all the information configured
 		// to properly the Random Event in game
-
 		streamerProducts.add(streamerProduct);
 		queuedTransactions.add(twitchTransaction);
 	}
