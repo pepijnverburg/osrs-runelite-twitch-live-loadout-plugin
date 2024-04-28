@@ -376,7 +376,7 @@ public class TwitchApi
 	}
 
 	@Nullable
-	private String getChannelId()
+	public String getChannelId()
 	{
 
 		try {
