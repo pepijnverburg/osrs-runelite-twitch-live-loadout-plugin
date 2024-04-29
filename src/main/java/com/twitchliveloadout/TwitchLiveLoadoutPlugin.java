@@ -39,6 +39,7 @@ import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubListener;
 import com.twitchliveloadout.ui.CanvasListener;
 import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
@@ -151,6 +152,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 */
 	private TwitchApi twitchApi;
 
+	/**
+	 * Twitch EventSub client
+	 */
+	private TwitchEventSubListener twitchEventSubListener;
 	/**
 	 * Twitch EventSub client
 	 */
@@ -273,7 +278,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			twitchState = new TwitchState(this, config, canvasListener, gson);
 			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient, configManager);
-			twitchEventSubClient = new TwitchEventSubClient(this, config, twitchApi, gson, httpClient);
+			twitchEventSubListener = new TwitchEventSubListener(this, twitchApi, gson);
+			twitchEventSubClient = new TwitchEventSubClient(this, config, twitchApi, gson, httpClient, twitchEventSubListener);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}

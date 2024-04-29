@@ -462,11 +462,6 @@ public class TwitchApi
 		final String refreshToken = config.twitchOAuthRefreshToken();
 		String url = DEFAULT_TWITCH_EBS_BASE_URL + "/api/refresh-token";
 
-		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
-		{
-			url = "http://localhost:3010/api/refresh-token";
-		}
-
 		// guard: check if the refresh token is valid
 		if (refreshToken.isEmpty())
 		{
@@ -525,14 +520,12 @@ public class TwitchApi
 		);
 	}
 
-	public void createEventSubSubscription(String sessionId, TwitchEventSubType subscriptionType) {
-		createEventSubSubscription(sessionId, subscriptionType.getType(), subscriptionType.getVersion());
-	}
-
-	public void createEventSubSubscription(String sessionId, String type, int version)
+	public void createEventSubSubscription(String sessionId, TwitchEventSubType subscriptionType)
 	{
 		final String channelId = getChannelId();
 		final String token = config.twitchOAuthAccessToken();
+		final String type = subscriptionType.getType();
+		final int version = subscriptionType.getVersion();
 
 		// guard: check if the auth parameters are valid
 		if (channelId == null || token == null) {
@@ -540,7 +533,18 @@ public class TwitchApi
 		}
 
 		final JsonObject condition = new JsonObject();
-		condition.addProperty("broadcaster_user_id", channelId);
+
+		// check which conditions to add based on the type of event
+		// usually we only need to add the broadcaster user ID, but there are some exceptions
+		if (subscriptionType == TwitchEventSubType.EXTENSION_BITS_TRANSACTION) {
+
+			// NOTE: this one doesn't actually work because oauth user tokens don't have access to these events...
+			// maintain the code here for reference purposes
+			condition.addProperty("extension_client_id", DEFAULT_EXTENSION_CLIENT_ID);
+		} else {
+			condition.addProperty("broadcaster_user_id", channelId);
+		}
+
 		final JsonObject transport = new JsonObject();
 		transport.addProperty("method", "websocket");
 		transport.addProperty("session_id", sessionId);

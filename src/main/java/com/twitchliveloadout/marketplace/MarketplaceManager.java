@@ -17,6 +17,7 @@ import com.twitchliveloadout.marketplace.spawns.SpawnOverheadManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
+import com.twitchliveloadout.marketplace.transactions.TwitchTransactionOrigin;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
@@ -304,12 +305,14 @@ public class MarketplaceManager {
 			// try to handle each individual transaction to prevent one invalid transaction in the queue
 			// to cancel all other transactions and with that all their effects
 			try {
+				String transactionId = transaction.id;
 				TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
 				StreamerProduct streamerProduct = getStreamerProductByTransaction(transaction);
 
 				// guard: make sure a products are exist for this transaction
 				if (twitchProduct == null || streamerProduct == null)
 				{
+					plugin.logSupport("Could not match the transaction product details to a Twitch and Streamer product. Transaction ID: "+ transactionId);
 					continue;
 				}
 
@@ -471,6 +474,29 @@ public class MarketplaceManager {
 		queuedTransactions.add(transaction);
 	}
 
+	public void handleCustomTransaction(TwitchTransaction transaction)
+	{
+
+		// guard: skip when not valid
+		if (transaction == null)
+		{
+			return;
+		}
+
+		String transactionId = transaction.id;
+
+		// guard: skip when already handled
+		if (handledTransactionIds.contains(transactionId))
+		{
+			return;
+		}
+
+		// add it to the queue and archive
+		queuedTransactions.add(transaction);
+		archivedTransactions.add(0, transaction);
+		updateMarketplacePanel();
+	}
+
 	/**
 	 * Cyclic method to cycle through all the available EBS products and test them one by one at a configurable interval
 	 */
@@ -529,8 +555,8 @@ public class MarketplaceManager {
 
 		TwitchTransaction twitchTransaction = new TwitchTransaction();
 		TwitchProduct twitchProduct = new TwitchProduct();
-		StreamerProduct streamerProduct = new StreamerProduct();
 		TwitchProductCost twitchProductCost = new TwitchProductCost();
+		StreamerProduct streamerProduct = new StreamerProduct();
 		String transactionId = generateRandomTestId();
 		String streamerProductId = generateRandomTestId();
 		String twitchSku = generateRandomTestId();
@@ -559,6 +585,7 @@ public class MarketplaceManager {
 		twitchTransaction.product_type = "TEST";
 		twitchTransaction.product_data = twitchProduct;
 		twitchTransaction.handled_at = Instant.now().toString();
+		twitchTransaction.origin = TwitchTransactionOrigin.TEST;
 
 		streamerProduct.id = streamerProductId;
 		streamerProduct.ebsProductId = ebsProduct.id;

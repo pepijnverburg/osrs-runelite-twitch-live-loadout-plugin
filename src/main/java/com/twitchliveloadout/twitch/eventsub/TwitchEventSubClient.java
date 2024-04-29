@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class TwitchEventSubClient {
-   private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
-    // private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "ws://127.0.0.1:8080/ws";
+//   private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
+     private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "ws://127.0.0.1:8080/ws";
 
     private final TwitchLiveLoadoutPlugin plugin;
     private final TwitchLiveLoadoutConfig config;
@@ -32,32 +32,14 @@ public class TwitchEventSubClient {
 
     private final TwitchEventSubListener listener;
 
-    public TwitchEventSubClient(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, TwitchApi twitchApi, Gson gson, OkHttpClient httpClientTemplate)
+    public TwitchEventSubClient(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, TwitchApi twitchApi, Gson gson, OkHttpClient httpClientTemplate, TwitchEventSubListener listener)
     {
         this.plugin = plugin;
         this.config = config;
         this.twitchApi = twitchApi;
         this.gson = gson;
         this.httpClientTemplate = httpClientTemplate;
-
-        listener = new TwitchEventSubListener()
-        {
-            @Override
-            public void onReady(String sessionId) {
-
-                // once the socket is ready we can create the subscriptions
-                twitchApi.createEventSubSubscription(sessionId, TwitchEventSubType.CHANNEL_POINTS_REDEEM);
-                // createSubscription("channel.subscribe", 1);
-            }
-
-            @Override
-            public void onEvent(String type, JsonObject payload) {
-
-                if (TwitchEventSubType.CHANNEL_POINTS_REDEEM.getType().equals(type)) {
-                    log.info("CHANNEL POINT REDEEM {}", payload);
-                }
-            }
-        };
+        this.listener = listener;
 
         // instantly attempt to connect
         connect();
@@ -137,13 +119,22 @@ public class TwitchEventSubClient {
 
                     // message for an event we've been subscribed to
                     case "notification" -> {
-                        String eventType = metadata.get("subscription_type").getAsString();
+                        String rawEventType = metadata.get("subscription_type").getAsString();
+                        TwitchEventSubType eventType = TwitchEventSubType.getByType(rawEventType);
                         JsonObject eventPayload = payload.getAsJsonObject("event");
+
+                        if (eventType == null)
+                        {
+                            plugin.logSupport("Could not find known Twitch EventSub type in enum, skipping it: "+ rawEventType);
+                            return;
+                        }
+
                         listener.onEvent(eventType, eventPayload);
                     }
                 }
             } catch (Exception exception) {
-                log.warn("Could not handle websocket message, skipping it: " + rawMessage);
+                log.warn("Could not handle Twitch websocket message due to error: ", exception);
+                log.warn("The websocket message that was skipped is: {}", rawMessage);
             }
         }
 

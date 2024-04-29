@@ -7,6 +7,7 @@ import lombok.Getter;
  */
 @Getter
 public enum TwitchEventSubType {
+    EXTENSION_BITS_TRANSACTION("extension.bits_transaction.create"),
     CHANNEL_POINTS_REDEEM("channel.channel_points_custom_reward_redemption.add"),
     NEW_SUBSCRIPTION("channel.subscribe"),
     CONTINUE_SUBSCRIPTION("channel.subscription.message"),
@@ -31,5 +32,18 @@ public enum TwitchEventSubType {
     TwitchEventSubType(String type) {
         this.type = type;
         this.version = 1;
+    }
+
+    public static TwitchEventSubType getByType(String rawType)
+    {
+        for (TwitchEventSubType type : TwitchEventSubType.values())
+        {
+          if (type.getType().equals(rawType))
+          {
+              return type;
+          }
+        }
+
+        return null;
     }
 }
