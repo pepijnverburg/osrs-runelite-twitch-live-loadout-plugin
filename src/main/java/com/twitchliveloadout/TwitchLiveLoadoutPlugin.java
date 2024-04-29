@@ -567,6 +567,22 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	/**
+	 * Polling mechanism to update the channel point rewards configured in Twitch.
+	 */
+	@Schedule(period = (IN_DEVELOPMENT ? 5 : 30), unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void updateChannelPointRewards()
+	{
+		try {
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.updateAsyncChannelPointRewards();
+			}
+		} catch (Exception exception) {
+			logSupport("Could not update the channel point rewards due to the following error: ", exception);
+		}
+	}
+
+	/**
 	 * Polling mechanism to get new Twitch transactions
 	 */
 	@Schedule(period = 3, unit = ChronoUnit.SECONDS, asynchronous = false)

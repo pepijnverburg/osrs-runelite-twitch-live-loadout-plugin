@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.marketplace.products.ChannelPointReward;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import com.twitchliveloadout.ui.CanvasListener;
 import com.twitchliveloadout.utilities.AccountType;
@@ -14,6 +15,7 @@ import net.runelite.api.*;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
@@ -507,6 +509,27 @@ public class TwitchState {
 			state.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), invocationsRaidLevel);
 		}
 
+		if (currentCyclicEntry == TwitchStateEntry.CHANNEL_POINT_REWARDS)
+		{
+			// add all channel point rewards in one go with data filtered from them
+			JsonArray simpleChannelPointRewards = new JsonArray();
+			CopyOnWriteArrayList<ChannelPointReward> channelPointRewards =  plugin.getMarketplaceManager().getChannelPointRewards();
+
+			for (ChannelPointReward channelPointReward : channelPointRewards)
+			{
+				JsonObject simpleChannelPointReward = new JsonObject();
+
+				// only add these three properties to conserve on data usage
+				simpleChannelPointReward.addProperty("id", channelPointReward.id);
+				simpleChannelPointReward.addProperty("title", channelPointReward.title);
+				simpleChannelPointReward.addProperty("cost", channelPointReward.cost);
+
+				simpleChannelPointRewards.add(simpleChannelPointReward);
+			}
+
+			state.add(TwitchStateEntry.CHANNEL_POINT_REWARDS.getKey(), simpleChannelPointRewards);
+		}
+
 		return state;
 	}
 
@@ -610,8 +633,15 @@ public class TwitchState {
 			currentCyclicSliceIndex = 0;
 		}
 
-		// after invocations we go back to the bank
+		// after invocations we go back to the channel point rewards
 		else if (currentCyclicEntry == TwitchStateEntry.INVOCATIONS)
+		{
+			currentCyclicEntry = TwitchStateEntry.CHANNEL_POINT_REWARDS;
+			currentCyclicSliceIndex = 0;
+		}
+
+		// after the channel point rewards go to the bank
+		else if (currentCyclicEntry == TwitchStateEntry.CHANNEL_POINT_REWARDS)
 		{
 			currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 			currentCyclicSliceIndex = 0;
@@ -621,6 +651,7 @@ public class TwitchState {
 	private JsonObject verifyClientActivityStatus(JsonObject state)
 	{
 		final JsonElement accountHashElement = state.get(TwitchStateEntry.ACCOUNT_HASH.getKey());
+		final JsonElement channelPointRewardsElement = state.get(TwitchStateEntry.CHANNEL_POINT_REWARDS.getKey());
 		final Long accountHash = (accountHashElement == null ? -1 : accountHashElement.getAsLong());
 
 		// only sync this account when a valid account hash
@@ -633,6 +664,13 @@ public class TwitchState {
 		if (!plugin.isLoggedIn(true))
 		{
 			state = new JsonObject();
+		}
+
+		// we need to make one exception for the cyclic state of the Channel Point Rewards
+		// that should be synced regardless of whether we are logged in or not
+		// TODO: look into refactor as this feels a bit weird to place here as one exception...
+		if (channelPointRewardsElement != null) {
+			state.add(TwitchStateEntry.CHANNEL_POINT_REWARDS.getKey(), channelPointRewardsElement);
 		}
 
 		return state;

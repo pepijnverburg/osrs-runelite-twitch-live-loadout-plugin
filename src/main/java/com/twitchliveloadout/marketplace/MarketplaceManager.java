@@ -100,6 +100,11 @@ public class MarketplaceManager {
 	private CopyOnWriteArrayList<EbsProduct> ebsProducts = new CopyOnWriteArrayList<>();
 
 	/**
+	 * List of all EBS products from Twitch
+	 */
+	private CopyOnWriteArrayList<ChannelPointReward> channelPointRewards = new CopyOnWriteArrayList<>();
+
+	/**
 	 * List of all extension transactions that should be handled
 	 */
 	private final CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList<>();
@@ -124,6 +129,7 @@ public class MarketplaceManager {
 	 */
 	private boolean isFetchingEbsTransactions = false;
 	private boolean isFetchingEbsProducts = false;
+	private boolean isFetchingChannelPointRewards = false;
 	@Getter
 	private boolean fetchingEbsTransactionsErrored = false;
 
@@ -773,9 +779,9 @@ public class MarketplaceManager {
 				CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList<>();
 
 				// try-catch for every parse, to not let all products crash on one misconfiguration
-				products.forEach((element) -> {
+				products.forEach((product) -> {
 					try {
-						EbsProduct ebsProduct = gson.fromJson(element, EbsProduct.class);
+						EbsProduct ebsProduct = gson.fromJson(product, EbsProduct.class);
 						newEbsProducts.add(ebsProduct);
 					} catch (Exception exception) {
 						plugin.logSupport("Could not parse the raw EBS product to a valid product: ", exception);
@@ -789,6 +795,57 @@ public class MarketplaceManager {
 		} catch (Exception exception) {
 			plugin.logSupport("Could not fetch the new EBS products due to the following error: ", exception);
 		}
+	}
+
+	public void updateAsyncChannelPointRewards()
+	{
+
+		// guard: skip when already fetching
+		if (isFetchingChannelPointRewards)
+		{
+			return;
+		}
+
+		isFetchingChannelPointRewards = true;
+		twitchApi.fetchAsyncChannelPointRewards(
+			(response) -> {
+				plugin.logSupport("TEST: "+ response.body().string());
+				isFetchingChannelPointRewards = false;
+				JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
+				JsonArray rewards = result.getAsJsonArray("data");
+
+				// guard: check if the rewards could be fetched
+				if (rewards == null)
+				{
+					plugin.logSupport("Could not find any valid Channel Point Rewards.");
+					return;
+				}
+
+				CopyOnWriteArrayList<ChannelPointReward> newChannelPointRewards = new CopyOnWriteArrayList<>();
+
+				// try-catch for every parse, to not let all products crash on one misconfiguration
+				rewards.forEach((reward) -> {
+					try {
+						ChannelPointReward channelPointReward = gson.fromJson(reward, ChannelPointReward.class);
+
+						// guard: skip any rewards that are not enabled
+						if (!channelPointReward.is_enabled)
+						{
+							return;
+						}
+
+						newChannelPointRewards.add(channelPointReward);
+					} catch (Exception exception) {
+						plugin.logSupport("Could not parse the raw Channel Point Reward: ", exception);
+					}
+				});
+
+				channelPointRewards = newChannelPointRewards;
+			},
+			(error) -> {
+				isFetchingChannelPointRewards = false;
+			}
+		);
 	}
 
 	/**
@@ -808,7 +865,7 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Get a copied copy of the streamer products list to prevent mutations
+	 * Get a copy of the streamer products list to prevent mutations
 	 */
 	public CopyOnWriteArrayList<StreamerProduct> getStreamerProducts()
 	{
@@ -816,7 +873,7 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Get a copied copy of the queued transactions list to prevent mutations
+	 * Get a copy of the queued transactions list to prevent mutations
 	 */
 	public CopyOnWriteArrayList<TwitchTransaction> getQueuedTransactions()
 	{
@@ -824,11 +881,19 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Get a copied copy of the queued transactions list to prevent mutations
+	 * Get a copy of the queued transactions list to prevent mutations
 	 */
 	public CopyOnWriteArrayList<TwitchTransaction> getArchivedTransactions()
 	{
 		return new CopyOnWriteArrayList<>(archivedTransactions);
+	}
+
+	/**
+	 * Get a copy of the channel point rewards list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<ChannelPointReward> getChannelPointRewards()
+	{
+		return new CopyOnWriteArrayList<>(channelPointRewards);
 	}
 
 	/**
@@ -1019,6 +1084,24 @@ public class MarketplaceManager {
 			if (ebsProductId.equals(candidateEbsProduct.id))
 			{
 				return candidateEbsProduct;
+			}
+		}
+
+		return null;
+	}
+
+	private ChannelPointReward getChannelPointRewardById(String channelPointRewardId)
+	{
+		Iterator<ChannelPointReward> iterator = channelPointRewards.iterator();
+
+		while(iterator.hasNext())
+		{
+			ChannelPointReward candidateProduct = iterator.next();
+
+			// guard: check if a match is found
+			if (channelPointRewardId.equals(candidateProduct.id))
+			{
+				return candidateProduct;
 			}
 		}
 

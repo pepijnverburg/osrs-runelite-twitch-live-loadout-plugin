@@ -70,6 +70,7 @@ public class TwitchApi
 	private final static String USER_AGENT = "RuneLite";
 	private final static String TWITCH_CREATE_SUBSCRIPTION_URL = "https://api.twitch.tv/helix/eventsub/subscriptions";
 	public final static String TWITCH_VALIDATE_TOKEN_URL = "https://id.twitch.tv/oauth2/validate";
+	public final static String TWITCH_GET_CHANNEL_POINT_REWARDS_URL = "https://api.twitch.tv/helix/channel_points/custom_rewards";
 	public final static String DEFAULT_APP_CLIENT_ID = "qaljqu9cfow8biixuat6rbr303ocp2";
 
 	/**
@@ -86,9 +87,8 @@ public class TwitchApi
 	private final OkHttpClient configurationSegmentHttpClient;
 	private final OkHttpClient pubSubHttpClient;
 	final OkHttpClient ebsProductsHttpClient;
-	private final OkHttpClient createSubscriptionHttpClient;
 
-	private final OkHttpClient oAuthTokenHttpClient;
+	private final OkHttpClient oAuthHttpClient;
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
@@ -127,8 +127,7 @@ public class TwitchApi
 		configurationSegmentHttpClient = createHttpClient(GET_CONFIGURATION_SERVICE_TIMEOUT_MS);
 		pubSubHttpClient = createHttpClient(SEND_PUBSUB_TIMEOUT_MS);
 		ebsProductsHttpClient = createHttpClient(GET_EBS_PRODUCTS_TIMEOUT_MS);
-		createSubscriptionHttpClient = createHttpClient(CREATE_SUBSCRIPTION_TIMEOUT_MS);
-		oAuthTokenHttpClient = createHttpClient(ENSURE_OAUTH_TOKEN_TIMEOUT_MS);
+		oAuthHttpClient = createHttpClient(ENSURE_OAUTH_TOKEN_TIMEOUT_MS);
 	}
 
 	public void shutDown()
@@ -328,9 +327,34 @@ public class TwitchApi
 			} catch (Exception exception) {
 				// empty
 			}
-		}, (error) -> {
+		}, (exception) -> {
 			// empty
 		});
+	}
+
+	public void fetchAsyncChannelPointRewards(HttpResponseHandler responseHandler, HttpErrorHandler errorHandler)
+	{
+		String token = config.twitchOAuthAccessToken();
+		String channelId = getChannelId();
+
+		// guard: make sure the authentication is valid
+		if (channelId == null || token == null || token.isEmpty())
+		{
+			return;
+		}
+
+		final String url = TWITCH_GET_CHANNEL_POINT_REWARDS_URL +"?broadcaster_id="+ channelId;
+
+		final Request request = new Request.Builder()
+			.header("Client-ID", DEFAULT_APP_CLIENT_ID)
+			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.get()
+			.url(url)
+			.build();
+
+		performRequest(request, oAuthHttpClient, responseHandler, errorHandler);
 	}
 
 	private void verifyStateUpdateResponse(String type, Response response, String compressedState) throws Exception
@@ -422,8 +446,8 @@ public class TwitchApi
 			.build();
 
 		performRequest(
-			validateRequest, 
-			oAuthTokenHttpClient,
+			validateRequest,
+				oAuthHttpClient,
 			(response) -> {
 				int responseCode = response.code();
 
@@ -483,7 +507,7 @@ public class TwitchApi
 
 		performRequest(
 			refreshRequest,
-			oAuthTokenHttpClient,
+				oAuthHttpClient,
 			(response) -> {
 				int responseCode = response.code();
 
@@ -574,7 +598,7 @@ public class TwitchApi
 			.url(TWITCH_CREATE_SUBSCRIPTION_URL)
 			.build();
 
-		createSubscriptionHttpClient.newCall(request).enqueue(new Callback() {
+		oAuthHttpClient.newCall(request).enqueue(new Callback() {
 			@Override
 			public void onFailure(Call call, IOException exception) {
 				plugin.logSupport("Could not create Twitch websocket subscription: "+ type);

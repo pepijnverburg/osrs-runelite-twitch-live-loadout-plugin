@@ -37,6 +37,7 @@ public enum TwitchStateEntry {
 	QUESTS("quests", true),
 	SEASONAL_ITEMS("seasonalItems", true),
 	STREAMER_PRODUCTS("streamerProducts"),
+	CHANNEL_POINT_REWARDS("channelPointRewards"),
 	;
 
 	@Getter

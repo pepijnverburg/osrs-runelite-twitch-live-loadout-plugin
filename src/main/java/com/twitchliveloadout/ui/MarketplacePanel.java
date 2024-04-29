@@ -4,6 +4,7 @@ import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.MarketplaceProductSorter;
+import com.twitchliveloadout.marketplace.products.ChannelPointReward;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.StreamerProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -15,7 +16,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -35,8 +35,10 @@ public class MarketplacePanel extends JPanel
 
 	private final GridBagConstraints playbackConstraints = new GridBagConstraints();
 	private final TextPanel statusPanel = new TextPanel("Status:", "<html><b color='"+ WARNING_TEXT_COLOR +"'>SETTING UP</b></html>");
-	private final TextPanel availableDonationsPanel = new TextPanel("Configured Donations:", "<html>No donations are configured.</html>");
-	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Donations:", "<html>No donations are queued.</html>");
+	private final TextPanel availableRandomEventsPanel = new TextPanel("Configured Random Events:", "<html>No Random Event are configured.</html>");
+	private final TextPanel availableChannelPointRewardsPanel = new TextPanel("Configured Channel Point Rewards:", "<html>No Channel Point Rewards are configured.</html>");
+
+	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Random Events:", "<html>No Random Events are queued.</html>");
 
 	private final JPanel playbackWrapper = new JPanel(new BorderLayout());
 	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start to temporarily block distractions. Currently active ones will still expire when paused!</html>");
@@ -49,7 +51,7 @@ public class MarketplacePanel extends JPanel
 	private final CopyOnWriteArrayList<MarketplaceProductPanel> productPanels = new CopyOnWriteArrayList<>();
 
 	private final JPanel transactionListPanel = new JPanel(new GridBagLayout());
-	private final TextPanel transactionListTitlePanel = new TextPanel("Recent donations:", "<html>List of all recent donations.</html>");
+	private final TextPanel transactionListTitlePanel = new TextPanel("Recent Random Events:", "<html>List of all recent Random Events.</html>");
 	private final JPanel transactionListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<TwitchTransactionPanel> transactionPanels = new CopyOnWriteArrayList<>();
 
@@ -119,7 +121,9 @@ public class MarketplacePanel extends JPanel
 		playbackConstraints.gridy++;
 		playbackWrapper.add(startPanel, playbackConstraints);
 		playbackConstraints.gridy++;
-		playbackWrapper.add(availableDonationsPanel, playbackConstraints);
+		playbackWrapper.add(availableRandomEventsPanel, playbackConstraints);
+		playbackConstraints.gridy++;
+		playbackWrapper.add(availableChannelPointRewardsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(queuedTransactionsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
@@ -266,6 +270,7 @@ public class MarketplacePanel extends JPanel
 	{
 		final CopyOnWriteArrayList<MarketplaceProduct> activeProducts = marketplaceManager.getActiveProducts();
 		final CopyOnWriteArrayList<StreamerProduct> streamerProducts = marketplaceManager.getStreamerProducts();
+		final CopyOnWriteArrayList<ChannelPointReward> channelPointRewards = marketplaceManager.getChannelPointRewards();
 		final CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = marketplaceManager.getQueuedTransactions();
 		final CopyOnWriteArrayList<TwitchTransaction> archivedTransactions = marketplaceManager.getArchivedTransactions();
 
@@ -273,36 +278,49 @@ public class MarketplacePanel extends JPanel
 		final int queuedTransactionAmount = queuedTransactions.size();
 		final int activeProductAmount = activeProducts.size();
 		final int archivedTransactionAmount = archivedTransactions.size();
+		final int channelPointRewardAmount = channelPointRewards.size();
 
-		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving donations and activating Random Events is ACTIVE</b></html>";
-		String availableDonationsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ streamerProductAmount +" Random Event donations</b>.</html>";
+		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving Random Events is ACTIVE</b></html>";
+		String availableRandomEventsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ streamerProductAmount +" Random Events</b>.</html>";
+		String availableChannelPointRewardsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ channelPointRewardAmount +" Channel Point Rewards</b>.</html>";
 
 		if (!marketplaceManager.isActive())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event donations are temporarily PAUSED</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Events are temporarily PAUSED</b></html>";
 		}
 
 		if (!marketplaceManager.getConfig().marketplaceEnabled())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event donations are DISABLED in the plugin settings</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Events are DISABLED in the plugin settings</b></html>";
 		}
 
 		if (marketplaceManager.isFetchingEbsTransactionsErrored())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Event donations are NOT AVAILABLE right now and therefore disabled. Contact support if the issue persists.</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Events are NOT AVAILABLE right now and therefore disabled. Contact support if the issue persists.</b></html>";
 		}
 
 		if (streamerProductAmount <= 0)
 		{
-			availableDonationsText = "<html>There are <b color='"+ ERROR_TEXT_COLOR +"'>no Random Event donations configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
+			availableRandomEventsText = "<html>There are <b color='"+ ERROR_TEXT_COLOR +"'>no Random Events configured<b>. Go to the Live Loadout Twitch Extension configuration page where you copied your token to set them up.</html>";
+		}
+
+		if (channelPointRewardAmount <= 0)
+		{
+			availableChannelPointRewardsText = "<html>There are <b color='"+ WARNING_TEXT_COLOR +"'>no Channel Point Rewards available<b>. Go to your channel to set them up if you want Random Events to trigger when they are redeemed.</html>";
+		}
+
+		if (marketplaceManager.getConfig().twitchOAuthAccessToken().isEmpty())
+		{
+			availableChannelPointRewardsText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>No Channel Point Rewards can be fetched<b>. Configure the Twitch Channel Token if you want to enable Random Events triggered by Channel Points, follows, subscriptions, etc.</html>";
 		}
 
 		statusPanel.setText(statusText);
 		startLabel.setText(getPlaybackButtonTitle());
-		availableDonationsPanel.setText(availableDonationsText);
-		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" donations queued.");
-		productListTitlePanel.setText("There are "+ activeProductAmount +" random events active.");
-		transactionListTitlePanel.setText("There are "+ archivedTransactionAmount +" recent donations.");
+		availableRandomEventsPanel.setText(availableRandomEventsText);
+		availableChannelPointRewardsPanel.setText(availableChannelPointRewardsText);
+		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" Random Events queued.");
+		productListTitlePanel.setText("There are "+ activeProductAmount +" Random Events active.");
+		transactionListTitlePanel.setText("There are "+ archivedTransactionAmount +" recent Random Events.");
 	}
 
 	private String getPlaybackButtonTitle()
