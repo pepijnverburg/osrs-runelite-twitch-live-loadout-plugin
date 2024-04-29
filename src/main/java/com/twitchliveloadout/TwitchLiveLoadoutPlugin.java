@@ -61,10 +61,11 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
-import okhttp3.OkHttpClient;
+import okhttp3.*;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -73,6 +74,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
+import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S;
 
 /**
  * Manages polling and event listening mechanisms to synchronize the state
@@ -237,6 +239,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// tasks to execute immediately on boot
 		updateMarketplaceStreamerProducts();
 		updateMarketplaceEbsProducts();
+		ensureValidTwitchOAuthToken();
 
 		// trigger some other updates that need to be triggered when booting up the plugin
 		// when someone is already logged in and e.g. disabling and enabling the plugin
@@ -269,7 +272,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			twitchState = new TwitchState(this, config, canvasListener, gson);
-			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient);
+			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient, configManager);
 			twitchEventSubClient = new TwitchEventSubClient(this, config, twitchApi, gson, httpClient);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
@@ -662,6 +665,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 		} catch (Exception exception) {
 			log.warn("Could not check the Twitch Event Sub client connection: ", exception);
+		}
+	}
+
+	/**
+	 * Periodically check whether we should refresh the Twitch OAuth token
+	 */
+	@Schedule(period = TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S / 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void ensureValidTwitchOAuthToken()
+	{
+		try {
+			twitchApi.ensureValidOAuthToken();
+		} catch (Exception exception) {
+			log.warn("Could not ensure we have a valid Twitch OAUth token: ", exception);
 		}
 	}
 

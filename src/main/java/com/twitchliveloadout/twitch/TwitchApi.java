@@ -6,6 +6,8 @@ import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import javax.annotation.Nullable;
+
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -15,8 +17,10 @@ import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
+import net.runelite.client.config.ConfigManager;
 import okhttp3.*;
 
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
 import static net.runelite.http.api.RuneLiteAPI.JSON;
 
 import java.io.ByteArrayOutputStream;
@@ -59,8 +63,14 @@ public class TwitchApi
 	private final static int GET_CONFIGURATION_SERVICE_TIMEOUT_MS = 5 * 1000;
 	private final static int GET_EBS_PRODUCTS_TIMEOUT_MS = 10 * 1000;
 	private final static int GET_EBS_TRANSACTIONS_TIMEOUT_MS = 10 * 1000;
+	private final static int ENSURE_OAUTH_TOKEN_TIMEOUT_MS = 10 * 1000;
+	private final static int CREATE_SUBSCRIPTION_TIMEOUT_MS = 10 * 1000;
+	public final static int TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S = 10 * 60; // refresh token x minutes before expiry
 	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 15 * 60 * 1000; // in ms
 	private final static String USER_AGENT = "RuneLite";
+	private final static String TWITCH_CREATE_SUBSCRIPTION_URL = "https://api.twitch.tv/helix/eventsub/subscriptions";
+	public final static String TWITCH_VALIDATE_TOKEN_URL = "https://id.twitch.tv/oauth2/validate";
+	public final static String DEFAULT_APP_CLIENT_ID = "qaljqu9cfow8biixuat6rbr303ocp2";
 
 	/**
 	 * Dedicated scheduler for sending the new state with a stream delay
@@ -71,10 +81,14 @@ public class TwitchApi
 	 * Dedicated HTTP clients for every type of request
 	 */
 	private final OkHttpClient httpClientTemplate;
+	private final ConfigManager configManager;
 	private final OkHttpClient ebsTransactionsHttpClient;
 	private final OkHttpClient configurationSegmentHttpClient;
 	private final OkHttpClient pubSubHttpClient;
 	final OkHttpClient ebsProductsHttpClient;
+	private final OkHttpClient createSubscriptionHttpClient;
+
+	private final OkHttpClient oAuthTokenHttpClient;
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
@@ -99,19 +113,22 @@ public class TwitchApi
 
 	private final ConcurrentHashMap<TwitchSegmentType, JsonObject> configurationSegmentContents = new ConcurrentHashMap<>();
 
-	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, OkHttpClient httpClientTemplate)
+	public TwitchApi(TwitchLiveLoadoutPlugin plugin, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, OkHttpClient httpClientTemplate, ConfigManager configManager)
 	{
 		this.plugin = plugin;
 		this.client = client;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
 		this.httpClientTemplate = httpClientTemplate;
+		this.configManager = configManager;
 
 		// instantiate a HTTP client for every call with a different timeout
 		ebsTransactionsHttpClient = createHttpClient(GET_EBS_TRANSACTIONS_TIMEOUT_MS);
 		configurationSegmentHttpClient = createHttpClient(GET_CONFIGURATION_SERVICE_TIMEOUT_MS);
 		pubSubHttpClient = createHttpClient(SEND_PUBSUB_TIMEOUT_MS);
 		ebsProductsHttpClient = createHttpClient(GET_EBS_PRODUCTS_TIMEOUT_MS);
+		createSubscriptionHttpClient = createHttpClient(CREATE_SUBSCRIPTION_TIMEOUT_MS);
+		oAuthTokenHttpClient = createHttpClient(ENSURE_OAUTH_TOKEN_TIMEOUT_MS);
 	}
 
 	public void shutDown()
@@ -249,6 +266,11 @@ public class TwitchApi
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"/api/marketplace-products";
 		final JsonObject data = new JsonObject();
 
+		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
+		{
+			url = "http://localhost:3010/api/marketplace-products";
+		}
+
 		performPostRequest(url, data, ebsProductsHttpClient, responseHandler, errorHandler);
 	}
 
@@ -256,6 +278,11 @@ public class TwitchApi
 	{
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"/api/marketplace-transactions";
 		final JsonObject data = new JsonObject();
+
+		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
+		{
+			url = "http://localhost:3010/api/marketplace-transactions";
+		}
 
 		// only add last checked at when it is valid
 		if (lastTransactionId != null)
@@ -373,6 +400,188 @@ public class TwitchApi
 		}
 
 		log.debug("Successfully sent state with response code: {}", responseCode);
+	}
+
+	public void ensureValidOAuthToken()
+	{
+		final String accessToken = config.twitchOAuthAccessToken();
+		final String refreshToken = config.twitchOAuthRefreshToken();
+
+		// guard: skip this then there is no token set
+		if (accessToken.isEmpty() || refreshToken.isEmpty())
+		{
+			return;
+		}
+
+		final Request validateRequest = new Request.Builder()
+			.header("Authorization", "OAuth "+ accessToken)
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.get()
+			.url(TWITCH_VALIDATE_TOKEN_URL)
+			.build();
+
+		performRequest(
+			validateRequest, 
+			oAuthTokenHttpClient,
+			(response) -> {
+				int responseCode = response.code();
+
+				// guard: skip when no valid body
+				if (response.body() == null)
+				{
+					return;
+				}
+
+				// guard: when unauthorized the token is already expired!
+				if (responseCode == 401)
+				{
+					plugin.logSupport("Twitch OAuth access token is already expired. Refreshing...");
+					refreshOAuthToken();
+					return;
+				}
+
+				JsonObject payload = parseJson(response.body().string());
+				Integer expiresInS = payload.get("expires_in").getAsInt();
+				boolean needsRefresh = expiresInS == null || expiresInS < TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S;
+
+				if (needsRefresh)
+				{
+					plugin.logSupport("Twitch OAuth access token almost expires in "+ expiresInS +" seconds. Refreshing...");
+					refreshOAuthToken();
+				}
+			},
+			(exception) -> {
+				log.warn("Could not check whether the Twitch OAuth token is valid: ", exception);
+			}
+		);
+	}
+
+	private void refreshOAuthToken()
+	{
+		final String refreshToken = config.twitchOAuthRefreshToken();
+		String url = DEFAULT_TWITCH_EBS_BASE_URL + "/api/refresh-token";
+
+		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
+		{
+			url = "http://localhost:3010/api/refresh-token";
+		}
+
+		// guard: check if the refresh token is valid
+		if (refreshToken.isEmpty())
+		{
+			return;
+		}
+
+		final JsonObject data = new JsonObject();
+		data.addProperty("refresh_token", refreshToken);
+
+		final Request refreshRequest = new Request.Builder()
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.post(RequestBody.create(JSON, data.toString()))
+			.url(url)
+			.build();
+
+		performRequest(
+			refreshRequest,
+			oAuthTokenHttpClient,
+			(response) -> {
+				int responseCode = response.code();
+
+				// guard: skip when no valid body
+				if (response.body() == null)
+				{
+					plugin.logSupport("Could not refresh the Twitch OAuth token due to no body for response code: "+ responseCode);
+					return;
+				}
+
+				String rawPayload = response.body().string();
+
+				// guard: when unauthorized the token is already expired!
+				if (responseCode != 200)
+				{
+					plugin.logSupport("Could not refresh the Twitch OAuth token due to unexpected response code: "+ responseCode);
+					return;
+				}
+
+				JsonObject payload = parseJson(rawPayload);
+				String newAccessToken = payload.get("access_token").getAsString();
+				String newRefreshToken = payload.get("refresh_token").getAsString();
+
+				// guard: make sure the new tokens are valid
+				if (newAccessToken == null || newRefreshToken == null || newAccessToken.isEmpty() || newRefreshToken.isEmpty())
+				{
+					return;
+				}
+
+				// when all is valid update the config in the plugin panel
+				configManager.setConfiguration("twitchstreamer", TWITCH_OAUTH_ACCESS_TOKEN_KEY, newAccessToken);
+				configManager.setConfiguration("twitchstreamer", TWITCH_OAUTH_REFRESH_TOKEN_KEY, newRefreshToken);
+			},
+			(exception) -> {
+				log.warn("Could not refresh the Twitch OAuth token: ", exception);
+			}
+		);
+	}
+
+	public void createEventSubSubscription(String sessionId, TwitchEventSubType subscriptionType) {
+		createEventSubSubscription(sessionId, subscriptionType.getType(), subscriptionType.getVersion());
+	}
+
+	public void createEventSubSubscription(String sessionId, String type, int version)
+	{
+		final String channelId = getChannelId();
+		final String token = config.twitchOAuthAccessToken();
+
+		// guard: check if the auth parameters are valid
+		if (channelId == null || token == null) {
+			return;
+		}
+
+		final JsonObject condition = new JsonObject();
+		condition.addProperty("broadcaster_user_id", channelId);
+		final JsonObject transport = new JsonObject();
+		transport.addProperty("method", "websocket");
+		transport.addProperty("session_id", sessionId);
+		final JsonObject data = new JsonObject();
+		data.addProperty("type", type);
+		data.addProperty("version", version);
+		data.add("condition", condition);
+		data.add("transport", transport);
+
+		final Request request = new Request.Builder()
+			.header("Client-ID", DEFAULT_APP_CLIENT_ID)
+			.header("Authorization", "Bearer "+ token)
+			.header("User-Agent", USER_AGENT)
+			.header("Content-Type", "application/json")
+			.post(RequestBody.create(JSON, data.toString()))
+			.url(TWITCH_CREATE_SUBSCRIPTION_URL)
+			.build();
+
+		createSubscriptionHttpClient.newCall(request).enqueue(new Callback() {
+			@Override
+			public void onFailure(Call call, IOException exception) {
+				plugin.logSupport("Could not create Twitch websocket subscription: "+ type);
+				plugin.logSupport("The error that occurred was: ");
+				plugin.logSupport(exception.getMessage());
+			}
+
+			@Override
+			public void onResponse(Call call, Response response) throws IOException {
+				int responseCode = response.code();
+
+				if (responseCode == 202) {
+					plugin.logSupport("Successfully created Twitch websocket subscription for type: "+ type);
+				} else {
+					plugin.logSupport("Could not create Twitch websocket subscription due to error code: "+ responseCode);
+					plugin.logSupport("And response body: "+ response.body().string());
+				}
+
+				// always close the response to be sure there are no memory leaks
+				response.close();
+			}
+		});
 	}
 
 	@Nullable

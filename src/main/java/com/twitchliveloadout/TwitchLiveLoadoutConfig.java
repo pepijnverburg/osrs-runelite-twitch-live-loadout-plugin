@@ -34,6 +34,10 @@ import net.runelite.client.config.*;
 public interface TwitchLiveLoadoutConfig extends Config
 {
 	public final static String PLUGIN_CONFIG_GROUP = "twitch-live-loadout";
+
+	public final static String TWITCH_OAUTH_ACCESS_TOKEN_KEY = "twitchOAuthAccessToken";
+	public final static String TWITCH_OAUTH_REFRESH_TOKEN_KEY = "twitchOAuthRefreshToken";
+
 	public final static String COLLECTION_LOG_CONFIG_KEY = "collection-log";
 	public final static String LOOTING_BAG_ITEMS_CONFIG_KEY = "looting-bag-items";
 	public final static String LOOTING_BAG_PRICE_CONFIG_KEY = "looting-bag-price";
@@ -99,7 +103,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 
 	@ConfigItem(
-			keyName = "twitchOAuthAccessToken",
+			keyName = TWITCH_OAUTH_ACCESS_TOKEN_KEY,
 			name = "Twitch Channel Token (optional)",
 			description = "Optional token to access events such as channel point redeems, subscriptions, etc.",
 			secret = true,
@@ -112,7 +116,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "twitchOAuthRefreshToken",
+			keyName = TWITCH_OAUTH_REFRESH_TOKEN_KEY,
 			name = "Twitch Channel Refresh Token (optional)",
 			description = "Optional refresh token to access events such as channel point redeems, subscriptions, etc.",
 			secret = true,

@@ -309,21 +309,20 @@ public class ConnectivityPanel extends JPanel
 	private Pair<String, String> getTwitchPubSubStatus()
 	{
 
-		if (config.twitchOAuthAccessToken().isBlank() || config.twitchOAuthRefreshToken().isBlank()) {
-			return Pair.of(
-					"Twitch Channel tokens are not provided. Will not connect.",
-					DEFAULT_TEXT_COLOR
-			);
+		if (config.twitchOAuthAccessToken().isEmpty() || config.twitchOAuthRefreshToken().isEmpty()) {
+			return Pair.of("Twitch Channel tokens are not setup. Will not connect. Follow our setup guide if you want to enable Twitch Channel Events, such as in-game effects upon channel point redeems, follow, subscriptions, etc.", DEFAULT_TEXT_COLOR);
 		}
 
 		if (twitchEventSubClient != null) {
 			if (twitchEventSubClient.isConnected()) {
 				return Pair.of("Connected to Twitch Events API.", SUCCESS_TEXT_COLOR);
+			} else if (twitchEventSubClient.isConnecting()) {
+				return Pair.of("Connecting to Twitch Events API...", WARNING_TEXT_COLOR);
 			}
 
-			return Pair.of("Connecting to Twitch Events API...", WARNING_TEXT_COLOR);
+			return Pair.of("Disconnected from the Twitch Events API", ERROR_TEXT_COLOR);
 		}
 
-		return Pair.of("Could not connect to Twitch Events API.", ERROR_TEXT_COLOR);
+		return Pair.of("Could not initialise the Twitch Events API.", ERROR_TEXT_COLOR);
 	}
 }

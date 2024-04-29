@@ -9,27 +9,19 @@ import com.twitchliveloadout.twitch.TwitchApi;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
-
-import static net.runelite.http.api.RuneLiteAPI.JSON;
 
 @Slf4j
 public class TwitchEventSubClient {
    private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
     // private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "ws://127.0.0.1:8080/ws";
-    private final static String TWITCH_CREATE_SUBSCRIPTION_URL = "https://api.twitch.tv/helix/eventsub/subscriptions";
-    public final static String DEFAULT_APP_CLIENT_ID = "qaljqu9cfow8biixuat6rbr303ocp2";
-    private final static String USER_AGENT = "RuneLite";
-    private final static int CREATE_SUBSCRIPTION_TIMEOUT_MS = 10_000;
 
     private final TwitchLiveLoadoutPlugin plugin;
     private final TwitchLiveLoadoutConfig config;
     private final TwitchApi twitchApi;
     private final Gson gson;
     private final OkHttpClient httpClientTemplate;
-    private final OkHttpClient createSubscriptionHttpClient;
     private WebSocket webSocket;
 
     private String websocketUrl = DEFAULT_TWITCH_WEBSOCKET_URL;
@@ -47,15 +39,14 @@ public class TwitchEventSubClient {
         this.twitchApi = twitchApi;
         this.gson = gson;
         this.httpClientTemplate = httpClientTemplate;
-        this.createSubscriptionHttpClient = createHttpClient(CREATE_SUBSCRIPTION_TIMEOUT_MS);
 
         listener = new TwitchEventSubListener()
         {
             @Override
-            public void onReady() {
+            public void onReady(String sessionId) {
 
                 // once the socket is ready we can create the subscriptions
-                createSubscription(TwitchEventSubType.CHANNEL_POINTS_REDEEM);
+                twitchApi.createEventSubSubscription(sessionId, TwitchEventSubType.CHANNEL_POINTS_REDEEM);
                 // createSubscription("channel.subscribe", 1);
             }
 
@@ -74,7 +65,7 @@ public class TwitchEventSubClient {
 
     private synchronized void connect()
     {
-        log.info("Initialising the websocket for url: {}", websocketUrl);
+        plugin.logSupport("Initialising the websocket for url: "+ websocketUrl);
 
         // guard: disconnect when one already exists
         if (webSocket != null) {
@@ -102,7 +93,7 @@ public class TwitchEventSubClient {
         @Override
         public void onOpen(WebSocket webSocket, Response response)
         {
-            log.info("Opened Twitch websocket...");
+            plugin.logSupport("Opened Twitch websocket...");
             socketOpen = true;
         }
 
@@ -126,7 +117,7 @@ public class TwitchEventSubClient {
                         keepAliveTimeoutS = session.get("keepalive_timeout_seconds").getAsInt();
 
                         // the socket is ready when a session ID has been received
-                        listener.onReady();
+                        listener.onReady(sessionId);
                     }
 
                     // keepalive message from the server to show it is still a valid connection
@@ -158,83 +149,29 @@ public class TwitchEventSubClient {
 
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
-            log.warn("Twitch websocket is closing due to: {}", reason);
+            plugin.logSupport("Twitch websocket is closing due to: "+ reason);
         }
 
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
-            log.warn("Twitch websocket was closed due to: {}", reason);
+            plugin.logSupport("Twitch websocket was closed due to: "+ reason);
             socketOpen = false;
         }
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-            log.warn("Twitch websocket failed with error: {}", t.getMessage());
+            plugin.logSupport("Twitch websocket failed with error: "+ t.getMessage());
         }
     };
-
-    public void createSubscription(TwitchEventSubType subscriptionType) {
-        createSubscription(subscriptionType.getType(), subscriptionType.getVersion());
-    }
-
-    public void createSubscription(String type, int version)
-    {
-        final String channelId = twitchApi.getChannelId();
-        final String token = config.twitchOAuthAccessToken();
-
-        // guard: check if the auth parameters are valid
-        if (channelId == null || token == null) {
-            return;
-        }
-
-        final JsonObject condition = new JsonObject();
-        condition.addProperty("broadcaster_user_id", channelId);
-        final JsonObject transport = new JsonObject();
-        transport.addProperty("method", "websocket");
-        transport.addProperty("session_id", sessionId);
-        final JsonObject data = new JsonObject();
-        data.addProperty("type", type);
-        data.addProperty("version", version);
-        data.add("condition", condition);
-        data.add("transport", transport);
-
-        final Request request = new Request.Builder()
-            .header("Client-ID", DEFAULT_APP_CLIENT_ID)
-            .header("Authorization", "Bearer "+ token)
-            .header("User-Agent", USER_AGENT)
-            .header("Content-Type", "application/json")
-            .post(RequestBody.create(JSON, data.toString()))
-            .url(TWITCH_CREATE_SUBSCRIPTION_URL)
-            .build();
-
-        createSubscriptionHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException exception) {
-                plugin.logSupport("Could not create Twitch websocket subscription: "+ type);
-                plugin.logSupport("The error that occurred was: ");
-                plugin.logSupport(exception.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                int responseCode = response.code();
-
-                if (responseCode == 202) {
-                    plugin.logSupport("Successfully created Twitch websocket subscription for type: "+ type);
-                } else {
-                    log.warn("Could not create Twitch websocket subscription due to error code: "+ responseCode);
-                    log.warn("And response body: "+ response.body().string());
-                }
-
-                // always close the response to be sure there are no memory leaks
-                response.close();
-            }
-        });
-    }
 
     public boolean isConnected()
     {
         return webSocket != null && socketOpen && !sessionId.isEmpty() && Instant.now().minusSeconds(keepAliveTimeoutS).isBefore(lastKeepAliveAt);
+    }
+
+    public boolean isConnecting()
+    {
+        return webSocket != null && socketOpen && sessionId.isEmpty();
     }
 
     private OkHttpClient createHttpClient(int timeoutMs)
