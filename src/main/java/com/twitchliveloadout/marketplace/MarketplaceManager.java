@@ -493,6 +493,7 @@ public class MarketplaceManager {
 
 		// add it to the queue and archive
 		queuedTransactions.add(transaction);
+		handledTransactionIds.add(transactionId);
 		archivedTransactions.add(0, transaction);
 		updateMarketplacePanel();
 	}

@@ -553,21 +553,34 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigSection(
-			name = "Random Event Donations",
-			description = "Settings for the Random Event triggered by donations",
+			name = "Random Events",
+			description = "Settings for the Random Event triggered by donations or channel events",
 			position = 3
 	)
 	String marketplaceSection = "donations";
 
 	@ConfigItem(
 			keyName = "marketplaceEnabled",
-			name = "Enable Random Event donations",
-			description = "Enable viewers to make donations to trigger in-game Random Events (requires Twitch Extension configuration!).",
+			name = "Enable Random Events",
+			description = "Enable viewers to make donations or channel events to trigger in-game Random Events (requires Twitch Extension configuration!).",
 			position = 4,
 			hidden = false,
 			section = marketplaceSection
 	)
 	default boolean marketplaceEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "marketplaceChannelEventsEnabled",
+			name = "Include Twitch Channel Events",
+			description = "Enable listening to channel events, such as follows and subs to activate Random Events (requires additional authentication)",
+			position = 5,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default boolean marketplaceChannelEventsEnabled()
 	{
 		return true;
 	}

@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class TwitchEventSubClient {
-//   private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
-     private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "ws://127.0.0.1:8080/ws";
+   private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
+//     private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "ws://127.0.0.1:8080/ws";
 
     private final TwitchLiveLoadoutPlugin plugin;
     private final TwitchLiveLoadoutConfig config;
@@ -75,7 +75,8 @@ public class TwitchEventSubClient {
         @Override
         public void onOpen(WebSocket webSocket, Response response)
         {
-            plugin.logSupport("Opened Twitch websocket...");
+            log.info("Successfully opened Twitch websocket...");
+            listener.clearActiveSubscriptionTypes();
             socketOpen = true;
         }
 
@@ -87,6 +88,7 @@ public class TwitchEventSubClient {
                 JsonObject message = (new JsonParser()).parse(rawMessage).getAsJsonObject();
                 JsonObject metadata = message.getAsJsonObject("metadata");
                 JsonObject payload = message.getAsJsonObject("payload");
+                String messageId = metadata.get("message_id").getAsString();
                 String messageType = metadata.get("message_type").getAsString();
 
                 plugin.logSupport("Handling Twitch websocket message with type: "+ messageType);
@@ -117,6 +119,14 @@ public class TwitchEventSubClient {
                         reconnect();
                     }
 
+                    // message when a subscription was revoked for whatever reason
+                    case "revocation" -> {
+                        String rawSubscriptionType = metadata.get("subscription_type").getAsString();
+                        TwitchEventSubType subscriptionType = TwitchEventSubType.getByType(rawSubscriptionType);
+                        log.info("A subscription was revoked from the Twitch websocket: "+ rawSubscriptionType);
+                        listener.revokeActiveSubscriptionType(subscriptionType);
+                    }
+
                     // message for an event we've been subscribed to
                     case "notification" -> {
                         String rawEventType = metadata.get("subscription_type").getAsString();
@@ -129,7 +139,7 @@ public class TwitchEventSubClient {
                             return;
                         }
 
-                        listener.onEvent(eventType, eventPayload);
+                        listener.onEvent(messageId, eventType, eventPayload);
                     }
                 }
             } catch (Exception exception) {
@@ -146,6 +156,7 @@ public class TwitchEventSubClient {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             plugin.logSupport("Twitch websocket was closed due to: "+ reason);
+            listener.clearActiveSubscriptionTypes();
             socketOpen = false;
         }
 

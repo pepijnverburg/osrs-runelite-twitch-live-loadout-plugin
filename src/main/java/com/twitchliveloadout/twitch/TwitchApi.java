@@ -465,6 +465,7 @@ public class TwitchApi
 		// guard: check if the refresh token is valid
 		if (refreshToken.isEmpty())
 		{
+			plugin.logSupport("Will not refresh the Twitch OAuth token because the refresh token is empty.");
 			return;
 		}
 
@@ -477,6 +478,8 @@ public class TwitchApi
 			.post(RequestBody.create(JSON, data.toString()))
 			.url(url)
 			.build();
+
+		plugin.logSupport("Attempting to refresh the Twitch OAuth token...");
 
 		performRequest(
 			refreshRequest,
@@ -507,12 +510,14 @@ public class TwitchApi
 				// guard: make sure the new tokens are valid
 				if (newAccessToken == null || newRefreshToken == null || newAccessToken.isEmpty() || newRefreshToken.isEmpty())
 				{
+					plugin.logSupport("The Twitch OAuth token could not be refreshed as it turns out to be empty.");
 					return;
 				}
 
 				// when all is valid update the config in the plugin panel
 				configManager.setConfiguration("twitchstreamer", TWITCH_OAUTH_ACCESS_TOKEN_KEY, newAccessToken);
 				configManager.setConfiguration("twitchstreamer", TWITCH_OAUTH_REFRESH_TOKEN_KEY, newRefreshToken);
+				plugin.logSupport("The Twitch OAuth tokens are successfully refreshed and stored in the config panel!");
 			},
 			(exception) -> {
 				log.warn("Could not refresh the Twitch OAuth token: ", exception);
@@ -520,7 +525,7 @@ public class TwitchApi
 		);
 	}
 
-	public void createEventSubSubscription(String sessionId, TwitchEventSubType subscriptionType)
+	public void createEventSubSubscription(String sessionId, TwitchEventSubType subscriptionType, HttpResponseHandler onSuccess, HttpErrorHandler onError)
 	{
 		final String channelId = getChannelId();
 		final String token = config.twitchOAuthAccessToken();
@@ -536,11 +541,17 @@ public class TwitchApi
 
 		// check which conditions to add based on the type of event
 		// usually we only need to add the broadcaster user ID, but there are some exceptions
+		// reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types
 		if (subscriptionType == TwitchEventSubType.EXTENSION_BITS_TRANSACTION) {
 
 			// NOTE: this one doesn't actually work because oauth user tokens don't have access to these events...
 			// maintain the code here for reference purposes
 			condition.addProperty("extension_client_id", DEFAULT_EXTENSION_CLIENT_ID);
+		} else if (subscriptionType == TwitchEventSubType.RAID) {
+			condition.addProperty("to_broadcaster_user_id", channelId);
+		} else if (subscriptionType == TwitchEventSubType.FOLLOW) {
+			condition.addProperty("moderator_user_id", channelId);
+			condition.addProperty("broadcaster_user_id", channelId);
 		} else {
 			condition.addProperty("broadcaster_user_id", channelId);
 		}
@@ -569,6 +580,7 @@ public class TwitchApi
 				plugin.logSupport("Could not create Twitch websocket subscription: "+ type);
 				plugin.logSupport("The error that occurred was: ");
 				plugin.logSupport(exception.getMessage());
+				onError.execute(exception);
 			}
 
 			@Override
@@ -577,9 +589,15 @@ public class TwitchApi
 
 				if (responseCode == 202) {
 					plugin.logSupport("Successfully created Twitch websocket subscription for type: "+ type);
+					try {
+						onSuccess.execute(response);
+					} catch (Exception exception) {
+						onError.execute(exception);
+					}
 				} else {
-					plugin.logSupport("Could not create Twitch websocket subscription due to error code: "+ responseCode);
+					plugin.logSupport("Could not create Twitch websocket subscription (type: "+ type +") due to error code: "+ responseCode);
 					plugin.logSupport("And response body: "+ response.body().string());
+					onError.execute(new Exception("Could not create Twitch websocket subscription due to error code: "+ responseCode));
 				}
 
 				// always close the response to be sure there are no memory leaks

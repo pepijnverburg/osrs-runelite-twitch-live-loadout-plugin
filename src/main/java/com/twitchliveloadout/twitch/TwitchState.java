@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import com.twitchliveloadout.ui.CanvasListener;
 import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
@@ -40,6 +41,7 @@ public class TwitchState {
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
+	private final TwitchEventSubClient twitchEventSubClient;
 	private final CanvasListener canvasListener;
 	private final Gson gson;
 
@@ -79,10 +81,11 @@ public class TwitchState {
 	private final static int WAS_IN_TOA_DEBOUNCE = 20 * 1000; // ms
 	private Instant lastWasInToA;
 
-	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, CanvasListener canvasListener, Gson gson)
+	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, TwitchEventSubClient twitchEventSubClient, CanvasListener canvasListener, Gson gson)
 	{
 		this.plugin = plugin;
 		this.config = config;
+		this.twitchEventSubClient = twitchEventSubClient;
 		this.canvasListener = canvasListener;
 		this.gson = gson;
 
@@ -657,9 +660,11 @@ public class TwitchState {
 		MarketplaceManager marketplaceManager = plugin.getMarketplaceManager();
 		boolean isEnabled = config.marketplaceEnabled();
 		boolean isActive = marketplaceManager != null && marketplaceManager.isActive() && !marketplaceManager.isFetchingEbsTransactionsErrored();
+		boolean channelEventsActive = config.marketplaceChannelEventsEnabled() && twitchEventSubClient.isConnected();
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ACTIVE.getKey(), isActive);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_CHANNEL_EVENTS_ACTIVE.getKey(), channelEventsActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_PROTECTION_ENABLED.getKey(), config.marketplaceProtectionEnabled());
 		state.addProperty(TwitchStateEntry.SHARED_COOLDOWN.getKey(), config.marketplaceSharedCooldownS());
 		return state;

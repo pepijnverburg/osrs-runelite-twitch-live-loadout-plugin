@@ -276,10 +276,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializeTwitch()
 	{
 		try {
-			twitchState = new TwitchState(this, config, canvasListener, gson);
 			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient, configManager);
 			twitchEventSubListener = new TwitchEventSubListener(this, twitchApi, gson);
 			twitchEventSubClient = new TwitchEventSubClient(this, config, twitchApi, gson, httpClient, twitchEventSubListener);
+			twitchState = new TwitchState(this, config, twitchEventSubClient, canvasListener, gson);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}
