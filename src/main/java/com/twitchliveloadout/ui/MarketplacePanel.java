@@ -41,9 +41,11 @@ public class MarketplacePanel extends JPanel
 	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Random Events:", "<html>No Random Events are queued.</html>");
 
 	private final JPanel playbackWrapper = new JPanel(new BorderLayout());
-	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start to temporarily block distractions. Currently active ones will still expire when paused!</html>");
+	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start to temporarily block distractions. Enable Preview Mode to test events from the Extension Configuration page in Twitch.</html>");
 	private final JPanel startPanel = new JPanel(new BorderLayout());
 	private final JLabel startLabel = new JLabel();
+	private final JPanel testModePanel = new JPanel(new BorderLayout());
+	private final JLabel testModeLabel = new JLabel();
 
 	private final JPanel productListPanel = new JPanel(new GridBagLayout());
 	private final TextPanel productListTitlePanel = new TextPanel("Active random events:", "<html>List of active random events.</html>");
@@ -121,6 +123,8 @@ public class MarketplacePanel extends JPanel
 		playbackConstraints.gridy++;
 		playbackWrapper.add(startPanel, playbackConstraints);
 		playbackConstraints.gridy++;
+		playbackWrapper.add(testModePanel, playbackConstraints);
+		playbackConstraints.gridy++;
 		playbackWrapper.add(availableRandomEventsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(availableChannelPointRewardsPanel, playbackConstraints);
@@ -166,6 +170,19 @@ public class MarketplacePanel extends JPanel
 				marketplaceManager.pauseActiveProducts();
 			} else {
 				marketplaceManager.playActiveProducts();
+			}
+
+			updateTexts();
+			rebuildProductPanels();
+		});
+
+		initializePanelButton(testModePanel, testModeLabel, getTestModeButtonTitle(), () -> {
+			final boolean isTestModeActive = marketplaceManager.isTestModeActive();
+
+			if (isTestModeActive) {
+				marketplaceManager.disableTestMode();
+			} else {
+				marketplaceManager.enableTestMode();
 			}
 
 			updateTexts();
@@ -316,6 +333,7 @@ public class MarketplacePanel extends JPanel
 
 		statusPanel.setText(statusText);
 		startLabel.setText(getPlaybackButtonTitle());
+		testModeLabel.setText(getTestModeButtonTitle());
 		availableRandomEventsPanel.setText(availableRandomEventsText);
 		availableChannelPointRewardsPanel.setText(availableChannelPointRewardsText);
 		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" Random Events queued.");
@@ -326,6 +344,11 @@ public class MarketplacePanel extends JPanel
 	private String getPlaybackButtonTitle()
 	{
 		return "<html><b color='yellow'>"+ (marketplaceManager.isActive() ? "PAUSE ALL" : "PLAY ALL") +"</b></html>";
+	}
+
+	private String getTestModeButtonTitle()
+	{
+		return "<html><b color='yellow'>"+ (marketplaceManager.isTestModeActive() ? "DISABLE PREVIEW MODE" : "ENABLE PREVIEW MODE ("+ MarketplaceManager.TEST_MODE_EXPIRY_TIME_READABLE +")") +"</b></html>";
 	}
 
 	private void initializePanelButton(JPanel panel, JLabel label, String buttonTitle, ButtonCallback buttonCallback)

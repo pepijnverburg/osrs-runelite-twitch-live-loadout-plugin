@@ -573,7 +573,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void updateChannelPointRewards()
 	{
 		try {
-			if (config.marketplaceEnabled())
+			if (config.marketplaceEnabled() && !config.twitchOAuthAccessToken().isEmpty())
 			{
 				marketplaceManager.updateAsyncChannelPointRewards();
 			}

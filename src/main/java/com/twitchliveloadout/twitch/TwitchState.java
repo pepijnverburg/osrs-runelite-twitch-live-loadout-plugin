@@ -699,10 +699,12 @@ public class TwitchState {
 		boolean isEnabled = config.marketplaceEnabled();
 		boolean isActive = marketplaceManager != null && marketplaceManager.isActive() && !marketplaceManager.isFetchingEbsTransactionsErrored();
 		boolean channelEventsActive = config.marketplaceChannelEventsEnabled() && twitchEventSubClient.isConnected();
+		boolean isTestModeActive = marketplaceManager != null && marketplaceManager.isTestModeActive();
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ACTIVE.getKey(), isActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_CHANNEL_EVENTS_ACTIVE.getKey(), channelEventsActive);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_TEST_MODE_ACTIVE.getKey(), isTestModeActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_PROTECTION_ENABLED.getKey(), config.marketplaceProtectionEnabled());
 		state.addProperty(TwitchStateEntry.SHARED_COOLDOWN.getKey(), config.marketplaceSharedCooldownS());
 		return state;

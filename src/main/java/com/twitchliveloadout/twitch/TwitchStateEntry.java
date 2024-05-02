@@ -30,6 +30,7 @@ public enum TwitchStateEntry {
 	MARKETPLACE_ENABLED("marketplaceEnabled", true),
 	MARKETPLACE_ACTIVE("marketplaceActive"),
 	MARKETPLACE_CHANNEL_EVENTS_ACTIVE("marketplaceChannelEventsActive"),
+	MARKETPLACE_TEST_MODE_ACTIVE("marketplaceTestModeActive"),
 	MARKETPLACE_PROTECTION_ENABLED("marketplaceProtectionEnabled"),
 	CURRENT_PRODUCT_COOLDOWNS("currentProductCooldowns", true),
 	CURRENT_SHARED_COOLDOWN("currentSharedCooldown"),

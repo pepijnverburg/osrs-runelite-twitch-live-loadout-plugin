@@ -820,7 +820,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Test Duration",
 			description = "Duration of a single Random Event while testing.",
 			position = 10,
-			hidden = !TwitchLiveLoadoutPlugin.IN_DEVELOPMENT,
+			hidden = false,
 			section = advancedSection
 	)
 	@Units(Units.SECONDS)

@@ -16,7 +16,7 @@ public class TwitchTransaction {
 	public String user_name;
 	public String product_type;
 	public TwitchProduct product_data;
-	public String override_ebs_product_id;
+	public String ebs_product_id;
 	public String handled_at;
 	public final String loaded_at = Instant.now().toString();
 

@@ -119,10 +119,17 @@ public class MarketplaceManager {
 	private final ConcurrentHashMap<String, Instant> timerLastTriggeredAt = new ConcurrentHashMap<>();
 
 	/**
-	 * Timer for when all the active products should be active again
+	 * Flag whether any events are allowed to be active
 	 */
 	@Getter
 	private boolean isActive = true;
+
+	/**
+	 * Timer for test mode where events can be tested through the Twitch extension
+	 */
+	private Instant testModeActivatedAt = null;
+	public final static int TEST_MODE_EXPIRY_TIME_S = 60 * 60;
+	public final static String TEST_MODE_EXPIRY_TIME_READABLE = "1h";
 
 	/**
 	 * Flag to identify we are already fetching data so requests are not hoarding
@@ -330,6 +337,7 @@ public class MarketplaceManager {
 				boolean isProductCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
 				boolean isSharedCoolingDown = sharedCooldownUntil != null && now.isBefore(sharedCooldownUntil);
 				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled && ebsProduct.behaviour != null;
+				boolean isTestTransaction = transaction.product_type.equals("TEST");
 
 				// guard: make sure this product is not cooling down
 				// this can be the case when two transactions are done at the same time
@@ -379,14 +387,21 @@ public class MarketplaceManager {
 				// guard: check if the version number is supported
 				if (ebsProduct.version != MarketplaceConstants.EBS_REQUIRED_PRODUCT_VERSION)
 				{
-					log.info("Skipping transaction the version number of the EBS product ("+ ebsProduct.version +") is not compatible. Transaction ID: " + transaction.id);
+					log.info("Skipping transaction the version number of the EBS product ("+ ebsProduct.version +") is not compatible. Transaction ID: "+ transactionId);
 					continue;
 				}
 
 				// guard: check for hardcore protection and dangerous random events
 				if (ebsProduct.dangerous && !plugin.canPerformDangerousEffects())
 				{
-					log.info("Skipping transaction because it is deemed dangerous and protection is on: " + transaction.id);
+					log.info("Skipping transaction because it is deemed dangerous and protection is on: "+ transactionId);
+					continue;
+				}
+
+				// guard: check for a test transaction while testing mode is not active
+				if (isTestTransaction && !isTestModeActive())
+				{
+					log.info("Skipping transaction because it is a test transaction while testing is not active: "+ transactionId);
 					continue;
 				}
 
@@ -549,23 +564,14 @@ public class MarketplaceManager {
 
 	/**
 	 * Test an EBS product by manually creating a fake Twitch donation and queueing it.
-	 * NOTE: this is only available in development.
 	 */
 	private void testEbsProduct(EbsProduct ebsProduct)
 	{
 
-		// guard: skip this when not in development
-		if (!IN_DEVELOPMENT || !config.testRandomEventsEnabled())
-		{
-			return;
-		}
-
 		TwitchTransaction twitchTransaction = new TwitchTransaction();
 		TwitchProduct twitchProduct = new TwitchProduct();
 		TwitchProductCost twitchProductCost = new TwitchProductCost();
-		StreamerProduct streamerProduct = new StreamerProduct();
 		String transactionId = generateRandomTestId();
-		String streamerProductId = generateRandomTestId();
 		String twitchSku = generateRandomTestId();
 		int currencyAmount = 100;
 		String currencyType = "gp";
@@ -591,20 +597,10 @@ public class MarketplaceManager {
 		twitchTransaction.user_name = "Test Viewer";
 		twitchTransaction.product_type = "TEST";
 		twitchTransaction.product_data = twitchProduct;
+		twitchTransaction.ebs_product_id = ebsProduct.id;
 		twitchTransaction.handled_at = Instant.now().toString();
 		twitchTransaction.origin = TwitchTransactionOrigin.TEST;
 
-		streamerProduct.id = streamerProductId;
-		streamerProduct.ebsProductId = ebsProduct.id;
-		streamerProduct.twitchProductSku = twitchSku;
-		streamerProduct.name = "[TEST] "+ ebsProduct.name;
-		streamerProduct.duration = config.testRandomEventsDuration();
-		streamerProduct.cooldown = 0;
-
-		// register the unique streamer product for this single transaction
-		// and queue the transaction as we now have all the information configured
-		// to properly the Random Event in game
-		streamerProducts.add(streamerProduct);
 		queuedTransactions.add(twitchTransaction);
 	}
 
@@ -809,7 +805,6 @@ public class MarketplaceManager {
 		isFetchingChannelPointRewards = true;
 		twitchApi.fetchAsyncChannelPointRewards(
 			(response) -> {
-				plugin.logSupport("TEST: "+ response.body().string());
 				isFetchingChannelPointRewards = false;
 				JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
 				JsonArray rewards = result.getAsJsonArray("data");
@@ -1027,11 +1022,25 @@ public class MarketplaceManager {
 	public StreamerProduct getStreamerProductByTransaction(TwitchTransaction transaction)
 	{
 		TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
+		boolean isTestTransaction = transaction.product_type.equals("TEST");
 
 		// guard: make sure the twitch product is valid
 		if (twitchProduct == null)
 		{
 			return null;
+		}
+
+		if (isTestTransaction)
+		{
+			StreamerProduct testStreamerProduct = new StreamerProduct();
+			testStreamerProduct.id = generateRandomTestId();
+			testStreamerProduct.ebsProductId = transaction.ebs_product_id;
+			testStreamerProduct.twitchProductSku = generateRandomTestId();
+			testStreamerProduct.name = "[TEST] "+ transaction.ebs_product_id;
+			testStreamerProduct.duration = config.testRandomEventsDuration();
+			testStreamerProduct.cooldown = 0;
+
+			return testStreamerProduct;
 		}
 
 		String twitchProductSku = twitchProduct.sku;
@@ -1147,6 +1156,29 @@ public class MarketplaceManager {
 	public void handleActiveProducts(LambdaIterator.ValueHandler<MarketplaceProduct> handler)
 	{
 		LambdaIterator.handleAll(activeProducts, handler);
+	}
+
+	public void enableTestMode()
+	{
+		testModeActivatedAt = Instant.now();
+	}
+
+	public void disableTestMode()
+	{
+		testModeActivatedAt = null;
+	}
+
+	public boolean isTestModeActive()
+	{
+
+		// in development allow testing when config enables it as well
+		// this is an easy permanent testing mode setup
+		if (IN_DEVELOPMENT && config.testRandomEventsEnabled())
+		{
+			return true;
+		}
+
+		return testModeActivatedAt != null && Instant.now().minusSeconds(TEST_MODE_EXPIRY_TIME_S).isBefore(testModeActivatedAt);
 	}
 
 	/**
