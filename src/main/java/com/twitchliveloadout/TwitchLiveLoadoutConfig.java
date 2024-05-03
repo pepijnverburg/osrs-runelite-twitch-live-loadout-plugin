@@ -744,6 +744,30 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+			keyName = "chaosModeSpawnMultiplier",
+			name = "Chaos Mode spawn multiplier",
+			description = "The amount all NPC/item spawns are multiplied when Chaos Mode is enabled.",
+			position = 28,
+			section = marketplaceSection
+	)
+	default int chaosModeSpawnMultiplier()
+	{
+		return 3;
+	}
+
+	@ConfigItem(
+			keyName = "chaosModeRangeMultiplier",
+			name = "Chaos Mode range multiplier",
+			description = "The multiplier for the distance where the spawns allowed to be put. When you have a spawn multiplier increasing the range as well is recommended.",
+			position = 28,
+			section = marketplaceSection
+	)
+	default int chaosModeRangeMultiplier()
+	{
+		return 2;
+	}
+
 	@ConfigSection(
 			name = "Advanced",
 			description = "Settings for advanced usage",

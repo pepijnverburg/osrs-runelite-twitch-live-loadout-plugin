@@ -46,6 +46,10 @@ public class MarketplacePanel extends JPanel
 	private final JLabel startLabel = new JLabel();
 	private final JPanel testModePanel = new JPanel(new BorderLayout());
 	private final JLabel testModeLabel = new JLabel();
+	private final JPanel chaosModePanel = new JPanel(new BorderLayout());
+	private final JLabel chaosModeLabel = new JLabel();
+	private final JPanel freeModePanel = new JPanel(new BorderLayout());
+	private final JLabel freeModeLabel = new JLabel();
 
 	private final JPanel productListPanel = new JPanel(new GridBagLayout());
 	private final TextPanel productListTitlePanel = new TextPanel("Active random events:", "<html>List of active random events.</html>");
@@ -125,6 +129,10 @@ public class MarketplacePanel extends JPanel
 		playbackConstraints.gridy++;
 		playbackWrapper.add(testModePanel, playbackConstraints);
 		playbackConstraints.gridy++;
+		playbackWrapper.add(chaosModePanel, playbackConstraints);
+		playbackConstraints.gridy++;
+		playbackWrapper.add(freeModePanel, playbackConstraints);
+		playbackConstraints.gridy++;
 		playbackWrapper.add(availableRandomEventsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(availableChannelPointRewardsPanel, playbackConstraints);
@@ -183,6 +191,32 @@ public class MarketplacePanel extends JPanel
 				marketplaceManager.disableTestMode();
 			} else {
 				marketplaceManager.enableTestMode();
+			}
+
+			updateTexts();
+			rebuildProductPanels();
+		});
+
+		initializePanelButton(chaosModePanel, chaosModeLabel, getChaosModeButtonTitle(), () -> {
+			final boolean isChaosModeActive = marketplaceManager.isChaosModeActive();
+
+			if (isChaosModeActive) {
+				marketplaceManager.disableChaosMode();
+			} else {
+				marketplaceManager.enableChaosMode();
+			}
+
+			updateTexts();
+			rebuildProductPanels();
+		});
+
+		initializePanelButton(freeModePanel, freeModeLabel, getFreeModeButtonTitle(), () -> {
+			final boolean isFreeModeActive = marketplaceManager.isFreeModeActive();
+
+			if (isFreeModeActive) {
+				marketplaceManager.disableFreeMode();
+			} else {
+				marketplaceManager.enableFreeMode();
 			}
 
 			updateTexts();
@@ -297,18 +331,18 @@ public class MarketplacePanel extends JPanel
 		final int archivedTransactionAmount = archivedTransactions.size();
 		final int channelPointRewardAmount = channelPointRewards.size();
 
-		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving Random Events is ACTIVE. Preview mode is disabled.</b></html>";
+		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving Random Events is ACTIVE. Preview mode is currently disabled.</b></html>";
 		String availableRandomEventsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ streamerProductAmount +" Random Events</b>.</html>";
 		String availableChannelPointRewardsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ channelPointRewardAmount +" Channel Point Rewards</b>.</html>";
 
 		if (marketplaceManager.isTestModeActive())
 		{
-			statusText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>Receiving preview Random Events is ACTIVE when you are logged in. Disable when you are doing previewing.</b></html>";
+			statusText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>Receiving preview Random Events is ACTIVE when you are logged in. Disable preview when done.</b></html>";
 		}
 
 		if (!marketplaceManager.isActive())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Events are temporarily PAUSED</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Events are temporarily PAUSED. Click PLAY ALL below to re-activate.</b></html>";
 		}
 
 		if (!marketplaceManager.getConfig().marketplaceEnabled())
@@ -339,6 +373,8 @@ public class MarketplacePanel extends JPanel
 		statusPanel.setText(statusText);
 		startLabel.setText(getPlaybackButtonTitle());
 		testModeLabel.setText(getTestModeButtonTitle());
+		chaosModeLabel.setText(getChaosModeButtonTitle());
+		freeModeLabel.setText(getFreeModeButtonTitle());
 		availableRandomEventsPanel.setText(availableRandomEventsText);
 		availableChannelPointRewardsPanel.setText(availableChannelPointRewardsText);
 		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" Random Events queued.");
@@ -353,7 +389,17 @@ public class MarketplacePanel extends JPanel
 
 	private String getTestModeButtonTitle()
 	{
-		return "<html><b color='yellow'>"+ (marketplaceManager.isTestModeActive() ? "DISABLE PREVIEW MODE" : "ENABLE PREVIEW MODE ("+ MarketplaceManager.TEST_MODE_EXPIRY_TIME_READABLE +")") +"</b></html>";
+		return "<html><b color='"+ (marketplaceManager.isTestModeActive() ? "red" : "yellow") +"'>"+ (marketplaceManager.isTestModeActive() ? "DISABLE PREVIEW MODE" : "ENABLE PREVIEW MODE ("+ MarketplaceManager.TEST_MODE_EXPIRY_TIME_READABLE +")") +"</b></html>";
+	}
+
+	private String getChaosModeButtonTitle()
+	{
+		return "<html><b color='"+ (marketplaceManager.isChaosModeActive() ? "red" : "yellow") +"'>"+ (marketplaceManager.isChaosModeActive() ? "DISABLE CHAOS MODE" : "ENABLE CHAOS MODE ("+ MarketplaceManager.CHAOS_MODE_EXPIRY_TIME_READABLE +")") +"</b></html>";
+	}
+
+	private String getFreeModeButtonTitle()
+	{
+		return "<html><b color='"+ (marketplaceManager.isFreeModeActive() ? "red" : "yellow") +"'>"+ (marketplaceManager.isFreeModeActive() ? "DISABLE FREE MODE" : "ENABLE FREE MODE ("+ MarketplaceManager.FREE_MODE_EXPIRY_TIME_READABLE +")") +"</b></html>";
 	}
 
 	private void initializePanelButton(JPanel panel, JLabel label, String buttonTitle, ButtonCallback buttonCallback)

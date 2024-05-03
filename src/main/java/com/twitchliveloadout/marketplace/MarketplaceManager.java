@@ -129,11 +129,17 @@ public class MarketplaceManager {
 	private boolean isActive = true;
 
 	/**
-	 * Timer for test mode where events can be tested through the Twitch extension
+	 * Timers for various modes where events can be tested through the Twitch extension
 	 */
 	private Instant testModeActivatedAt = null;
-	public final static int TEST_MODE_EXPIRY_TIME_S = 60 * 60;
+	public final static int TEST_MODE_EXPIRY_TIME_S = 1 * 60 * 60;
 	public final static String TEST_MODE_EXPIRY_TIME_READABLE = "1h";
+	private Instant chaosModeActivatedAt = null;
+	public final static int CHAOS_MODE_EXPIRY_TIME_S = 8 * 60 * 60;
+	public final static String CHAOS_MODE_EXPIRY_TIME_READABLE = "8h";
+	private Instant freeModeActivatedAt = null;
+	public final static int FREE_MODE_EXPIRY_TIME_S = 8 * 60 * 60;
+	public final static String FREE_MODE_EXPIRY_TIME_READABLE = "8h";
 
 	/**
 	 * Flag to identify we are already fetching data so requests are not hoarding
@@ -166,7 +172,7 @@ public class MarketplaceManager {
 		this.config = config;
 		this.gson = gson;
 		this.fightStateManager = fightStateManager;
-		this.spawnManager = new SpawnManager(plugin, client);
+		this.spawnManager = new SpawnManager(plugin, client, this);
 		this.spawnOverheadManager = new SpawnOverheadManager(client, overlayManager);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
@@ -1184,6 +1190,36 @@ public class MarketplaceManager {
 		}
 
 		return testModeActivatedAt != null && Instant.now().minusSeconds(TEST_MODE_EXPIRY_TIME_S).isBefore(testModeActivatedAt);
+	}
+
+	public void enableChaosMode()
+	{
+		chaosModeActivatedAt = Instant.now();
+	}
+
+	public void disableChaosMode()
+	{
+		chaosModeActivatedAt = null;
+	}
+
+	public boolean isChaosModeActive()
+	{
+		return chaosModeActivatedAt != null && Instant.now().minusSeconds(CHAOS_MODE_EXPIRY_TIME_S).isBefore(chaosModeActivatedAt);
+	}
+
+	public void enableFreeMode()
+	{
+		freeModeActivatedAt = Instant.now();
+	}
+
+	public void disableFreeMode()
+	{
+		freeModeActivatedAt = null;
+	}
+
+	public boolean isFreeModeActive()
+	{
+		return freeModeActivatedAt != null && Instant.now().minusSeconds(FREE_MODE_EXPIRY_TIME_S).isBefore(freeModeActivatedAt);
 	}
 
 	/**

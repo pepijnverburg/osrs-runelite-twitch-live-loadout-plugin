@@ -680,6 +680,12 @@ public class MarketplaceProduct
 		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
 		String spawnPointType = spawnOption.spawnPointType;
 
+		// multiply the spawn amount when chaos mode is activate
+		if (manager.isChaosModeActive())
+		{
+			spawnGroupAmount *= manager.getConfig().chaosModeSpawnMultiplier();
+		}
+
 		// guard: make sure the spawn behaviours are valid
 		if (spawns == null)
 		{
@@ -698,10 +704,11 @@ public class MarketplaceProduct
 		}
 
 		// make sure spawning is on client thread for e.g. using client instance
+		int finalSpawnGroupAmount = spawnGroupAmount;
 		manager.getPlugin().runOnClientThread(() -> {
 
 			// execute the spawn for the requested amount of times along with all spawn behaviours
-			for (int spawnGroupIndex = 0; spawnGroupIndex < spawnGroupAmount; spawnGroupIndex++)
+			for (int spawnGroupIndex = 0; spawnGroupIndex < finalSpawnGroupAmount; spawnGroupIndex++)
 			{
 
 				// spawn points can be shared between spawns depending on the settings
