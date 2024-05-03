@@ -698,7 +698,7 @@ public class TwitchState {
 		MarketplaceManager marketplaceManager = plugin.getMarketplaceManager();
 		boolean isEnabled = config.marketplaceEnabled();
 		boolean isActive = marketplaceManager != null && marketplaceManager.isActive() && !marketplaceManager.isFetchingEbsTransactionsErrored();
-		boolean channelEventsActive = config.marketplaceChannelEventsEnabled() && twitchEventSubClient.isConnected();
+		boolean channelEventsActive = config.marketplaceChannelEventsEnabled() && twitchEventSubClient.isConnected() && !config.twitchOAuthAccessToken().isEmpty() && !config.twitchOAuthRefreshToken().isEmpty();
 		boolean isTestModeActive = marketplaceManager != null && marketplaceManager.isTestModeActive();
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
