@@ -1,5 +1,6 @@
 package com.twitchliveloadout.ui;
 
+import com.twitchliveloadout.fights.ActorType;
 import com.twitchliveloadout.fights.Fight;
 import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
@@ -97,7 +98,7 @@ public class FightPanel extends JPanel
 		}
 
 		final String actorName = fight.getActorName();
-		final FightStateManager.ActorType actorType = fight.getActorType();
+		final ActorType actorType = fight.getActorType();
 
 		actorNameLabel.setText(actorName +" ("+ actorType.getName() +")");
 	}
