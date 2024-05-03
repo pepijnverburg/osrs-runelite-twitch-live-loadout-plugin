@@ -6,7 +6,11 @@ import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.products.EbsMenuOptionFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Actor;
+import net.runelite.api.Client;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.Player;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.client.util.Text;
 
@@ -19,12 +23,14 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 @Slf4j
 public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 	private final TwitchLiveLoadoutConfig config;
+	private final Client client;
 
-	public MenuManager(TwitchLiveLoadoutConfig config)
+	public MenuManager(TwitchLiveLoadoutConfig config, Client client)
 	{
 		super(MENU_EFFECT_MAX_SIZE);
 
 		this.config = config;
+		this.client = client;
 	}
 
 	public void onGameTick()
@@ -38,6 +44,10 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 		String clickedOption = event.getMenuOption();
 		String clickedTarget = event.getMenuTarget();
 		String clickedEntityType = "";
+		Actor clickedActor = event.getMenuEntry().getActor();
+		Player localPlayer = client.getLocalPlayer();
+		boolean hasLocalPlayer = localPlayer != null;
+		boolean hasClickedActor = clickedActor != null;
 
 		if (menuEntry != null)
 		{
@@ -81,9 +91,30 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 			boolean satisfiesOptions = verifyPropertyMatch(clickedOption, menuOptionFrame.matchedOptions);
 			boolean satisfiesTargets = verifyPropertyMatch(clickedTarget, menuOptionFrame.matchedTargets);
 			boolean satisfiesEntityTypes = verifyPropertyMatch(clickedEntityType, menuOptionFrame.matchedEntityTypes);
+			Integer minClickRange = menuOptionFrame.minClickRange;
+			Integer maxClickRange = menuOptionFrame.maxClickRange;
+			boolean hasClickRange = minClickRange != null || maxClickRange != null;
+			boolean satisfiesClickRange = true;
+
+			if (hasLocalPlayer && hasClickedActor && hasClickRange)
+			{
+				LocalPoint localPlayerLocation = localPlayer.getLocalLocation();
+				LocalPoint clickedActorLocation = clickedActor.getLocalLocation();
+				int distance = localPlayerLocation.distanceTo(clickedActorLocation);
+
+				if (minClickRange != null && distance < minClickRange)
+				{
+					satisfiesClickRange = false;
+				}
+
+				if (maxClickRange != null && distance > maxClickRange)
+				{
+					satisfiesClickRange = false;
+				}
+			}
 
 			// guard: check if all is satisfied
-			if (!satisfiesOptions || !satisfiesTargets || !satisfiesEntityTypes)
+			if (!satisfiesOptions || !satisfiesTargets || !satisfiesEntityTypes || !satisfiesClickRange)
 			{
 				continue;
 			}
