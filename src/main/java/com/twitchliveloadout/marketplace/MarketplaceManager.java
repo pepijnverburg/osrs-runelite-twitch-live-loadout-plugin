@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
 import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
@@ -84,6 +85,9 @@ public class MarketplaceManager {
 	@Getter
 	private final Gson gson;
 
+	@Getter
+	private final FightStateManager fightStateManager;
+
 	/**
 	 * List to keep track of all the active products
 	 */
@@ -153,7 +157,7 @@ public class MarketplaceManager {
 	private int currentTestEbsProductIndex = 0;
 	private Instant lastEbsProductTestedAt;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson)
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson, FightStateManager fightStateManager)
 	{
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
@@ -161,13 +165,14 @@ public class MarketplaceManager {
 		this.client = client;
 		this.config = config;
 		this.gson = gson;
+		this.fightStateManager = fightStateManager;
 		this.spawnManager = new SpawnManager(plugin, client);
 		this.spawnOverheadManager = new SpawnOverheadManager(client, overlayManager);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
 		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client, this);
 		this.widgetManager = new WidgetManager(plugin, client);
-		this.menuManager = new MenuManager(config);
+		this.menuManager = new MenuManager(config, client);
 		this.soundManager = new SoundManager(client, config);
 	}
 

@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2017, honeyhoney <https://github.com/honeyhoney>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.twitchliveloadout.fights;
 
 import com.google.gson.JsonArray;
@@ -74,104 +98,11 @@ public class FightStateManager
 	public static final int MULTI_ANCIENT_ANIMATION_ID = 1979;
 	public static final int ENTANGLE_ANIMATION_ID = 1161;
 
-	public enum FightGraphic {
-		ICE_BARRAGE(369, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
-		ICE_BLITZ(367, Skill.MAGIC, NO_SKILL, SINGLE_ANCIENT_ANIMATION_ID, true, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
-		ICE_BURST(363, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
-		ICE_RUSH(361, Skill.MAGIC, NO_SKILL, SINGLE_ANCIENT_ANIMATION_ID, true, FightStatisticEntry.FREEZE, FightStatisticProperty.HIT_DAMAGES),
+	@Getter
+	private int equippedWeaponTypeVarbit = -1;
 
-		BLOOD_BARRAGE(377, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
-		BLOOD_BLITZ(375, Skill.MAGIC, NO_SKILL, SINGLE_ANCIENT_ANIMATION_ID, true, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
-		BLOOD_BURST(376, Skill.MAGIC, NO_SKILL, MULTI_ANCIENT_ANIMATION_ID, false, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
-		BLOOD_RUSH(373, Skill.MAGIC, NO_SKILL, SINGLE_ANCIENT_ANIMATION_ID, true, FightStatisticEntry.BLOOD_HEAL, FightStatisticProperty.HIT_DAMAGES),
-
-		ENTANGLE(179, Skill.MAGIC, NO_SKILL, ENTANGLE_ANIMATION_ID, true, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_DAMAGES),
-		SNARE(180, Skill.MAGIC, NO_SKILL, ENTANGLE_ANIMATION_ID, true, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_DAMAGES),
-		BIND(181, Skill.MAGIC, Skill.HITPOINTS, ENTANGLE_ANIMATION_ID, true, FightStatisticEntry.ENTANGLE, FightStatisticProperty.HIT_COUNTERS), // no hitsplat
-
-		// Note that with the interaction required boolean to true splashes on multi-target enemies will not register (e.g. while barraging).
-		// However, this is needed because otherwise splashes from other actors have a very high change to trigger false positives.
-		// No invalid skill as multi-target spells can both hit and splash on enemies in the same attack.
-		SPLASH(85, Skill.MAGIC, NO_SKILL, NO_ANIMATION_ID, true, FightStatisticEntry.SPELL, FightStatisticProperty.MISS_COUNTERS); // no hitsplat
-
-		private final int graphicId;
-		private final Skill requiredSkill;
-		private final Skill invalidSkill;
-		private final int animationId;
-		private final boolean interactionRequired;
-		private final FightStatisticEntry entry;
-		private final FightStatisticProperty property;
-
-		FightGraphic(int graphicId, Skill requiredSkill, Skill invalidSkill, int animationId, boolean interactionRequired, FightStatisticEntry entry, FightStatisticProperty property) {
-			this.graphicId = graphicId;
-			this.requiredSkill = requiredSkill;
-			this.invalidSkill = invalidSkill;
-			this.animationId = animationId;
-			this.interactionRequired = interactionRequired;
-			this.entry = entry;
-			this.property = property;
-		}
-
-		public int getGraphicId()
-		{
-			return graphicId;
-		}
-
-		public Skill getRequiredSkill()
-		{
-			return requiredSkill;
-		}
-
-		public Skill getInvalidSkill()
-		{
-			return invalidSkill;
-		}
-
-		public int getAnimationId()
-		{
-			return animationId;
-		}
-
-		public boolean isInteractionRequired()
-		{
-			return interactionRequired;
-		}
-
-		public FightStatisticEntry getEntry()
-		{
-			return entry;
-		}
-
-		public FightStatisticProperty getProperty()
-		{
-			return property;
-		}
-	}
-
-	public enum ActorType {
-		NPC("npc", "npc"),
-		PLAYER("player", "player"),
-		GAME_OBJECT("gameObject", "gameObject"),
-		LOCAL_PLAYER("localPlayer", "self");
-
-		private final String key;
-		private final String name;
-
-		ActorType(String key, String name) {
-			this.key = key;
-			this.name = name;
-		}
-
-		public String getKey()
-		{
-			return key;
-		}
-
-		public String getName()
-		{
-			return name;
-		}
-	}
+	@Getter
+	private AttackStyle currentAttackStyle;
 
 	public FightStateManager(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, Client client)
 	{
@@ -227,6 +158,22 @@ public class FightStateManager
 				}
 			}
 		}, ON_GRAPHIC_CHANGED_DELAY, TimeUnit.MILLISECONDS);
+	}
+
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if (event.getVarpId() == VarPlayer.ATTACK_STYLE
+				|| event.getVarbitId() == Varbits.EQUIPPED_WEAPON_TYPE
+				|| event.getVarbitId() == Varbits.DEFENSIVE_CASTING_MODE)
+		{
+			final int currentAttackStyleVarbit = client.getVarpValue(VarPlayer.ATTACK_STYLE);
+			final int currentEquippedWeaponTypeVarbit = client.getVarbitValue(Varbits.EQUIPPED_WEAPON_TYPE);
+			final int currentCastingModeVarbit = client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE);
+
+			equippedWeaponTypeVarbit = currentEquippedWeaponTypeVarbit;
+
+			updateAttackStyle(equippedWeaponTypeVarbit, currentAttackStyleVarbit, currentCastingModeVarbit);
+		}
 	}
 
 	public void clearScheduledUpdates()
@@ -1202,5 +1149,67 @@ public class FightStateManager
 		}
 
 		return maxAmount;
+	}
+
+	private void updateAttackStyle(int equippedWeaponType, int attackStyleIndex, int castingMode)
+	{
+		AttackStyle[] attackStyles = getWeaponTypeStyles(equippedWeaponType);
+		if (attackStyleIndex < attackStyles.length)
+		{
+			// from script4525
+			// Even though the client has 5 attack styles for Staffs, only attack styles 0-4 are used, with an additional
+			// casting mode set for defensive casting
+			if (attackStyleIndex == 4)
+			{
+				attackStyleIndex += castingMode;
+			}
+
+			currentAttackStyle = attackStyles[attackStyleIndex];
+			if (currentAttackStyle == null)
+			{
+				currentAttackStyle = AttackStyle.OTHER;
+			}
+		}
+	}
+
+	private AttackStyle[] getWeaponTypeStyles(int weaponType)
+	{
+		// from script4525
+		int weaponStyleEnum = client.getEnum(EnumID.WEAPON_STYLES).getIntValue(weaponType);
+		int[] weaponStyleStructs = client.getEnum(weaponStyleEnum).getIntVals();
+
+		AttackStyle[] styles = new AttackStyle[weaponStyleStructs.length];
+		int i = 0;
+		for (int style : weaponStyleStructs)
+		{
+			StructComposition attackStyleStruct = client.getStructComposition(style);
+			String attackStyleName = attackStyleStruct.getStringValue(ParamID.ATTACK_STYLE_NAME);
+
+			AttackStyle attackStyle = AttackStyle.valueOf(attackStyleName.toUpperCase());
+			if (attackStyle == AttackStyle.OTHER)
+			{
+				// "Other" is used for no style
+				++i;
+				continue;
+			}
+
+			// "Defensive" is used for Defensive and also Defensive casting
+			if (i == 5 && attackStyle == AttackStyle.DEFENSIVE)
+			{
+				attackStyle = AttackStyle.DEFENSIVE_CASTING;
+			}
+
+			styles[i++] = attackStyle;
+		}
+		return styles;
+	}
+
+	public boolean isCurrentCombatStyle(String combatStyleKey) {
+		if (currentAttackStyle == null)
+		{
+			return CombatStyle.MELEE.getKey().equals(combatStyleKey);
+		}
+
+		return currentAttackStyle.getCombatStyle().getKey().equals(combatStyleKey);
 	}
 }

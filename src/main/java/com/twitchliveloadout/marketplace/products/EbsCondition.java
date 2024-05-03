@@ -22,6 +22,7 @@ public class EbsCondition {
 	public String stateKey = null;
 	public String stateValue = null;
 	public Double chance = 1d;
+	public String combatStyle = null;
 	public ArrayList<EbsCondition> or;
 	public ArrayList<EbsCondition> and;
 }

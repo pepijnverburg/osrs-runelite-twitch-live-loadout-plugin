@@ -997,6 +997,7 @@ public class MarketplaceProduct
 		String stateKey = condition.stateKey;
 		String stateValue = condition.stateValue;
 		Double chance = condition.chance;
+		String combatStyle = condition.combatStyle;
 		ArrayList<EbsCondition> orConditions = condition.or;
 		ArrayList<EbsCondition> andConditions = condition.and;
 		boolean orConditionsVerified = false;
@@ -1027,6 +1028,12 @@ public class MarketplaceProduct
 
 		// guard: check if this condition should check a varbit
 		if (varbitId >= 0 && manager.getClient().getVarbitValue(varbitId) != varbitValue)
+		{
+			return false;
+		}
+
+		// guard: check whether a specific combat style is requested
+		if (combatStyle != null && !manager.getFightStateManager().isCurrentCombatStyle(combatStyle))
 		{
 			return false;
 		}

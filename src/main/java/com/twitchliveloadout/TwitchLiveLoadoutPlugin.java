@@ -979,12 +979,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onVarbitChanged(VarbitChanged varbitChanged)
+	public void onVarbitChanged(VarbitChanged event)
 	{
 		try {
 			if (config.collectionLogEnabled())
 			{
-				collectionLogManager.onVarbitChanged(varbitChanged);
+				collectionLogManager.onVarbitChanged(event);
+			}
+			if (config.fightStatisticsEnabled() || config.marketplaceEnabled())
+			{
+				// also handle when marketplace is enabled as some random events
+				// might have dependencies on updated attack styles
+				fightStateManager.onVarbitChanged(event);
 			}
 		} catch (Exception exception) {
 			logSupport("Could not handle varbit change event: ", exception);
