@@ -272,9 +272,16 @@ public class NotificationManager {
 		if (message == null)
 		{
 			if (twitchProduct == null) {
-				message = "Thank you {viewerName} for your donation!";
+				message = "Thank you {viewerName}!";
 			} else {
 				message = config.marketplaceDefaultDonationMessage();
+
+				// when chat messages are sent prefix them with the name of the event
+				if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(notification.ebsNotification.messageType))
+				{
+					String name = notification.marketplaceProduct.getStreamerProduct().name;
+					message = "["+ name +"] "+ message;
+				}
 			}
 		}
 
