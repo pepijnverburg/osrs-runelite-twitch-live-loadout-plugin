@@ -8,6 +8,7 @@ public enum TwitchTransactionOrigin {
     EVENT_SUB("event_sub"),
     MANUAL("manual"),
     TEST("test"),
+    FREE("free"),
     CHARITY("charity"),
     ;
 
