@@ -297,9 +297,14 @@ public class MarketplacePanel extends JPanel
 		final int archivedTransactionAmount = archivedTransactions.size();
 		final int channelPointRewardAmount = channelPointRewards.size();
 
-		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving Random Events is ACTIVE</b></html>";
+		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving Random Events is ACTIVE. Preview mode is disabled.</b></html>";
 		String availableRandomEventsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ streamerProductAmount +" Random Events</b>.</html>";
 		String availableChannelPointRewardsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ channelPointRewardAmount +" Channel Point Rewards</b>.</html>";
+
+		if (marketplaceManager.isTestModeActive())
+		{
+			statusText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>Receiving preview Random Events is ACTIVE when you are logged in. Disable when you are doing previewing.</b></html>";
+		}
 
 		if (!marketplaceManager.isActive())
 		{
