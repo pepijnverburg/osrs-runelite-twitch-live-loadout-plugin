@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class TwitchEventSubClient {
-   private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
+   public final static String DEFAULT_TWITCH_WEBSOCKET_URL = "wss://eventsub.wss.twitch.tv/ws";
 //     private final static String DEFAULT_TWITCH_WEBSOCKET_URL = "ws://127.0.0.1:8080/ws";
 
     private final TwitchLiveLoadoutPlugin plugin;
@@ -23,8 +23,6 @@ public class TwitchEventSubClient {
     private final Gson gson;
     private final OkHttpClient httpClientTemplate;
     private WebSocket webSocket;
-
-    private String websocketUrl = DEFAULT_TWITCH_WEBSOCKET_URL;
     private String sessionId = "";
     private int keepAliveTimeoutS = 10;
     private Instant lastKeepAliveAt = Instant.now();
@@ -42,12 +40,12 @@ public class TwitchEventSubClient {
         this.listener = listener;
 
         // instantly attempt to connect
-        connect();
+        connect(DEFAULT_TWITCH_WEBSOCKET_URL);
     }
 
-    private synchronized void connect()
+    private synchronized void connect(String webSocketUrl)
     {
-        plugin.logSupport("Initialising the websocket for url: "+ websocketUrl);
+        plugin.logSupport("Initialising the websocket for url: "+ webSocketUrl);
 
         // guard: disconnect when one already exists
         if (webSocket != null) {
@@ -55,13 +53,13 @@ public class TwitchEventSubClient {
         }
 
         OkHttpClient client = createHttpClient(10_000);
-        Request request = new Request.Builder().url(websocketUrl).build();
+        Request request = new Request.Builder().url(webSocketUrl).build();
         webSocket = client.newWebSocket(request, webSocketListener);
     }
 
-    public synchronized void reconnect()
+    public synchronized void reconnect(String webSocketUrl)
     {
-        connect();
+        connect(webSocketUrl);
     }
 
     public void disconnect()
@@ -115,8 +113,7 @@ public class TwitchEventSubClient {
                         String reconnectUrl = session.get("reconnect_url").getAsString();
 
                         // override to the new URL and reconnect
-                        websocketUrl = reconnectUrl;
-                        reconnect();
+                        reconnect(reconnectUrl);
                     }
 
                     // message when a subscription was revoked for whatever reason
