@@ -1114,16 +1114,17 @@ public class FightStateManager
 			allowedPlayerAmount += 1;
 		}
 
-		return client.getPlayers().size() > allowedPlayerAmount;
+		return client.getTopLevelWorldView().players().getSize() > allowedPlayerAmount;
 	}
 
 	public CopyOnWriteArrayList<String> getOtherActorNames()
 	{
 		final CopyOnWriteArrayList<String> actorNames = new CopyOnWriteArrayList<>();
 		final CopyOnWriteArrayList<Actor> actors = new CopyOnWriteArrayList<>();
+		WorldView worldView = client.getTopLevelWorldView();
 
-		actors.addAll(client.getNpcs());
-		actors.addAll(client.getPlayers());
+		actors.addAll(worldView.npcs().stream().toList());
+		actors.addAll(worldView.players().stream().toList());
 
 		for (Actor actor : actors)
 		{

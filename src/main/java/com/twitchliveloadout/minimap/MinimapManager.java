@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.SpritePixels;
 import net.runelite.api.Tile;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 
 import javax.imageio.ImageIO;
@@ -58,11 +59,12 @@ public class MinimapManager {
 			return null;
 		}
 
+		WorldView worldView = client.getTopLevelWorldView();
 		int tileSize = 4;
 		int sceneSize = 104;
 		int radiusAroundPlayer = 12;
-		int plane = client.getPlane();
-		Tile[][] planeTiles = client.getScene().getTiles()[plane];
+		int plane = worldView.getPlane();
+		Tile[][] planeTiles = worldView.getScene().getTiles()[plane];
 
 		LocalPoint playerLocation = client.getLocalPlayer().getLocalLocation();
 		int playerX = playerLocation.getSceneX();

@@ -3,11 +3,12 @@ package com.twitchliveloadout.marketplace.spawns;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.Client;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 
+@Getter
 public class SpawnPoint {
-	@Getter
 	private final WorldPoint worldPoint;
 
 	public SpawnPoint(WorldPoint worldPoint)
@@ -17,7 +18,8 @@ public class SpawnPoint {
 
 	public LocalPoint getLocalPoint(Client client)
 	{
-		final LocalPoint localPoint = LocalPoint.fromWorld(client, worldPoint);
+		final WorldView worldView = client.getTopLevelWorldView();
+		final LocalPoint localPoint = LocalPoint.fromWorld(worldView, worldPoint);
 
 		return localPoint;
 	}

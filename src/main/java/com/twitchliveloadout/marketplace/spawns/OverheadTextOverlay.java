@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.*;
@@ -29,7 +30,7 @@ public class OverheadTextOverlay extends Overlay {
 		setMovable(false);
 		setPosition(OverlayPosition.TOP_LEFT);
 		setLayer(OverlayLayer.ABOVE_SCENE);
-		setPriority(OverlayPriority.HIGHEST);
+		setPriority(Overlay.PRIORITY_HIGHEST);
 	}
 
 	@Override
@@ -70,7 +71,8 @@ public class OverheadTextOverlay extends Overlay {
 				continue;
 			}
 
-			Point textLocation = Perspective.localToCanvas(client, localPoint, client.getPlane(), textHeight);
+			WorldView worldView = client.getTopLevelWorldView();
+			Point textLocation = Perspective.localToCanvas(client, localPoint, worldView.getPlane(), textHeight);
 			Color textColor = MarketplaceColors.getColorByHex(textColorHex);
 
 			// guard: ensure a valid location for the text rendering

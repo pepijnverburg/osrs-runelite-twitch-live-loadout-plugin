@@ -301,6 +301,7 @@ public class SpawnManager {
 		final ArrayList<SpawnPoint> candidateSpawnPoints = new ArrayList<>();
 		final int[][] collisionFlags = getSceneCollisionFlags();
 		final Player player = client.getLocalPlayer();
+		final WorldView worldView = client.getTopLevelWorldView();
 		final WorldArea playerArea = player.getWorldArea();
 		final WorldPoint playerWorldPoint = player.getWorldLocation();
 
@@ -316,7 +317,7 @@ public class SpawnManager {
 			maxRadius = minRadius;
 		}
 
-		LocalPoint referenceLocalPoint = LocalPoint.fromWorld(client, referenceWorldPoint);
+		LocalPoint referenceLocalPoint = LocalPoint.fromWorld(worldView, referenceWorldPoint);
 
 		// guard: make sure the LOCAL point is always valid
 		if (referenceLocalPoint == null)
@@ -325,7 +326,7 @@ public class SpawnManager {
 		}
 		
 		final int plane = referenceWorldPoint.getPlane();
-		final Scene scene = client.getScene();
+		final Scene scene = worldView.getScene();
 		final short[][][] overlayIds = scene.getOverlayIds();
 		final short[][][] underlayIds = scene.getUnderlayIds();
 		final int sceneX = referenceLocalPoint.getSceneX();
@@ -371,7 +372,7 @@ public class SpawnManager {
 					continue;
 				}
 
-				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY);
+				LocalPoint localPoint = LocalPoint.fromScene(sceneAttemptX, sceneAttemptY, scene);
 				WorldPoint worldPoint = WorldPoint.fromLocal(client, localPoint);
 
 				// guard: check if this world point is already taken by another spawned object
@@ -414,12 +415,14 @@ public class SpawnManager {
 	}
 
 	private int[][] getSceneCollisionFlags() {
-		final CollisionData[] collisionMaps = client.getCollisionMaps();
+		WorldView worldView = client.getTopLevelWorldView();
+		final CollisionData[] collisionMaps = worldView.getCollisionMaps();
 		int[][] collisionFlags = new int[Constants.SCENE_SIZE][Constants.SCENE_SIZE];
+		int plane = worldView.getPlane();
 
 		// if we have map collision flags we populate the starting point with them
 		if (collisionMaps != null) {
-			collisionFlags = collisionMaps[client.getPlane()].getFlags();
+			collisionFlags = collisionMaps[plane].getFlags();
 		}
 
 		return collisionFlags;

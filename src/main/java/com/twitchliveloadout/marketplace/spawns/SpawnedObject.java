@@ -586,12 +586,13 @@ public class SpawnedObject {
 
 	public SimplePolygon calculatePolygon()
 	{
+		LocalPoint localPoint = spawnPoint.getLocalPoint(client);
+		WorldView worldView = client.getTopLevelWorldView();
 		Model model = object.getModel();
 		int jauOrient = object.getOrientation();
-		LocalPoint localPoint = spawnPoint.getLocalPoint(client);
 		int x = localPoint.getX();
 		int y = localPoint.getY();
-		int z = client.getPlane();
+		int z = worldView.getPlane();
 		int zOff = Perspective.getTileHeight(client, localPoint, z);
 		AABB aabb = model.getAABB(jauOrient);
 

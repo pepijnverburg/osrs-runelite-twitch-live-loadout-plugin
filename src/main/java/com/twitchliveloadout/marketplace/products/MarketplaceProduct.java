@@ -1596,11 +1596,11 @@ public class MarketplaceProduct
 				LocalPoint startReferenceLocation = getLocalPointByLocationType(startLocationType, spawnedObject);
 				LocalPoint endReferenceLocation = getLocalPointByLocationType(endLocationType, spawnedObject);
 
+
 				// offset the locations with possible radiuses
 				LocalPoint startLocation = offsetLocalPointByRadius(startReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, avoidInvalidOverlay, projectileFrame.startLocationRadiusRange);
 				LocalPoint endLocation = offsetLocalPointByRadius(endReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, avoidInvalidOverlay, projectileFrame.endLocationRadiusRange);
-				WorldPoint startWorldLocation = WorldPoint.fromLocal(client, startLocation);
-				WorldPoint endWorldLocation = WorldPoint.fromLocal(client, endLocation);
+				WorldView worldView = client.getTopLevelWorldView();
 
 				int startZ = projectileFrame.startZ;
 				int slope = projectileFrame.slope;
@@ -1608,13 +1608,6 @@ public class MarketplaceProduct
 				int endHeight = projectileFrame.endHeight;
 				int durationMs = projectileFrame.durationMs;
 				int durationCycles = (durationMs / GAME_CYCLE_DURATION_MS);
-				int plane = client.getPlane();
-				int sceneX = startLocation.getSceneX();
-				int sceneY = startLocation.getSceneY();
-				int tileHeight = client.getTileHeights()[plane][sceneX][sceneY];
-				int correctedStartZ = tileHeight + startZ; // correct for the starting tile height
-				int startCycle = client.getGameCycle();
-				int endCycle = startCycle + durationCycles;
 
 				// guard: make sure the parameters are valid
 				if (projectileId == null || durationCycles <= 0 || startLocation == null || endLocation == null)
@@ -1622,12 +1615,23 @@ public class MarketplaceProduct
 					return;
 				}
 
+				WorldPoint startWorldLocation = WorldPoint.fromLocal(client, startLocation);
+				WorldPoint endWorldLocation = WorldPoint.fromLocal(client, endLocation);
+
+				int plane = worldView.getPlane();
+				int sceneX = startLocation.getSceneX();
+				int sceneY = startLocation.getSceneY();
+				int tileHeight = worldView.getTileHeights()[plane][sceneX][sceneY];
+				int correctedStartZ = tileHeight + startZ; // correct for the starting tile height
+				int startCycle = client.getGameCycle();
+				int endCycle = startCycle + durationCycles;
+
 				// trigger start spawns
 				triggerSpawnOptionsAtWorldPoint(startWorldLocation, projectileFrame.startSpawnOptions);
 
-				Projectile projectile = client.createProjectile(
+				Projectile projectile = worldView.createProjectile(
 					projectileId,
-					client.getPlane(),
+					plane,
 					startLocation.getX(),
 					startLocation.getY(),
 			    	correctedStartZ,
@@ -1640,7 +1644,7 @@ public class MarketplaceProduct
 					endLocation.getX(),
 					endLocation.getY()
 				);
-				client.getProjectiles().addLast(projectile);
+				worldView.getProjectiles().addLast(projectile);
 
 				// trigger end spawns
 				manager.getPlugin().scheduleOnClientThread(() -> {
@@ -1674,6 +1678,7 @@ public class MarketplaceProduct
 	private LocalPoint getLocalPointByLocationType(String locationType, SpawnedObject spawnedObject)
 	{
 		Client client = manager.getClient();
+		WorldView worldView = client.getTopLevelWorldView();
 		Actor actor = getActorByLocationType(locationType);
 		LocalPoint actorLocation = null;
 
@@ -1696,7 +1701,7 @@ public class MarketplaceProduct
 					return actorLocation;
 				}
 
-				return LocalPoint.fromWorld(client, previousLocation);
+				return LocalPoint.fromWorld(worldView, previousLocation);
 			case MODEL_TILE_LOCATION_TYPE:
 				return spawnedObject.getSpawnPoint().getLocalPoint(client);
 		}
