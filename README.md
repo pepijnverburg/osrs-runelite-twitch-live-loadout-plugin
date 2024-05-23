@@ -10,7 +10,7 @@ Visit the landing page for more information:<br/>
 ## Introduction
 Immerse your Twitch viewers with interactive and real-time information about `Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Quests`, `Looting Bag`, `Tombs of Amascut Invocations` and more!
 
-Optionally engage with gameplay by letting viewers activate custom `Random Events`. There's a wide range of default `Random Events` to choose from, and if you'd like additional ones, feel free to make requests in our [Discord](https://discord.gg/3Fjm5HTFGM) community.
+Optionally engage with gameplay by letting viewers activate custom `Random Events` triggered by Bit donations, channel point redeems, channel follows, subscriptions, gifts and more. There's a wide range of default `Random Events` to choose from, and if you'd like additional ones, feel free to make requests in our [Discord](https://discord.gg/3Fjm5HTFGM) community.
 
 ![Summary](./docs/summary.gif "Summary")
 

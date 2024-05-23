@@ -17,7 +17,7 @@ import static com.twitchliveloadout.fights.FightStateManager.MAX_FINISHED_FIGHT_
 public class Fight {
 	private final String actorName;
 	private final int actorId;
-	private final FightStateManager.ActorType actorType;
+	private final ActorType actorType;
 	private final int actorCombatLevel;
 
 	private final CopyOnWriteArrayList<FightQueuedStatistic> queuedStatistics = new CopyOnWriteArrayList<>();
@@ -46,22 +46,22 @@ public class Fight {
 		if (actor instanceof NPC)
 		{
 			actorId = ((NPC) actor).getId();
-			actorType = FightStateManager.ActorType.NPC;
+			actorType = ActorType.NPC;
 		}
 		else if (actor instanceof GameObject)
 		{
 			actorId = ((GameObject) actor).getId();
-			actorType = FightStateManager.ActorType.GAME_OBJECT;
+			actorType = ActorType.GAME_OBJECT;
 		}
 		else if (isLocalPlayer)
 		{
 			actorId = -1;
-			actorType = FightStateManager.ActorType.LOCAL_PLAYER;
+			actorType = ActorType.LOCAL_PLAYER;
 		}
 		else
 		{
 			actorId = -1;
-			actorType = FightStateManager.ActorType.PLAYER;
+			actorType = ActorType.PLAYER;
 		}
 	}
 
@@ -307,7 +307,7 @@ public class Fight {
 		sessionCounter++;
 	}
 
-	public FightStateManager.ActorType getActorType()
+	public ActorType getActorType()
 	{
 		return actorType;
 	}

@@ -8,4 +8,6 @@ public class EbsMenuOptionFrame extends EbsEffectFrame {
 	public ArrayList<String> matchedTargets;
 	public ArrayList<String> matchedEntityTypes;
 	public ArrayList<EbsEffect> onClickEffects;
+	public Integer minClickRange;
+	public Integer maxClickRange;
 }

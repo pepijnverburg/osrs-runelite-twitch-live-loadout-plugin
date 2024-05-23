@@ -38,11 +38,14 @@ import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubListener;
 import com.twitchliveloadout.ui.CanvasListener;
 import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -60,10 +63,11 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
-import okhttp3.OkHttpClient;
+import okhttp3.*;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -72,11 +76,12 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
+import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S;
 
 /**
  * Manages polling and event listening mechanisms to synchronize the state
  * to the Twitch Configuration Service. All client data is fetched in this main entry point
- * and passed along to dedicated managers. Also you will see that this class if fairly 'polluted'
+ * and passed along to dedicated managers. Also you will see that this class is fairly 'polluted'
  * with try-catch statements. This helps making sure that any breaking changes to Oldschool Runescape and/or
  * RuneLite will less likely cause issues.
  *
@@ -147,6 +152,15 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * Twitch Configuration Service API end-point helpers.
 	 */
 	private TwitchApi twitchApi;
+
+	/**
+	 * Twitch EventSub client
+	 */
+	private TwitchEventSubListener twitchEventSubListener;
+	/**
+	 * Twitch EventSub client
+	 */
+	private TwitchEventSubClient twitchEventSubClient;
 
 	/**
 	 * Dedicated manager for all fight information.
@@ -231,6 +245,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// tasks to execute immediately on boot
 		updateMarketplaceStreamerProducts();
 		updateMarketplaceEbsProducts();
+		ensureValidTwitchOAuthToken();
 
 		// trigger some other updates that need to be triggered when booting up the plugin
 		// when someone is already logged in and e.g. disabling and enabling the plugin
@@ -262,8 +277,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializeTwitch()
 	{
 		try {
-			twitchState = new TwitchState(this, config, canvasListener, gson);
-			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient);
+			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient, configManager);
+			twitchEventSubListener = new TwitchEventSubListener(this, twitchApi, gson);
+			twitchEventSubClient = new TwitchEventSubClient(this, config, twitchApi, gson, httpClient, twitchEventSubListener);
+			twitchState = new TwitchState(this, config, twitchEventSubClient, canvasListener, gson);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing Twitch: ", exception);
 		}
@@ -276,7 +293,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			itemStateManager = new ItemStateManager(this, twitchState, client, itemManager, config);
 			skillStateManager = new SkillStateManager(twitchState, client);
 			collectionLogManager = new CollectionLogManager(this, twitchState, client);
-			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager, overlayManager, gson);
+			marketplaceManager = new MarketplaceManager(this, twitchApi, twitchState, client, config, chatMessageManager, itemManager, overlayManager, gson, fightStateManager);
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 			questManager = new QuestManager(this, twitchState, client);
@@ -289,7 +306,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializePanel()
 	{
 		try {
-			pluginPanel = new TwitchLiveLoadoutPanel(this, twitchApi, twitchState, fightStateManager, marketplaceManager, canvasListener, config);
+			pluginPanel = new TwitchLiveLoadoutPanel(this, twitchApi, twitchEventSubClient, twitchState, fightStateManager, marketplaceManager, canvasListener, config);
 			pluginPanel.rebuild();
 
 			final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
@@ -482,10 +499,20 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					lastAccountIdentifier = accountIdentifier;
 				}
 
+				if (isLoggedIn())
+				{
+					int regionId = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
+					twitchState.setRegionId(regionId);
+
+					// update state at the marketplace manager as well that should be accessible to products
+					marketplaceManager.setCurrentRegionId(regionId);
+				}
+
 				// update this information periodically because it is possible the plugin
 				// is being installed or activated after e.g. the AccountHashChanged event fires
 				twitchState.setAccountHash(accountHash);
 				twitchState.setAccountType(accountType);
+
 			});
 		} catch (Exception exception) {
 			logSupport("Could not sync player info to state due to the following error: ", exception);
@@ -547,6 +574,22 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 		} catch (Exception exception) {
 			logSupport("Could not update the EBS products due to the following error: ", exception);
+		}
+	}
+
+	/**
+	 * Polling mechanism to update the channel point rewards configured in Twitch.
+	 */
+	@Schedule(period = (IN_DEVELOPMENT ? 5 : 30), unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void updateChannelPointRewards()
+	{
+		try {
+			if (config.marketplaceEnabled() && !config.twitchOAuthAccessToken().isEmpty())
+			{
+				marketplaceManager.updateAsyncChannelPointRewards();
+			}
+		} catch (Exception exception) {
+			logSupport("Could not update the channel point rewards due to the following error: ", exception);
 		}
 	}
 
@@ -636,6 +679,38 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 		} catch (Exception exception) {
 			logSupport("Could not handle lobby game tick event: ", exception);
+		}
+	}
+
+	/**
+	 * Periodically check whether we are still connected to the Twitch EventSub API.
+	 */
+	@Schedule(period = 30, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void checkTwitchEventSubConnection()
+	{
+		try {
+			if (twitchEventSubClient == null) {
+				return;
+			}
+
+			if (!twitchEventSubClient.isConnected()) {
+				twitchEventSubClient.reconnect(TwitchEventSubClient.DEFAULT_TWITCH_WEBSOCKET_URL);
+			}
+		} catch (Exception exception) {
+			log.warn("Could not check the Twitch Event Sub client connection: ", exception);
+		}
+	}
+
+	/**
+	 * Periodically check whether we should refresh the Twitch OAuth token
+	 */
+	@Schedule(period = TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S / 2, unit = ChronoUnit.SECONDS, asynchronous = true)
+	public void ensureValidTwitchOAuthToken()
+	{
+		try {
+			twitchApi.ensureValidOAuthToken();
+		} catch (Exception exception) {
+			log.warn("Could not ensure we have a valid Twitch OAUth token: ", exception);
 		}
 	}
 
@@ -915,12 +990,18 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onVarbitChanged(VarbitChanged varbitChanged)
+	public void onVarbitChanged(VarbitChanged event)
 	{
 		try {
 			if (config.collectionLogEnabled())
 			{
-				collectionLogManager.onVarbitChanged(varbitChanged);
+				collectionLogManager.onVarbitChanged(event);
+			}
+			if (config.fightStatisticsEnabled() || config.marketplaceEnabled())
+			{
+				// also handle when marketplace is enabled as some random events
+				// might have dependencies on updated attack styles
+				fightStateManager.onVarbitChanged(event);
 			}
 		} catch (Exception exception) {
 			logSupport("Could not handle varbit change event: ", exception);
@@ -964,6 +1045,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 						marketplaceManager.disable();
 					}
 					break;
+				case "twitchOAuthAccessToken":
+				case "twitchOAuthRefreshToken":
+					twitchEventSubClient.reconnect(TwitchEventSubClient.DEFAULT_TWITCH_WEBSOCKET_URL);
+					break;
 			}
 
 			// somehow when in the settings tab the focus is lost, which means
@@ -973,6 +1058,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			canvasListener.enableFocus();
 		} catch (Exception exception) {
 			log.warn("Could not handle config change event: ", exception);
+		}
+	}
+
+	@Subscribe
+	public void onMenuOpened(MenuOpened event)
+	{
+		try {
+			marketplaceManager.onMenuOpened(event);
+		} catch (Exception exception) {
+			logSupport("Could not menu opened event: ", exception);
 		}
 	}
 

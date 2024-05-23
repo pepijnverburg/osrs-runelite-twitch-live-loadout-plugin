@@ -8,6 +8,7 @@ public enum TwitchStateEntry {
 	ACCOUNT_HASH("accountHash"),
 	ACCOUNT_TYPE("accountType"),
 	PLAYER_NAME("playerName"),
+	REGION_ID("regionId"),
 	INVENTORY_ITEMS("inventory", true),
 	INVENTORY_PRICE("inventoryPrice", true),
 	EQUIPMENT_ITEMS("equipment", true),
@@ -29,6 +30,8 @@ public enum TwitchStateEntry {
 	INVOCATIONS_RAID_LEVEL("invocationsRaidLevel", true),
 	MARKETPLACE_ENABLED("marketplaceEnabled", true),
 	MARKETPLACE_ACTIVE("marketplaceActive"),
+	MARKETPLACE_CHANNEL_EVENTS_ACTIVE("marketplaceChannelEventsActive"),
+	MARKETPLACE_TEST_MODE_ACTIVE("marketplaceTestModeActive"),
 	MARKETPLACE_PROTECTION_ENABLED("marketplaceProtectionEnabled"),
 	CURRENT_PRODUCT_COOLDOWNS("currentProductCooldowns", true),
 	CURRENT_SHARED_COOLDOWN("currentSharedCooldown"),
@@ -36,6 +39,7 @@ public enum TwitchStateEntry {
 	QUESTS("quests", true),
 	SEASONAL_ITEMS("seasonalItems", true),
 	STREAMER_PRODUCTS("streamerProducts"),
+	CHANNEL_POINT_REWARDS("channelPointRewards"),
 	;
 
 	@Getter

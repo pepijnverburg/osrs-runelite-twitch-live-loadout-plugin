@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
+import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
 import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
@@ -17,18 +18,24 @@ import com.twitchliveloadout.marketplace.spawns.SpawnOverheadManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
+import com.twitchliveloadout.marketplace.transactions.TwitchTransactionOrigin;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
 import net.runelite.api.Player;
+import net.runelite.api.Point;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.PlayerChanged;
+import net.runelite.api.geometry.SimplePolygon;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -48,6 +55,7 @@ public class MarketplaceManager {
 	@Getter
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchApi twitchApi;
+	@Getter
 	private final TwitchState twitchState;
 
 	@Getter
@@ -83,6 +91,9 @@ public class MarketplaceManager {
 	@Getter
 	private final Gson gson;
 
+	@Getter
+	private final FightStateManager fightStateManager;
+
 	/**
 	 * List to keep track of all the active products
 	 */
@@ -99,6 +110,11 @@ public class MarketplaceManager {
 	private CopyOnWriteArrayList<EbsProduct> ebsProducts = new CopyOnWriteArrayList<>();
 
 	/**
+	 * List of all EBS products from Twitch
+	 */
+	private CopyOnWriteArrayList<ChannelPointReward> channelPointRewards = new CopyOnWriteArrayList<>();
+
+	/**
 	 * List of all extension transactions that should be handled
 	 */
 	private final CopyOnWriteArrayList<TwitchTransaction> queuedTransactions = new CopyOnWriteArrayList<>();
@@ -113,16 +129,30 @@ public class MarketplaceManager {
 	private final ConcurrentHashMap<String, Instant> timerLastTriggeredAt = new ConcurrentHashMap<>();
 
 	/**
-	 * Timer for when all the active products should be active again
+	 * Flag whether any events are allowed to be active
 	 */
 	@Getter
 	private boolean isActive = true;
+
+	/**
+	 * Timers for various modes where events can be tested through the Twitch extension
+	 */
+	private Instant testModeActivatedAt = null;
+	public final static int TEST_MODE_EXPIRY_TIME_S = 1 * 60 * 60;
+	public final static String TEST_MODE_EXPIRY_TIME_READABLE = "1h";
+	private Instant chaosModeActivatedAt = null;
+	public final static int CHAOS_MODE_EXPIRY_TIME_S = 8 * 60 * 60;
+	public final static String CHAOS_MODE_EXPIRY_TIME_READABLE = "8h";
+	private Instant freeModeActivatedAt = null;
+	public final static int FREE_MODE_EXPIRY_TIME_S = 8 * 60 * 60;
+	public final static String FREE_MODE_EXPIRY_TIME_READABLE = "8h";
 
 	/**
 	 * Flag to identify we are already fetching data so requests are not hoarding
 	 */
 	private boolean isFetchingEbsTransactions = false;
 	private boolean isFetchingEbsProducts = false;
+	private boolean isFetchingChannelPointRewards = false;
 	@Getter
 	private boolean fetchingEbsTransactionsErrored = false;
 
@@ -139,7 +169,14 @@ public class MarketplaceManager {
 	private int currentTestEbsProductIndex = 0;
 	private Instant lastEbsProductTestedAt;
 
-	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson)
+	/**
+	 * Several states that are needed for various product effects / conditions
+	 */
+	@Getter
+	@Setter
+	private int currentRegionId = 0;
+
+	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson, FightStateManager fightStateManager)
 	{
 		this.plugin = plugin;
 		this.twitchApi = twitchApi;
@@ -147,13 +184,14 @@ public class MarketplaceManager {
 		this.client = client;
 		this.config = config;
 		this.gson = gson;
-		this.spawnManager = new SpawnManager(plugin, client);
+		this.fightStateManager = fightStateManager;
+		this.spawnManager = new SpawnManager(plugin, client, this);
 		this.spawnOverheadManager = new SpawnOverheadManager(client, overlayManager);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
 		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client, this);
 		this.widgetManager = new WidgetManager(plugin, client);
-		this.menuManager = new MenuManager(config);
+		this.menuManager = new MenuManager(config, client);
 		this.soundManager = new SoundManager(client, config);
 	}
 
@@ -304,12 +342,14 @@ public class MarketplaceManager {
 			// try to handle each individual transaction to prevent one invalid transaction in the queue
 			// to cancel all other transactions and with that all their effects
 			try {
+				String transactionId = transaction.id;
 				TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
 				StreamerProduct streamerProduct = getStreamerProductByTransaction(transaction);
 
 				// guard: make sure a products are exist for this transaction
 				if (twitchProduct == null || streamerProduct == null)
 				{
+					plugin.logSupport("Could not match the transaction product details to a Twitch and Streamer product. Transaction ID: "+ transactionId);
 					continue;
 				}
 
@@ -321,6 +361,7 @@ public class MarketplaceManager {
 				boolean isProductCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
 				boolean isSharedCoolingDown = sharedCooldownUntil != null && now.isBefore(sharedCooldownUntil);
 				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled && ebsProduct.behaviour != null;
+				boolean isTestTransaction = transaction.product_type.equals("TEST");
 
 				// guard: make sure this product is not cooling down
 				// this can be the case when two transactions are done at the same time
@@ -344,13 +385,12 @@ public class MarketplaceManager {
 				// any incoming donations
 				if (requiredModelPlacement != null)
 				{
-
 					SpawnPoint spawnPoint = spawnManager.getSpawnPoint(requiredModelPlacement, null);
 
 					// guard: continue with the queue and don't remove from queue because we will wait for a valid spawn point
 					if (spawnPoint == null)
 					{
-						//log.info("Skipping transaction because required model placement could not be satisfied: "+ transaction.id);
+						plugin.logSupport("Skipping transaction because required model placement could not be satisfied: "+ transaction.id);
 						continue;
 					}
 				}
@@ -370,14 +410,21 @@ public class MarketplaceManager {
 				// guard: check if the version number is supported
 				if (ebsProduct.version != MarketplaceConstants.EBS_REQUIRED_PRODUCT_VERSION)
 				{
-					log.info("Skipping transaction the version number of the EBS product ("+ ebsProduct.version +") is not compatible. Transaction ID: " + transaction.id);
+					log.info("Skipping transaction the version number of the EBS product ("+ ebsProduct.version +") is not compatible. Transaction ID: "+ transactionId);
 					continue;
 				}
 
 				// guard: check for hardcore protection and dangerous random events
 				if (ebsProduct.dangerous && !plugin.canPerformDangerousEffects())
 				{
-					log.info("Skipping transaction because it is deemed dangerous and protection is on: " + transaction.id);
+					log.info("Skipping transaction because it is deemed dangerous and protection is on: "+ transactionId);
+					continue;
+				}
+
+				// guard: check for a test transaction while testing mode is not active
+				if (isTestTransaction && !isTestModeActive())
+				{
+					log.info("Skipping transaction because it is a test transaction while testing is not active: "+ transactionId);
 					continue;
 				}
 
@@ -409,7 +456,7 @@ public class MarketplaceManager {
 						queuedTransactions.add(transaction);
 					}
 
-					log.info("It is skipped, because it has already expired at: " + newProduct.getExpiredAt());
+					log.info("It is skipped, because it has already expired at: "+ newProduct.getExpiredAt());
 					continue;
 				}
 
@@ -444,8 +491,8 @@ public class MarketplaceManager {
 	public void rerunTransaction(TwitchTransaction transaction)
 	{
 
-		// guard: make sure the transaction is valid
-		if (transaction == null)
+		// guard: make sure the transaction is valid and not queued yet
+		if (transaction == null || queuedTransactions.contains(transaction))
 		{
 			return;
 		}
@@ -469,6 +516,30 @@ public class MarketplaceManager {
 		// remove from the handled transactions and queue once again
 		handledTransactionIds.remove(transactionId);
 		queuedTransactions.add(transaction);
+	}
+
+	public void handleCustomTransaction(TwitchTransaction transaction)
+	{
+
+		// guard: skip when not valid
+		if (transaction == null)
+		{
+			return;
+		}
+
+		String transactionId = transaction.id;
+
+		// guard: skip when already handled
+		if (handledTransactionIds.contains(transactionId))
+		{
+			return;
+		}
+
+		// add it to the queue and archive
+		queuedTransactions.add(transaction);
+		handledTransactionIds.add(transactionId);
+		archivedTransactions.add(0, transaction);
+		updateMarketplacePanel();
 	}
 
 	/**
@@ -516,23 +587,14 @@ public class MarketplaceManager {
 
 	/**
 	 * Test an EBS product by manually creating a fake Twitch donation and queueing it.
-	 * NOTE: this is only available in development.
 	 */
 	private void testEbsProduct(EbsProduct ebsProduct)
 	{
 
-		// guard: skip this when not in development
-		if (!IN_DEVELOPMENT || !config.testRandomEventsEnabled())
-		{
-			return;
-		}
-
 		TwitchTransaction twitchTransaction = new TwitchTransaction();
 		TwitchProduct twitchProduct = new TwitchProduct();
-		StreamerProduct streamerProduct = new StreamerProduct();
 		TwitchProductCost twitchProductCost = new TwitchProductCost();
 		String transactionId = generateRandomTestId();
-		String streamerProductId = generateRandomTestId();
 		String twitchSku = generateRandomTestId();
 		int currencyAmount = 100;
 		String currencyType = "gp";
@@ -558,20 +620,10 @@ public class MarketplaceManager {
 		twitchTransaction.user_name = "Test Viewer";
 		twitchTransaction.product_type = "TEST";
 		twitchTransaction.product_data = twitchProduct;
+		twitchTransaction.ebs_product_id = ebsProduct.id;
 		twitchTransaction.handled_at = Instant.now().toString();
+		twitchTransaction.origin = TwitchTransactionOrigin.TEST;
 
-		streamerProduct.id = streamerProductId;
-		streamerProduct.ebsProductId = ebsProduct.id;
-		streamerProduct.twitchProductSku = twitchSku;
-		streamerProduct.name = "[TEST] "+ ebsProduct.name;
-		streamerProduct.duration = config.testRandomEventsDuration();
-		streamerProduct.cooldown = 0;
-
-		// register the unique streamer product for this single transaction
-		// and queue the transaction as we now have all the information configured
-		// to properly the Random Event in game
-
-		streamerProducts.add(streamerProduct);
 		queuedTransactions.add(twitchTransaction);
 	}
 
@@ -746,9 +798,9 @@ public class MarketplaceManager {
 				CopyOnWriteArrayList<EbsProduct> newEbsProducts = new CopyOnWriteArrayList<>();
 
 				// try-catch for every parse, to not let all products crash on one misconfiguration
-				products.forEach((element) -> {
+				products.forEach((product) -> {
 					try {
-						EbsProduct ebsProduct = gson.fromJson(element, EbsProduct.class);
+						EbsProduct ebsProduct = gson.fromJson(product, EbsProduct.class);
 						newEbsProducts.add(ebsProduct);
 					} catch (Exception exception) {
 						plugin.logSupport("Could not parse the raw EBS product to a valid product: ", exception);
@@ -762,6 +814,56 @@ public class MarketplaceManager {
 		} catch (Exception exception) {
 			plugin.logSupport("Could not fetch the new EBS products due to the following error: ", exception);
 		}
+	}
+
+	public void updateAsyncChannelPointRewards()
+	{
+
+		// guard: skip when already fetching
+		if (isFetchingChannelPointRewards)
+		{
+			return;
+		}
+
+		isFetchingChannelPointRewards = true;
+		twitchApi.fetchAsyncChannelPointRewards(
+			(response) -> {
+				isFetchingChannelPointRewards = false;
+				JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
+				JsonArray rewards = result.getAsJsonArray("data");
+
+				// guard: check if the rewards could be fetched
+				if (rewards == null)
+				{
+					plugin.logSupport("Could not find any valid Channel Point Rewards.");
+					return;
+				}
+
+				CopyOnWriteArrayList<ChannelPointReward> newChannelPointRewards = new CopyOnWriteArrayList<>();
+
+				// try-catch for every parse, to not let all products crash on one misconfiguration
+				rewards.forEach((reward) -> {
+					try {
+						ChannelPointReward channelPointReward = gson.fromJson(reward, ChannelPointReward.class);
+
+						// guard: skip any rewards that are not enabled
+						if (!channelPointReward.is_enabled)
+						{
+							return;
+						}
+
+						newChannelPointRewards.add(channelPointReward);
+					} catch (Exception exception) {
+						plugin.logSupport("Could not parse the raw Channel Point Reward: ", exception);
+					}
+				});
+
+				channelPointRewards = newChannelPointRewards;
+			},
+			(error) -> {
+				isFetchingChannelPointRewards = false;
+			}
+		);
 	}
 
 	/**
@@ -781,7 +883,7 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Get a copied copy of the streamer products list to prevent mutations
+	 * Get a copy of the streamer products list to prevent mutations
 	 */
 	public CopyOnWriteArrayList<StreamerProduct> getStreamerProducts()
 	{
@@ -789,7 +891,7 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Get a copied copy of the queued transactions list to prevent mutations
+	 * Get a copy of the queued transactions list to prevent mutations
 	 */
 	public CopyOnWriteArrayList<TwitchTransaction> getQueuedTransactions()
 	{
@@ -797,11 +899,19 @@ public class MarketplaceManager {
 	}
 
 	/**
-	 * Get a copied copy of the queued transactions list to prevent mutations
+	 * Get a copy of the queued transactions list to prevent mutations
 	 */
 	public CopyOnWriteArrayList<TwitchTransaction> getArchivedTransactions()
 	{
 		return new CopyOnWriteArrayList<>(archivedTransactions);
+	}
+
+	/**
+	 * Get a copy of the channel point rewards list to prevent mutations
+	 */
+	public CopyOnWriteArrayList<ChannelPointReward> getChannelPointRewards()
+	{
+		return new CopyOnWriteArrayList<>(channelPointRewards);
 	}
 
 	/**
@@ -909,6 +1019,75 @@ public class MarketplaceManager {
 		menuManager.onMenuOptionClicked(event);
 	}
 
+	public void onMenuOpened(MenuOpened event)
+	{
+		Point mouseCanvasPoint = client.getMouseCanvasPosition();
+		int firstAvailableMenuEntryIndex = 0;
+
+		for (int menuEntryIndex = 0; menuEntryIndex < client.getMenuEntries().length; menuEntryIndex++)
+		{
+			if (client.getMenuEntries()[menuEntryIndex].getOption().equals("Cancel"))
+			{
+				firstAvailableMenuEntryIndex = menuEntryIndex + 1;
+				break;
+			}
+		}
+
+		int finalFirstAvailableMenuEntryIndex = firstAvailableMenuEntryIndex;
+		spawnManager.handleAllSpawnedObjects((spawnedObject) -> {
+			MarketplaceProduct product = spawnedObject.getProduct();
+			ArrayList<EbsMenuEntry> menuEntries = spawnedObject.getModelSet().menuEntries;
+
+			if (menuEntries == null || menuEntries.size() <= 0)
+			{
+				return;
+			}
+
+			// only calculate the polygon when there are menu entries
+			SimplePolygon polygon = spawnedObject.calculatePolygon();
+
+			// guard: skip when not in poly
+			if (!polygon.contains(mouseCanvasPoint.getX(), mouseCanvasPoint.getY()))
+			{
+				return;
+			}
+
+			// add all menu entries in reverse order to make sure they are displayed correctly
+			for (EbsMenuEntry menuEntry : menuEntries)
+			{
+				String option = menuEntry.option;
+				String target = menuEntry.target;
+				ArrayList<EbsEffect> onClickEffects = menuEntry.onClickEffects;
+				String formattedOption = MarketplaceMessages.formatMessage(option, product, null);
+				String formattedTarget = MarketplaceMessages.formatMessage(target, product, null);
+
+				// guard: make sure the entry is valid
+				if (option == null || target == null || option.isEmpty() || target.isEmpty())
+				{
+					continue;
+				}
+
+				client.createMenuEntry(finalFirstAvailableMenuEntryIndex)
+					.setOption(formattedOption)
+					.setTarget(formattedTarget)
+					.onClick((callback) -> {
+
+						// guard: skip triggering the effects when the product is not active anymore
+						if (!product.isActive())
+						{
+							return;
+						}
+
+						product.triggerEffects(onClickEffects, spawnedObject, 0);
+					})
+					.setType(MenuAction.RUNELITE)
+					.setParam0(0)
+					.setParam1(0)
+					.setDeprioritized(true);
+			}
+		});
+	}
+
 	private boolean passTimerOnce(MarketplaceTimer timer, Instant now)
 	{
 
@@ -935,11 +1114,25 @@ public class MarketplaceManager {
 	public StreamerProduct getStreamerProductByTransaction(TwitchTransaction transaction)
 	{
 		TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
+		boolean isTestTransaction = transaction.product_type.equals("TEST");
 
 		// guard: make sure the twitch product is valid
 		if (twitchProduct == null)
 		{
 			return null;
+		}
+
+		if (isTestTransaction)
+		{
+			StreamerProduct testStreamerProduct = new StreamerProduct();
+			testStreamerProduct.id = generateRandomTestId();
+			testStreamerProduct.ebsProductId = transaction.ebs_product_id;
+			testStreamerProduct.twitchProductSku = generateRandomTestId();
+			testStreamerProduct.name = "[TEST] "+ transaction.ebs_product_id;
+			testStreamerProduct.duration = config.testRandomEventsDuration();
+			testStreamerProduct.cooldown = 0;
+
+			return testStreamerProduct;
 		}
 
 		String twitchProductSku = twitchProduct.sku;
@@ -998,6 +1191,24 @@ public class MarketplaceManager {
 		return null;
 	}
 
+	private ChannelPointReward getChannelPointRewardById(String channelPointRewardId)
+	{
+		Iterator<ChannelPointReward> iterator = channelPointRewards.iterator();
+
+		while(iterator.hasNext())
+		{
+			ChannelPointReward candidateProduct = iterator.next();
+
+			// guard: check if a match is found
+			if (channelPointRewardId.equals(candidateProduct.id))
+			{
+				return candidateProduct;
+			}
+		}
+
+		return null;
+	}
+
 	/**
 	 * Force stop all active products
 	 */
@@ -1037,6 +1248,59 @@ public class MarketplaceManager {
 	public void handleActiveProducts(LambdaIterator.ValueHandler<MarketplaceProduct> handler)
 	{
 		LambdaIterator.handleAll(activeProducts, handler);
+	}
+
+	public void enableTestMode()
+	{
+		testModeActivatedAt = Instant.now();
+	}
+
+	public void disableTestMode()
+	{
+		testModeActivatedAt = null;
+	}
+
+	public boolean isTestModeActive()
+	{
+
+		// in development allow testing when config enables it as well
+		// this is an easy permanent testing mode setup
+		if (IN_DEVELOPMENT && config.testRandomEventsEnabled())
+		{
+			return true;
+		}
+
+		return testModeActivatedAt != null && Instant.now().minusSeconds(TEST_MODE_EXPIRY_TIME_S).isBefore(testModeActivatedAt);
+	}
+
+	public void enableChaosMode()
+	{
+		chaosModeActivatedAt = Instant.now();
+	}
+
+	public void disableChaosMode()
+	{
+		chaosModeActivatedAt = null;
+	}
+
+	public boolean isChaosModeActive()
+	{
+		return chaosModeActivatedAt != null && Instant.now().minusSeconds(CHAOS_MODE_EXPIRY_TIME_S).isBefore(chaosModeActivatedAt);
+	}
+
+	public void enableFreeMode()
+	{
+		freeModeActivatedAt = Instant.now();
+	}
+
+	public void disableFreeMode()
+	{
+		freeModeActivatedAt = null;
+	}
+
+	public boolean isFreeModeActive()
+	{
+		return freeModeActivatedAt != null && Instant.now().minusSeconds(FREE_MODE_EXPIRY_TIME_S).isBefore(freeModeActivatedAt);
 	}
 
 	/**

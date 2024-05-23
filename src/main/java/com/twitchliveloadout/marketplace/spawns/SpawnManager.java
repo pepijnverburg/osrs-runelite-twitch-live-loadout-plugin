@@ -23,6 +23,7 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 public class SpawnManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
+	private final MarketplaceManager manager;
 
 	/**
 	 * Lookup to see which world points are taken for future spawns
@@ -34,10 +35,11 @@ public class SpawnManager {
 	 */
 	private EvictingQueue<WorldPoint> playerLocationHistory = EvictingQueue.create(PLAYER_TILE_HISTORY_SIZE);
 
-	public SpawnManager(TwitchLiveLoadoutPlugin plugin, Client client)
+	public SpawnManager(TwitchLiveLoadoutPlugin plugin, Client client, MarketplaceManager manager)
 	{
 		this.plugin = plugin;
 		this.client = client;
+		this.manager = manager;
 	}
 
 	/**
@@ -258,6 +260,12 @@ public class SpawnManager {
 		Boolean avoidInvalidOverlay = placement.avoidInvalidOverlay;
 		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
 
+		if (manager.isChaosModeActive())
+		{
+			// only multiply the maximum radius, because we want to keep the minimum intact
+			maxRadius *= manager.getConfig().chaosModeRangeMultiplier();
+		}
+
 		// check if we should change the reference to the previous tile
 		// NOTE: current tile is not needed to be handled, because this is the default!
 		if (PREVIOUS_TILE_LOCATION_TYPE.equals(locationType))
@@ -381,7 +389,7 @@ public class SpawnManager {
 				}
 
 				// guard: make sure the tile is in line of sight
-				if (inLineOfSight && !playerArea.hasLineOfSightTo(client, worldPoint))
+				if (inLineOfSight && !playerArea.hasLineOfSightTo(client.getTopLevelWorldView(), worldPoint))
 				{
 					continue;
 				}

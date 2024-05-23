@@ -4,6 +4,8 @@ import com.google.gson.*;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.marketplace.products.ChannelPointReward;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import com.twitchliveloadout.ui.CanvasListener;
 import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
@@ -13,6 +15,7 @@ import net.runelite.api.*;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
@@ -40,6 +43,7 @@ public class TwitchState {
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
+	private final TwitchEventSubClient twitchEventSubClient;
 	private final CanvasListener canvasListener;
 	private final Gson gson;
 
@@ -79,10 +83,11 @@ public class TwitchState {
 	private final static int WAS_IN_TOA_DEBOUNCE = 20 * 1000; // ms
 	private Instant lastWasInToA;
 
-	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, CanvasListener canvasListener, Gson gson)
+	public TwitchState(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, TwitchEventSubClient twitchEventSubClient, CanvasListener canvasListener, Gson gson)
 	{
 		this.plugin = plugin;
 		this.config = config;
+		this.twitchEventSubClient = twitchEventSubClient;
 		this.canvasListener = canvasListener;
 		this.gson = gson;
 
@@ -123,6 +128,11 @@ public class TwitchState {
 		}
 
 		currentState.addProperty(TwitchStateEntry.ACCOUNT_TYPE.getKey(), accountType.getKey());
+	}
+
+	public void setRegionId(int regionId)
+	{
+		currentState.addProperty(TwitchStateEntry.REGION_ID.getKey(), regionId);
 	}
 
 	public void setOverlayTopPosition(int overlayTopPosition)
@@ -504,6 +514,27 @@ public class TwitchState {
 			state.addProperty(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey(), invocationsRaidLevel);
 		}
 
+		if (currentCyclicEntry == TwitchStateEntry.CHANNEL_POINT_REWARDS)
+		{
+			// add all channel point rewards in one go with data filtered from them
+			JsonArray simpleChannelPointRewards = new JsonArray();
+			CopyOnWriteArrayList<ChannelPointReward> channelPointRewards =  plugin.getMarketplaceManager().getChannelPointRewards();
+
+			for (ChannelPointReward channelPointReward : channelPointRewards)
+			{
+				JsonObject simpleChannelPointReward = new JsonObject();
+
+				// only add these three properties to conserve on data usage
+				simpleChannelPointReward.addProperty("id", channelPointReward.id);
+				simpleChannelPointReward.addProperty("title", channelPointReward.title);
+				simpleChannelPointReward.addProperty("cost", channelPointReward.cost);
+
+				simpleChannelPointRewards.add(simpleChannelPointReward);
+			}
+
+			state.add(TwitchStateEntry.CHANNEL_POINT_REWARDS.getKey(), simpleChannelPointRewards);
+		}
+
 		return state;
 	}
 
@@ -607,8 +638,15 @@ public class TwitchState {
 			currentCyclicSliceIndex = 0;
 		}
 
-		// after invocations we go back to the bank
+		// after invocations we go back to the channel point rewards
 		else if (currentCyclicEntry == TwitchStateEntry.INVOCATIONS)
+		{
+			currentCyclicEntry = TwitchStateEntry.CHANNEL_POINT_REWARDS;
+			currentCyclicSliceIndex = 0;
+		}
+
+		// after the channel point rewards go to the bank
+		else if (currentCyclicEntry == TwitchStateEntry.CHANNEL_POINT_REWARDS)
 		{
 			currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 			currentCyclicSliceIndex = 0;
@@ -618,6 +656,7 @@ public class TwitchState {
 	private JsonObject verifyClientActivityStatus(JsonObject state)
 	{
 		final JsonElement accountHashElement = state.get(TwitchStateEntry.ACCOUNT_HASH.getKey());
+		final JsonElement channelPointRewardsElement = state.get(TwitchStateEntry.CHANNEL_POINT_REWARDS.getKey());
 		final Long accountHash = (accountHashElement == null ? -1 : accountHashElement.getAsLong());
 
 		// only sync this account when a valid account hash
@@ -630,6 +669,13 @@ public class TwitchState {
 		if (!plugin.isLoggedIn(true))
 		{
 			state = new JsonObject();
+		}
+
+		// we need to make one exception for the cyclic state of the Channel Point Rewards
+		// that should be synced regardless of whether we are logged in or not
+		// TODO: look into refactor as this feels a bit weird to place here as one exception...
+		if (channelPointRewardsElement != null) {
+			state.add(TwitchStateEntry.CHANNEL_POINT_REWARDS.getKey(), channelPointRewardsElement);
 		}
 
 		return state;
@@ -657,9 +703,13 @@ public class TwitchState {
 		MarketplaceManager marketplaceManager = plugin.getMarketplaceManager();
 		boolean isEnabled = config.marketplaceEnabled();
 		boolean isActive = marketplaceManager != null && marketplaceManager.isActive() && !marketplaceManager.isFetchingEbsTransactionsErrored();
+		boolean channelEventsActive = config.marketplaceChannelEventsEnabled() && twitchEventSubClient.isConnected() && !config.twitchOAuthAccessToken().isEmpty() && !config.twitchOAuthRefreshToken().isEmpty();
+		boolean isTestModeActive = marketplaceManager != null && marketplaceManager.isTestModeActive();
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ACTIVE.getKey(), isActive);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_CHANNEL_EVENTS_ACTIVE.getKey(), channelEventsActive);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_TEST_MODE_ACTIVE.getKey(), isTestModeActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_PROTECTION_ENABLED.getKey(), config.marketplaceProtectionEnabled());
 		state.addProperty(TwitchStateEntry.SHARED_COOLDOWN.getKey(), config.marketplaceSharedCooldownS());
 		return state;

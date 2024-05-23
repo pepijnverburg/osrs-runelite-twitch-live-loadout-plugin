@@ -13,7 +13,10 @@ import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
+import com.twitchliveloadout.twitch.TwitchState;
+import com.twitchliveloadout.twitch.TwitchStateEntry;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -680,6 +683,12 @@ public class MarketplaceProduct
 		ArrayList<EbsSpawn> spawns = spawnOption.spawns;
 		String spawnPointType = spawnOption.spawnPointType;
 
+		// multiply the spawn amount when chaos mode is activate
+		if (manager.isChaosModeActive())
+		{
+			spawnGroupAmount *= manager.getConfig().chaosModeSpawnMultiplier();
+		}
+
 		// guard: make sure the spawn behaviours are valid
 		if (spawns == null)
 		{
@@ -698,10 +707,11 @@ public class MarketplaceProduct
 		}
 
 		// make sure spawning is on client thread for e.g. using client instance
+		int finalSpawnGroupAmount = spawnGroupAmount;
 		manager.getPlugin().runOnClientThread(() -> {
 
 			// execute the spawn for the requested amount of times along with all spawn behaviours
-			for (int spawnGroupIndex = 0; spawnGroupIndex < spawnGroupAmount; spawnGroupIndex++)
+			for (int spawnGroupIndex = 0; spawnGroupIndex < finalSpawnGroupAmount; spawnGroupIndex++)
 			{
 
 				// spawn points can be shared between spawns depending on the settings
@@ -997,8 +1007,11 @@ public class MarketplaceProduct
 		String stateKey = condition.stateKey;
 		String stateValue = condition.stateValue;
 		Double chance = condition.chance;
+		String combatStyle = condition.combatStyle;
+		Integer regionId = condition.regionId;
 		ArrayList<EbsCondition> orConditions = condition.or;
 		ArrayList<EbsCondition> andConditions = condition.and;
+		ArrayList<EbsCondition> notConditions = condition.not;
 		boolean orConditionsVerified = false;
 
 		// guard: check if the chance is passed
@@ -1031,6 +1044,18 @@ public class MarketplaceProduct
 			return false;
 		}
 
+		// guard: check whether a specific combat style is requested
+		if (combatStyle != null && !manager.getFightStateManager().isCurrentCombatStyle(combatStyle))
+		{
+			return false;
+		}
+
+		// guard: check whether a specific region is requested
+		if (regionId != null && regionId != manager.getCurrentRegionId())
+		{
+			return false;
+		}
+
 		// guard: check for max spawns in view
 		if (maxSpawnsInView > 0 && countSpawnedObjectsInView(maxSpawnsInViewRadius) > maxSpawnsInView)
 		{
@@ -1055,6 +1080,20 @@ public class MarketplaceProduct
 			for (EbsCondition andCondition : andConditions)
 			{
 				if (!verifyCondition(andCondition, spawnedObject))
+				{
+					return false;
+				}
+			}
+		}
+
+		// check if one NOT condition is not valid to set to false
+		// the collection is handled as an AND statement on the root-level of the NOT conditions
+		if (notConditions != null)
+		{
+			for (EbsCondition notCondition : notConditions)
+			{
+				// NOTE: when verified we will set to false
+				if (verifyCondition(notCondition, spawnedObject))
 				{
 					return false;
 				}
