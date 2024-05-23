@@ -28,6 +28,7 @@ import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.items.ItemStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.twitch.TwitchThemeEntry;
+import com.twitchliveloadout.twitch.TwitchVisibilityEntry;
 import net.runelite.client.config.*;
 
 @ConfigGroup("twitchstreamer")
@@ -53,8 +54,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static int MAX_OVERLAY_TOP_POSITION = 75;
 
 	@ConfigSection(
-			name = "Twitch Extension & Tokens",
-			description = "Authentication and extension configuration.",
+			name = "Twitch Extension",
+			description = "Authentication and layout config for the extension on Twitch.",
 			position = 0
 	)
 	String twitchSection = "twitch";
@@ -78,7 +79,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	@ConfigItem(
 			keyName = "overlayTopPosition",
-			name = "Overlay top position",
+			name = "Vertical position",
 			description = "The position from the top left of the overlay in % of the screen height. Should be between "+ MIN_OVERLAY_TOP_POSITION +" and "+ MAX_OVERLAY_TOP_POSITION +".",
 			position = 4,
 			section = twitchSection
@@ -91,7 +92,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "twitchTheme",
-			name = "Twitch Extension Theme",
+			name = "Extension theme",
 			description = "The theme of the Twitch Extension interface for viewers",
 			position = 6,
 			section = twitchSection
@@ -101,14 +102,47 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return TwitchThemeEntry.LIGHT;
 	}
 
+	@ConfigItem(
+			keyName = "twitchVisibility",
+			name = "Extension visibility",
+			description = "Always show extension or only when viewers hover the video stream",
+			position = 8,
+			hidden = false,
+			section = twitchSection
+	)
+	default TwitchVisibilityEntry twitchVisibility()
+	{
+		return TwitchVisibilityEntry.NORMAL;
+	}
+
+	@ConfigSection(
+			name = "Channel Events (optional)",
+			description = "Authentication and configuration for channel events, such as follows, subs, etc.",
+			position = 1,
+			closedByDefault = true
+	)
+	String channelEventsSection = "channel-events";
+
+	@ConfigItem(
+			keyName = "marketplaceChannelEventsEnabled",
+			name = "Enable Channel Events",
+			description = "Enable listening to channel events, such as follows and subs to activate Random Events",
+			position = 1,
+			hidden = false,
+			section = channelEventsSection
+	)
+	default boolean marketplaceChannelEventsEnabled()
+	{
+		return true;
+	}
 
 	@ConfigItem(
 			keyName = TWITCH_OAUTH_ACCESS_TOKEN_KEY,
 			name = "Twitch Channel Token (optional)",
 			description = "Optional token to access events such as channel point redeems, subscriptions, etc.",
 			secret = true,
-			position = 8,
-			section = twitchSection
+			position = 2,
+			section = channelEventsSection
 	)
 	default String twitchOAuthAccessToken()
 	{
@@ -120,12 +154,191 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Twitch Channel Refresh Token (optional)",
 			description = "Optional refresh token to access events such as channel point redeems, subscriptions, etc.",
 			secret = true,
-			position = 10,
-			section = twitchSection
+			position = 4,
+			section = channelEventsSection
 	)
 	default String twitchOAuthRefreshToken()
 	{
 		return "";
+	}
+
+	@ConfigItem(
+			keyName = "enableFollowEventMessage",
+			name = "Enable follow message",
+			description = "Enable message shown when there is a new channel follower.",
+			position = 12,
+			section = channelEventsSection
+	)
+	default boolean enableFollowEventMessage()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "channelEventOverheadMessageEnabled",
+			name = "Overhead event message",
+			description = "Enable event message as overhead text.",
+			position = 13,
+			section = channelEventsSection
+	)
+	default boolean channelEventOverheadMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "channelEventChatMessageEnabled",
+			name = "Chat event message",
+			description = "Enable event message as a chat message.",
+			position = 13,
+			section = channelEventsSection
+	)
+	default boolean channelEventChatMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "channelEventPopupMessageEnabled",
+			name = "Pop-up event message",
+			description = "Enable event message as a pop-up.",
+			position = 13,
+			section = channelEventsSection
+	)
+	default boolean channelEventPopupMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "followEventMessage",
+			name = "Message on follow",
+			description = "Message shown when there is a new channel follower.",
+			position = 14,
+			section = channelEventsSection
+	)
+	default String followEventMessage()
+	{
+		return "Thanks {viewerName} for following!";
+	}
+
+	@ConfigItem(
+			keyName = "channelPointsRedeemEventMessage",
+			name = "Message on channel point redeem",
+			description = "Message shown when there is a channel point redeem.",
+			position = 14,
+			section = channelEventsSection
+	)
+	default String channelPointsRedeemEventMessage()
+	{
+		return "Thanks {viewerName} for redeeming!";
+	}
+
+	@ConfigItem(
+			keyName = "newSubscriptionEventMessage",
+			name = "Message on new sub",
+			description = "Message shown when there is a new channel subscription.",
+			position = 16,
+			section = channelEventsSection
+	)
+	default String newSubscriptionEventMessage()
+	{
+		return "Thanks {viewerName} for the sub!";
+	}
+
+	@ConfigItem(
+			keyName = "newResubscriptionEventMessage",
+			name = "Message on resub",
+			description = "Message shown when there is a resub.",
+			position = 18,
+			section = channelEventsSection
+	)
+	default String newResubscriptionEventMessage()
+	{
+		return "Thanks {viewerName} for the resub!";
+	}
+
+	@ConfigItem(
+			keyName = "giftSubscriptionEventMessage",
+			name = "Message on gift",
+			description = "Message shown when there is a gift subscription.",
+			position = 20,
+			section = channelEventsSection
+	)
+	default String giftSubscriptionEventMessage()
+	{
+		return "Thanks {viewerName} for the gifted!";
+	}
+
+	@ConfigItem(
+			keyName = "raidEventMessage",
+			name = "Message on raid",
+			description = "Message shown when you receive a raid.", position = 22,
+			section = channelEventsSection
+	)
+	default String raidEventMessage()
+	{
+		return "Thanks {viewerName} for the raid!";
+	}
+
+	@ConfigItem(
+			keyName = "addedModMessage",
+			name = "Message on mod added",
+			description = "Message shown a user is promoted to mod.",
+			position = 24,
+			section = channelEventsSection
+	)
+	default String addedModMessage()
+	{
+		return "Congrats {viewerName} with the promotion!";
+	}
+
+	@ConfigItem(
+			keyName = "removedModMessage",
+			name = "Message on mod removal",
+			description = "Message shown when a user is demoted from mod.",
+			position = 26,
+			section = channelEventsSection
+	)
+	default String removedModMessage()
+	{
+		return "No mod for you anymore, {viewerName}!";
+	}
+
+	@ConfigItem(
+			keyName = "beginHypeTrainMessage",
+			name = "Message on hype train begin",
+			description = "Message when a hype train begins",
+			position = 28,
+			section = channelEventsSection
+	)
+	default String beginHypeTrainMessage()
+	{
+		return "Thanks all for starting the hype train!";
+	}
+
+	@ConfigItem(
+			keyName = "progressHypeTrainMessage",
+			name = "Message on hype train progresses",
+			description = "Message when a hype train progresses in percentage or level.",
+			position = 30,
+			section = channelEventsSection
+	)
+	default String progressHypeTrainMessage()
+	{
+		return "Thanks all for continuing the hype train!";
+	}
+
+	@ConfigItem(
+			keyName = "endHypeTrainMessage",
+			name = "Message on hype train end",
+			description = "Message when a hype train ends.",
+			position = 32,
+			section = channelEventsSection
+	)
+	default String endHypeTrainMessage()
+	{
+		return "Thanks all for the hype train!";
 	}
 
 	@ConfigSection(
@@ -568,19 +781,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 			section = marketplaceSection
 	)
 	default boolean marketplaceEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "marketplaceChannelEventsEnabled",
-			name = "Include Twitch Channel Events",
-			description = "Enable listening to channel events, such as follows and subs to activate Random Events (requires additional authentication)",
-			position = 5,
-			hidden = false,
-			section = marketplaceSection
-	)
-	default boolean marketplaceChannelEventsEnabled()
 	{
 		return true;
 	}
