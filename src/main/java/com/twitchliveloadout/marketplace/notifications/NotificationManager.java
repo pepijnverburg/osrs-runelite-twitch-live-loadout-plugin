@@ -9,6 +9,8 @@ import com.twitchliveloadout.marketplace.MarketplaceMessages;
 import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
+import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -157,6 +159,12 @@ public class NotificationManager {
 
 		String message = getMessage(notification);
 
+		// guard: check if the message is valid
+		if (message.isEmpty())
+		{
+			return;
+		}
+
 		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
 			.append(ChatColorType.HIGHLIGHT)
 			.append(message)
@@ -182,6 +190,12 @@ public class NotificationManager {
 		Player player = client.getLocalPlayer();
 		String message = getMessage(notification);
 		int overheadTextDurationMs = config.marketplaceOverheadTextDurationS() * 1000;
+
+		// guard: check if the message is valid
+		if (message.isEmpty())
+		{
+			return;
+		}
 
 		// guard: skip on invalid player
 		if (player == null)
@@ -213,10 +227,17 @@ public class NotificationManager {
 			return;
 		}
 
-		var hasCustomTitle = null != notification.ebsNotification.popupTitle;
+		boolean hasCustomTitle = null != notification.ebsNotification.popupTitle;
 		plugin.runOnClientThread(() -> {
 			try {
 				String message = getMessage(notification);
+
+				// guard: check if the message is valid
+				if (message.isEmpty())
+				{
+					return;
+				}
+
 				WidgetNode widgetNode = client.openInterface((161 << 16) | 13, 660, WidgetModalMode.MODAL_CLICKTHROUGH);
 				client.runScript(3343, hasCustomTitle ? notification.ebsNotification.popupTitle : POPUP_NOTIFICATION_TITLE, message, -1);
 
@@ -268,15 +289,28 @@ public class NotificationManager {
 		}
 
 		final TwitchProduct twitchProduct = marketplaceProduct.getTwitchProduct();
+		final TwitchTransaction twitchTransaction = marketplaceProduct.getTransaction();
+		final TwitchEventSubType eventSubType = twitchTransaction.eventSubType;
 
 		if (message == null)
 		{
 			if (twitchProduct == null) {
 				message = "Thank you {viewerName}!";
 			} else {
-				message = config.marketplaceDefaultDonationMessage();
 
-				// when chat messages are sent prefix them with the name of the event
+				// get the message from the channel event sub type
+				if (eventSubType != null)
+				{
+					message = eventSubType.getConfigValueGetter().execute(config);
+				}
+
+				// fallback to the default message when none is found
+				if (message == null)
+				{
+					message = config.marketplaceDefaultDonationMessage();
+				}
+
+				// when default chat messages are sent prefix them with the name of the event
 				if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(notification.ebsNotification.messageType))
 				{
 					String name = notification.marketplaceProduct.getStreamerProduct().name;

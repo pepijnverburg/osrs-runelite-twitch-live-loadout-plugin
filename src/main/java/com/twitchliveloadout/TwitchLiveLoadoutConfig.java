@@ -116,232 +116,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigSection(
-			name = "Channel Events (optional)",
-			description = "Authentication and configuration for channel events, such as follows, subs, etc.",
-			position = 1,
-			closedByDefault = true
-	)
-	String channelEventsSection = "channel-events";
-
-	@ConfigItem(
-			keyName = "marketplaceChannelEventsEnabled",
-			name = "Enable Channel Events",
-			description = "Enable listening to channel events, such as follows and subs to activate Random Events",
-			position = 1,
-			hidden = false,
-			section = channelEventsSection
-	)
-	default boolean marketplaceChannelEventsEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = TWITCH_OAUTH_ACCESS_TOKEN_KEY,
-			name = "Twitch Channel Token (optional)",
-			description = "Optional token to access events such as channel point redeems, subscriptions, etc.",
-			secret = true,
-			position = 2,
-			section = channelEventsSection
-	)
-	default String twitchOAuthAccessToken()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-			keyName = TWITCH_OAUTH_REFRESH_TOKEN_KEY,
-			name = "Twitch Channel Refresh Token (optional)",
-			description = "Optional refresh token to access events such as channel point redeems, subscriptions, etc.",
-			secret = true,
-			position = 4,
-			section = channelEventsSection
-	)
-	default String twitchOAuthRefreshToken()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-			keyName = "enableFollowEventMessage",
-			name = "Enable follow message",
-			description = "Enable message shown when there is a new channel follower.",
-			position = 12,
-			section = channelEventsSection
-	)
-	default boolean enableFollowEventMessage()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "channelEventOverheadMessageEnabled",
-			name = "Overhead event message",
-			description = "Enable event message as overhead text.",
-			position = 13,
-			section = channelEventsSection
-	)
-	default boolean channelEventOverheadMessageEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "channelEventChatMessageEnabled",
-			name = "Chat event message",
-			description = "Enable event message as a chat message.",
-			position = 13,
-			section = channelEventsSection
-	)
-	default boolean channelEventChatMessageEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "channelEventPopupMessageEnabled",
-			name = "Pop-up event message",
-			description = "Enable event message as a pop-up.",
-			position = 13,
-			section = channelEventsSection
-	)
-	default boolean channelEventPopupMessageEnabled()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-			keyName = "followEventMessage",
-			name = "Message on follow",
-			description = "Message shown when there is a new channel follower.",
-			position = 14,
-			section = channelEventsSection
-	)
-	default String followEventMessage()
-	{
-		return "Thanks {viewerName} for following!";
-	}
-
-	@ConfigItem(
-			keyName = "channelPointsRedeemEventMessage",
-			name = "Message on channel point redeem",
-			description = "Message shown when there is a channel point redeem.",
-			position = 14,
-			section = channelEventsSection
-	)
-	default String channelPointsRedeemEventMessage()
-	{
-		return "Thanks {viewerName} for redeeming!";
-	}
-
-	@ConfigItem(
-			keyName = "newSubscriptionEventMessage",
-			name = "Message on new sub",
-			description = "Message shown when there is a new channel subscription.",
-			position = 16,
-			section = channelEventsSection
-	)
-	default String newSubscriptionEventMessage()
-	{
-		return "Thanks {viewerName} for the sub!";
-	}
-
-	@ConfigItem(
-			keyName = "newResubscriptionEventMessage",
-			name = "Message on resub",
-			description = "Message shown when there is a resub.",
-			position = 18,
-			section = channelEventsSection
-	)
-	default String newResubscriptionEventMessage()
-	{
-		return "Thanks {viewerName} for the resub!";
-	}
-
-	@ConfigItem(
-			keyName = "giftSubscriptionEventMessage",
-			name = "Message on gift",
-			description = "Message shown when there is a gift subscription.",
-			position = 20,
-			section = channelEventsSection
-	)
-	default String giftSubscriptionEventMessage()
-	{
-		return "Thanks {viewerName} for the gifted!";
-	}
-
-	@ConfigItem(
-			keyName = "raidEventMessage",
-			name = "Message on raid",
-			description = "Message shown when you receive a raid.", position = 22,
-			section = channelEventsSection
-	)
-	default String raidEventMessage()
-	{
-		return "Thanks {viewerName} for the raid!";
-	}
-
-	@ConfigItem(
-			keyName = "addedModMessage",
-			name = "Message on mod added",
-			description = "Message shown a user is promoted to mod.",
-			position = 24,
-			section = channelEventsSection
-	)
-	default String addedModMessage()
-	{
-		return "Congrats {viewerName} with the promotion!";
-	}
-
-	@ConfigItem(
-			keyName = "removedModMessage",
-			name = "Message on mod removal",
-			description = "Message shown when a user is demoted from mod.",
-			position = 26,
-			section = channelEventsSection
-	)
-	default String removedModMessage()
-	{
-		return "No mod for you anymore, {viewerName}!";
-	}
-
-	@ConfigItem(
-			keyName = "beginHypeTrainMessage",
-			name = "Message on hype train begin",
-			description = "Message when a hype train begins",
-			position = 28,
-			section = channelEventsSection
-	)
-	default String beginHypeTrainMessage()
-	{
-		return "Thanks all for starting the hype train!";
-	}
-
-	@ConfigItem(
-			keyName = "progressHypeTrainMessage",
-			name = "Message on hype train progresses",
-			description = "Message when a hype train progresses in percentage or level.",
-			position = 30,
-			section = channelEventsSection
-	)
-	default String progressHypeTrainMessage()
-	{
-		return "Thanks all for continuing the hype train!";
-	}
-
-	@ConfigItem(
-			keyName = "endHypeTrainMessage",
-			name = "Message on hype train end",
-			description = "Message when a hype train ends.",
-			position = 32,
-			section = channelEventsSection
-	)
-	default String endHypeTrainMessage()
-	{
-		return "Thanks all for the hype train!";
-	}
-
-	@ConfigSection(
 			name = "Data Syncing",
 			description = "Syncing conditions and multi-account settings",
 			position = 2
@@ -966,6 +740,270 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default int chaosModeRangeMultiplier()
 	{
 		return 2;
+	}
+
+
+	@ConfigSection(
+			name = "Channel Events",
+			description = "Authentication and configuration for channel events, such as follows, subs, etc.",
+			position = 5,
+			closedByDefault = true
+	)
+	String channelEventsSection = "channel-events";
+
+	@ConfigItem(
+			keyName = "marketplaceChannelEventsEnabled",
+			name = "Enable Channel Events",
+			description = "Enable listening to channel events, such as follows and subs to activate Random Events",
+			position = 1,
+			hidden = false,
+			section = channelEventsSection
+	)
+	default boolean marketplaceChannelEventsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = TWITCH_OAUTH_ACCESS_TOKEN_KEY,
+			name = "Twitch Channel Token (optional)",
+			description = "Optional token to access events such as channel point redeems, subscriptions, etc.",
+			secret = true,
+			position = 2,
+			section = channelEventsSection
+	)
+	default String twitchOAuthAccessToken()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+			keyName = TWITCH_OAUTH_REFRESH_TOKEN_KEY,
+			name = "Twitch Channel Refresh Token (optional)",
+			description = "Optional refresh token to access events such as channel point redeems, subscriptions, etc.",
+			secret = true,
+			position = 4,
+			section = channelEventsSection
+	)
+	default String twitchOAuthRefreshToken()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+			keyName = "channelEventOverheadMessageEnabled",
+			name = "Overhead event message",
+			description = "Enable event message as overhead text.",
+			position = 8,
+			section = channelEventsSection
+	)
+	default boolean channelEventOverheadMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "channelEventChatMessageEnabled",
+			name = "Chat event message",
+			description = "Enable event message as a chat message.",
+			position = 10,
+			section = channelEventsSection
+	)
+	default boolean channelEventChatMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "channelEventPopupMessageEnabled",
+			name = "Pop-up event message",
+			description = "Enable event message as a pop-up.",
+			position = 12,
+			section = channelEventsSection
+	)
+	default boolean channelEventPopupMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "followEventMessage",
+			name = "Message on follow",
+			description = "Message shown when there is a new channel follower.",
+			position = 14,
+			section = channelEventsSection
+	)
+	default String followEventMessage()
+	{
+		return "Thanks {viewerName} for following!";
+	}
+
+	@ConfigItem(
+			keyName = "channelPointsRedeemEventMessage",
+			name = "Message on channel point redeem",
+			description = "Message shown when there is a channel point redeem.",
+			position = 16,
+			section = channelEventsSection
+	)
+	default String channelPointsRedeemEventMessage()
+	{
+		return "Thanks {viewerName} for redeeming!";
+	}
+
+	@ConfigItem(
+			keyName = "newSubscriptionEventMessage",
+			name = "Message on new sub",
+			description = "Message shown when there is a new channel subscription.",
+			position = 18,
+			section = channelEventsSection
+	)
+	default String newSubscriptionEventMessage()
+	{
+		return "Thanks {viewerName} for the sub!";
+	}
+
+	@ConfigItem(
+			keyName = "newResubscriptionEventMessage",
+			name = "Message on resub",
+			description = "Message shown when there is a resub.",
+			position = 20,
+			section = channelEventsSection
+	)
+	default String newResubscriptionEventMessage()
+	{
+		return "Thanks {viewerName} for the resub!";
+	}
+
+	@ConfigItem(
+			keyName = "giftSubscriptionEventMessage",
+			name = "Message on gift",
+			description = "Message shown when there is a gift subscription.",
+			position = 22,
+			section = channelEventsSection
+	)
+	default String giftSubscriptionEventMessage()
+	{
+		return "Thanks {viewerName} for the gifted!";
+	}
+
+	@ConfigItem(
+			keyName = "raidEventMessage",
+			name = "Message on raid",
+			description = "Message shown when you receive a raid.",
+			position = 24,
+			section = channelEventsSection
+	)
+	default String raidEventMessage()
+	{
+		return "Thanks {viewerName} for the raid!";
+	}
+
+	@ConfigItem(
+			keyName = "addedModMessage",
+			name = "Message on mod added",
+			description = "Message shown a user is promoted to mod.",
+			position = 26,
+			section = channelEventsSection
+	)
+	default String addedModMessage()
+	{
+		return "Congrats {viewerName} with the promotion!";
+	}
+
+	@ConfigItem(
+			keyName = "removedModMessage",
+			name = "Message on mod removal",
+			description = "Message shown when a user is demoted from mod.",
+			position = 28,
+			section = channelEventsSection
+	)
+	default String removedModMessage()
+	{
+		return "No mod for you anymore, {viewerName}!";
+	}
+
+	@ConfigItem(
+			keyName = "beginHypeTrainMessage",
+			name = "Message on hype train begin",
+			description = "Message when a hype train begins",
+			position = 30,
+			section = channelEventsSection
+	)
+	default String beginHypeTrainMessage()
+	{
+		return "Thanks all for starting the hype train!";
+	}
+
+	@ConfigItem(
+			keyName = "progressHypeTrainMessage",
+			name = "Message on hype train progression",
+			description = "Message when a hype train progresses in percentage or level.",
+			position = 32,
+			section = channelEventsSection
+	)
+	default String progressHypeTrainMessage()
+	{
+		return "Thanks all for continuing the hype train!";
+	}
+
+	@ConfigItem(
+			keyName = "endHypeTrainMessage",
+			name = "Message on hype train end",
+			description = "Message when a hype train ends.",
+			position = 34,
+			section = channelEventsSection
+	)
+	default String endHypeTrainMessage()
+	{
+		return "Thanks all for the hype train!";
+	}
+
+	@ConfigItem(
+			keyName = "donateCharityCampaignMessage",
+			name = "Message on charity donation",
+			description = "Message when a charity campaign receives a donation.",
+			position = 36,
+			section = channelEventsSection
+	)
+	default String donateCharityCampaignMessage()
+	{
+		return "Thanks {viewerName} for donating {currencyAmount} {currencyType}!";
+	}
+
+	@ConfigItem(
+			keyName = "startCharityCampaignMessage",
+			name = "Message on charity start",
+			description = "Message when a charity campaign starts",
+			position = 38,
+			section = channelEventsSection
+	)
+	default String startCharityCampaignMessage()
+	{
+		return "Welcome to the charity campaign!";
+	}
+
+	@ConfigItem(
+			keyName = "progressCharityCampaignMessage",
+			name = "Message on charity progression",
+			description = "Message when a charity progresses in amount donated.",
+			position = 40,
+			section = channelEventsSection
+	)
+	default String progressCharityCampaignMessage()
+	{
+		return "Thanks all for donating up until now!";
+	}
+
+	@ConfigItem(
+			keyName = "stopCharityCampaignMessage",
+			name = "Message on charity end",
+			description = "Message when a charity campaign ends.",
+			position = 42,
+			section = channelEventsSection
+	)
+	default String stopCharityCampaignMessage()
+	{
+		return "Thanks all for donating to the charity! It's a wrap!";
 	}
 
 	@ConfigSection(

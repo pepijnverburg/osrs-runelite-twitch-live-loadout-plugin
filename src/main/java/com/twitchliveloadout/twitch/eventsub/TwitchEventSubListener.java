@@ -10,9 +10,7 @@ import com.twitchliveloadout.marketplace.products.TwitchProductCost;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransactionOrigin;
 import com.twitchliveloadout.twitch.TwitchApi;
-import com.twitchliveloadout.twitch.eventsub.messages.BaseUserInfo;
-import com.twitchliveloadout.twitch.eventsub.messages.ChannelPointsRedeem;
-import com.twitchliveloadout.twitch.eventsub.messages.ChannelPointsReward;
+import com.twitchliveloadout.twitch.eventsub.messages.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -73,6 +71,9 @@ public class TwitchEventSubListener {
             case CHANNEL_POINTS_REDEEM -> {
                 expandTransactionForChannelPointsRedeem(twitchTransaction, (ChannelPointsRedeem) message);
             }
+            case CHARITY_CAMPAIGN_DONATE -> {
+                expandTransactionForCharityCampaignDonation(twitchTransaction, (CharityCampaignDonate) message);
+            }
         }
 
         addTwitchTransaction(twitchTransaction);
@@ -90,6 +91,21 @@ public class TwitchEventSubListener {
         twitchProductCost.type = "channel points";
         twitchProduct.sku = reward.id;
         twitchProduct.displayName = reward.title;
+    }
+
+    private void expandTransactionForCharityCampaignDonation(TwitchTransaction twitchTransaction, CharityCampaignDonate donation)
+    {
+        CharityCampaignAmount amount = donation.amount;
+        String charityName = donation.charity_name;
+        TwitchProduct twitchProduct = twitchTransaction.product_data;
+        TwitchProductCost twitchProductCost = twitchProduct.cost;
+
+        // overrides specific for charity donations
+        twitchTransaction.id = donation.id;
+        twitchProductCost.amount = amount.value;
+        twitchProductCost.type = amount.currency;
+        twitchProduct.sku = donation.id;
+        twitchProduct.displayName = "Donation to "+ charityName;
     }
 
     private void addTwitchTransaction(TwitchTransaction transaction)

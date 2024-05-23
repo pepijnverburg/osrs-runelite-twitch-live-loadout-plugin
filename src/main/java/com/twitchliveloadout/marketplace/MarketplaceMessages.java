@@ -3,12 +3,14 @@ package com.twitchliveloadout.marketplace;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 
 public class MarketplaceMessages {
 	public static String formatMessage(String message, MarketplaceProduct marketplaceProduct, MarketplaceEffect marketplaceEffect)
 	{
 		TwitchTransaction transaction = (marketplaceProduct != null ? marketplaceProduct.getTransaction() : null);
 		TwitchProduct twitchProduct = (marketplaceProduct != null ? marketplaceProduct.getTwitchProduct() : null);
+		TwitchEventSubType eventSubType = null;
 		String viewerName = "viewer";
 		String channelName = "broadcaster";
 		String currencyAmount = "";
@@ -22,6 +24,7 @@ public class MarketplaceMessages {
 		{
 			viewerName = transaction.user_name;
 			channelName = transaction.broadcaster_name;
+			eventSubType = transaction.eventSubType;
 		}
 
 		if (twitchProduct != null)
@@ -50,6 +53,7 @@ public class MarketplaceMessages {
 		message = message.replaceAll("\\{productDurationLeft\\}", productDurationLeft);
 		message = message.replaceAll("\\{effectDuration\\}", effectDuration);
 		message = message.replaceAll("\\{effectDurationLeft\\}", effectDurationLeft);
+		message = message.trim();
 
 		return message;
 	}
