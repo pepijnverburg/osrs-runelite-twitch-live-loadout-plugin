@@ -381,7 +381,7 @@ public class SpawnManager {
 				}
 
 				// guard: make sure the tile is in line of sight
-				if (inLineOfSight && !playerArea.hasLineOfSightTo(client, worldPoint))
+				if (inLineOfSight && !playerArea.hasLineOfSightTo(client.getTopLevelWorldView(), worldPoint))
 				{
 					continue;
 				}
