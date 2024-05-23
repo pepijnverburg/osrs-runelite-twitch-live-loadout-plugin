@@ -45,6 +45,7 @@ import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -80,7 +81,7 @@ import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN
 /**
  * Manages polling and event listening mechanisms to synchronize the state
  * to the Twitch Configuration Service. All client data is fetched in this main entry point
- * and passed along to dedicated managers. Also you will see that this class if fairly 'polluted'
+ * and passed along to dedicated managers. Also you will see that this class is fairly 'polluted'
  * with try-catch statements. This helps making sure that any breaking changes to Oldschool Runescape and/or
  * RuneLite will less likely cause issues.
  *
@@ -498,10 +499,20 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					lastAccountIdentifier = accountIdentifier;
 				}
 
+				if (isLoggedIn())
+				{
+					int regionId = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation()).getRegionID();
+					twitchState.setRegionId(regionId);
+
+					// update state at the marketplace manager as well that should be accessible to products
+					marketplaceManager.setCurrentRegionId(regionId);
+				}
+
 				// update this information periodically because it is possible the plugin
 				// is being installed or activated after e.g. the AccountHashChanged event fires
 				twitchState.setAccountHash(accountHash);
 				twitchState.setAccountType(accountType);
+
 			});
 		} catch (Exception exception) {
 			logSupport("Could not sync player info to state due to the following error: ", exception);
@@ -683,7 +694,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 
 			if (!twitchEventSubClient.isConnected()) {
-				twitchEventSubClient.reconnect();
+				twitchEventSubClient.reconnect(TwitchEventSubClient.DEFAULT_TWITCH_WEBSOCKET_URL);
 			}
 		} catch (Exception exception) {
 			log.warn("Could not check the Twitch Event Sub client connection: ", exception);
@@ -1036,7 +1047,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					break;
 				case "twitchOAuthAccessToken":
 				case "twitchOAuthRefreshToken":
-					twitchEventSubClient.reconnect();
+					twitchEventSubClient.reconnect(TwitchEventSubClient.DEFAULT_TWITCH_WEBSOCKET_URL);
 					break;
 			}
 
@@ -1047,6 +1058,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			canvasListener.enableFocus();
 		} catch (Exception exception) {
 			log.warn("Could not handle config change event: ", exception);
+		}
+	}
+
+	@Subscribe
+	public void onMenuOpened(MenuOpened event)
+	{
+		try {
+			marketplaceManager.onMenuOpened(event);
+		} catch (Exception exception) {
+			logSupport("Could not menu opened event: ", exception);
 		}
 	}
 

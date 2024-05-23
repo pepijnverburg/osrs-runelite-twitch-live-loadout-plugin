@@ -23,6 +23,8 @@ public class EbsCondition {
 	public String stateValue = null;
 	public Double chance = 1d;
 	public String combatStyle = null;
+	public Integer regionId = null;
 	public ArrayList<EbsCondition> or;
 	public ArrayList<EbsCondition> and;
+	public ArrayList<EbsCondition> not;
 }
