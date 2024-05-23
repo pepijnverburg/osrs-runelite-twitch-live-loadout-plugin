@@ -8,4 +8,5 @@ public class EbsModelSet {
 	public Integer scalePerOneTile;
 	public ArrayList<EbsRecolor> recolors;
 	public EbsTranslation translation;
+	public ArrayList<EbsMenuEntry> menuEntries;
 }
