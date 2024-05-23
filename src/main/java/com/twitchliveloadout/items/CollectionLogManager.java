@@ -8,7 +8,6 @@ import net.runelite.api.Client;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.events.NpcLootReceived;
 
 import java.util.concurrent.CopyOnWriteArrayList;
