@@ -8,6 +8,7 @@ public enum TwitchStateEntry {
 	ACCOUNT_HASH("accountHash"),
 	ACCOUNT_TYPE("accountType"),
 	PLAYER_NAME("playerName"),
+	REGION_ID("regionId"),
 	INVENTORY_ITEMS("inventory", true),
 	INVENTORY_PRICE("inventoryPrice", true),
 	EQUIPMENT_ITEMS("equipment", true),

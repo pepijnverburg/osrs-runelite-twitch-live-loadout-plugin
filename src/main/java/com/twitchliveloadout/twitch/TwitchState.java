@@ -130,6 +130,11 @@ public class TwitchState {
 		currentState.addProperty(TwitchStateEntry.ACCOUNT_TYPE.getKey(), accountType.getKey());
 	}
 
+	public void setRegionId(int regionId)
+	{
+		currentState.addProperty(TwitchStateEntry.REGION_ID.getKey(), regionId);
+	}
+
 	public void setOverlayTopPosition(int overlayTopPosition)
 	{
 		if (overlayTopPosition < MIN_OVERLAY_TOP_POSITION)
