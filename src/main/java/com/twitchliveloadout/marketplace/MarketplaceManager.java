@@ -25,12 +25,17 @@ import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
 import net.runelite.api.Player;
+import net.runelite.api.Point;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.PlayerChanged;
+import net.runelite.api.geometry.SimplePolygon;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -50,6 +55,7 @@ public class MarketplaceManager {
 	@Getter
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchApi twitchApi;
+	@Getter
 	private final TwitchState twitchState;
 
 	@Getter
@@ -162,6 +168,13 @@ public class MarketplaceManager {
 	 */
 	private int currentTestEbsProductIndex = 0;
 	private Instant lastEbsProductTestedAt;
+
+	/**
+	 * Several states that are needed for various product effects / conditions
+	 */
+	@Getter
+	@Setter
+	private int currentRegionId = 0;
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson, FightStateManager fightStateManager)
 	{
@@ -372,13 +385,12 @@ public class MarketplaceManager {
 				// any incoming donations
 				if (requiredModelPlacement != null)
 				{
-
 					SpawnPoint spawnPoint = spawnManager.getSpawnPoint(requiredModelPlacement, null);
 
 					// guard: continue with the queue and don't remove from queue because we will wait for a valid spawn point
 					if (spawnPoint == null)
 					{
-						//log.info("Skipping transaction because required model placement could not be satisfied: "+ transaction.id);
+						plugin.logSupport("Skipping transaction because required model placement could not be satisfied: "+ transaction.id);
 						continue;
 					}
 				}
@@ -444,7 +456,7 @@ public class MarketplaceManager {
 						queuedTransactions.add(transaction);
 					}
 
-					log.info("It is skipped, because it has already expired at: " + newProduct.getExpiredAt());
+					log.info("It is skipped, because it has already expired at: "+ newProduct.getExpiredAt());
 					continue;
 				}
 
@@ -479,8 +491,8 @@ public class MarketplaceManager {
 	public void rerunTransaction(TwitchTransaction transaction)
 	{
 
-		// guard: make sure the transaction is valid
-		if (transaction == null)
+		// guard: make sure the transaction is valid and not queued yet
+		if (transaction == null || queuedTransactions.contains(transaction))
 		{
 			return;
 		}
@@ -1005,6 +1017,75 @@ public class MarketplaceManager {
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
 		menuManager.onMenuOptionClicked(event);
+	}
+
+	public void onMenuOpened(MenuOpened event)
+	{
+		Point mouseCanvasPoint = client.getMouseCanvasPosition();
+		int firstAvailableMenuEntryIndex = 0;
+
+		for (int menuEntryIndex = 0; menuEntryIndex < client.getMenuEntries().length; menuEntryIndex++)
+		{
+			if (client.getMenuEntries()[menuEntryIndex].getOption().equals("Cancel"))
+			{
+				firstAvailableMenuEntryIndex = menuEntryIndex + 1;
+				break;
+			}
+		}
+
+		int finalFirstAvailableMenuEntryIndex = firstAvailableMenuEntryIndex;
+		spawnManager.handleAllSpawnedObjects((spawnedObject) -> {
+			MarketplaceProduct product = spawnedObject.getProduct();
+			ArrayList<EbsMenuEntry> menuEntries = spawnedObject.getModelSet().menuEntries;
+
+			if (menuEntries == null || menuEntries.size() <= 0)
+			{
+				return;
+			}
+
+			// only calculate the polygon when there are menu entries
+			SimplePolygon polygon = spawnedObject.calculatePolygon();
+
+			// guard: skip when not in poly
+			if (!polygon.contains(mouseCanvasPoint.getX(), mouseCanvasPoint.getY()))
+			{
+				return;
+			}
+
+			// add all menu entries in reverse order to make sure they are displayed correctly
+			for (EbsMenuEntry menuEntry : menuEntries)
+			{
+				String option = menuEntry.option;
+				String target = menuEntry.target;
+				ArrayList<EbsEffect> onClickEffects = menuEntry.onClickEffects;
+				String formattedOption = MarketplaceMessages.formatMessage(option, product, null);
+				String formattedTarget = MarketplaceMessages.formatMessage(target, product, null);
+
+				// guard: make sure the entry is valid
+				if (option == null || target == null || option.isEmpty() || target.isEmpty())
+				{
+					continue;
+				}
+
+				client.createMenuEntry(finalFirstAvailableMenuEntryIndex)
+					.setOption(formattedOption)
+					.setTarget(formattedTarget)
+					.onClick((callback) -> {
+
+						// guard: skip triggering the effects when the product is not active anymore
+						if (!product.isActive())
+						{
+							return;
+						}
+
+						product.triggerEffects(onClickEffects, spawnedObject, 0);
+					})
+					.setType(MenuAction.RUNELITE)
+					.setParam0(0)
+					.setParam1(0)
+					.setDeprioritized(true);
+			}
+		});
 	}
 
 	private boolean passTimerOnce(MarketplaceTimer timer, Instant now)

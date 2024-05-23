@@ -48,6 +48,11 @@ public class TextPanel extends JPanel
 
 	public void setText(String text)
 	{
+		if (text == null)
+		{
+			text = "";
+		}
+
 		textLabel.setText(text);
 	}
 }
