@@ -827,6 +827,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "followEventMessageEnabled",
+			name = "Enable follow message",
+			description = "Enable follow event message",
+			position = 13,
+			section = channelEventsSection
+	)
+	default boolean followEventMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "followEventMessage",
 			name = "Message on follow",
 			description = "Message shown when there is a new channel follower.",
@@ -836,6 +848,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String followEventMessage()
 	{
 		return "Thanks {viewerName} for following!";
+	}
+
+	@ConfigItem(
+			keyName = "channelPointsRedeemEventMessageEnabled",
+			name = "Enable channel point message",
+			description = "Enable message shown when there is a channel point redeem.",
+			position = 15,
+			section = channelEventsSection
+	)
+	default boolean channelPointsRedeemEventMessageEnabled()
+	{
+		return true;
 	}
 
 	@ConfigItem(
@@ -851,6 +875,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "newSubscriptionEventMessageEnabled",
+			name = "Enable sub message",
+			description = "Enable message shown when there is a new channel subscription.",
+			position = 17,
+			section = channelEventsSection
+	)
+	default boolean newSubscriptionEventMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "newSubscriptionEventMessage",
 			name = "Message on new sub",
 			description = "Message shown when there is a new channel subscription.",
@@ -860,6 +896,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String newSubscriptionEventMessage()
 	{
 		return "Thanks {viewerName} for the sub!";
+	}
+
+	@ConfigItem(
+			keyName = "newResubscriptionEventMessageEnabled",
+			name = "Enable resub message",
+			description = "Enable message shown when there is a resub.",
+			position = 19,
+			section = channelEventsSection
+	)
+	default boolean newResubscriptionEventMessageEnabled()
+	{
+		return true;
 	}
 
 	@ConfigItem(
@@ -875,6 +923,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "giftSubscriptionEventMessageEnabled",
+			name = "Enable gift sub message",
+			description = "Enable message shown when there is a gift subscription.",
+			position = 21,
+			section = channelEventsSection
+	)
+	default boolean giftSubscriptionEventMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "giftSubscriptionEventMessage",
 			name = "Message on gift",
 			description = "Message shown when there is a gift subscription.",
@@ -884,6 +944,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String giftSubscriptionEventMessage()
 	{
 		return "Thanks {viewerName} for the gifted!";
+	}
+
+	@ConfigItem(
+			keyName = "raidEventMessageEnabled",
+			name = "Enable raid message",
+			description = "Enable message shown when there is a raid.",
+			position = 23,
+			section = channelEventsSection
+	)
+	default boolean raidEventMessageEnabled()
+	{
+		return true;
 	}
 
 	@ConfigItem(
@@ -899,6 +971,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "addedModMessageEnabled",
+			name = "Enable add mod message",
+			description = "Enable message shown a user is promoted to mod.",
+			position = 25,
+			section = channelEventsSection
+	)
+	default boolean addedModMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "addedModMessage",
 			name = "Message on mod added",
 			description = "Message shown a user is promoted to mod.",
@@ -908,6 +992,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String addedModMessage()
 	{
 		return "Congrats {viewerName} with the promotion!";
+	}
+
+	@ConfigItem(
+			keyName = "removedModMessageEnabled",
+			name = "Enable remove mod message",
+			description = "Enable message shown when a user is demoted from mod.",
+			position = 27,
+			section = channelEventsSection
+	)
+	default boolean removedModMessageEnabled()
+	{
+		return true;
 	}
 
 	@ConfigItem(
@@ -923,6 +1019,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "beginHypeTrainMessageEnabled",
+			name = "Enable hype train begin message",
+			description = "Enable message when a hype train begins.",
+			position = 29,
+			section = channelEventsSection
+	)
+	default boolean beginHypeTrainMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "beginHypeTrainMessage",
 			name = "Message on hype train begin",
 			description = "Message when a hype train begins",
@@ -932,6 +1040,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String beginHypeTrainMessage()
 	{
 		return "Thanks all for starting the hype train!";
+	}
+
+	@ConfigItem(
+			keyName = "progressHypeTrainMessageEnabled",
+			name = "Enable hype train progression message",
+			description = "Enable message when a hype train progresses in percentage or level.",
+			position = 31,
+			section = channelEventsSection
+	)
+	default boolean progressHypeTrainMessageEnabled()
+	{
+		return true;
 	}
 
 	@ConfigItem(
@@ -947,6 +1067,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "endHypeTrainMessageEnabled",
+			name = "Enable hype train end message",
+			description = "Enable message when a hype train ends.",
+			position = 33,
+			section = channelEventsSection
+	)
+	default boolean endHypeTrainMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "endHypeTrainMessage",
 			name = "Message on hype train end",
 			description = "Message when a hype train ends.",
@@ -956,6 +1088,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String endHypeTrainMessage()
 	{
 		return "Thanks all for the hype train!";
+	}
+
+	@ConfigItem(
+			keyName = "donateCharityCampaignMessageEnabled",
+			name = "Enable charity donation message",
+			description = "Enable message when a charity campaign receives a donation.",
+			position = 35,
+			section = channelEventsSection
+	)
+	default boolean donateCharityCampaignMessageEnabled()
+	{
+		return true;
 	}
 
 	@ConfigItem(
@@ -971,6 +1115,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "startCharityCampaignMessageEnabled",
+			name = "Enable charity start message",
+			description = "Enable message when a charity campaign starts.",
+			position = 37,
+			section = channelEventsSection
+	)
+	default boolean startCharityCampaignMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "startCharityCampaignMessage",
 			name = "Message on charity start",
 			description = "Message when a charity campaign starts",
@@ -983,6 +1139,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "progressCharityCampaignMessageEnabled",
+			name = "Enable charity progression message",
+			description = "Enable message when a charity progresses in amount donated.",
+			position = 39,
+			section = channelEventsSection
+	)
+	default boolean progressCharityCampaignMessageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "progressCharityCampaignMessage",
 			name = "Message on charity progression",
 			description = "Message when a charity progresses in amount donated.",
@@ -992,6 +1160,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default String progressCharityCampaignMessage()
 	{
 		return "Thanks all for donating up until now!";
+	}
+
+	@ConfigItem(
+			keyName = "stopCharityCampaignMessageEnabled",
+			name = "Enable charity end message",
+			description = "Enable message when a charity campaign ends.",
+			position = 41,
+			section = channelEventsSection
+	)
+	default boolean stopCharityCampaignMessageEnabled()
+	{
+		return true;
 	}
 
 	@ConfigItem(

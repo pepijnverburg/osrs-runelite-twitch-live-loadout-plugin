@@ -107,7 +107,5 @@ public class MarketplaceConstants {
 	public static final int GLOBAL_PLAY_SOUND_THROTTLE_MS = 0;
 	public static final int UNIQUE_PLAY_SOUND_THROTTLE_MS = 100;
 
-	public static final String EXTENSION_BITS_TWITCH_PRODUCT_TYPE = "EXTENSION_BITS";
-	public static final String CHANNEL_POINTS_TWITCH_PRODUCT_TYPE = "CHANNEL_POINTS";
-	public static final String CHANNEL_EVENT_TWITCH_PRODUCT_TYPE = "CHANNEL_EVENT";
+	public static final String EVENT_SUB_DEFAULT_EBS_PRODUCT_ID = "all-messages";
 }

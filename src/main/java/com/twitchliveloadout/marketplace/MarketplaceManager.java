@@ -19,11 +19,13 @@ import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransactionOrigin;
+import com.twitchliveloadout.marketplace.transactions.TwitchTransactionProductType;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutPlugin.IN_DEVELOPMENT;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.EVENT_SUB_DEFAULT_EBS_PRODUCT_ID;
 
 @Slf4j
 public class MarketplaceManager {
@@ -360,8 +363,8 @@ public class MarketplaceManager {
 				EbsProduct ebsProduct = getEbsProductById(ebsProductId);
 				boolean isProductCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
 				boolean isSharedCoolingDown = sharedCooldownUntil != null && now.isBefore(sharedCooldownUntil);
+				boolean isTestTransaction = transaction.product_type.equals(TwitchTransactionProductType.TEST.getType());
 				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled && ebsProduct.behaviour != null;
-				boolean isTestTransaction = transaction.product_type.equals("TEST");
 
 				// guard: make sure this product is not cooling down
 				// this can be the case when two transactions are done at the same time
@@ -618,7 +621,7 @@ public class MarketplaceManager {
 		twitchTransaction.user_id = "0";
 		twitchTransaction.user_login = "test-viewer";
 		twitchTransaction.user_name = "Test Viewer";
-		twitchTransaction.product_type = "TEST";
+		twitchTransaction.product_type = TwitchTransactionProductType.TEST.getType();
 		twitchTransaction.product_data = twitchProduct;
 		twitchTransaction.ebs_product_id = ebsProduct.id;
 		twitchTransaction.handled_at = Instant.now().toString();
@@ -1114,7 +1117,8 @@ public class MarketplaceManager {
 	public StreamerProduct getStreamerProductByTransaction(TwitchTransaction transaction)
 	{
 		TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
-		boolean isTestTransaction = transaction.product_type.equals("TEST");
+		boolean isTestTransaction = transaction.product_type.equals(TwitchTransactionProductType.TEST.getType());
+		boolean isEventSubTransaction = transaction.eventSubType != null;
 
 		// guard: make sure the twitch product is valid
 		if (twitchProduct == null)
@@ -1122,6 +1126,7 @@ public class MarketplaceManager {
 			return null;
 		}
 
+		// if this is a test transaction force the EBS product ID based on what is passed in the transaction
 		if (isTestTransaction)
 		{
 			StreamerProduct testStreamerProduct = new StreamerProduct();
@@ -1137,6 +1142,28 @@ public class MarketplaceManager {
 
 		String twitchProductSku = twitchProduct.sku;
 		StreamerProduct streamerProduct = getStreamerProductBySku(twitchProductSku);
+
+		// create a custom streamer product with a default EBS product only showing some messages
+		// only do this when no streamer product is known for this event
+		if (streamerProduct == null && isEventSubTransaction)
+		{
+			boolean isEventSubMessageEnabled = transaction.eventSubType.getMessageEnabledGetter().execute(config);
+
+			// guard: skip when the event sub message is not enabled
+			if (!isEventSubMessageEnabled)
+			{
+				return null;
+			}
+
+            StreamerProduct eventSubStreamerProduct = new StreamerProduct();
+			eventSubStreamerProduct.id = generateRandomTestId();
+			eventSubStreamerProduct.ebsProductId = EVENT_SUB_DEFAULT_EBS_PRODUCT_ID;
+			eventSubStreamerProduct.twitchProductSku = transaction.product_data.sku;
+			eventSubStreamerProduct.name = "[CHANNEL EVENT] "+ transaction.eventSubType.getType();
+			eventSubStreamerProduct.cooldown = 0;
+
+			return eventSubStreamerProduct;
+		}
 
 		return streamerProduct;
 	}

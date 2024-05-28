@@ -301,7 +301,13 @@ public class NotificationManager {
 				// get the message from the channel event sub type
 				if (eventSubType != null)
 				{
-					message = eventSubType.getConfigValueGetter().execute(config);
+					Boolean isEventSubMessageEnabled = eventSubType.getMessageEnabledGetter().execute(config);
+
+					// only override the message when the override is enabled
+					if (isEventSubMessageEnabled)
+					{
+						message = eventSubType.getMessageGetter().execute(config);
+					}
 				}
 
 				// fallback to the default message when none is found
