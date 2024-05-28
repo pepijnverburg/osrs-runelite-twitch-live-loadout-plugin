@@ -749,11 +749,13 @@ public class FightStateManager
 			case HitsplatTypeID.DAMAGE_ME_ORANGE:
 			case HitsplatTypeID.DAMAGE_ME_WHITE:
 			case HitsplatTypeID.DAMAGE_ME_YELLOW:
+			case HitsplatTypeID.DAMAGE_ME_POISE:
 			case HitsplatTypeID.DAMAGE_OTHER:
 			case HitsplatTypeID.DAMAGE_OTHER_CYAN:
 			case HitsplatTypeID.DAMAGE_OTHER_ORANGE:
 			case HitsplatTypeID.DAMAGE_OTHER_WHITE:
 			case HitsplatTypeID.DAMAGE_OTHER_YELLOW:
+			case HitsplatTypeID.DAMAGE_OTHER_POISE:
 			case HitsplatTypeID.VENOM:
 			case HitsplatTypeID.POISON:
 			case HitsplatTypeID.HEAL:
@@ -762,6 +764,10 @@ public class FightStateManager
 			case HitsplatTypeID.DAMAGE_MAX_ME_ORANGE:
 			case HitsplatTypeID.DAMAGE_MAX_ME_WHITE:
 			case HitsplatTypeID.DAMAGE_MAX_ME_YELLOW:
+			case HitsplatTypeID.DAMAGE_MAX_ME_POISE:
+			case HitsplatTypeID.DOOM:
+			case HitsplatTypeID.BURN:
+			case HitsplatTypeID.BLEED:
 				statistic.registerHit(amount);
 				break;
 		}
