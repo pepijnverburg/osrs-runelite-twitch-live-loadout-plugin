@@ -107,5 +107,5 @@ public class MarketplaceConstants {
 	public static final int GLOBAL_PLAY_SOUND_THROTTLE_MS = 0;
 	public static final int UNIQUE_PLAY_SOUND_THROTTLE_MS = 100;
 
-	public static final String EVENT_SUB_DEFAULT_EBS_PRODUCT_ID = "all-messages";
+	public static final String EVENT_SUB_DEFAULT_EBS_PRODUCT_ID = "all-notifications";
 }
