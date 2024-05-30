@@ -23,6 +23,7 @@ public enum TwitchStateEntry {
 	ITEM_GOALS("itemGoals", true),
 	TOP_POSITION("topPosition"),
 	THEME_TYPE("themeType"),
+	VISIBILITY_TYPE("visibilityType"),
 	BANK_TABBED_ITEMS("bankTabbedItems", true),
 	BANK_PRICE("bankPrice", true),
 	COLLECTION_LOG("collectionLog", true),

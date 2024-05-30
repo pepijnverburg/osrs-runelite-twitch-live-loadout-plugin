@@ -1035,6 +1035,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				case "twitchTheme":
 					twitchState.setTwitchTheme(config.twitchTheme());
 					break;
+				case "twitchVisibility":
+					twitchState.setTwitchVisibility(config.twitchVisibility());
+					break;
 				case "marketplaceEnabled":
 					pluginPanel.getMarketplacePanel().updateTexts();
 

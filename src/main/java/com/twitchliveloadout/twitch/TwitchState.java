@@ -95,6 +95,7 @@ public class TwitchState {
 		setOverlayTopPosition(config.overlayTopPosition());
 		setVirtualLevelsEnabled(config.virtualLevelsEnabled());
 		setTwitchTheme(config.twitchTheme());
+		setTwitchVisibility(config.twitchVisibility());
 
 		// set initial items as no events are triggered when they are empty
 		setInventoryItems(new Item[0], 0);
@@ -152,6 +153,11 @@ public class TwitchState {
 	public void setTwitchTheme(TwitchThemeEntry twitchTheme)
 	{
 		currentState.addProperty(TwitchStateEntry.THEME_TYPE.getKey(), twitchTheme.getKey());
+	}
+
+	public void setTwitchVisibility(TwitchVisibilityEntry twitchVisibility)
+	{
+		currentState.addProperty(TwitchStateEntry.VISIBILITY_TYPE.getKey(), twitchVisibility.getKey());
 	}
 
 	public void setWeight(Integer weight)

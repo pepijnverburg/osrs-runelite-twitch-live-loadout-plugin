@@ -742,7 +742,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return 2;
 	}
 
-
 	@ConfigSection(
 			name = "Channel Events",
 			description = "Authentication and configuration for channel events, such as follows, subs, etc.",
