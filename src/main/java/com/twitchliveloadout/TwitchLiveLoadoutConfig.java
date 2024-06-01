@@ -33,6 +33,8 @@ import net.runelite.client.config.*;
 
 import java.awt.Color;
 
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.CHAOS_MODE_AVAILABLE;
+
 @ConfigGroup("twitchstreamer")
 public interface TwitchLiveLoadoutConfig extends Config
 {
@@ -120,8 +122,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Data Syncing",
 			description = "Syncing conditions and multi-account settings",
-			position = 4,
-			closedByDefault = true
+			position = 4
 	)
 	String syncingSection = "syncing";
 
@@ -659,7 +660,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Chaos Mode spawn multiplier",
 			description = "The amount all NPC/item spawns are multiplied when Chaos Mode is enabled.",
 			position = 28,
-			section = marketplaceSection
+			section = marketplaceSection,
+			hidden = !CHAOS_MODE_AVAILABLE
 	)
 	default int chaosModeSpawnMultiplier()
 	{
@@ -671,11 +673,29 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Chaos Mode range multiplier",
 			description = "The multiplier for the distance where the spawns allowed to be put. When you have a spawn multiplier increasing the range as well is recommended.",
 			position = 28,
-			section = marketplaceSection
+			section = marketplaceSection,
+			hidden = !CHAOS_MODE_AVAILABLE
 	)
 	default int chaosModeRangeMultiplier()
 	{
 		return 2;
+	}
+
+	@Range(
+			min = 5,
+			max = 60 * 5
+	)
+	@ConfigItem(
+			keyName = "testRandomEventsDuration_v2", // NOTE: different key to force update to new default
+			name = "Preview Duration",
+			description = "Duration of the Random Event when requested as a preview.",
+			position = 30,
+			section = marketplaceSection
+	)
+	@Units(Units.SECONDS)
+	default int testRandomEventsDuration()
+	{
+		return 30;
 	}
 
 	@ConfigSection(
@@ -1252,20 +1272,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 	default boolean testRandomEventsRandomly()
 	{
 		return false;
-	}
-
-	@ConfigItem(
-			keyName = "testRandomEventsDuration",
-			name = "Test Duration",
-			description = "Duration of a single Random Event while testing.",
-			position = 10,
-			hidden = false,
-			section = advancedSection
-	)
-	@Units(Units.SECONDS)
-	default int testRandomEventsDuration()
-	{
-		return 10;
 	}
 
 	@ConfigItem(

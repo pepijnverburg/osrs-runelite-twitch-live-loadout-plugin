@@ -19,6 +19,8 @@ import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
+
 @Slf4j
 public class MarketplacePanel extends JPanel
 {
@@ -41,7 +43,7 @@ public class MarketplacePanel extends JPanel
 	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Random Events:", "<html>No Random Events are queued.</html>");
 
 	private final JPanel playbackWrapper = new JPanel(new BorderLayout());
-	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start to temporarily block distractions. Enable Preview Mode to test events from the Extension Configuration page in Twitch.</html>");
+	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start to temporarily block distractions. Enable Preview Mode to temporarily test events from the Extension Configuration page in Twitch.</html>");
 	private final JPanel startPanel = new JPanel(new BorderLayout());
 	private final JLabel startLabel = new JLabel();
 	private final JPanel testModePanel = new JPanel(new BorderLayout());
@@ -127,12 +129,25 @@ public class MarketplacePanel extends JPanel
 		playbackConstraints.gridy++;
 		playbackWrapper.add(startPanel, playbackConstraints);
 		playbackConstraints.gridy++;
-		playbackWrapper.add(testModePanel, playbackConstraints);
-		playbackConstraints.gridy++;
-		playbackWrapper.add(chaosModePanel, playbackConstraints);
-		playbackConstraints.gridy++;
-		playbackWrapper.add(freeModePanel, playbackConstraints);
-		playbackConstraints.gridy++;
+
+		if (TEST_MODE_AVAILABLE)
+		{
+			playbackWrapper.add(testModePanel, playbackConstraints);
+			playbackConstraints.gridy++;
+		}
+
+		if (CHAOS_MODE_AVAILABLE)
+		{
+			playbackWrapper.add(chaosModePanel, playbackConstraints);
+			playbackConstraints.gridy++;
+		}
+
+		if (FREE_MODE_AVAILABLE)
+		{
+			playbackWrapper.add(freeModePanel, playbackConstraints);
+			playbackConstraints.gridy++;
+		}
+
 		playbackWrapper.add(availableRandomEventsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(availableChannelPointRewardsPanel, playbackConstraints);
@@ -336,8 +351,9 @@ public class MarketplacePanel extends JPanel
 		final int activeProductAmount = activeProducts.size();
 		final int archivedTransactionAmount = archivedTransactions.size();
 		final int channelPointRewardAmount = channelPointRewards.size();
+		final boolean areChannelEventsActive = !marketplaceManager.getConfig().twitchOAuthAccessToken().isEmpty();
 
-		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving Random Events is ACTIVE. Preview mode is currently disabled.</b></html>";
+		String statusText = "<html><b color='"+ SUCCESS_TEXT_COLOR +"'>Receiving Random Events is ACTIVE. Preview mode is disabled. Channel Events are "+ (areChannelEventsActive ? "ACTIVE" : "NOT SETUP") +".</b></html>";
 		String availableRandomEventsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ streamerProductAmount +" Random Events</b>.</html>";
 		String availableChannelPointRewardsText = "<html>You have <b color='"+ SUCCESS_TEXT_COLOR +"'>configured "+ channelPointRewardAmount +" Channel Point Rewards</b>.</html>";
 
@@ -348,7 +364,7 @@ public class MarketplacePanel extends JPanel
 
 		if (!marketplaceManager.isActive())
 		{
-			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Events are temporarily PAUSED. Click PLAY ALL below to re-activate.</b></html>";
+			statusText = "<html><b color='"+ ERROR_TEXT_COLOR +"'>Random Events are temporarily PAUSED. Click PLAY ALL below to resume.</b></html>";
 		}
 
 		if (!marketplaceManager.getConfig().marketplaceEnabled())
@@ -371,7 +387,7 @@ public class MarketplacePanel extends JPanel
 			availableChannelPointRewardsText = "<html>There are <b color='"+ WARNING_TEXT_COLOR +"'>no Channel Point Rewards available<b>. Go to your channel to set them up if you want Random Events to trigger when they are redeemed.</html>";
 		}
 
-		if (marketplaceManager.getConfig().twitchOAuthAccessToken().isEmpty())
+		if (!areChannelEventsActive)
 		{
 			availableChannelPointRewardsText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>No Channel Point Rewards can be fetched<b>. Configure the Twitch Channel Token if you want to enable Random Events triggered by Channel Points, follows, subscriptions, etc.</html>";
 		}

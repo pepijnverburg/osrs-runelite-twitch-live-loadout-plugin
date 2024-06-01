@@ -295,7 +295,6 @@ public class NotificationManager {
 			return (message == null ? "Thank you!" : message);
 		}
 
-		final TwitchProduct twitchProduct = marketplaceProduct.getTwitchProduct();
 		final TwitchTransaction twitchTransaction = marketplaceProduct.getTransaction();
 		final TwitchEventSubType eventSubType = twitchTransaction.eventSubType;
 		final BaseMessage eventSubMessage = twitchTransaction.eventSubMessage;

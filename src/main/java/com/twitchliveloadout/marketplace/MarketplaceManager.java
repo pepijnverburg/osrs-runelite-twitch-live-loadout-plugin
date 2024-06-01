@@ -1162,7 +1162,7 @@ public class MarketplaceManager {
 			eventSubStreamerProduct.id = UUID.randomUUID().toString();
 			eventSubStreamerProduct.ebsProductId = EVENT_SUB_DEFAULT_EBS_PRODUCT_ID;
 			eventSubStreamerProduct.twitchProductSku = twitchProductSku;
-			eventSubStreamerProduct.name = eventSubType.getName();
+			eventSubStreamerProduct.name = "Channel Event"; //eventSubType.getName();
 			eventSubStreamerProduct.cooldown = 0;
 
 			return eventSubStreamerProduct;
