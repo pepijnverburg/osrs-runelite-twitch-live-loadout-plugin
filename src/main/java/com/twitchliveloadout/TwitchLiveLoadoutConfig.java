@@ -31,6 +31,8 @@ import com.twitchliveloadout.twitch.TwitchThemeEntry;
 import com.twitchliveloadout.twitch.TwitchVisibilityEntry;
 import net.runelite.client.config.*;
 
+import java.awt.Color;
+
 @ConfigGroup("twitchstreamer")
 public interface TwitchLiveLoadoutConfig extends Config
 {
@@ -743,10 +745,22 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "popupDonationMessageEnabled",
+			name = "Enable pop-up messages",
+			description = "Allow messages as a pop-up.",
+			position = 6,
+			section = notificationsSection
+	)
+	default boolean popupMessagesEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "chatDonationMessageEnabled",
 			name = "Enable chat messages",
 			description = "Allow messages as a chat message.",
-			position = 6,
+			position = 8,
 			section = notificationsSection
 	)
 	default boolean chatMessagesEnabled()
@@ -755,15 +769,16 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "popupDonationMessageEnabled",
-			name = "Enable pop-up messages",
-			description = "Allow messages as a pop-up.",
-			position = 8,
+			keyName = "chatMessageColor",
+			name = "Chat message color",
+			description = "The color in which the chat messages are shown.",
+			position = 9,
 			section = notificationsSection
 	)
-	default boolean popupMessagesEnabled()
+	default Color chatMessageColor()
 	{
-		return true;
+		// return new Color(145, 70, 255); // light purple
+		return new Color(96, 33, 191); // dark purple
 	}
 
 	@Range(

@@ -40,7 +40,6 @@ public class NotificationManager {
 	private final MarketplaceManager manager;
 	private Instant notificationsLockedUntil;
 	private ScheduledFuture overheadResetTask;
-	private final Color chatColor = new Color(145, 70, 255); // Twitch purple
 
 	/**
 	 * Queue of all the notifications that should be shown to the player
@@ -168,6 +167,7 @@ public class NotificationManager {
 			return;
 		}
 
+		final Color chatColor = config.chatMessageColor();
 		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
 			.append(ChatColorType.HIGHLIGHT)
 			.append(chatColor, message)
