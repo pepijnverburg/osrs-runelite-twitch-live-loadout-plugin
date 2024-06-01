@@ -1471,6 +1471,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		log.info("[SUPPORT] "+ message, exception);
+
+		// add for some more extensive logging in dev
+		if (IN_DEVELOPMENT && exception != null) {
+			exception.printStackTrace();
+		}
 	}
 
 	@Provides
