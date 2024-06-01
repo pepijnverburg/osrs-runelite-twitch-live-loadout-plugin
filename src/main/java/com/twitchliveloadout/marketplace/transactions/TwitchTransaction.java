@@ -2,6 +2,7 @@ package com.twitchliveloadout.marketplace.transactions;
 
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
+import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
 
 import java.time.Instant;
 
@@ -20,6 +21,8 @@ public class TwitchTransaction {
 	public String handled_at;
 	public final String loaded_at = Instant.now().toString();
 
+	// support for alternative sources and extra information about them
 	public TwitchTransactionOrigin origin = TwitchTransactionOrigin.EBS;
 	public TwitchEventSubType eventSubType = null;
+	public BaseMessage eventSubMessage = null;
 }

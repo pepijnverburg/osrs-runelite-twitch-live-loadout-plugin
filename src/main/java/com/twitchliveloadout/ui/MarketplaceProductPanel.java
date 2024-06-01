@@ -44,7 +44,7 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 		String streamerProductName = marketplaceProduct.getStreamerProduct().name;
 		String viewerName = marketplaceProduct.getTransaction().user_name;
 		TwitchProductCost productCost = marketplaceProduct.getTwitchProduct().cost;
-		Integer costAmount = productCost.amount;
+		Double costAmount = productCost.amount;
 		String costCurrency = productCost.type;
 		String statusLine = "<b color='green'>ACTIVE</b>";
 

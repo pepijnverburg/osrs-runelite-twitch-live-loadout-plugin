@@ -4,10 +4,10 @@ import java.util.ArrayList;
 
 public class BaseHypeTrain extends BaseBroadcasterInfo {
     public String id;
-    public int level;
-    public int total;
-    public int progress;
-    public int goal;
+    public Integer level;
+    public Integer total;
+    public Integer progress;
+    public Integer goal;
     public ArrayList<HypeTrainContribution> top_contributions;
     public String started_at;
 }

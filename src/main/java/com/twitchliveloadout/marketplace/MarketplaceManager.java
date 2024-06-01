@@ -26,6 +26,7 @@ import com.twitchliveloadout.twitch.TwitchSegmentType;
 import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
+import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -599,7 +600,7 @@ public class MarketplaceManager {
 		TwitchProductCost twitchProductCost = new TwitchProductCost();
 		String transactionId = generateRandomTestId();
 		String twitchSku = generateRandomTestId();
-		int currencyAmount = 100;
+		double currencyAmount = 100d;
 		String currencyType = "gp";
 
 		twitchProductCost.amount = currencyAmount;
@@ -1119,6 +1120,7 @@ public class MarketplaceManager {
 		TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
 		boolean isTestTransaction = transaction.product_type.equals(TwitchTransactionProductType.TEST.getType());
 		boolean isEventSubTransaction = transaction.eventSubType != null;
+		BaseMessage eventSubMessage = transaction.eventSubMessage;
 
 		// guard: make sure the twitch product is valid
 		if (twitchProduct == null)
@@ -1147,7 +1149,7 @@ public class MarketplaceManager {
 		// only do this when no streamer product is known for this event
 		if (streamerProduct == null && isEventSubTransaction)
 		{
-			boolean isEventSubMessageEnabled = transaction.eventSubType.getMessageEnabledGetter().execute(config);
+			boolean isEventSubMessageEnabled = transaction.eventSubType.getMessageEnabledGetter().execute(config, eventSubMessage);
 
 			// guard: skip when the event sub message is not enabled
 			if (!isEventSubMessageEnabled)
@@ -1158,8 +1160,8 @@ public class MarketplaceManager {
             StreamerProduct eventSubStreamerProduct = new StreamerProduct();
 			eventSubStreamerProduct.id = generateRandomTestId();
 			eventSubStreamerProduct.ebsProductId = EVENT_SUB_DEFAULT_EBS_PRODUCT_ID;
-			eventSubStreamerProduct.twitchProductSku = transaction.product_data.sku;
-			eventSubStreamerProduct.name = "[CHANNEL EVENT] "+ transaction.eventSubType.getType();
+			eventSubStreamerProduct.twitchProductSku = twitchProductSku;
+			eventSubStreamerProduct.name = "Channel Event";
 			eventSubStreamerProduct.cooldown = 0;
 
 			return eventSubStreamerProduct;

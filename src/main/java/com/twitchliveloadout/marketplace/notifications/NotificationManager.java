@@ -11,6 +11,7 @@ import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
+import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -23,6 +24,7 @@ import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 
+import java.awt.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.concurrent.ScheduledFuture;
@@ -38,6 +40,7 @@ public class NotificationManager {
 	private final MarketplaceManager manager;
 	private Instant notificationsLockedUntil;
 	private ScheduledFuture overheadResetTask;
+	private final Color chatColor = new Color(145, 70, 255); // Twitch purple
 
 	/**
 	 * Queue of all the notifications that should be shown to the player
@@ -152,7 +155,7 @@ public class NotificationManager {
 	{
 
 		// guard: skip when the chat donation message is disabled
-		if (notification.isDonationMessage() && !config.chatDonationMessageEnabled())
+		if (notification.isDonationMessage() && !config.chatMessagesEnabled())
 		{
 			return;
 		}
@@ -167,7 +170,7 @@ public class NotificationManager {
 
 		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
 			.append(ChatColorType.HIGHLIGHT)
-			.append(message)
+			.append(chatColor, message)
 			.append(ChatColorType.NORMAL);
 
 		chatMessageManager.queue(QueuedMessage.builder()
@@ -182,14 +185,14 @@ public class NotificationManager {
 	{
 
 		// guard: skip when the overhead donation message is disabled
-		if (notification.isDonationMessage() && !config.overheadDonationMessageEnabled())
+		if (notification.isDonationMessage() && !config.overheadMessagesEnabled())
 		{
 			return;
 		}
 
 		Player player = client.getLocalPlayer();
 		String message = getMessage(notification);
-		int overheadTextDurationMs = config.marketplaceOverheadTextDurationS() * 1000;
+		int overheadTextDurationMs = config.overheadMessageDurationS() * 1000;
 
 		// guard: check if the message is valid
 		if (message.isEmpty())
@@ -222,7 +225,7 @@ public class NotificationManager {
 	{
 
 		// guard: skip when the popup donation message is disabled
-		if (notification.isDonationMessage() && !config.popupDonationMessageEnabled())
+		if (notification.isDonationMessage() && !config.popupMessagesEnabled())
 		{
 			return;
 		}
@@ -285,13 +288,17 @@ public class NotificationManager {
 		// guard: make sure the product is valid
 		if (marketplaceProduct == null)
 		{
-			return (message == null ? "Thank you for the donation!" : message);
+			return (message == null ? "Thank you!" : message);
 		}
 
 		final TwitchProduct twitchProduct = marketplaceProduct.getTwitchProduct();
 		final TwitchTransaction twitchTransaction = marketplaceProduct.getTransaction();
 		final TwitchEventSubType eventSubType = twitchTransaction.eventSubType;
+		final BaseMessage eventSubMessage = twitchTransaction.eventSubMessage;
+		final boolean isEventSubMessage = eventSubType != null;
+		final boolean isEbsBitsTransaction = !isEventSubMessage;
 
+		// ensure there is a message when it is not set
 		if (message == null)
 		{
 			if (twitchProduct == null) {
@@ -299,9 +306,9 @@ public class NotificationManager {
 			} else {
 
 				// get the message from the channel event sub type
-				if (eventSubType != null)
+				if (isEventSubMessage)
 				{
-					Boolean isEventSubMessageEnabled = eventSubType.getMessageEnabledGetter().execute(config);
+					Boolean isEventSubMessageEnabled = eventSubType.getMessageEnabledGetter().execute(config, eventSubMessage);
 
 					// only override the message when the override is enabled
 					if (isEventSubMessageEnabled)
@@ -310,10 +317,10 @@ public class NotificationManager {
 					}
 				}
 
-				// fallback to the default message when none is found
-				if (message == null)
+				// use the default bits donation message when this is an EBS bits transaction
+				if (isEbsBitsTransaction)
 				{
-					message = config.marketplaceDefaultDonationMessage();
+					message = config.defaultBitsDonationMessage();
 				}
 
 				// when default chat messages are sent prefix them with the name of the event

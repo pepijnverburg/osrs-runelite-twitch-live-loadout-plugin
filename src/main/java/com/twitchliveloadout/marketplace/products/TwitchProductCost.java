@@ -1,6 +1,6 @@
 package com.twitchliveloadout.marketplace.products;
 
 public class TwitchProductCost {
-	public Integer amount = 0;
+	public Double amount = 0d;
 	public String type;
 }

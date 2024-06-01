@@ -9,38 +9,53 @@ import lombok.Getter;
  */
 @Getter
 public enum TwitchEventSubType {
-    CHANNEL_POINTS_REDEEM("channel.channel_points_custom_reward_redemption.add", true, 1, ChannelPointsRedeem.class, TwitchLiveLoadoutConfig::channelPointsRedeemEventMessage, TwitchLiveLoadoutConfig::channelPointsRedeemEventMessageEnabled),
-    START_SUBSCRIPTION("channel.subscribe",true, 1, ChannelStartSubscription.class, TwitchLiveLoadoutConfig::newSubscriptionEventMessage, TwitchLiveLoadoutConfig::newSubscriptionEventMessageEnabled),
-    CONTINUE_SUBSCRIPTION("channel.subscription.message", true, 1, ChannelContinueSubscription.class, TwitchLiveLoadoutConfig::newResubscriptionEventMessage, TwitchLiveLoadoutConfig::newResubscriptionEventMessageEnabled),
-    GIFT_SUBSCRIPTION("channel.subscription.gift", true, 1, ChannelGiftSubscription.class, TwitchLiveLoadoutConfig::giftSubscriptionEventMessage, TwitchLiveLoadoutConfig::giftSubscriptionEventMessageEnabled),
-    RAID("channel.raid", true, 1, ChannelRaid.class, TwitchLiveLoadoutConfig::raidEventMessage, TwitchLiveLoadoutConfig::raidEventMessageEnabled),
-    FOLLOW("channel.follow", true, 2, ChannelFollow.class, TwitchLiveLoadoutConfig::followEventMessage, TwitchLiveLoadoutConfig::followEventMessageEnabled),
-    ADD_MODERATOR("channel.moderator.add", true, 1, ChannelAddModerator.class, TwitchLiveLoadoutConfig::addedModMessage, TwitchLiveLoadoutConfig::addedModMessageEnabled),
-    REMOVE_MODERATOR("channel.moderator.remove", true, 1, ChannelRemoveModerator.class, TwitchLiveLoadoutConfig::removedModMessage, TwitchLiveLoadoutConfig::removedModMessageEnabled),
-    HYPE_TRAIN_BEGIN("channel.hype_train.begin", true, 1, HypeTrainBegin.class, TwitchLiveLoadoutConfig::beginHypeTrainMessage, TwitchLiveLoadoutConfig::beginHypeTrainMessageEnabled),
-    HYPE_TRAIN_PROGRESS("channel.hype_train.progress", true, 1, HypeTrainProgress.class, TwitchLiveLoadoutConfig::progressHypeTrainMessage, TwitchLiveLoadoutConfig::progressHypeTrainMessageEnabled),
-    HYPE_TRAIN_END("channel.hype_train.end", true, 1, HypeTrainEnd.class, TwitchLiveLoadoutConfig::endHypeTrainMessage, TwitchLiveLoadoutConfig::endHypeTrainMessageEnabled),
-    CHARITY_CAMPAIGN_DONATE("channel.charity_campaign.donate", true, 1, CharityCampaignDonate.class, TwitchLiveLoadoutConfig::donateCharityCampaignMessage, TwitchLiveLoadoutConfig::donateCharityCampaignMessageEnabled),
-    CHARITY_CAMPAIGN_START("channel.charity_campaign.start", true, 1, CharityCampaignStart.class, TwitchLiveLoadoutConfig::startCharityCampaignMessage, TwitchLiveLoadoutConfig::startCharityCampaignMessageEnabled),
-    CHARITY_CAMPAIGN_PROGRESS("channel.charity_campaign.progress", true, 1, CharityCampaignProgress.class, TwitchLiveLoadoutConfig::progressCharityCampaignMessage, TwitchLiveLoadoutConfig::progressCharityCampaignMessageEnabled),
-    CHARITY_CAMPAIGN_STOP("channel.charity_campaign.stop", true, 1, CharityCampaignStop.class, TwitchLiveLoadoutConfig::stopCharityCampaignMessage, TwitchLiveLoadoutConfig::stopCharityCampaignMessageEnabled),
+    CHANNEL_POINTS_REDEEM("channel.channel_points_custom_reward_redemption.add", true, 1, ChannelPointsRedeem.class, TwitchLiveLoadoutConfig::channelPointsRedeemEventMessage, (config, message) -> config.channelPointsRedeemEventMessageEnabled()),
+    START_SUBSCRIPTION(
+        "channel.subscribe",true, 1, ChannelStartSubscription.class, TwitchLiveLoadoutConfig::subscribeEventMessage,
+        (config, message) -> {
+            boolean isMessageEnabled = config.subscribeEventMessageEnabled();
+
+            // guard: also check whether the sub should be shown when it was gifted
+            if (message instanceof ChannelStartSubscription channelStartSubscription) {
+                boolean isGifted = channelStartSubscription.is_gift;
+                boolean shouldShowMessageOnGifted = config.subscribeEventMessageOnGiftEnabled();
+
+                return isMessageEnabled && (!isGifted || shouldShowMessageOnGifted);
+            }
+
+            return isMessageEnabled;
+        }
+    ),
+    CONTINUE_SUBSCRIPTION("channel.subscription.message", true, 1, ChannelContinueSubscription.class, TwitchLiveLoadoutConfig::resubscribeEventMessage, (config, message) -> config.resubscribeEventMessageEnabled()),
+    GIFT_SUBSCRIPTION("channel.subscription.gift", true, 1, ChannelGiftSubscription.class, TwitchLiveLoadoutConfig::giftSubscriptionEventMessage, (config, message) -> config.giftSubscriptionEventMessageEnabled()),
+    RAID("channel.raid", true, 1, ChannelRaid.class, TwitchLiveLoadoutConfig::raidEventMessage, (config, message) -> config.raidEventMessageEnabled()),
+    FOLLOW("channel.follow", true, 2, ChannelFollow.class, TwitchLiveLoadoutConfig::followEventMessage, (config, message) -> config.followEventMessageEnabled()),
+    ADD_MODERATOR("channel.moderator.add", true, 1, ChannelAddModerator.class, TwitchLiveLoadoutConfig::addedModMessage, (config, message) -> config.addedModMessageEnabled()),
+    REMOVE_MODERATOR("channel.moderator.remove", true, 1, ChannelRemoveModerator.class, TwitchLiveLoadoutConfig::removedModMessage, (config, message) -> config.removedModMessageEnabled()),
+    HYPE_TRAIN_BEGIN("channel.hype_train.begin", true, 1, HypeTrainBegin.class, TwitchLiveLoadoutConfig::beginHypeTrainMessage, (config, message) -> config.beginHypeTrainMessageEnabled()),
+    HYPE_TRAIN_PROGRESS("channel.hype_train.progress", true, 1, HypeTrainProgress.class, TwitchLiveLoadoutConfig::progressHypeTrainMessage, (config, message) -> config.progressHypeTrainMessageEnabled()),
+    HYPE_TRAIN_END("channel.hype_train.end", true, 1, HypeTrainEnd.class, TwitchLiveLoadoutConfig::endHypeTrainMessage, (config, message) -> config.endHypeTrainMessageEnabled()),
+    CHARITY_CAMPAIGN_DONATE("channel.charity_campaign.donate", true, 1, CharityCampaignDonate.class, TwitchLiveLoadoutConfig::donateCharityCampaignMessage, (config, message) -> config.donateCharityCampaignMessageEnabled()),
+    CHARITY_CAMPAIGN_START("channel.charity_campaign.start", true, 1, CharityCampaignStart.class, TwitchLiveLoadoutConfig::startCharityCampaignMessage, (config, message) -> config.startCharityCampaignMessageEnabled()),
+    CHARITY_CAMPAIGN_PROGRESS("channel.charity_campaign.progress", true, 1, CharityCampaignProgress.class, TwitchLiveLoadoutConfig::progressCharityCampaignMessage, (config, message) -> config.progressCharityCampaignMessageEnabled()),
+    CHARITY_CAMPAIGN_STOP("channel.charity_campaign.stop", true, 1, CharityCampaignStop.class, TwitchLiveLoadoutConfig::stopCharityCampaignMessage, (config, message) -> config.stopCharityCampaignMessageEnabled()),
 
     // disabled for now because it requires extension token
-    EXTENSION_BITS_TRANSACTION("extension.bits_transaction.create", false, 1, ExtensionBitsTransaction.class, c -> null, c -> false),
+    EXTENSION_BITS_TRANSACTION("extension.bits_transaction.create", false, 1, ExtensionBitsTransaction.class, c -> null, (c, m) -> false),
 
     // disabled for now because it requires full moderation access (with the token being able to do moderation)
-    BAN("channel.ban", false, 1, ChannelBan.class, c -> null, c -> false),
-    UNBAN("channel.unban", false, 1, ChannelUnban.class, c -> null, c -> false),
+    BAN("channel.ban", false, 1, ChannelBan.class, c -> null, (c, m) -> false),
+    UNBAN("channel.unban", false, 1, ChannelUnban.class, c -> null, (c, m) -> false),
     ;
 
     private final String type;
     private final boolean enabled;
     private final int version;
-    private final Class messageClass;
+    private final Class<? extends BaseMessage> messageClass;
     private final StringConfigValueGetter messageGetter;
     private final BooleanConfigValueGetter messageEnabledGetter;
 
-    TwitchEventSubType(String type, boolean enabled, int version, Class messageClass, StringConfigValueGetter messageGetter, BooleanConfigValueGetter messageEnabledGetter)
+    TwitchEventSubType(String type, boolean enabled, int version, Class<? extends BaseMessage> messageClass, StringConfigValueGetter messageGetter, BooleanConfigValueGetter messageEnabledGetter)
     {
         this.type = type;
         this.enabled = enabled;
@@ -68,6 +83,6 @@ public enum TwitchEventSubType {
     }
 
     public interface BooleanConfigValueGetter {
-        Boolean execute(TwitchLiveLoadoutConfig config);
+        Boolean execute(TwitchLiveLoadoutConfig config, BaseMessage eventSubMessage);
     }
 }

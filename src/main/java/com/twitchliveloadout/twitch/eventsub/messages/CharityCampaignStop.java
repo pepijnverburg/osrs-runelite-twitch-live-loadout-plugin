@@ -1,7 +1,5 @@
 package com.twitchliveloadout.twitch.eventsub.messages;
 
-public class CharityCampaignStop {
-    public CharityCampaignAmount current_amount;
-    public CharityCampaignAmount target_amount;
+public class CharityCampaignStop extends CharityCampaignAmountInfo {
     public String stopped_at;
 }

@@ -45,7 +45,7 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 		StreamerProduct streamerProduct = marketplaceManager.getStreamerProductByTransaction(twitchTransaction);
 		String viewerName = twitchTransaction.user_name;
 		TwitchProductCost productCost = twitchTransaction.product_data.cost;
-		Integer costAmount = productCost.amount;
+		Double costAmount = productCost.amount;
 		String costCurrency = productCost.type;
 		Instant transactionAt = Instant.parse(twitchTransaction.timestamp);
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss - dd MMM yyyy").withZone(ZoneId.systemDefault());

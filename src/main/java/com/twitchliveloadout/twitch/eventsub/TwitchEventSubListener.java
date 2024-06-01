@@ -63,7 +63,7 @@ public class TwitchEventSubListener {
 
     public void onEvent(String messageId, TwitchEventSubType type, JsonObject payload)
     {
-        Object message = gson.fromJson(payload, type.getMessageClass());
+        BaseMessage message = gson.fromJson(payload, type.getMessageClass());
         TwitchTransaction twitchTransaction = createTransactionFromEventMessage(messageId, type, message);
 
         // handle types that need to extend the twitch transaction in any way
@@ -87,7 +87,7 @@ public class TwitchEventSubListener {
 
         // overrides specific for channel points redeem
         twitchTransaction.id = redeem.id;
-        twitchProductCost.amount = reward.cost;
+        twitchProductCost.amount = reward.cost.doubleValue();
         twitchProductCost.type = "channel points";
         twitchProduct.sku = reward.id;
         twitchProduct.displayName = reward.title;
@@ -102,7 +102,7 @@ public class TwitchEventSubListener {
 
         // overrides specific for charity donations
         twitchTransaction.id = donation.id;
-        twitchProductCost.amount = amount.value;
+        twitchProductCost.amount = amount.getCurrencyAmount();
         twitchProductCost.type = amount.currency;
         twitchProduct.sku = donation.id;
         twitchProduct.displayName = "Donation to "+ charityName;
@@ -122,7 +122,7 @@ public class TwitchEventSubListener {
         marketplaceManager.handleCustomTransaction(transaction);
     }
 
-    private <T> TwitchTransaction createTransactionFromEventMessage(String messageId, TwitchEventSubType eventType, T message)
+    private <T extends BaseMessage> TwitchTransaction createTransactionFromEventMessage(String messageId, TwitchEventSubType eventType, T message)
     {
         String nowString = Instant.now().toString();
         TwitchTransaction twitchTransaction = new TwitchTransaction();
@@ -140,6 +140,7 @@ public class TwitchEventSubListener {
         twitchTransaction.handled_at = Instant.now().toString();
         twitchTransaction.origin = TwitchTransactionOrigin.EVENT_SUB;
         twitchTransaction.eventSubType = eventType;
+        twitchTransaction.eventSubMessage = message;
 
         // add user info when available
         if (message instanceof BaseUserInfo baseUserInfo)
