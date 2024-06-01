@@ -52,7 +52,7 @@ public class MarketplacePanel extends JPanel
 	private final JLabel freeModeLabel = new JLabel();
 
 	private final JPanel productListPanel = new JPanel(new GridBagLayout());
-	private final TextPanel productListTitlePanel = new TextPanel("Active random events:", "<html>List of active random events.</html>");
+	private final TextPanel productListTitlePanel = new TextPanel("Active Random Events:", "<html>List of active random events.</html>");
 	private final JPanel productListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<MarketplaceProductPanel> productPanels = new CopyOnWriteArrayList<>();
 

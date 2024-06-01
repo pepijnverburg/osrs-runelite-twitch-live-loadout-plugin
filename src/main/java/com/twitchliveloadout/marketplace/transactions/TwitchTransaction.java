@@ -25,4 +25,14 @@ public class TwitchTransaction {
 	public TwitchTransactionOrigin origin = TwitchTransactionOrigin.EBS;
 	public TwitchEventSubType eventSubType = null;
 	public BaseMessage eventSubMessage = null;
+
+	public boolean isEventSubTransaction()
+	{
+		return eventSubType != null && eventSubMessage != null;
+	}
+
+	public boolean isCurrencyTransaction()
+	{
+		return !isEventSubTransaction() && product_data != null && product_data.cost != null;
+	}
 }

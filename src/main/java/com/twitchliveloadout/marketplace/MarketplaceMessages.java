@@ -6,15 +6,16 @@ import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import com.twitchliveloadout.twitch.eventsub.messages.*;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 
+@Slf4j
 public class MarketplaceMessages {
 	public static String formatMessage(String message, MarketplaceProduct marketplaceProduct, MarketplaceEffect marketplaceEffect)
 	{
 		TwitchTransaction transaction = (marketplaceProduct != null ? marketplaceProduct.getTransaction() : null);
 		TwitchProduct twitchProduct = (marketplaceProduct != null ? marketplaceProduct.getTwitchProduct() : null);
-		TwitchEventSubType eventSubType = null;
 		BaseMessage eventSubMessage = null;
 		HashMap<MarketplaceMessageTemplate, String> templateLookup = new HashMap<>();
 
@@ -22,69 +23,74 @@ public class MarketplaceMessages {
 		templateLookup.put(MarketplaceMessageTemplate.VIEWER_NAME, "viewer");
 		templateLookup.put(MarketplaceMessageTemplate.CHANNEL_NAME, "streamer");
 
-		if (transaction != null)
-		{
+		if (transaction != null) {
 			templateLookup.put(MarketplaceMessageTemplate.VIEWER_NAME, transaction.user_name);
 			templateLookup.put(MarketplaceMessageTemplate.CHANNEL_NAME, transaction.broadcaster_name);
-			eventSubType = transaction.eventSubType;
 			eventSubMessage = transaction.eventSubMessage;
 		}
 
-		if (twitchProduct != null)
-		{
-			templateLookup.put(MarketplaceMessageTemplate.CURRENCY_AMOUNT, twitchProduct.cost.amount.toString());
+		if (twitchProduct != null) {
+
+			// make sure things such as '150.0' are displayed as '150'
+			Double rawCurrencyAmount = twitchProduct.cost.amount;
+			boolean hasDecimalPlaces = (rawCurrencyAmount % 1 != 0);
+			String formattedCurrencyAmount = hasDecimalPlaces ? rawCurrencyAmount.toString() : Integer.toString(rawCurrencyAmount.intValue());
+
+			templateLookup.put(MarketplaceMessageTemplate.CURRENCY_AMOUNT, formattedCurrencyAmount);
 			templateLookup.put(MarketplaceMessageTemplate.CURRENCY_TYPE, twitchProduct.cost.type);
 		}
 
-		if (marketplaceEffect != null)
-		{
+		if (marketplaceEffect != null) {
 			templateLookup.put(MarketplaceMessageTemplate.EFFECT_DURATION, MarketplaceDuration.humanizeDurationRounded(marketplaceEffect.getDuration()));
 			templateLookup.put(MarketplaceMessageTemplate.EFFECT_DURATION_LEFT, MarketplaceDuration.humanizeDurationRounded(marketplaceEffect.getDurationLeft()));
 		}
 
-		if (marketplaceProduct != null)
-		{
+		if (marketplaceProduct != null) {
 			templateLookup.put(MarketplaceMessageTemplate.PRODUCT_DURATION, MarketplaceDuration.humanizeDurationRounded(marketplaceProduct.getDuration()));
 			templateLookup.put(MarketplaceMessageTemplate.PRODUCT_DURATION_LEFT, MarketplaceDuration.humanizeDurationRounded(marketplaceProduct.getDurationLeft()));
 		}
 
-		if (eventSubMessage instanceof ChannelContinueSubscription channelContinueSubscription)
-		{
+		if (eventSubMessage instanceof BaseUserInfo baseUserInfo) {
+			templateLookup.put(MarketplaceMessageTemplate.VIEWER_NAME, baseUserInfo.user_name);
+			templateLookup.put(MarketplaceMessageTemplate.CHANNEL_NAME, baseUserInfo.broadcaster_user_name);
+		}
+
+		if (eventSubMessage instanceof ChannelContinueSubscription channelContinueSubscription) {
 			templateLookup.put(MarketplaceMessageTemplate.SUB_MONTHS, channelContinueSubscription.duration_months.toString());
 			templateLookup.put(MarketplaceMessageTemplate.SUB_TOTAL_MONTHS, channelContinueSubscription.cumulative_months.toString());
 		}
 
-		if (eventSubMessage instanceof ChannelGiftSubscription channelGiftSubscription)
-		{
+		if (eventSubMessage instanceof ChannelGiftSubscription channelGiftSubscription) {
 			templateLookup.put(MarketplaceMessageTemplate.GIFTED_AMOUNT, channelGiftSubscription.total.toString());
 			templateLookup.put(MarketplaceMessageTemplate.GIFTED_TOTAL_AMOUNT, channelGiftSubscription.cumulative_total.toString());
 		}
 
-		if (eventSubMessage instanceof ChannelRaid channelRaid)
-		{
-			templateLookup.put(MarketplaceMessageTemplate.RAID_VIEWER_AMOUNT, channelRaid.viewers.toString());
+		if (eventSubMessage instanceof ChannelRaid channelRaid) {
 			templateLookup.put(MarketplaceMessageTemplate.VIEWER_NAME, channelRaid.from_broadcaster_user_name);
+			templateLookup.put(MarketplaceMessageTemplate.RAID_VIEWER_AMOUNT, channelRaid.viewers.toString());
+			templateLookup.put(MarketplaceMessageTemplate.RAIDER_CHANNEL_NAME, channelRaid.from_broadcaster_user_name);
+			templateLookup.put(MarketplaceMessageTemplate.RAIDED_CHANNEL_NAME, channelRaid.to_broadcaster_user_name);
 		}
 
-		if (eventSubMessage instanceof BaseCharityCampaignInfo baseCharityCampaignInfo)
-		{
+		if (eventSubMessage instanceof BaseCharityCampaignInfo baseCharityCampaignInfo) {
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_NAME, baseCharityCampaignInfo.charity_name);
 		}
 
-		if (eventSubMessage instanceof CharityCampaignAmountInfo charityCampaignAmountInfo)
-		{
+		if (eventSubMessage instanceof CharityCampaignAmountInfo charityCampaignAmountInfo) {
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_CURRENT_AMOUNT, charityCampaignAmountInfo.current_amount.getCurrencyAmount().toString());
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_TARGET_AMOUNT, charityCampaignAmountInfo.target_amount.getCurrencyAmount().toString());
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_CURRENT_CURRENCY, charityCampaignAmountInfo.current_amount.currency);
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_TARGET_CURRENCY, charityCampaignAmountInfo.target_amount.currency);
 		}
 
-		if (eventSubMessage instanceof BaseHypeTrain baseHypeTrain)
-		{
-			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_GOAL, baseHypeTrain.goal.toString());
+		if (eventSubMessage instanceof BaseHypeTrain baseHypeTrain) {
 			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_TOTAL, baseHypeTrain.total.toString());
 			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_LEVEL, baseHypeTrain.level.toString());
-			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_PROGRESS, baseHypeTrain.progress.toString());
+		}
+
+		if (eventSubMessage instanceof BaseHypeTrainWithGoal baseHypeTrainWithGoal) {
+			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_GOAL, baseHypeTrainWithGoal.goal.toString());
+			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_PROGRESS, baseHypeTrainWithGoal.progress.toString());
 		}
 
 		// replace all the known template strings with their respective values
@@ -122,6 +128,8 @@ public class MarketplaceMessages {
 		SUB_TOTAL_MONTHS("subTotalMonths"),
 		GIFTED_AMOUNT("giftedAmount"),
 		GIFTED_TOTAL_AMOUNT("giftedTotalAmount"),
+		RAIDER_CHANNEL_NAME("raiderChannelName"),
+		RAIDED_CHANNEL_NAME("raidedChannelName"),
 		RAID_VIEWER_AMOUNT("raidViewerAmount"),
 		CHARITY_NAME("charityName"),
 		CHARITY_CURRENT_AMOUNT("charityCurrentAmount"),

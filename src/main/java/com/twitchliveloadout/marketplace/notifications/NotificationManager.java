@@ -134,19 +134,23 @@ public class NotificationManager {
 		EbsNotification ebsNotification = notification.ebsNotification;
 		String messageType = ebsNotification.messageType;
 
-		log.debug("Sending notification: "+ notification.ebsNotification.message);
+		plugin.logSupport("Sending notification with message: "+ notification.ebsNotification.message);
 
-		if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
-		{
-			sendChatNotification(notification);
-		}
-		else if (OVERHEAD_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
-		{
-			sendOverheadNotification(notification);
-		}
-		else if (POPUP_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
-		{
-			sendPopupNotification(notification);
+		try {
+			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+			{
+				sendChatNotification(notification);
+			}
+			else if (OVERHEAD_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+			{
+				sendOverheadNotification(notification);
+			}
+			else if (POPUP_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+			{
+				sendPopupNotification(notification);
+			}
+		} catch (Exception exception) {
+			plugin.logSupport("Could not send notification due to an error: ", exception);
 		}
 	}
 
@@ -295,40 +299,34 @@ public class NotificationManager {
 		final TwitchTransaction twitchTransaction = marketplaceProduct.getTransaction();
 		final TwitchEventSubType eventSubType = twitchTransaction.eventSubType;
 		final BaseMessage eventSubMessage = twitchTransaction.eventSubMessage;
-		final boolean isEventSubMessage = eventSubType != null;
-		final boolean isEbsBitsTransaction = !isEventSubMessage;
+		final boolean isEventSubTransaction = twitchTransaction.isEventSubTransaction();
+		final boolean isCurrencyTransaction = twitchTransaction.isCurrencyTransaction();
 
 		// ensure there is a message when it is not set
 		if (message == null)
 		{
-			if (twitchProduct == null) {
-				message = "Thank you {viewerName}!";
+
+			// get the message from the channel event sub type
+			// or use the default bits donation message when this is an EBS bits transaction
+			if (isEventSubTransaction) {
+				Boolean isEventSubMessageEnabled = eventSubType.getMessageEnabledGetter().execute(config, eventSubMessage);
+
+				// only override the message when the override is enabled
+				if (isEventSubMessageEnabled)
+				{
+					message = eventSubType.getMessageGetter().execute(config);
+				}
+			} else if (isCurrencyTransaction) {
+				message = config.defaultBitsDonationMessage();
 			} else {
+				message = "Thank you {viewerName}!";
+			}
 
-				// get the message from the channel event sub type
-				if (isEventSubMessage)
-				{
-					Boolean isEventSubMessageEnabled = eventSubType.getMessageEnabledGetter().execute(config, eventSubMessage);
-
-					// only override the message when the override is enabled
-					if (isEventSubMessageEnabled)
-					{
-						message = eventSubType.getMessageGetter().execute(config);
-					}
-				}
-
-				// use the default bits donation message when this is an EBS bits transaction
-				if (isEbsBitsTransaction)
-				{
-					message = config.defaultBitsDonationMessage();
-				}
-
-				// when default chat messages are sent prefix them with the name of the event
-				if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(notification.ebsNotification.messageType))
-				{
-					String name = notification.marketplaceProduct.getStreamerProduct().name;
-					message = "["+ name +"] "+ message;
-				}
+			// when default chat messages are sent prefix them with the name of the event
+			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(notification.ebsNotification.messageType))
+			{
+				String name = marketplaceProduct.getStreamerProduct().name;
+				message = "["+ name +"] "+ message;
 			}
 		}
 

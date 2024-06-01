@@ -916,7 +916,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default String resubscribeEventMessage()
 	{
-		return "Thanks {viewerName} for the {subMonths} month resub for a total of {subTotalMonths}x!";
+		return "Thanks {viewerName} for the {subMonths} month resub for a total of {subTotalMonths}!";
 	}
 
 	@ConfigItem(
@@ -964,7 +964,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default String raidEventMessage()
 	{
-		return "Thanks {viewerName} for the raid with {raidViewerAmount} viewers!";
+		return "Thanks {raiderChannelName} for the raid with {raidViewerAmount} viewers!";
 	}
 
 	@ConfigItem(

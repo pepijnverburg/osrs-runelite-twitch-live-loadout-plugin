@@ -1119,7 +1119,7 @@ public class MarketplaceManager {
 	{
 		TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
 		boolean isTestTransaction = transaction.product_type.equals(TwitchTransactionProductType.TEST.getType());
-		boolean isEventSubTransaction = transaction.eventSubType != null;
+		boolean isEventSubTransaction = transaction.isEventSubTransaction();
 		BaseMessage eventSubMessage = transaction.eventSubMessage;
 
 		// guard: make sure the twitch product is valid
@@ -1149,7 +1149,8 @@ public class MarketplaceManager {
 		// only do this when no streamer product is known for this event
 		if (streamerProduct == null && isEventSubTransaction)
 		{
-			boolean isEventSubMessageEnabled = transaction.eventSubType.getMessageEnabledGetter().execute(config, eventSubMessage);
+			TwitchEventSubType eventSubType = transaction.eventSubType;
+			boolean isEventSubMessageEnabled = eventSubType.getMessageEnabledGetter().execute(config, eventSubMessage);
 
 			// guard: skip when the event sub message is not enabled
 			if (!isEventSubMessageEnabled)
@@ -1158,10 +1159,10 @@ public class MarketplaceManager {
 			}
 
             StreamerProduct eventSubStreamerProduct = new StreamerProduct();
-			eventSubStreamerProduct.id = generateRandomTestId();
+			eventSubStreamerProduct.id = UUID.randomUUID().toString();
 			eventSubStreamerProduct.ebsProductId = EVENT_SUB_DEFAULT_EBS_PRODUCT_ID;
 			eventSubStreamerProduct.twitchProductSku = twitchProductSku;
-			eventSubStreamerProduct.name = "Channel Event";
+			eventSubStreamerProduct.name = eventSubType.getName();
 			eventSubStreamerProduct.cooldown = 0;
 
 			return eventSubStreamerProduct;

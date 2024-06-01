@@ -1,24 +1,14 @@
 package com.twitchliveloadout.ui;
 
-import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceDuration;
+import com.twitchliveloadout.marketplace.MarketplaceMessages;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProductCost;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
+import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.util.ImageUtil;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
 @Slf4j
 public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduct> {
@@ -41,12 +31,10 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 		boolean isActive = marketplaceProduct.isActive();
 		boolean isExpired = marketplaceProduct.isExpired();
 		long expiresInMs = marketplaceProduct.getExpiresInMs();
+		TwitchTransaction transaction = marketplaceProduct.getTransaction();
 		String streamerProductName = marketplaceProduct.getStreamerProduct().name;
-		String viewerName = marketplaceProduct.getTransaction().user_name;
-		TwitchProductCost productCost = marketplaceProduct.getTwitchProduct().cost;
-		Double costAmount = productCost.amount;
-		String costCurrency = productCost.type;
 		String statusLine = "<b color='green'>ACTIVE</b>";
+		String[] lines = {};
 
 		if (isExpired) {
 			statusLine = "<b color='red'>EXPIRED</b>";
@@ -54,13 +42,30 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 			statusLine = "<b color='orange'>PAUSED</b>";
 		}
 
-		String[] lines = {
-			statusLine,
-			"<b>"+ streamerProductName +"</b>",
-			"Donation of <b color='yellow'>"+ costAmount +" "+ costCurrency +"</b>",
-			"By <b color='yellow'>"+ viewerName +"</b>",
-			"Expires in "+ MarketplaceDuration.humanizeDurationMs(expiresInMs),
-		};
+		if (transaction.isCurrencyTransaction())
+		{
+			lines = new String[]{
+				statusLine,
+				"<b>" + streamerProductName + "</b>",
+				MarketplaceMessages.formatMessage("Donation of <b color='yellow'>{currencyAmount} {currencyType}</b>", marketplaceProduct, null),
+				MarketplaceMessages.formatMessage("By <b color='yellow'>{viewerName}</b>", marketplaceProduct, null),
+				"Expires in " + MarketplaceDuration.humanizeDurationMs(expiresInMs),
+			};
+		}
+
+		if (transaction.isEventSubTransaction())
+		{
+			TwitchEventSubType eventSubType = transaction.eventSubType;
+
+			lines = new String[]{
+				statusLine,
+				"<b>Channel Event</b>",
+				"<b color='yellow'>" + eventSubType.getName() + "</b>",
+				MarketplaceMessages.formatMessage("By <b color='yellow'>{viewerName}</b>", marketplaceProduct, null),
+				"Expires in " + MarketplaceDuration.humanizeDurationMs(expiresInMs),
+			};
+		}
+
 		return lines;
 	}
 
