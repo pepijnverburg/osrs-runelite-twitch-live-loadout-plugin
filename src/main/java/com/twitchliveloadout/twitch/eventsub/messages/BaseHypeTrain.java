@@ -3,7 +3,6 @@ package com.twitchliveloadout.twitch.eventsub.messages;
 import java.util.ArrayList;
 
 public class BaseHypeTrain extends BaseBroadcasterInfo {
-    public String id;
     public Integer level;
     public Integer total;
     public Integer progress;
