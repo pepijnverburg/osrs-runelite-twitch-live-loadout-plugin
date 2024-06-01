@@ -285,6 +285,12 @@ public class MarketplacePanel extends JPanel
 		// directly add all the products again in the new order
 		for (TwitchTransaction twitchTransaction : archivedTransactions)
 		{
+
+			// guard: skip when too many transactions are there
+			if (twitchTransactionPanelIndex >= transactionPanels.size()) {
+				break;
+			}
+
 			TwitchTransactionPanel panel = transactionPanels.get(twitchTransactionPanelIndex);
 
 			// guard: check if the panel is valid
