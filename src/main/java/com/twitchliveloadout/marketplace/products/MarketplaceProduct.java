@@ -1009,10 +1009,16 @@ public class MarketplaceProduct
 		Double chance = condition.chance;
 		String combatStyle = condition.combatStyle;
 		Integer regionId = condition.regionId;
+		Integer genderId = condition.genderId;
 		ArrayList<EbsCondition> orConditions = condition.or;
 		ArrayList<EbsCondition> andConditions = condition.and;
 		ArrayList<EbsCondition> notConditions = condition.not;
 		boolean orConditionsVerified = false;
+
+		Client client = manager.getClient();
+		Player localPlayer = client.getLocalPlayer();
+		PlayerComposition localPlayerComposition = (localPlayer == null ? null : localPlayer.getPlayerComposition());
+		int localGenderId = (localPlayerComposition == null ? MALE_GENDER_ID : localPlayerComposition.getGender()); // default to male gender?
 
 		// guard: check if the chance is passed
 		if (!MarketplaceRandomizers.rollChance(chance))
@@ -1039,7 +1045,7 @@ public class MarketplaceProduct
 		}
 
 		// guard: check if this condition should check a varbit
-		if (varbitId >= 0 && manager.getClient().getVarbitValue(varbitId) != varbitValue)
+		if (varbitId >= 0 && client.getVarbitValue(varbitId) != varbitValue)
 		{
 			return false;
 		}
@@ -1052,6 +1058,12 @@ public class MarketplaceProduct
 
 		// guard: check whether a specific region is requested
 		if (regionId != null && regionId != manager.getCurrentRegionId())
+		{
+			return false;
+		}
+
+		// guard: check whether a specific gender is requested
+		if (genderId != null && genderId != localGenderId)
 		{
 			return false;
 		}
