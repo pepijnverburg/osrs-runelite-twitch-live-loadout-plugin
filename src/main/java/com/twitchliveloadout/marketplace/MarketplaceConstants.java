@@ -55,6 +55,7 @@ public class MarketplaceConstants {
 	public static final String CHAT_NOTIFICATION_MESSAGE_TYPE = "chat";
 	public static final String OVERHEAD_NOTIFICATION_MESSAGE_TYPE = "overhead";
 	public static final String POPUP_NOTIFICATION_MESSAGE_TYPE = "popup";
+	public static final String TWITCH_CHAT_NOTIFICATION_MESSAGE_TYPE = "twitch-chat";
 
 	public static final String POPUP_NOTIFICATION_TITLE = "Live Loadout";
 

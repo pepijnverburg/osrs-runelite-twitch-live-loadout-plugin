@@ -193,7 +193,7 @@ public class MarketplaceManager {
 		this.spawnOverheadManager = new SpawnOverheadManager(client, overlayManager);
 		this.animationManager = new AnimationManager(plugin, client);
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
-		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client, this);
+		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client, twitchApi, this);
 		this.widgetManager = new WidgetManager(plugin, client);
 		this.menuManager = new MenuManager(config, client);
 		this.soundManager = new SoundManager(client, config);

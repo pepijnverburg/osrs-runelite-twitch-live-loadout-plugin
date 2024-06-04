@@ -1,6 +1,7 @@
 package com.twitchliveloadout.marketplace;
 
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
+import com.twitchliveloadout.marketplace.products.StreamerProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
@@ -14,19 +15,31 @@ import java.util.HashMap;
 public class MarketplaceMessages {
 	public static String formatMessage(String message, MarketplaceProduct marketplaceProduct, MarketplaceEffect marketplaceEffect)
 	{
-		TwitchTransaction transaction = (marketplaceProduct != null ? marketplaceProduct.getTransaction() : null);
-		TwitchProduct twitchProduct = (marketplaceProduct != null ? marketplaceProduct.getTwitchProduct() : null);
+		TwitchTransaction transaction = null;
+		TwitchProduct twitchProduct = null;
+		StreamerProduct streamerProduct = null;
 		BaseMessage eventSubMessage = null;
 		HashMap<MarketplaceMessageTemplate, String> templateLookup = new HashMap<>();
+
+		if (marketplaceProduct != null) {
+			transaction = marketplaceProduct.getTransaction();
+			twitchProduct = marketplaceProduct.getTwitchProduct();
+			streamerProduct = marketplaceProduct.getStreamerProduct();
+		}
 
 		// add defaults
 		templateLookup.put(MarketplaceMessageTemplate.VIEWER_NAME, "viewer");
 		templateLookup.put(MarketplaceMessageTemplate.CHANNEL_NAME, "streamer");
+		templateLookup.put(MarketplaceMessageTemplate.PRODUCT_NAME, "Random Event");
 
 		if (transaction != null) {
 			templateLookup.put(MarketplaceMessageTemplate.VIEWER_NAME, transaction.user_name);
 			templateLookup.put(MarketplaceMessageTemplate.CHANNEL_NAME, transaction.broadcaster_name);
 			eventSubMessage = transaction.eventSubMessage;
+		}
+
+		if (streamerProduct != null) {
+			templateLookup.put(MarketplaceMessageTemplate.PRODUCT_NAME, streamerProduct.name);
 		}
 
 		if (twitchProduct != null) {
@@ -118,6 +131,7 @@ public class MarketplaceMessages {
 	public enum MarketplaceMessageTemplate {
 		VIEWER_NAME("viewerName"),
 		CHANNEL_NAME("channelName"),
+		PRODUCT_NAME("productName"),
 		CURRENCY_AMOUNT("currencyAmount"),
 		CURRENCY_TYPE("currencyType"),
 		PRODUCT_DURATION("productDuration"),

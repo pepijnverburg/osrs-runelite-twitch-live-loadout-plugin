@@ -1,5 +1,6 @@
 package com.twitchliveloadout.twitch;
 
+import com.formdev.flatlaf.json.Json;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -47,6 +48,7 @@ public class TwitchApi
 	public final static int MAX_SCHEDULED_STATE_AMOUNT = 50;
 
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
+	public final static String DEFAULT_EXTENSION_VERSION = "2.2.0";
 	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com";
 	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions";
 	private final static String RATE_LIMIT_REMAINING_HEADER = "Ratelimit-Remaining";
@@ -64,6 +66,8 @@ public class TwitchApi
 	private final static int GET_EBS_PRODUCTS_TIMEOUT_MS = 10 * 1000;
 	private final static int GET_EBS_TRANSACTIONS_TIMEOUT_MS = 10 * 1000;
 	private final static int ENSURE_OAUTH_TOKEN_TIMEOUT_MS = 10 * 1000;
+	private final static int CHAT_MESSAGE_TIMEOUT_MS = 10 * 1000;
+
 	private final static int CREATE_SUBSCRIPTION_TIMEOUT_MS = 10 * 1000;
 	public final static int TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S = 10 * 60; // refresh token x minutes before expiry
 	private final static int ERROR_CHAT_MESSAGE_THROTTLE = 15 * 60 * 1000; // in ms
@@ -89,6 +93,7 @@ public class TwitchApi
 	final OkHttpClient ebsProductsHttpClient;
 
 	private final OkHttpClient oAuthHttpClient;
+	private final OkHttpClient chatMessageHttpClient;
 
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final Client client;
@@ -128,6 +133,7 @@ public class TwitchApi
 		pubSubHttpClient = createHttpClient(SEND_PUBSUB_TIMEOUT_MS);
 		ebsProductsHttpClient = createHttpClient(GET_EBS_PRODUCTS_TIMEOUT_MS);
 		oAuthHttpClient = createHttpClient(ENSURE_OAUTH_TOKEN_TIMEOUT_MS);
+		chatMessageHttpClient = createHttpClient(CHAT_MESSAGE_TIMEOUT_MS);
 	}
 
 	public void shutDown()
@@ -357,6 +363,36 @@ public class TwitchApi
 		performRequest(request, oAuthHttpClient, responseHandler, errorHandler);
 	}
 
+	public void sendChatMessage(String message)
+	{
+		String channelId = getChannelId();
+
+		final String url = DEFAULT_TWITCH_BASE_URL +"/chat?broadcaster_id="+ channelId;
+		final JsonObject data = new JsonObject();
+
+		// add the required data, reference: https://dev.twitch.tv/docs/api/reference/#send-extension-chat-message
+		data.addProperty("text", message);
+		data.addProperty("extension_id", DEFAULT_EXTENSION_CLIENT_ID);
+		data.addProperty("extension_version", DEFAULT_EXTENSION_VERSION);
+
+		performPostRequest(
+			url,
+			data,
+			chatMessageHttpClient,
+			(response) -> {
+				final int responseCode = response.code();
+
+				if (responseCode != 204)
+				{
+					plugin.logSupport("Could not send notification to the Twitch chat (message: "+ message +") due to an error with code: "+ responseCode);
+				}
+			},
+			(error) -> {
+				plugin.logSupport("Could not send notification to the Twitch chat due to an error: "+ message, error);
+			}
+		);
+	}
+
 	private void verifyStateUpdateResponse(String type, Response response, String compressedState) throws Exception
 	{
 		final int responseCode = response.code();
@@ -447,7 +483,7 @@ public class TwitchApi
 
 		performRequest(
 			validateRequest,
-				oAuthHttpClient,
+			oAuthHttpClient,
 			(response) -> {
 				int responseCode = response.code();
 

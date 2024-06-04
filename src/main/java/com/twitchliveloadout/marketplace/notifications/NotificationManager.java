@@ -10,6 +10,7 @@ import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
+import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import net.runelite.client.chat.QueuedMessage;
 import java.awt.*;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
@@ -37,9 +39,11 @@ public class NotificationManager {
 	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
 	private final Client client;
+	private final TwitchApi twitchApi;
 	private final MarketplaceManager manager;
 	private Instant notificationsLockedUntil;
 	private ScheduledFuture overheadResetTask;
+	private final CopyOnWriteArrayList<String> twitchChatNotifiedTransactionIds = new CopyOnWriteArrayList<>();
 
 	/**
 	 * Queue of all the notifications that should be shown to the player
@@ -48,12 +52,13 @@ public class NotificationManager {
 	 */
 	private final EvictingQueue<ArrayList<Notification>> notificationGroupQueue = EvictingQueue.create(NOTIFICATION_QUEUE_MAX_SIZE);
 
-	public NotificationManager(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, Client client, MarketplaceManager manager)
+	public NotificationManager(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, Client client, TwitchApi twitchApi, MarketplaceManager manager)
 	{
 		this.plugin = plugin;
 		this.config = config;
 		this.chatMessageManager = chatMessageManager;
 		this.client = client;
+		this.twitchApi = twitchApi;
 		this.manager = manager;
 	}
 
@@ -149,6 +154,11 @@ public class NotificationManager {
 			{
 				sendPopupNotification(notification);
 			}
+			else if (TWITCH_CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
+			{
+				sendTwitchChatNotification(notification);
+			}
+
 		} catch (Exception exception) {
 			plugin.logSupport("Could not send notification due to an error: ", exception);
 		}
@@ -262,6 +272,37 @@ public class NotificationManager {
 		});
 	}
 
+	private void sendTwitchChatNotification(Notification notification)
+	{
+
+		// guard: skip when the Twitch chat messages are disabled
+		if (!config.twitchChatBitsDonationMessageEnabled())
+		{
+			return;
+		}
+
+		try {
+			String transactionId = notification.marketplaceProduct.getTransaction().id;
+
+			// guard: skip when message was already sent for this transaction
+			// NOTE: this means each transaction can only send ONE message to avoid spam
+			// we cannot think of a use-case right now when multiple messages would be nice
+			if (twitchChatNotifiedTransactionIds.contains(transactionId))
+			{
+				return;
+			}
+
+			// register this transaction ID as being handled
+			twitchChatNotifiedTransactionIds.add(transactionId);
+
+			// send the message to the twitch api
+			String message = getMessage(notification);
+			twitchApi.sendChatMessage(message);
+		} catch (Exception exception) {
+			// empty
+		}
+	}
+
 	public void forceHideOverheadText()
 	{
 		Player player = client.getLocalPlayer();
@@ -285,7 +326,9 @@ public class NotificationManager {
 
 	private String getMessage(Notification notification)
 	{
-		String message = notification.ebsNotification.message;
+		EbsNotification ebsNotification = notification.ebsNotification;
+		String message = ebsNotification.message;
+		String messageType = ebsNotification.messageType;
 		final MarketplaceProduct marketplaceProduct = notification.marketplaceProduct;
 		final MarketplaceEffect marketplaceEffect = notification.marketplaceEffect;
 
@@ -316,7 +359,13 @@ public class NotificationManager {
 					message = eventSubType.getMessageGetter().execute(config);
 				}
 			} else if (isCurrencyTransaction) {
-				message = config.defaultBitsDonationMessage();
+
+				// override the default bits message when its the Twitch chat notification
+				if (TWITCH_CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType)) {
+					message = config.twitchChatBitsDonationMessage();
+				} else {
+					message = config.defaultBitsDonationMessage();
+				}
 			} else {
 				message = "Thank you {viewerName}!";
 			}

@@ -116,7 +116,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default TwitchVisibilityEntry twitchVisibility()
 	{
-		return TwitchVisibilityEntry.NORMAL;
+		return TwitchVisibilityEntry.ALWAYS;
 	}
 
 	@ConfigSection(
@@ -768,7 +768,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "popupDonationMessageEnabled",
 			name = "Enable pop-up messages",
 			description = "Allow messages as a pop-up.",
-			position = 6,
+			position = 8,
 			section = notificationsSection
 	)
 	default boolean popupMessagesEnabled()
@@ -780,7 +780,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "chatDonationMessageEnabled",
 			name = "Enable chat messages",
 			description = "Allow messages as a chat message.",
-			position = 8,
+			position = 12,
 			section = notificationsSection
 	)
 	default boolean chatMessagesEnabled()
@@ -792,7 +792,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "chatMessageColor",
 			name = "Chat message color",
 			description = "The color in which the chat messages are shown.",
-			position = 9,
+			position = 16,
 			section = notificationsSection
 	)
 	default Color chatMessageColor()
@@ -809,7 +809,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "overheadMessageDurationS",
 			name = "Overhead text duration",
 			description = "How long overhead notifications, such as thank you's are shown above the player.",
-			position = 10,
+			position = 20,
 			hidden = false,
 			section = notificationsSection
 	)
@@ -823,7 +823,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "marketplaceDefaultDonationMessage", // NOTE: keep old key for migration purposes
 			name = "Default bits donation message",
 			description = "Default message shown when bits are donated. Use '{viewerName}', '{currencyAmount}' and '{currencyType}' to replace with values from the transaction.",
-			position = 12,
+			position = 24,
 			section = notificationsSection
 	)
 	default String defaultBitsDonationMessage()
@@ -832,10 +832,34 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "twitchChatBitsDonationMessage",
+			name = "Twitch Chat bits donation message",
+			description = "Enable sending a Twitch Chat message with details of the bits donation.",
+			position = 28,
+			section = notificationsSection
+	)
+	default String twitchChatBitsDonationMessage()
+	{
+		return "{viewerName} just activated \"{productName}\" for {currencyAmount} {currencyType}!";
+	}
+
+	@ConfigItem(
+			keyName = "twitchChatBitsDonationMessageEnabled",
+			name = "Enable Twitch Chat bits donation message",
+			description = "Enable sending a Twitch Chat message with details of the bits donation.",
+			position = 32,
+			section = notificationsSection
+	)
+	default boolean twitchChatBitsDonationMessageEnabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 			keyName = "followEventMessageEnabled",
 			name = "Enable follow message",
 			description = "Enable follow event message",
-			position = 13,
+			position = 36,
 			section = notificationsSection
 	)
 	default boolean followEventMessageEnabled()
@@ -847,7 +871,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "followEventMessage",
 			name = "Message on follow",
 			description = "Message shown when there is a new channel follower.",
-			position = 14,
+			position = 40,
 			section = notificationsSection
 	)
 	default String followEventMessage()
@@ -859,7 +883,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "channelPointsRedeemEventMessageEnabled",
 			name = "Enable channel point message",
 			description = "Enable message shown when there is a channel point redeem.",
-			position = 15,
+			position = 44,
 			section = notificationsSection
 	)
 	default boolean channelPointsRedeemEventMessageEnabled()
@@ -871,7 +895,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "channelPointsRedeemEventMessage",
 			name = "Message on channel point redeem",
 			description = "Message shown when there is a channel point redeem.",
-			position = 16,
+			position = 48,
 			section = notificationsSection
 	)
 	default String channelPointsRedeemEventMessage()
@@ -883,7 +907,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "subscribeEventMessageEnabled",
 			name = "Enable sub message",
 			description = "Enable message shown when there is a new sub.",
-			position = 17,
+			position = 52,
 			section = notificationsSection
 	)
 	default boolean subscribeEventMessageEnabled()
@@ -895,7 +919,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "subscribeEventMessageOnGiftEnabled",
 			name = "Enable sub message when gifted",
 			description = "Enable message when the sub is gifted.",
-			position = 17,
+			position = 56,
 			section = notificationsSection
 	)
 	default boolean subscribeEventMessageOnGiftEnabled()
@@ -907,7 +931,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "subscribeEventMessage",
 			name = "Message on new sub",
 			description = "Message shown when there is a new sub.",
-			position = 18,
+			position = 60,
 			section = notificationsSection
 	)
 	default String subscribeEventMessage()
@@ -919,7 +943,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "resubscribeEventMessageEnabled",
 			name = "Enable resub message",
 			description = "Enable message shown when there is a resub.",
-			position = 19,
+			position = 64,
 			section = notificationsSection
 	)
 	default boolean resubscribeEventMessageEnabled()
@@ -931,7 +955,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "resubscribeEventMessage",
 			name = "Message on resub",
 			description = "Message shown when there is a resub.",
-			position = 20,
+			position = 68,
 			section = notificationsSection
 	)
 	default String resubscribeEventMessage()
@@ -943,7 +967,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "giftSubscriptionEventMessageEnabled",
 			name = "Enable gift sub message",
 			description = "Enable message shown when there is a gift subscription.",
-			position = 21,
+			position = 72,
 			section = notificationsSection
 	)
 	default boolean giftSubscriptionEventMessageEnabled()
@@ -955,7 +979,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "giftSubscriptionEventMessage",
 			name = "Message on gift",
 			description = "Message shown when there is a gift subscription.",
-			position = 22,
+			position = 76,
 			section = notificationsSection
 	)
 	default String giftSubscriptionEventMessage()
@@ -967,7 +991,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "raidEventMessageEnabled",
 			name = "Enable raid message",
 			description = "Enable message shown when there is a raid.",
-			position = 23,
+			position = 80,
 			section = notificationsSection
 	)
 	default boolean raidEventMessageEnabled()
@@ -979,7 +1003,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "raidEventMessage",
 			name = "Message on raid",
 			description = "Message shown when you receive a raid.",
-			position = 24,
+			position = 84,
 			section = notificationsSection
 	)
 	default String raidEventMessage()
@@ -991,7 +1015,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "addedModMessageEnabled",
 			name = "Enable add mod message",
 			description = "Enable message shown a user is promoted to mod.",
-			position = 25,
+			position = 88,
 			section = notificationsSection
 	)
 	default boolean addedModMessageEnabled()
@@ -1003,7 +1027,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "addedModMessage",
 			name = "Message on mod added",
 			description = "Message shown a user is promoted to mod.",
-			position = 26,
+			position = 92,
 			section = notificationsSection
 	)
 	default String addedModMessage()
@@ -1015,7 +1039,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "removedModMessageEnabled",
 			name = "Enable remove mod message",
 			description = "Enable message shown when a user is demoted from mod.",
-			position = 27,
+			position = 96,
 			section = notificationsSection
 	)
 	default boolean removedModMessageEnabled()
@@ -1027,7 +1051,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "removedModMessage",
 			name = "Message on mod removal",
 			description = "Message shown when a user is demoted from mod.",
-			position = 28,
+			position = 100,
 			section = notificationsSection
 	)
 	default String removedModMessage()
@@ -1039,7 +1063,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "beginHypeTrainMessageEnabled",
 			name = "Enable hype train begin message",
 			description = "Enable message when a hype train begins.",
-			position = 29,
+			position = 104,
 			section = notificationsSection
 	)
 	default boolean beginHypeTrainMessageEnabled()
@@ -1051,7 +1075,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "beginHypeTrainMessage",
 			name = "Message on hype train begin",
 			description = "Message when a hype train begins",
-			position = 30,
+			position = 108,
 			section = notificationsSection
 	)
 	default String beginHypeTrainMessage()
@@ -1063,7 +1087,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "progressHypeTrainMessageEnabled",
 			name = "Enable hype train progression message",
 			description = "Enable message when a hype train progresses in percentage or level.",
-			position = 31,
+			position = 112,
 			section = notificationsSection
 	)
 	default boolean progressHypeTrainMessageEnabled()
@@ -1075,7 +1099,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "progressHypeTrainMessage",
 			name = "Message on hype train progression",
 			description = "Message when a hype train progresses in percentage or level.",
-			position = 32,
+			position = 116,
 			section = notificationsSection
 	)
 	default String progressHypeTrainMessage()
@@ -1087,7 +1111,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "endHypeTrainMessageEnabled",
 			name = "Enable hype train end message",
 			description = "Enable message when a hype train ends.",
-			position = 33,
+			position = 120,
 			section = notificationsSection
 	)
 	default boolean endHypeTrainMessageEnabled()
@@ -1099,7 +1123,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "endHypeTrainMessage",
 			name = "Message on hype train end",
 			description = "Message when a hype train ends.",
-			position = 34,
+			position = 124,
 			section = notificationsSection
 	)
 	default String endHypeTrainMessage()
@@ -1111,7 +1135,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "donateCharityCampaignMessageEnabled",
 			name = "Enable charity donation message",
 			description = "Enable message when a charity campaign receives a donation.",
-			position = 35,
+			position = 128,
 			section = notificationsSection
 	)
 	default boolean donateCharityCampaignMessageEnabled()
@@ -1123,7 +1147,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "donateCharityCampaignMessage",
 			name = "Message on charity donation",
 			description = "Message when a charity campaign receives a donation.",
-			position = 36,
+			position = 132,
 			section = notificationsSection
 	)
 	default String donateCharityCampaignMessage()
@@ -1135,7 +1159,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "startCharityCampaignMessageEnabled",
 			name = "Enable charity start message",
 			description = "Enable message when a charity campaign starts.",
-			position = 37,
+			position = 136,
 			section = notificationsSection
 	)
 	default boolean startCharityCampaignMessageEnabled()
@@ -1147,7 +1171,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "startCharityCampaignMessage",
 			name = "Message on charity start",
 			description = "Message when a charity campaign starts",
-			position = 38,
+			position = 140,
 			section = notificationsSection
 	)
 	default String startCharityCampaignMessage()
@@ -1159,7 +1183,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "progressCharityCampaignMessageEnabled",
 			name = "Enable charity progression message",
 			description = "Enable message when a charity progresses in amount donated.",
-			position = 39,
+			position = 144,
 			section = notificationsSection
 	)
 	default boolean progressCharityCampaignMessageEnabled()
@@ -1171,7 +1195,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "progressCharityCampaignMessage",
 			name = "Message on charity progression",
 			description = "Message when a charity progresses in amount donated.",
-			position = 40,
+			position = 148,
 			section = notificationsSection
 	)
 	default String progressCharityCampaignMessage()
@@ -1183,7 +1207,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "stopCharityCampaignMessageEnabled",
 			name = "Enable charity end message",
 			description = "Enable message when a charity campaign ends.",
-			position = 41,
+			position = 152,
 			section = notificationsSection
 	)
 	default boolean stopCharityCampaignMessageEnabled()
@@ -1195,7 +1219,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "stopCharityCampaignMessage",
 			name = "Message on charity end",
 			description = "Message when a charity campaign ends.",
-			position = 42,
+			position = 156,
 			section = notificationsSection
 	)
 	default String stopCharityCampaignMessage()
