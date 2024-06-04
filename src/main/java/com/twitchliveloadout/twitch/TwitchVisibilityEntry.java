@@ -3,7 +3,7 @@ package com.twitchliveloadout.twitch;
 import lombok.Getter;
 
 public enum TwitchVisibilityEntry {
-    NORMAL("normal"),
+    ALWAYS("normal"),
     HOVER("hover");
 
     @Getter
