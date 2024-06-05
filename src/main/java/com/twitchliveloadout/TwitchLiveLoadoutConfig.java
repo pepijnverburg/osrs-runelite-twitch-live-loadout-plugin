@@ -116,7 +116,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default TwitchVisibilityEntry twitchVisibility()
 	{
-		return TwitchVisibilityEntry.ALWAYS;
+		return TwitchVisibilityEntry.HOVER;
 	}
 
 	@ConfigSection(
