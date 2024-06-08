@@ -53,6 +53,18 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String QUESTS_CONFIG_KEY = "quests";
 	public final static String SEASONAL_RELICS_CONFIG_KEY = "seasonal-relics";
 	public final static String SEASONAL_AREAS_CONFIG_KEY = "seasonal-areas";
+	public final static String[] PERSISTENT_STATE_CONFIG_KEYS = new String[]{
+		COLLECTION_LOG_CONFIG_KEY,
+		LOOTING_BAG_ITEMS_CONFIG_KEY,
+		LOOTING_BAG_PRICE_CONFIG_KEY,
+		BANK_TABBED_ITEMS_CONFIG_KEY,
+		BANK_PRICE_CONFIG_KEY,
+		INVOCATIONS_CONFIG_KEY,
+		INVOCATIONS_RAID_LEVEL_CONFIG_KEY,
+		QUESTS_CONFIG_KEY,
+		SEASONAL_RELICS_CONFIG_KEY,
+		SEASONAL_AREAS_CONFIG_KEY,
+	};
 
 	public final static int MIN_OVERLAY_TOP_POSITION = 25;
 	public final static int MAX_OVERLAY_TOP_POSITION = 75;

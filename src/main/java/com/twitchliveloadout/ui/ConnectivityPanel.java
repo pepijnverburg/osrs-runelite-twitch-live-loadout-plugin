@@ -46,6 +46,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import org.apache.commons.lang3.tuple.Pair;
 
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PERSISTENT_STATE_CONFIG_KEYS;
+
 public class ConnectivityPanel extends JPanel
 {
 	private final static String DEFAULT_TEXT_COLOR = "#ffffff";
@@ -69,6 +71,8 @@ public class ConnectivityPanel extends JPanel
 	private final TextPanel authPanel = new TextPanel("Twitch Token Validity", "N/A");
 	private final TextPanel rateLimitPanel = new TextPanel("Twitch API Limit", "N/A");
 	private final TextPanel statePanel = new TextPanel("Loadout State Size", "N/A");
+	private final JPanel stateResetPanel = new JPanel(new BorderLayout());
+	private final JLabel stateResetLabel = new JLabel();
 	private JPanel actionsContainer = new JPanel();
 
 	private final TwitchLiveLoadoutPlugin plugin;
@@ -108,6 +112,11 @@ public class ConnectivityPanel extends JPanel
 			LinkBrowser.browse(SETUP_GUIDE_URL);
 		}));
 
+		TwitchLiveLoadoutPanel.initializePanelButton(stateResetPanel, stateResetLabel, "Reset state", () -> {
+			plugin.resetPersistentStateConfiguration();
+			twitchState.resetState();
+		});
+
 		constraints.fill = GridBagConstraints.HORIZONTAL;
 		constraints.weightx = 1;
 		constraints.gridx = 0;
@@ -127,6 +136,8 @@ public class ConnectivityPanel extends JPanel
 		wrapper.add(rateLimitPanel, constraints);
 		constraints.gridy++;
 		wrapper.add(statePanel, constraints);
+		constraints.gridy++;
+		wrapper.add(stateResetPanel, constraints);
 		constraints.gridy++;
 
 		add(wrapper, BorderLayout.NORTH);

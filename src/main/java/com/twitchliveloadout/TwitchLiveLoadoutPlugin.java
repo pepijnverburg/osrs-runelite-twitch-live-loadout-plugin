@@ -1220,6 +1220,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+	public void resetPersistentStateConfiguration()
+	{
+		for (String configKey : PERSISTENT_STATE_CONFIG_KEYS)
+		{
+			setConfiguration(configKey, "");
+		}
+	}
+
 	public String getConfiguration(String configKey)
 	{
 		try {

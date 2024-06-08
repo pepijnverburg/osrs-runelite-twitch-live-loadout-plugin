@@ -186,7 +186,7 @@ public class MarketplacePanel extends JPanel
 		// for now always show the playback panel
 		cardLayout.show(wrapper, PLAYBACK_PANEL);
 
-		initializePanelButton(startPanel, startLabel, getPlaybackButtonTitle(), () -> {
+		TwitchLiveLoadoutPanel.initializePanelButton(startPanel, startLabel, getPlaybackButtonTitle(), () -> {
 			final boolean isMarketplaceActive = marketplaceManager.isActive();
 
 			if (isMarketplaceActive) {
@@ -199,7 +199,7 @@ public class MarketplacePanel extends JPanel
 			rebuildProductPanels();
 		});
 
-		initializePanelButton(testModePanel, testModeLabel, getTestModeButtonTitle(), () -> {
+		TwitchLiveLoadoutPanel.initializePanelButton(testModePanel, testModeLabel, getTestModeButtonTitle(), () -> {
 			final boolean isTestModeActive = marketplaceManager.isTestModeActive();
 
 			if (isTestModeActive) {
@@ -212,7 +212,7 @@ public class MarketplacePanel extends JPanel
 			rebuildProductPanels();
 		});
 
-		initializePanelButton(chaosModePanel, chaosModeLabel, getChaosModeButtonTitle(), () -> {
+		TwitchLiveLoadoutPanel.initializePanelButton(chaosModePanel, chaosModeLabel, getChaosModeButtonTitle(), () -> {
 			final boolean isChaosModeActive = marketplaceManager.isChaosModeActive();
 
 			if (isChaosModeActive) {
@@ -225,7 +225,7 @@ public class MarketplacePanel extends JPanel
 			rebuildProductPanels();
 		});
 
-		initializePanelButton(freeModePanel, freeModeLabel, getFreeModeButtonTitle(), () -> {
+		TwitchLiveLoadoutPanel.initializePanelButton(freeModePanel, freeModeLabel, getFreeModeButtonTitle(), () -> {
 			final boolean isFreeModeActive = marketplaceManager.isFreeModeActive();
 
 			if (isFreeModeActive) {
@@ -422,40 +422,5 @@ public class MarketplacePanel extends JPanel
 	private String getFreeModeButtonTitle()
 	{
 		return "<html><b color='"+ (marketplaceManager.isFreeModeActive() ? "red" : "yellow") +"'>"+ (marketplaceManager.isFreeModeActive() ? "DISABLE FREE MODE" : "ENABLE FREE MODE ("+ MarketplaceManager.FREE_MODE_EXPIRY_TIME_READABLE +")") +"</b></html>";
-	}
-
-	private void initializePanelButton(JPanel panel, JLabel label, String buttonTitle, ButtonCallback buttonCallback)
-	{
-		panel.setLayout(new BorderLayout());
-		panel.setBorder(new EmptyBorder(10, 10, 10, 10));
-		panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		panel.add(label, BorderLayout.CENTER);
-		Styles.styleBigLabel(label, buttonTitle);
-		panel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mousePressed(MouseEvent mouseEvent)
-			{
-				buttonCallback.execute();
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent mouseEvent)
-			{
-				panel.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
-				panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-			}
-
-			@Override
-			public void mouseExited(MouseEvent mouseEvent)
-			{
-				panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-				panel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-			}
-		});
-	}
-
-	public interface ButtonCallback {
-		public void execute();
 	}
 }

@@ -61,7 +61,7 @@ public class TwitchState {
 	/**
 	 * The current state that is queued to be sent out.
 	 */
-	private final JsonObject currentState = new JsonObject();
+	private JsonObject currentState = new JsonObject();
 
 	/**
 	 * An additional cyclic state that cannot be sent out at once
@@ -72,7 +72,7 @@ public class TwitchState {
 	private final static int MAX_BANK_ITEMS_PER_SLICE = 250;
 	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 250;
 	private final static String COLLECTION_LOG_FILTER_SEPARATOR = ",";
-	private final JsonObject cyclicState = new JsonObject();
+	private JsonObject cyclicState = new JsonObject();
 	@Getter
 	private TwitchStateEntry currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
 	private int currentCyclicSliceIndex = 0;
@@ -711,11 +711,15 @@ public class TwitchState {
 		boolean isActive = marketplaceManager != null && marketplaceManager.isActive() && !marketplaceManager.isFetchingEbsTransactionsErrored();
 		boolean channelEventsActive = config.marketplaceChannelEventsEnabled() && twitchEventSubClient.isConnected() && !config.twitchOAuthAccessToken().isEmpty() && !config.twitchOAuthRefreshToken().isEmpty();
 		boolean isTestModeActive = marketplaceManager != null && marketplaceManager.isTestModeActive();
+		boolean isFreeModeActive = marketplaceManager != null && marketplaceManager.isFreeModeActive();
+		boolean isChaosModeActive = marketplaceManager != null && marketplaceManager.isChaosModeActive();
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ACTIVE.getKey(), isActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_CHANNEL_EVENTS_ACTIVE.getKey(), channelEventsActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_TEST_MODE_ACTIVE.getKey(), isTestModeActive);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_FREE_MODE_ACTIVE.getKey(), isFreeModeActive);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_CHAOS_MODE_ACTIVE.getKey(), isChaosModeActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_PROTECTION_ENABLED.getKey(), config.marketplaceProtectionEnabled());
 		state.addProperty(TwitchStateEntry.SHARED_COOLDOWN.getKey(), config.marketplaceSharedCooldownS());
 		return state;
@@ -1002,6 +1006,12 @@ public class TwitchState {
 		plugin.loadFromConfiguration(INVOCATIONS_RAID_LEVEL_CONFIG_KEY, (String raidLevel) -> {
 			setInvocationsRaidLevel(raidLevel);
 		});
+	}
+
+	public void resetState()
+	{
+		currentState = new JsonObject();
+		cyclicState = new JsonObject();
 	}
 
 	public void setInToA(boolean isInToA)
