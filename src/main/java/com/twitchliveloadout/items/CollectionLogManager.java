@@ -299,4 +299,68 @@ public class CollectionLogManager {
 
 		return counters;
 	}
+
+
+	private static final List<Integer> COLLECTION_LOG_TAB_STRUCT_IDS = ImmutableList.of(
+			471, // Bosses
+			472, // Raids
+			473, // Clues
+			474, // Minigames
+			475  // Other
+	);
+	private static final int COLLECTION_LOG_KILL_COUNT_SCRIPT_ID = 2735;
+	private static final int COLLECTION_LOG_TAB_NAME_PARAM_ID = 682;
+	private static final int COLLECTION_LOG_TAB_ENUM_PARAM_ID = 683;
+	private static final int COLLECTION_LOG_PAGE_NAME_PARAM_ID = 689;
+	private static final int COLLECTION_LOG_PAGE_ITEMS_ENUM_PARAM_ID = 690;
+
+	/**
+	 * Init CollectionLog object with all items in the collection log. Does not include quantity or obtained status.
+	 * Based off cs2 scripts
+	 * <a href="https://github.com/Joshua-F/cs2-scripts/blob/master/scripts/%5Bproc,collection_draw_list%5D.cs2">2731 proc_collection_draw_list</a>
+	 * and
+	 * <a href="https://github.com/Joshua-F/cs2-scripts/blob/master/scripts/%5Bproc,collection_draw_log%5D.cs2">2732 proc_collection_draw_log</a>
+	 * If a user has previously clicked through the collection log with the plugin installed,
+	 * obtained and quantity will be set for each item if item exists in local save file.
+	 */
+	public void updateKillCounts()
+	{
+		plugin.runOnClientThread(() -> {
+			for (Integer structId : COLLECTION_LOG_TAB_STRUCT_IDS) {
+				StructComposition tabStruct = client.getStructComposition(structId);
+				String tabName = tabStruct.getStringValue(COLLECTION_LOG_TAB_NAME_PARAM_ID);
+				int tabEnumId = tabStruct.getIntValue(COLLECTION_LOG_TAB_ENUM_PARAM_ID);
+				EnumComposition tabEnum = client.getEnum(tabEnumId);
+
+				for (Integer pageStructId : tabEnum.getIntVals()) {
+					StructComposition pageStruct = client.getStructComposition(pageStructId);
+					String pageName = pageStruct.getStringValue(COLLECTION_LOG_PAGE_NAME_PARAM_ID);
+					int pageItemsEnumId = pageStruct.getIntValue(COLLECTION_LOG_PAGE_ITEMS_ENUM_PARAM_ID);
+					EnumComposition pageItemsEnum = client.getEnum(pageItemsEnumId);
+					log.info("PAGE NAME: "+ pageName);
+					/*
+					 * Run script to get available kill count names. Amounts are set in var2048 which isn't set unless
+					 * pages are manually opened in-game. Override amounts with 0 or previously saved amounts.
+					 *
+					 * https://github.com/Joshua-F/cs2-scripts/blob/master/scripts/%5Bproc,collection_category_count%5D.cs2
+					 */
+					client.runScript(COLLECTION_LOG_KILL_COUNT_SCRIPT_ID, pageStruct.getId());
+					List<String> killCountStrings = new ArrayList<>(
+							Arrays.asList(Arrays.copyOfRange(client.getStringStack(), 0, 3))
+					);
+					Collections.reverse(killCountStrings);
+
+					for (String killCountString : killCountStrings)
+					{
+						if (killCountString.isEmpty())
+						{
+							continue;
+						}
+
+						log.info("KC STRING: "+ killCountString);
+					}
+				}
+			}
+		});
+	}
 }
