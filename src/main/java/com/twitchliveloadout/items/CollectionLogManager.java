@@ -1,24 +1,29 @@
 package com.twitchliveloadout.items;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.*;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.EnumComposition;
+import net.runelite.api.StructComposition;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetID;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.events.NpcLootReceived;
 
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledFuture;
 
 @Slf4j
 public class CollectionLogManager {
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchState twitchState;
 	private final Client client;
+
+	private final HashMap<String, Integer> killCounts = new HashMap<>();
 
 	private static final int COLLECTION_LOG_ID = 621;
 	private static final int COLLECTION_LOG_ITEM_CONTAINER_ID = 36;
@@ -42,6 +47,7 @@ public class CollectionLogManager {
 		COLLECTION_LOG_MINIGAMES_TAB,
 		COLLECTION_LOG_OTHER_TAB,
 	};
+	private ScheduledFuture scheduledUpdateCurrentCategory = null;
 	public static final String COUNTERS_KEY_NAME = "c";
 	public static final String ITEMS_KEY_NAME = "i";
 
@@ -56,26 +62,23 @@ public class CollectionLogManager {
 	{
 		if (scriptPostFired.getScriptId() == COLLECTION_LOG_DRAW_LIST_SCRIPT_ID)
 		{
-			plugin.runOnClientThread(this::updateCurrentCategory);
+			log.info("ON SCRIPT!!!");
+			scheduleUpdateCurrentCategory();
 		}
 	}
 
 	public void onVarbitChanged(VarbitChanged varbitChanged)
 	{
 		int varbitId = varbitChanged.getVarbitId();
-		boolean matchFound = false;
 
 		for (int candidateVarbitId : COLLECTION_LOG_CATEGORY_VARBIT_IDS)
 		{
 			if (candidateVarbitId == varbitId)
 			{
-				matchFound = true;
+				log.info("ON VARBIT!!!");
+				scheduleUpdateCurrentCategory();
+				return;
 			}
-		}
-
-		if (matchFound)
-		{
-			plugin.runOnClientThread(this::updateCurrentCategory);
 		}
 	}
 
@@ -92,10 +95,8 @@ public class CollectionLogManager {
 		return categoryHead;
 	}
 
-	private String getCategoryTitle()
+	private String getCategoryTitle(Widget categoryHead)
 	{
-		final Widget categoryHead = getCategoryHead();
-
 		if (categoryHead == null)
 		{
 			return null;
@@ -147,16 +148,48 @@ public class CollectionLogManager {
 	}
 
 	/**
+	 * Somehow there is a race condition within the client when reading the kill counts
+	 * When inspecting the widgets for the kill counts is possible when they are read that the kill count
+	 * from the previous category is concatenated to the name of the new category. So for example in the situation of:
+	 * - You have a KC of 1 for Scorpia
+	 * - You have a KC of 0 for Scurrius
+	 *
+	 * When switching the tabs really fast the client can actually return a raw KC string for Scurrius with:
+	 * "Scurrius kills: 1"
+	 *
+	 * This is then split on the ":" and will result in the wrong KC for that boss. This is very strange behaviour,
+	 * because you would expect this whole string to be updated as a whole. It however looks like first the name part is updated
+	 * and after that the KC part. With the assumption this is a race condition a tiny delay is added below to update the current category.
+	 * When testing this has resolved the issue right now.
+	 *
+	 * This delay does mean we should cancel any other scheduled updates in the past when a new update is requested within the delay time.
+	 */
+	private void scheduleUpdateCurrentCategory()
+	{
+		if (scheduledUpdateCurrentCategory != null && !scheduledUpdateCurrentCategory.isDone())
+		{
+			scheduledUpdateCurrentCategory.cancel(true);
+		}
+
+		// NOTE: make sure to add a delay here to fix the race condition mentioned above
+		// this race condition can not be fixed within the plugin as it is part of the client
+		scheduledUpdateCurrentCategory = plugin.scheduleOnClientThread(
+			this::updateCurrentCategory,
+			100
+		);
+	}
+
+	/**
 	 * Handle a change of selected category to collect the current items and quantities.
 	 */
 	private void updateCurrentCategory()
 	{
-		// debug errors because this method is called on the client thread
-		// using invokeLater which makes it harder to verify than on our own threads.
+		// debug errors because this method is run on the client thread
 		try {
 			final CopyOnWriteArrayList<CollectionLogItem> items = getCurrentItems();
-			final JsonObject counters = getCurrentCounters();
-			final String categoryTitle = getCategoryTitle();
+			final Widget categoryHead = getCategoryHead();
+			final JsonObject counters = getCurrentCounters(categoryHead);
+			final String categoryTitle = getCategoryTitle(categoryHead);
 			final String tabTitle = getTabTitle();
 			JsonObject collectionLog = twitchState.getCollectionLog();
 
@@ -192,6 +225,10 @@ public class CollectionLogManager {
 			categoryLog.add(ITEMS_KEY_NAME, serializedItems);
 			tabLog.add(categoryTitle, categoryLog);
 
+//			log.info("-------------------");
+//			log.info("CATEGORY TITLE: "+ categoryTitle);
+//			log.info("COUNTERS: "+ counters.toString());
+
 			// update the twitch state
 			twitchState.setCollectionLog(collectionLog);
 		} catch (Exception exception) {
@@ -219,10 +256,9 @@ public class CollectionLogManager {
 		return items;
 	}
 
-	private JsonObject getCurrentCounters()
+	private JsonObject getCurrentCounters(Widget categoryHead)
 	{
 		final JsonObject counters = new JsonObject();
-		final Widget categoryHead = getCategoryHead();
 
 		if (categoryHead == null)
 		{
