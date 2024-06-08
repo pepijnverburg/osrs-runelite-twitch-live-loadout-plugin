@@ -139,7 +139,7 @@ public class NotificationManager {
 		EbsNotification ebsNotification = notification.ebsNotification;
 		String messageType = ebsNotification.messageType;
 
-		plugin.logSupport("Sending notification with message: "+ notification.ebsNotification.message);
+		// plugin.logSupport("Sending notification with message: "+ notification.ebsNotification.message);
 
 		try {
 			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
