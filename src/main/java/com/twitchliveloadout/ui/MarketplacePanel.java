@@ -359,7 +359,17 @@ public class MarketplacePanel extends JPanel
 
 		if (marketplaceManager.isTestModeActive())
 		{
-			statusText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>Receiving preview Random Events is ACTIVE when you are logged in. Disable preview when done.</b></html>";
+			statusText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>Receiving preview Random Events is ACTIVE when you are logged in. Disable preview mode when done.</b></html>";
+		}
+
+		if (marketplaceManager.isChaosModeActive())
+		{
+			statusText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>Chaos Mode is active, multiplying spawns and other things for Random Events. Disable chaos mode when done.</b></html>";
+		}
+
+		if (marketplaceManager.isFreeModeActive())
+		{
+			statusText = "<html><b color='"+ WARNING_TEXT_COLOR +"'>All configured Random Events are temporarily FREE for viewers. Disable free mode when done.</b></html>";
 		}
 
 		if (!marketplaceManager.isActive())
