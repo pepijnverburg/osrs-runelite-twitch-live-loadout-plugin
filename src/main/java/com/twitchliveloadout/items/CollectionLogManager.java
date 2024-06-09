@@ -28,12 +28,13 @@ public class CollectionLogManager {
 	private static final int COLLECTION_LOG_ID = 621;
 	private static final int COLLECTION_LOG_ITEM_CONTAINER_ID = 36;
 	private static final int COLLECTION_LOG_CATEGORY_ID = 19;
-	private static final int COLLECTION_LOG_TITLE = 1;
+	private static final int COLLECTION_LOG_CONTAINER_ID = 1;
+	private static final int COLLECTION_LOG_TITLE_INDEX = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
 	private static final int COLLECTION_LOG_RAIDS_TAB = 5;
 	private static final int COLLECTION_LOG_CLUES_TAB = 6;
 	private static final int COLLECTION_LOG_MINIGAMES_TAB = 7;
-	private static final int COLLECTION_LOG_TAB_TEXT_INDEX =3;
+	private static final int COLLECTION_LOG_TAB_TEXT_INDEX = 3;
 	private static final int COLLECTION_LOG_TAB_INACTIVE_COLOR = 16750623;
 	private static final int COLLECTION_LOG_TAB_ACTIVE_COLOR = 16754735;
 	private static final int COLLECTION_LOG_OTHER_TAB = 8;
@@ -174,7 +175,10 @@ public class CollectionLogManager {
 		// NOTE: make sure to add a delay here to fix the race condition mentioned above
 		// this race condition can not be fixed within the plugin as it is part of the client
 		scheduledUpdateCurrentCategory = plugin.scheduleOnClientThread(
-			this::updateCurrentCategory,
+				() -> {
+					updateCurrentCategory();
+					updateObtainedAmounts();
+				},
 			100
 		);
 	}
@@ -233,6 +237,30 @@ public class CollectionLogManager {
 			twitchState.setCollectionLog(collectionLog);
 		} catch (Exception exception) {
 			log.warn("Could not update the collection log due to the following error: ", exception);
+		}
+	}
+
+	private void updateObtainedAmounts()
+	{
+		try {
+			Widget containerWidget = client.getWidget(COLLECTION_LOG_ID, COLLECTION_LOG_CONTAINER_ID);
+			Widget titleWidget = containerWidget.getChild(COLLECTION_LOG_TITLE_INDEX);
+			String title = titleWidget.getText();
+			String[] titlePieces = title.split(" - ");
+
+			if (titlePieces.length <= 1)
+			{
+				return;
+			}
+
+			String obtainedAmountFraction = titlePieces[1];
+			String[] obtainedAmountPieces = obtainedAmountFraction.split("/");
+			Integer obtainedAmount = Integer.parseInt(obtainedAmountPieces[0]);
+			Integer obtainableAmount = Integer.parseInt(obtainedAmountPieces[1]);
+
+			twitchState.setCollectionLogAmounts(obtainedAmount, obtainableAmount);
+		} catch (Exception exception) {
+			// empty
 		}
 	}
 

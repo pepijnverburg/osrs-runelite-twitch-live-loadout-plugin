@@ -316,6 +316,14 @@ public class TwitchState {
 		plugin.setConfiguration(COLLECTION_LOG_CONFIG_KEY, collectionLog);
 	}
 
+	public void setCollectionLogAmounts(Integer obtainedAmount, Integer obtainableAmount)
+	{
+		cyclicState.addProperty(TwitchStateEntry.COLLECTION_LOG_OBTAINED_AMOUNT.getKey(), obtainedAmount);
+		cyclicState.addProperty(TwitchStateEntry.COLLECTION_LOG_OBTAINABLE_AMOUNT.getKey(), obtainableAmount);
+		plugin.setConfiguration(COLLECTION_LOG_OBTAINED_AMOUNT_CONFIG_KEY, obtainedAmount);
+		plugin.setConfiguration(COLLECTION_LOG_OBTAINABLE_AMOUNT_CONFIG_KEY, obtainableAmount);
+	}
+
 	public void setQuests(JsonArray quests)
 	{
 		cyclicState.add(TwitchStateEntry.QUESTS.getKey(), quests);
@@ -439,12 +447,23 @@ public class TwitchState {
 		{
 			final JsonObject collectionLog = getCollectionLog();
 			final JsonObject slicedCollectionLog = new JsonObject();
+			Integer collectionLogObtainedAmount = null;
+			Integer collectionLogObtainableAmount = null;
 			AtomicInteger skippedItemAmount = new AtomicInteger();
 			AtomicInteger includedItemAmount = new AtomicInteger();
+			String collectionLogKey = TwitchStateEntry.COLLECTION_LOG.getKey();
+			String obtainedAmountKey = TwitchStateEntry.COLLECTION_LOG_OBTAINED_AMOUNT.getKey();
+			String obtainableAmountKey = TwitchStateEntry.COLLECTION_LOG_OBTAINABLE_AMOUNT.getKey();
 
 			if (collectionLog == null)
 			{
 				return state;
+			}
+
+			if (cyclicState.has(obtainedAmountKey) && cyclicState.has(obtainableAmountKey))
+			{
+				collectionLogObtainedAmount = cyclicState.get(obtainedAmountKey).getAsInt();
+				collectionLogObtainableAmount = cyclicState.get(obtainableAmountKey).getAsInt();
 			}
 
 			collectionLog.keySet().forEach(tabTitle ->
@@ -500,7 +519,9 @@ public class TwitchState {
 				});
 			});
 
-			state.add(TwitchStateEntry.COLLECTION_LOG.getKey(), slicedCollectionLog);
+			state.add(collectionLogKey, slicedCollectionLog);
+			state.addProperty(obtainedAmountKey, collectionLogObtainedAmount);
+			state.addProperty(obtainableAmountKey, collectionLogObtainableAmount);
 		}
 
 		if (currentCyclicEntry == TwitchStateEntry.QUESTS)
@@ -973,6 +994,14 @@ public class TwitchState {
 		plugin.loadFromConfiguration(COLLECTION_LOG_CONFIG_KEY, (String rawCollectionLog) -> {
 			JsonObject parsedCollectionLog = new JsonParser().parse(rawCollectionLog).getAsJsonObject();
 			setCollectionLog(parsedCollectionLog);
+		});
+
+		plugin.loadFromConfiguration(COLLECTION_LOG_OBTAINED_AMOUNT_CONFIG_KEY, (String rawObtainedAmount) -> {
+			plugin.loadFromConfiguration(COLLECTION_LOG_OBTAINABLE_AMOUNT_CONFIG_KEY, (String rawObtainableAmount) -> {
+				Integer obtainedAmount = Integer.parseInt(rawObtainedAmount);
+				Integer obtainableAmount = Integer.parseInt(rawObtainableAmount);
+				setCollectionLogAmounts(obtainedAmount, obtainableAmount);
+			});
 		});
 
 		plugin.loadFromConfiguration(BANK_TABBED_ITEMS_CONFIG_KEY, (String rawItems) -> {
