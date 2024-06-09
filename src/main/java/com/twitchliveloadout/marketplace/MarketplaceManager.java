@@ -313,7 +313,7 @@ public class MarketplaceManager {
 	 * When applying new transactions we will check whether all of these steps are valid to prevent viewers
 	 * triggering any effects that were never configured by the streamer.
 	 */
-	public void applyQueuedTransactions()
+	public void handleQueuedTransactions()
 	{
 
 		// guard: only apply the products when the player is logged in
@@ -362,9 +362,11 @@ public class MarketplaceManager {
 				Instant now = Instant.now();
 				Instant cooldownUntil = streamerProductCooldownUntil.get(streamerProductId);
 				EbsProduct ebsProduct = getEbsProductById(ebsProductId);
+				String productType = transaction.product_type;
 				boolean isProductCoolingDown = cooldownUntil != null && now.isBefore(cooldownUntil);
 				boolean isSharedCoolingDown = sharedCooldownUntil != null && now.isBefore(sharedCooldownUntil);
-				boolean isTestTransaction = transaction.product_type.equals(TwitchTransactionProductType.TEST.getType());
+				boolean isTestTransaction = productType.equals(TwitchTransactionProductType.TEST.getType());
+				boolean isFreeTransaction = productType.equals(TwitchTransactionProductType.FREE.getType());
 				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled && ebsProduct.behaviour != null;
 
 				// guard: make sure this product is not cooling down
@@ -428,7 +430,14 @@ public class MarketplaceManager {
 				// guard: check for a test transaction while testing mode is not active
 				if (isTestTransaction && !isTestModeActive())
 				{
-					log.info("Skipping transaction because it is a test transaction while testing is not active: "+ transactionId);
+					log.warn("Skipping transaction because it is a test transaction while testing is not active: "+ transactionId);
+					continue;
+				}
+
+				// guard: check for a free transaction while free mode is not active
+				if (isFreeTransaction && !isFreeModeActive())
+				{
+					log.warn("Skipping transaction because it is a free transaction while free mode is not active: "+ transactionId);
 					continue;
 				}
 

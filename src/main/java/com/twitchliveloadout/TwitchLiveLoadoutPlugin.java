@@ -67,7 +67,6 @@ import okhttp3.*;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -620,7 +619,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.marketplaceEnabled())
 			{
 				runOnClientThread(() -> {
-					marketplaceManager.applyQueuedTransactions();
+					marketplaceManager.handleQueuedTransactions();
 					marketplaceManager.cleanExpiredProducts();
 				});
 			}
