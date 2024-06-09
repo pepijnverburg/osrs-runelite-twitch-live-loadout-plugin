@@ -34,6 +34,7 @@ import net.runelite.client.config.*;
 import java.awt.Color;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.CHAOS_MODE_AVAILABLE;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.FREE_MODE_AVAILABLE;
 
 @ConfigGroup("twitchstreamer")
 public interface TwitchLiveLoadoutConfig extends Config
@@ -637,24 +638,6 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@Range(
-			min = 0,
-			max = 60 * 30 // half hour max?
-	)
-	@ConfigItem(
-			keyName = "marketplaceSharedCooldownS",
-			name = "Shared cooldown",
-			description = "Cooldown time shared between all random events. This works together with the cooldown time per random event configured in Twitch.",
-			position = 14,
-			hidden = false,
-			section = marketplaceSection
-	)
-	@Units(Units.SECONDS)
-	default int marketplaceSharedCooldownS()
-	{
-		return 0;
-	}
-
-	@Range(
 			min = 1,
 			max = MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY
 	)
@@ -671,11 +654,28 @@ public interface TwitchLiveLoadoutConfig extends Config
 		return MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY;
 	}
 
+	@Range(
+			min = 5,
+			max = 60 * 5
+	)
+	@ConfigItem(
+			keyName = "testRandomEventsDuration_v2", // NOTE: different key to force update to new default
+			name = "Preview Duration",
+			description = "Duration of the Random Event when requested as a preview.",
+			position = 20,
+			section = marketplaceSection
+	)
+	@Units(Units.SECONDS)
+	default int testRandomEventsDuration()
+	{
+		return 30;
+	}
+
 	@ConfigItem(
 			keyName = "chaosModeSpawnMultiplier",
 			name = "Chaos Mode spawn multiplier",
 			description = "The amount all NPC/item spawns are multiplied when Chaos Mode is enabled.",
-			position = 28,
+			position = 24,
 			section = marketplaceSection,
 			hidden = !CHAOS_MODE_AVAILABLE
 	)
@@ -698,20 +698,57 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@Range(
-			min = 5,
-			max = 60 * 5
+			min = 0,
+			max = 60 * 30 // half hour max?
 	)
 	@ConfigItem(
-			keyName = "testRandomEventsDuration_v2", // NOTE: different key to force update to new default
-			name = "Preview Duration",
-			description = "Duration of the Random Event when requested as a preview.",
+			keyName = "marketplaceNormalModeCooldownS",
+			name = "Base cooldown",
+			description = "Cooldown time shared between all random events. This works together with the cooldown time per random event configured in Twitch.",
 			position = 30,
+			hidden = false,
 			section = marketplaceSection
 	)
 	@Units(Units.SECONDS)
-	default int testRandomEventsDuration()
+	default int marketplaceNormalModeCooldownS()
 	{
-		return 30;
+		return 0;
+	}
+
+	@Range(
+			min = 0,
+			max = 60 * 30 // half hour max?
+	)
+	@ConfigItem(
+			keyName = "marketplaceFreeModeCooldownS",
+			name = "Free mode cooldown",
+			description = "Cooldown time shared between all random events when in free mode. This adds towards the base cooldown.",
+			position = 32,
+			hidden = !FREE_MODE_AVAILABLE,
+			section = marketplaceSection
+	)
+	@Units(Units.SECONDS)
+	default int marketplaceFreeModeCooldownS()
+	{
+		return 0;
+	}
+
+	@Range(
+			min = 0,
+			max = 60 * 30 // half hour max?
+	)
+	@ConfigItem(
+			keyName = "marketplaceChaosModeCooldownS",
+			name = "Chaos mode cooldown",
+			description = "Cooldown time shared between all random events when in chaos mode. This adds towards the base cooldown.",
+			position = 34,
+			hidden = !CHAOS_MODE_AVAILABLE,
+			section = marketplaceSection
+	)
+	@Units(Units.SECONDS)
+	default int marketplaceChaosModeCooldownS()
+	{
+		return 0;
 	}
 
 	@ConfigSection(
@@ -824,7 +861,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "overheadMessageDurationS",
 			name = "Overhead text duration",
-			description = "How long overhead notifications, such as thank you's are shown above the player.",
+			description = "How long overhead notifications, such as thank you's above the player.",
 			position = 20,
 			hidden = false,
 			section = notificationsSection
@@ -838,13 +875,25 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "marketplaceDefaultDonationMessage", // NOTE: keep old key for migration purposes
 			name = "Default bits donation message",
-			description = "Default message shown when bits are donated. Use '{viewerName}', '{currencyAmount}' and '{currencyType}' to replace with values from the transaction.",
+			description = "Default message when bits are donated. Use '{viewerName}', '{currencyAmount}' and '{currencyType}' to replace with values from the transaction.",
 			position = 24,
 			section = notificationsSection
 	)
 	default String defaultBitsDonationMessage()
 	{
 		return "Thank you {viewerName} for donating {currencyAmount} {currencyType}!";
+	}
+
+	@ConfigItem(
+			keyName = "defaultFreeModeActivationMessage", // NOTE: keep old key for migration purposes
+			name = "Default free mode activation message",
+			description = "Default message when an event is activated when free mode is on. Use '{viewerName}' and {productName} to replace with values from the transaction.",
+			position = 25,
+			section = notificationsSection
+	)
+	default String defaultFreeModeActivationMessage()
+	{
+		return "Thank you {viewerName} for activating {productName}!";
 	}
 
 	@ConfigItem(

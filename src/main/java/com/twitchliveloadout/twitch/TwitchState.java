@@ -729,11 +729,21 @@ public class TwitchState {
 		// state also to this class. NOTE: check whether it is not null because this class is initialized first.
 		MarketplaceManager marketplaceManager = plugin.getMarketplaceManager();
 		boolean isEnabled = config.marketplaceEnabled();
-		boolean isActive = marketplaceManager != null && marketplaceManager.isActive() && !marketplaceManager.isFetchingEbsTransactionsErrored();
 		boolean channelEventsActive = config.marketplaceChannelEventsEnabled() && twitchEventSubClient.isConnected() && !config.twitchOAuthAccessToken().isEmpty() && !config.twitchOAuthRefreshToken().isEmpty();
-		boolean isTestModeActive = marketplaceManager != null && marketplaceManager.isTestModeActive();
-		boolean isFreeModeActive = marketplaceManager != null && marketplaceManager.isFreeModeActive();
-		boolean isChaosModeActive = marketplaceManager != null && marketplaceManager.isChaosModeActive();
+		boolean isActive = false;
+		boolean isTestModeActive = false;
+		boolean isFreeModeActive = false;
+		boolean isChaosModeActive = false;
+		int sharedCooldownS = 0;
+
+		if (marketplaceManager != null)
+		{
+			isActive = marketplaceManager.isActive() && !marketplaceManager.isFetchingEbsTransactionsErrored();
+			isTestModeActive = marketplaceManager.isTestModeActive();
+			isFreeModeActive = marketplaceManager.isFreeModeActive();
+			isChaosModeActive = marketplaceManager.isChaosModeActive();
+			sharedCooldownS = marketplaceManager.getSharedCooldownS();
+		}
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ACTIVE.getKey(), isActive);
@@ -742,7 +752,7 @@ public class TwitchState {
 		state.addProperty(TwitchStateEntry.MARKETPLACE_FREE_MODE_ACTIVE.getKey(), isFreeModeActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_CHAOS_MODE_ACTIVE.getKey(), isChaosModeActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_PROTECTION_ENABLED.getKey(), config.marketplaceProtectionEnabled());
-		state.addProperty(TwitchStateEntry.SHARED_COOLDOWN.getKey(), config.marketplaceSharedCooldownS());
+		state.addProperty(TwitchStateEntry.SHARED_COOLDOWN.getKey(), sharedCooldownS);
 		return state;
 	}
 

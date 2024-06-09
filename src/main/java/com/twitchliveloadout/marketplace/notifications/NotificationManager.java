@@ -363,6 +363,8 @@ public class NotificationManager {
 				// override the default bits message when its the Twitch chat notification
 				if (TWITCH_CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType)) {
 					message = config.twitchChatBitsDonationMessage();
+				} else if (manager.isFreeModeActive()) {
+					message = config.defaultFreeModeActivationMessage();
 				} else {
 					message = config.defaultBitsDonationMessage();
 				}

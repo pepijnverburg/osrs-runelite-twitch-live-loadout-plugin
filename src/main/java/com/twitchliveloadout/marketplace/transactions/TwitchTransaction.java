@@ -35,4 +35,9 @@ public class TwitchTransaction {
 	{
 		return !isEventSubTransaction() && product_data != null && product_data.cost != null;
 	}
+
+	public boolean isFreeTransaction()
+	{
+		return TwitchTransactionProductType.FREE.getType().equals(product_type);
+	}
 }

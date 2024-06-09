@@ -40,8 +40,6 @@ public class MarketplacePanel extends JPanel
 	private final TextPanel availableRandomEventsPanel = new TextPanel("Configured Random Events:", "<html>No Random Event are configured.</html>");
 	private final TextPanel availableChannelPointRewardsPanel = new TextPanel("Configured Channel Point Rewards:", "<html>No Channel Point Rewards are configured.</html>");
 
-	private final TextPanel queuedTransactionsPanel = new TextPanel("Queued Random Events:", "<html>No Random Events are queued.</html>");
-
 	private final JPanel playbackWrapper = new JPanel(new BorderLayout());
 	private final TextPanel playbackControlsPanel = new TextPanel("Playback Controls:", "<html>Pause and start to temporarily block distractions. Enable Preview Mode to temporarily test events from the Extension Configuration page in Twitch.</html>");
 	private final JPanel startPanel = new JPanel(new BorderLayout());
@@ -52,14 +50,15 @@ public class MarketplacePanel extends JPanel
 	private final JLabel chaosModeLabel = new JLabel();
 	private final JPanel freeModePanel = new JPanel(new BorderLayout());
 	private final JLabel freeModeLabel = new JLabel();
+	private final TextPanel queuedTransactionsPanel = new TextPanel("<html><h2>Queued Random Events:</h2></html>", "<html>No Random Events are queued.</html>");
 
 	private final JPanel productListPanel = new JPanel(new GridBagLayout());
-	private final TextPanel productListTitlePanel = new TextPanel("Active Random Events:", "<html>List of active random events.</html>");
+	private final TextPanel productListTitlePanel = new TextPanel("<html><h2>Active Random Events:</h2></html>", "<html>List of active random events.</html>");
 	private final JPanel productListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<MarketplaceProductPanel> productPanels = new CopyOnWriteArrayList<>();
 
 	private final JPanel transactionListPanel = new JPanel(new GridBagLayout());
-	private final TextPanel transactionListTitlePanel = new TextPanel("Recent Random Events:", "<html>List of all recent Random Events.</html>");
+	private final TextPanel transactionListTitlePanel = new TextPanel("<html><h2>Recent Random Events:</h2></html>", "<html>List of all recent Random Events.</html>");
 	private final JPanel transactionListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<TwitchTransactionPanel> transactionPanels = new CopyOnWriteArrayList<>();
 
@@ -223,6 +222,7 @@ public class MarketplacePanel extends JPanel
 
 			updateTexts();
 			rebuildProductPanels();
+			rebuildTransactionPanels();
 		});
 
 		TwitchLiveLoadoutPanel.initializePanelButton(freeModePanel, freeModeLabel, getFreeModeButtonTitle(), () -> {
@@ -236,6 +236,7 @@ public class MarketplacePanel extends JPanel
 
 			updateTexts();
 			rebuildProductPanels();
+			rebuildTransactionPanels();
 		});
 
 		// initialize all the panel slots

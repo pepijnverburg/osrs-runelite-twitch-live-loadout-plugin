@@ -35,6 +35,8 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 		String streamerProductName = marketplaceProduct.getStreamerProduct().name;
 		String statusLine = "<b color='green'>ACTIVE</b>";
 		String[] lines = {};
+		String expiresInLine = "Expires in " + MarketplaceDuration.humanizeDurationMs(expiresInMs);
+		String viewerLine = MarketplaceMessages.formatMessage("By <b color='yellow'>{viewerName}</b>", marketplaceProduct, null);
 
 		if (isExpired) {
 			statusLine = "<b color='red'>EXPIRED</b>";
@@ -48,8 +50,19 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 				statusLine,
 				"<b>" + streamerProductName + "</b>",
 				MarketplaceMessages.formatMessage("Donation of <b color='yellow'>{currencyAmount} {currencyType}</b>", marketplaceProduct, null),
-				MarketplaceMessages.formatMessage("By <b color='yellow'>{viewerName}</b>", marketplaceProduct, null),
-				"Expires in " + MarketplaceDuration.humanizeDurationMs(expiresInMs),
+				viewerLine,
+				expiresInLine
+			};
+		}
+
+		if (transaction.isFreeTransaction())
+		{
+			lines = new String[]{
+				statusLine,
+				"<b>" + streamerProductName + "</b>",
+				"FREE activation",
+				viewerLine,
+				expiresInLine
 			};
 		}
 
@@ -61,8 +74,8 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 				statusLine,
 				"<b>Channel Event</b>",
 				"<b color='yellow'>" + eventSubType.getName() + "</b>",
-				MarketplaceMessages.formatMessage("By <b color='yellow'>{viewerName}</b>", marketplaceProduct, null),
-				"Expires in " + MarketplaceDuration.humanizeDurationMs(expiresInMs),
+				viewerLine,
+				expiresInLine
 			};
 		}
 
@@ -79,5 +92,10 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 		log.info("A marketplace product is manually requested to be stopped, transaction ID: "+ transactionId);
 		marketplaceProduct.stop(false);
 		marketplacePanel.rebuild();
+	}
+
+	@Override
+	protected boolean canRunAction() {
+		return true;
 	}
 }

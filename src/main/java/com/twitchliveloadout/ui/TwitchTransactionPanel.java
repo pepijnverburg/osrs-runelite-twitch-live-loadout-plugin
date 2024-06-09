@@ -60,6 +60,7 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 			TwitchProductCost productCost = twitchTransaction.product_data.cost;
 			Double costAmount = productCost.amount;
 			String costCurrency = productCost.type;
+			String currencyLine = twitchTransaction.isFreeTransaction() ? "FREE activation" : "Donation of <b color='yellow'>"+ costAmount +" "+ costCurrency +"</b>";
 
 			if (streamerProduct != null)
 			{
@@ -68,7 +69,7 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 
 			lines = new String[]{
 				"<b>"+ streamerProductName +"</b>",
-				"Donation of <b color='yellow'>"+ costAmount +" "+ costCurrency +"</b>",
+				currencyLine,
 				"By <b color='yellow'>"+ viewerName + "</b>",
 				"At "+ transactionAtString,
 			};
@@ -108,5 +109,21 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 
 		log.info("A transaction is manually requested for a rerun, transaction ID: "+ transactionId);
 		marketplaceManager.rerunTransaction(twitchTransaction);
+	}
+
+	@Override
+	protected boolean canRunAction() {
+		TwitchTransaction twitchTransaction = getEntity();
+
+		if (twitchTransaction == null)
+		{
+			return false;
+		}
+
+		String transactionId = twitchTransaction.id;
+		boolean isFreeTransaction = twitchTransaction.isFreeTransaction();
+		boolean isAlreadyActive = marketplaceManager.isTransactionActive(transactionId);
+
+		return !isAlreadyActive && (!isFreeTransaction || marketplaceManager.isFreeModeActive());
 	}
 }

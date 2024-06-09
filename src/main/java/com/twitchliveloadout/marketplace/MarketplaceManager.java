@@ -512,13 +512,9 @@ public class MarketplaceManager {
 
 		String transactionId = transaction.id;
 
-		// guard: don't rerun the transaction when it is already active
-		for (MarketplaceProduct marketplaceProduct : activeProducts)
+		if (isTransactionActive(transactionId))
 		{
-			if (marketplaceProduct.getTransaction().id.equals(transactionId))
-			{
-				return;
-			}
+			return;
 		}
 
 		log.info("A transaction is going to be rerun, transaction ID: "+ transactionId);
@@ -529,6 +525,21 @@ public class MarketplaceManager {
 		// remove from the handled transactions and queue once again
 		handledTransactionIds.remove(transactionId);
 		queuedTransactions.add(transaction);
+	}
+
+	public boolean isTransactionActive(String transactionId)
+	{
+
+		// guard: don't rerun the transaction when it is already active
+		for (MarketplaceProduct marketplaceProduct : activeProducts)
+		{
+			if (marketplaceProduct.getTransaction().id.equals(transactionId))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public void handleCustomTransaction(TwitchTransaction transaction)
@@ -660,7 +671,7 @@ public class MarketplaceManager {
 		Instant now = Instant.now();
 		String streamerProductId = streamerProduct.id;
 		Integer productCooldownSeconds = streamerProduct.cooldown;
-		Integer sharedCooldownSeconds = config.marketplaceSharedCooldownS();
+		int sharedCooldownSeconds = getSharedCooldownS();
 
 		// check if the shared cooldown needs to be updated
 		if (sharedCooldownSeconds > 0)
@@ -682,6 +693,26 @@ public class MarketplaceManager {
 			// that have missed the PubSub message, because they open the stream after the transaction
 			twitchState.setCurrentProductCooldowns(streamerProductCooldownUntil);
 		}
+	}
+
+	/**
+	 * Get the shared cooldown timer depending on which mode is active.
+	 */
+	public int getSharedCooldownS()
+	{
+		int cooldownS = config.marketplaceNormalModeCooldownS();
+
+		if (isFreeModeActive())
+		{
+			cooldownS += config.marketplaceFreeModeCooldownS();
+		}
+
+		if (isChaosModeActive())
+		{
+			cooldownS += config.marketplaceChaosModeCooldownS();
+		}
+
+		return cooldownS;
 	}
 
 	/**

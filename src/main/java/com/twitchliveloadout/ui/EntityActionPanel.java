@@ -134,9 +134,11 @@ public abstract class EntityActionPanel<EntityType> extends JPanel {
 
 		setVisible(true);
 		nameLabel.setText("<html>"+ name +"</html>");
+		actionLabel.setVisible(canRunAction());
 	}
 
 	protected abstract String[] getLines();
 
 	protected abstract void executeAction();
+	protected abstract boolean canRunAction();
 }
