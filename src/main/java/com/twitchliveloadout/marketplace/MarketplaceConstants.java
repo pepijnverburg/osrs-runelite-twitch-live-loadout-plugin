@@ -115,4 +115,8 @@ public class MarketplaceConstants {
 
 	public static final int MALE_GENDER_ID = 0;
 	public static final int FEMALE_GENDER_ID = 1;
+
+	public static final String EXTENSION_BITS_TWITCH_PRODUCT_TYPE = "EXTENSION_BITS";
+	public static final String CHANNEL_POINTS_TWITCH_PRODUCT_TYPE = "CHANNEL_POINTS";
+	public static final String CHANNEL_EVENT_TWITCH_PRODUCT_TYPE = "CHANNEL_EVENT";
 }
