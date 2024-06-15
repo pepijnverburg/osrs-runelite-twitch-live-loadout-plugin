@@ -19,13 +19,12 @@ repositories {
 	mavenCentral()
 }
 
-//def runeLiteVersion = '1.10.8-SNAPSHOT'
-//def runeLiteVersion = '1.10.20-SNAPSHOT'
+//def runeLiteVersion = '1.10.32-SNAPSHOT'
 def runeLiteVersion = 'latest.release'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
-
+	// implementation files('client-1.10.32-SNAPSHOT-shaded-test.jar')
 	compileOnly 'org.projectlombok:lombok:1.18.20'
 	annotationProcessor 'org.projectlombok:lombok:1.18.20'
 
