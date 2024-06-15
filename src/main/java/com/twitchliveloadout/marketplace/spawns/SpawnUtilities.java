@@ -57,12 +57,12 @@ public class SpawnUtilities {
 
 		double angleRadians = Math.toRadians(angleDegrees);
 		for(int verticesIndex = 0; verticesIndex < modelData.getVerticesCount(); ++verticesIndex) {
-			int[] xVertices = modelData.getVerticesX();
-			int[] yVertices = modelData.getVerticesY();
-			int[] zVertices = modelData.getVerticesZ();
-			int x = xVertices[verticesIndex];
-			int y = yVertices[verticesIndex];
-			int z = zVertices[verticesIndex];
+			float[] xVertices = modelData.getVerticesX();
+			float[] yVertices = modelData.getVerticesY();
+			float[] zVertices = modelData.getVerticesZ();
+			float x = xVertices[verticesIndex];
+			float y = yVertices[verticesIndex];
+			float z = zVertices[verticesIndex];
 
 			xVertices[verticesIndex] = (int) (x*Math.cos(angleRadians) + z*Math.sin(angleRadians));
 			yVertices[verticesIndex] = y;
