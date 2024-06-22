@@ -24,7 +24,7 @@ public class TwitchEventSubClient {
     private final OkHttpClient httpClientTemplate;
     private WebSocket webSocket;
     private String sessionId = "";
-    private int keepAliveTimeoutS = 10;
+    private int keepAliveTimeoutS = 20;
     private Instant lastKeepAliveAt = Instant.now();
     private boolean socketOpen = false;
 
