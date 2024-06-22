@@ -875,15 +875,16 @@ public class MarketplaceManager {
 				isFetchingChannelPointRewards = false;
 				JsonObject result = (new JsonParser()).parse(response.body().string()).getAsJsonObject();
 				JsonArray rewards = result.getAsJsonArray("data");
+				CopyOnWriteArrayList<ChannelPointReward> newChannelPointRewards = new CopyOnWriteArrayList<>();
 
 				// guard: check if the rewards could be fetched
+				// NOTE: on empty data we will reset the channel point rewards to make sure 'old' data is not synced up
 				if (rewards == null)
 				{
+					channelPointRewards = newChannelPointRewards;
 					plugin.logSupport("Could not find any valid Channel Point Rewards.");
 					return;
 				}
-
-				CopyOnWriteArrayList<ChannelPointReward> newChannelPointRewards = new CopyOnWriteArrayList<>();
 
 				// try-catch for every parse, to not let all products crash on one misconfiguration
 				rewards.forEach((reward) -> {
@@ -902,6 +903,7 @@ public class MarketplaceManager {
 					}
 				});
 
+				plugin.logSupport("Updated to new channel point rewards with amount: "+ newChannelPointRewards.size());
 				channelPointRewards = newChannelPointRewards;
 			},
 			(error) -> {
