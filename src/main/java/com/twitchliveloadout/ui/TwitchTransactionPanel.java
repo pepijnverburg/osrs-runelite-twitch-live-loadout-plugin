@@ -52,20 +52,20 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss - dd MMM yyyy").withZone(ZoneId.systemDefault());
 		String transactionAtString = formatter.format(transactionAt);
 		String[] lines = {};
+		String streamerProductName = "Unknown";
+
+		if (streamerProduct != null)
+		{
+			streamerProductName = streamerProduct.name;
+		}
 
 		if (twitchTransaction.isCurrencyTransaction())
 		{
-			String streamerProductName = "Unknown";
 			String viewerName = twitchTransaction.user_name;
 			TwitchProductCost productCost = twitchTransaction.product_data.cost;
 			Double costAmount = productCost.amount;
 			String costCurrency = productCost.type;
 			String currencyLine = twitchTransaction.isFreeTransaction() ? "FREE activation" : "Donation of <b color='yellow'>"+ costAmount +" "+ costCurrency +"</b>";
-
-			if (streamerProduct != null)
-			{
-				streamerProductName = streamerProduct.name;
-			}
 
 			lines = new String[]{
 				"<b>"+ streamerProductName +"</b>",
@@ -92,8 +92,8 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 			}
 
 			lines = new String[]{
-				"<b>Channel Event</b>",
-				"<b color='yellow'>" + eventSubType.getName() + "</b>",
+				"<b>"+ eventSubType.getName() +"</b>",
+				"<b color='yellow'>" + streamerProductName + "</b>",
 				"By <b color='yellow'>"+ viewerName + "</b>",
 				"At "+ transactionAtString,
 			};

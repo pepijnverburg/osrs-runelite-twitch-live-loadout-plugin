@@ -72,8 +72,8 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 
 			lines = new String[]{
 				statusLine,
-				"<b>Channel Event</b>",
-				"<b color='yellow'>" + eventSubType.getName() + "</b>",
+				"<b>"+ eventSubType.getName() +"</b>",
+				"<b color='yellow'>" + streamerProductName + "</b>",
 				viewerLine,
 				expiresInLine
 			};
