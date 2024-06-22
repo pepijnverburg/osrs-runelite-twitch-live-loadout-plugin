@@ -65,7 +65,7 @@ public class ConnectivityPanel extends JPanel
 	private final JPanel wrapper = new JPanel(new GridBagLayout());
 
 	private final TextPanel syncingStatusPanel = new TextPanel("Syncing status", "N/A");
-	private final TextPanel twitchStatusPanel = new TextPanel("Twitch Status", "N/A");
+	private final TextPanel twitchStatusPanel = new TextPanel("Twitch Extension Status", "N/A");
 	private final TextPanel twitchEventSubStatusPanel = new TextPanel("Twitch Channel Events Status", "N/A");
 
 	private final TextPanel authPanel = new TextPanel("Twitch Token Validity", "N/A");
@@ -331,9 +331,9 @@ public class ConnectivityPanel extends JPanel
 				return Pair.of("Connecting to Twitch Channel Events API...", WARNING_TEXT_COLOR);
 			}
 
-			return Pair.of("Disconnected from the Twitch Channel Events API", ERROR_TEXT_COLOR);
+			return Pair.of("Disconnected from the Twitch Channel Events API.", ERROR_TEXT_COLOR);
 		}
 
-		return Pair.of("Could not initialise the Twitch Channel Events API.", ERROR_TEXT_COLOR);
+		return Pair.of("Could not initialise the Twitch Channel Events API. Try to setup the channel events tokens again.", ERROR_TEXT_COLOR);
 	}
 }
