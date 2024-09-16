@@ -30,10 +30,7 @@ import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.MenuAction;
-import net.runelite.api.Player;
-import net.runelite.api.Point;
+import net.runelite.api.*;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
@@ -423,7 +420,7 @@ public class MarketplaceManager {
 				// guard: check for hardcore protection and dangerous random events
 				if (ebsProduct.dangerous && !plugin.canPerformDangerousEffects())
 				{
-					log.info("Skipping transaction because it is deemed dangerous and protection is on: "+ transactionId);
+					log.error("Skipping transaction because it is deemed dangerous and protection is on, please notify the maintainer: "+ transactionId);
 					continue;
 				}
 
@@ -733,6 +730,7 @@ public class MarketplaceManager {
 			activeProducts.remove(marketplaceProduct);
 			updateMarketplacePanel();
 
+			TwitchTransaction transaction = marketplaceProduct.getTransaction();
 			String transactionId = marketplaceProduct.getTransaction().id;
 			String ebsProductId = marketplaceProduct.getEbsProduct().id;
 			int spawnAmount = marketplaceProduct.getSpawnAmount();
@@ -1081,11 +1079,12 @@ public class MarketplaceManager {
 	public void onMenuOpened(MenuOpened event)
 	{
 		Point mouseCanvasPoint = client.getMouseCanvasPosition();
+		MenuEntry[] currentMenuEntries = client.getMenu().getMenuEntries();
 		int firstAvailableMenuEntryIndex = 0;
 
-		for (int menuEntryIndex = 0; menuEntryIndex < client.getMenuEntries().length; menuEntryIndex++)
+		for (int menuEntryIndex = 0; menuEntryIndex < currentMenuEntries.length; menuEntryIndex++)
 		{
-			if (client.getMenuEntries()[menuEntryIndex].getOption().equals("Cancel"))
+			if (currentMenuEntries[menuEntryIndex].getOption().equals("Cancel"))
 			{
 				firstAvailableMenuEntryIndex = menuEntryIndex + 1;
 				break;
@@ -1097,7 +1096,7 @@ public class MarketplaceManager {
 			MarketplaceProduct product = spawnedObject.getProduct();
 			ArrayList<EbsMenuEntry> menuEntries = spawnedObject.getModelSet().menuEntries;
 
-			if (menuEntries == null || menuEntries.size() <= 0)
+			if (menuEntries == null || menuEntries.isEmpty())
 			{
 				return;
 			}
@@ -1126,7 +1125,7 @@ public class MarketplaceManager {
 					continue;
 				}
 
-				client.createMenuEntry(finalFirstAvailableMenuEntryIndex)
+				client.getMenu().createMenuEntry(finalFirstAvailableMenuEntryIndex)
 					.setOption(formattedOption)
 					.setTarget(formattedTarget)
 					.onClick((callback) -> {
@@ -1190,7 +1189,7 @@ public class MarketplaceManager {
 			testStreamerProduct.id = generateRandomTestId();
 			testStreamerProduct.ebsProductId = transaction.ebs_product_id;
 			testStreamerProduct.twitchProductSku = generateRandomTestId();
-			testStreamerProduct.name = "[TEST] "+ transaction.ebs_product_id;
+			testStreamerProduct.name = "[PREVIEW] "+ transaction.ebs_product_id;
 			testStreamerProduct.duration = config.testRandomEventsDuration();
 			testStreamerProduct.cooldown = 0;
 
@@ -1262,7 +1261,7 @@ public class MarketplaceManager {
 	{
 		Iterator<EbsProduct> iterator = ebsProducts.iterator();
 
-		while(iterator.hasNext())
+		while (iterator.hasNext())
 		{
 			EbsProduct candidateEbsProduct = iterator.next();
 
