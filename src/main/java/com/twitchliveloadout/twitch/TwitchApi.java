@@ -273,7 +273,7 @@ public class TwitchApi
 
 		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
 		{
-			url = "http://localhost:3010/api/marketplace-products";
+			url = "http://localhost:8000/api/marketplace-products";
 		}
 
 		performPostRequest(url, data, ebsProductsHttpClient, responseHandler, errorHandler);
@@ -286,7 +286,7 @@ public class TwitchApi
 
 		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
 		{
-			url = "http://localhost:3010/api/marketplace-transactions";
+			url = "http://localhost:8000/api/marketplace-transactions";
 		}
 
 		// only add last checked at when it is valid
@@ -502,8 +502,8 @@ public class TwitchApi
 				}
 
 				JsonObject payload = parseJson(response.body().string());
-				Integer expiresInS = payload.get("expires_in").getAsInt();
-				boolean needsRefresh = expiresInS == null || expiresInS < TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S;
+				int expiresInS = payload.get("expires_in").getAsInt();
+				boolean needsRefresh = expiresInS < TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S;
 
 				if (needsRefresh)
 				{
@@ -520,7 +520,11 @@ public class TwitchApi
 	private void refreshOAuthToken()
 	{
 		final String refreshToken = config.twitchOAuthRefreshToken();
-		String url = DEFAULT_TWITCH_EBS_BASE_URL + "/api/refresh-token";
+		String url = DEFAULT_TWITCH_EBS_BASE_URL + "/api/refresh-oauth-token";
+
+		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT) {
+			url = "http://localhost:8000/api/refresh-oauth-token";
+		}
 
 		// guard: check if the refresh token is valid
 		if (refreshToken.isEmpty())
@@ -530,7 +534,7 @@ public class TwitchApi
 		}
 
 		final JsonObject data = new JsonObject();
-		data.addProperty("refresh_token", refreshToken);
+		data.addProperty("refreshToken", refreshToken);
 
 		final Request refreshRequest = new Request.Builder()
 			.header("User-Agent", USER_AGENT)
@@ -575,8 +579,8 @@ public class TwitchApi
 				}
 
 				// when all is valid update the config in the plugin panel
-				configManager.setConfiguration("twitchstreamer", TWITCH_OAUTH_ACCESS_TOKEN_KEY, newAccessToken);
-				configManager.setConfiguration("twitchstreamer", TWITCH_OAUTH_REFRESH_TOKEN_KEY, newRefreshToken);
+				configManager.setConfiguration(config.PLUGIN_CONFIG_GROUP, TWITCH_OAUTH_ACCESS_TOKEN_KEY, newAccessToken);
+				configManager.setConfiguration(config.PLUGIN_CONFIG_GROUP, TWITCH_OAUTH_REFRESH_TOKEN_KEY, newRefreshToken);
 				plugin.logSupport("The Twitch OAuth tokens are successfully refreshed and stored in the config panel!");
 			},
 			(exception) -> {
