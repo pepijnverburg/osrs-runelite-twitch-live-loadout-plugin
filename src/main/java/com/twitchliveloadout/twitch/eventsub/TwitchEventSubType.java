@@ -43,7 +43,7 @@ public enum TwitchEventSubType {
     // disabled for now because it requires extension token
     EXTENSION_BITS_TRANSACTION("extension.bits_transaction.create", "Bits Donation", false, 1, ExtensionBitsTransaction.class, c -> null, (c, m) -> false),
 
-    // disabled for now because it requires full moderation access (with the token being able to do moderation)
+    // disabled for now because it requires full moderation access, which might a bit too much (with the token being able to do moderation)
     BAN("channel.ban", "Ban Viewer", false, 1, ChannelBan.class, c -> null, (c, m) -> false),
     UNBAN("channel.unban", "Unban Viewer", false, 1, ChannelUnban.class, c -> null, (c, m) -> false),
     ;
