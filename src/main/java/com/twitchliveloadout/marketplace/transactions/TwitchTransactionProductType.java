@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum TwitchTransactionProductType {
     BITS_IN_EXTENSION("BITS_IN_EXTENSION"),
+    REPLAY("REPLAY"),
     TEST("TEST"),
     FREE("FREE"),
     ;
