@@ -39,7 +39,8 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.FREE_MODE_A
 @ConfigGroup("twitchstreamer")
 public interface TwitchLiveLoadoutConfig extends Config
 {
-	public final static String PLUGIN_CONFIG_GROUP = "twitch-live-loadout";
+	public final static String PLUGIN_CONFIG_GROUP = "twitchstreamer";
+	public final static String PLUGIN_CONFIG_PROFILE_GROUP = "twitch-live-loadout";
 
 	public final static String TWITCH_OAUTH_ACCESS_TOKEN_KEY = "twitchOAuthAccessToken";
 	public final static String TWITCH_OAUTH_REFRESH_TOKEN_KEY = "twitchOAuthRefreshToken";
@@ -139,7 +140,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Data Syncing",
 			description = "Syncing conditions and multi-account settings",
-			position = 4
+			position = 4,
+			closedByDefault = true
 	)
 	String syncingSection = "syncing";
 
@@ -175,7 +177,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Items",
 			description = "Syncing of items in inventory, equipment and bank.",
-			position = 15
+			position = 15,
+			closedByDefault = true
 	)
 	String itemsSection = "items";
 
@@ -294,7 +297,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Combat",
 			description = "Syncing of weapon damage, smite drains, poison damage, etc. per enemy.",
-			position = 14
+			position = 14,
+			closedByDefault = true
 	)
 	String combatSection = "combat";
 
@@ -407,7 +411,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Raids",
 			description = "Syncing of invocations",
-			position = 16
+			position = 16,
+			closedByDefault = true
 	)
 	String raidsSection = "raids";
 
@@ -450,7 +455,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Skills",
 			description = "Syncing of skill experience, virtual levels, etc.",
-			position = 16
+			position = 16,
+			closedByDefault = true
 	)
 	String skillsSection = "skills";
 
@@ -481,7 +487,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Quests",
 			description = "Syncing of quests and their status.",
-			position = 17
+			position = 17,
+			closedByDefault = true
 	)
 	String questsSection = "quests";
 
@@ -500,7 +507,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Seasonals",
 			description = "Syncing of seasonal stats",
-			position = 18
+			position = 18,
+			closedByDefault = true
 	)
 	String seasonalsSection = "seasonals";
 
@@ -519,7 +527,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "General info",
 			description = "Syncing of display name, player weight, etc.",
-			position = 20
+			position = 20,
+			closedByDefault = true
 	)
 	String generalInfoSection = "general-info";
 
@@ -563,7 +572,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Random Events",
 			description = "Settings for the Random Event triggered by donations or channel events",
-			position = 6
+			position = 6,
+			closedByDefault = true
 	)
 	String marketplaceSection = "donations";
 
@@ -660,7 +670,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	@ConfigItem(
 			keyName = "testRandomEventsDuration_v2", // NOTE: different key to force update to new default
-			name = "Preview Duration",
+			name = "Preview duration",
 			description = "Duration of the Random Event when requested as a preview.",
 			position = 20,
 			section = marketplaceSection
@@ -754,7 +764,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Channel Events",
 			description = "Authentication and configuration for channel events, such as follows, subs, etc.",
-			position = 10
+			position = 10,
+			closedByDefault = true
 	)
 	String channelEventsSection = "channel-events";
 
@@ -1295,7 +1306,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Advanced",
 			description = "Settings for advanced usage",
-			position = 99
+			position = 99,
+			closedByDefault = true
 	)
 	String advancedSection = "advanced";
 

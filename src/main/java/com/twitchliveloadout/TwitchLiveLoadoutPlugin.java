@@ -1213,7 +1213,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			String accountIdentifier = getAccountIdentifier();
 			String scopedConfigKey = getScopedConfigKey(accountIdentifier, configKey);
-			configManager.setConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey, payload);
+			configManager.setConfiguration(PLUGIN_CONFIG_PROFILE_GROUP, scopedConfigKey, payload);
 		} catch (Exception exception) {
 			log.warn("Could not set the configuration due to the following error: ", exception);
 		}
@@ -1230,33 +1230,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public String getConfiguration(String configKey)
 	{
 		try {
-			String playerName = getPlayerName();
 			String accountIdentifier = getAccountIdentifier();
-
-			if (playerName == null)
-			{
-				playerName = "unknown";
-			}
-
 			String scopedConfigKey = getScopedConfigKey(accountIdentifier, configKey);
-			String configuration = configManager.getConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey);
-
-			// MIGRATION TO ACCOUNT HASH FROM PLAYER NAME
-			// TODO: remove the migration with player name after a while that the new account hash is used
-			// only migrate when there is no hash configuration yet
-			String oldNameScopedConfigKey = getScopedConfigKey(playerName, configKey);
-			String oldNameConfiguration = configManager.getConfiguration(PLUGIN_CONFIG_GROUP, oldNameScopedConfigKey);
-			boolean oldConfigurationIsEmpty = (oldNameConfiguration == null || oldNameConfiguration.trim().equals(""));
-			boolean configurationIsEmpty = (configuration == null || configuration.trim().equals(""));
-			if (!oldConfigurationIsEmpty && configurationIsEmpty)
-			{
-				configManager.setConfiguration(PLUGIN_CONFIG_GROUP, scopedConfigKey, oldNameConfiguration);
-				configManager.setConfiguration(PLUGIN_CONFIG_GROUP, oldNameScopedConfigKey, "");
-
-				// after migrate set to old value for now to return it properly
-				configuration = oldNameConfiguration;
-				log.info("Migration of config is completed. Moved: "+ oldNameScopedConfigKey +", to: "+ scopedConfigKey);
-			}
+			String configuration = configManager.getConfiguration(PLUGIN_CONFIG_PROFILE_GROUP, scopedConfigKey);
 
 			return configuration;
 		} catch (Exception exception) {
