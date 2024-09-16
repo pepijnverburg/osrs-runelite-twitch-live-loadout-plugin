@@ -736,6 +736,19 @@ public class MarketplaceManager {
 			String transactionId = marketplaceProduct.getTransaction().id;
 			String ebsProductId = marketplaceProduct.getEbsProduct().id;
 			int spawnAmount = marketplaceProduct.getSpawnAmount();
+			boolean hasRequiredModelPlacement = marketplaceProduct.getEbsProduct().behaviour.requiredModelPlacement != null;
+
+			// guard: check whether nothing has been spawned, but the effect has a spawn requirement
+			// there has been unusual cases in very specific areas where this has been the case reported by streamers
+			// for reference: https://github.com/pepijnverburg/osrs-runelite-twitch-live-loadout-plugin/issues/143
+			// when this happens we will rerun the event.
+			if (spawnAmount == 0 && hasRequiredModelPlacement)
+			{
+				log.error("Rerunning an expired marketplace product due to not having spawned enough effects (EBS ID: "+ ebsProductId +", spawn amount: "+ spawnAmount +") for transaction: "+ transactionId);
+				rerunTransaction(transaction);
+				return;
+			}
+
 			log.info("Cleaned an expired marketplace product (EBS ID: "+ ebsProductId +", spawn amount: "+ spawnAmount +") for transaction: "+ transactionId);
 		});
 
