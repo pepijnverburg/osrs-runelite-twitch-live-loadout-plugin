@@ -124,11 +124,12 @@ public class MarketplaceProduct
 		this.loadedAt = Instant.now();
 		this.transactionAt = Instant.parse(transaction.timestamp);
 
-		// check when the transaction was loaded in and if it was loaded too late
+		// Check when the transaction was loaded in and if it was loaded too late
 		// compared to when the transaction was made. With this mechanism we still allow
 		// queued transactions to be handled while a streamer is logged out for 30 seconds while keeping RL open.
 		// but we will not handle transactions that RL will load when booting up without any in the queue.
-		int transactionExpiryToleranceS = 30;
+		// Finally, this allows transactions that might've been missed to be handled properly (e.g. after an EBS crash)
+		int transactionExpiryToleranceS = 5 * 60;
 		Instant transactionExpiredAt = transactionAt.plusSeconds(duration + transactionExpiryToleranceS);
 		Instant transactionLoadedAt = Instant.parse(transaction.loaded_at);
 		boolean loadedTooLate = transactionLoadedAt.isAfter(transactionExpiredAt);
