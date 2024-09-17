@@ -75,6 +75,7 @@ public class MarketplaceConstants {
 	public static final String WIDGET_MENU_ENTITY_TYPE = "widget";
 	public static final String PLAYER_MENU_ENTITY_TYPE = "player";
 	public static final String OBJECT_MENU_ENTITY_TYPE = "object";
+	public static final String GROUND_ITEM_MENU_ENTITY_TYPE = "ground-item";
 
 	public static final int MAX_SPAWN_AMOUNT = 500;
 	public static final String INDIVIDUAL_SPAWN_POINT_TYPE = "individual";
