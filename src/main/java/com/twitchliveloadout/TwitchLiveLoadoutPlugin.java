@@ -1039,6 +1039,13 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged)
 	{
+
+		// guard: only handle config updates of the plugin itself
+		if (!configChanged.getGroup().equals(TwitchLiveLoadoutConfig.PLUGIN_CONFIG_GROUP))
+		{
+			return;
+		}
+
 		try {
 			String key = configChanged.getKey();
 
