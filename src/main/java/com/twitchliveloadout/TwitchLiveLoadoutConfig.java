@@ -819,7 +819,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "overheadDonationMessageEnabled",
 			name = "Enable overhead messages",
-			description = "Allow messages as overhead text.",
+			description = "Enable messages for Random Events as overhead text.",
 			position = 4,
 			section = notificationsSection
 	)
@@ -831,7 +831,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigItem(
 			keyName = "popupDonationMessageEnabled",
 			name = "Enable pop-up messages",
-			description = "Allow messages as a pop-up.",
+			description = "Enable messages for Random Events as a pop-up.",
 			position = 8,
 			section = notificationsSection
 	)
@@ -842,8 +842,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "chatDonationMessageEnabled",
-			name = "Enable chat messages",
-			description = "Allow messages as a chat message.",
+			name = "Enable in-game chat messages",
+			description = "Enable messages for Random Events as in-game chat messages.",
 			position = 12,
 			section = notificationsSection
 	)
@@ -853,9 +853,21 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "twitchChatBitsDonationMessageEnabled",
+			name = "Enable Twitch chat messages",
+			description = "Enable messages for Random Events as Twitch Chat messages.",
+			position = 14,
+			section = notificationsSection
+	)
+	default boolean twitchChatBitsDonationMessageEnabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 			keyName = "chatMessageColor",
 			name = "Chat message color",
-			description = "The color in which the chat messages are shown.",
+			description = "The color in which the in-game chat messages are shown.",
 			position = 16,
 			section = notificationsSection
 	)
@@ -896,22 +908,10 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "defaultFreeModeActivationMessage", // NOTE: keep old key for migration purposes
-			name = "Default free mode activation message",
-			description = "Default message when an event is activated when free mode is on. Use '{viewerName}' and {productName} to replace with values from the transaction.",
-			position = 25,
-			section = notificationsSection
-	)
-	default String defaultFreeModeActivationMessage()
-	{
-		return "Thank you {viewerName} for activating {productName}!";
-	}
-
-	@ConfigItem(
 			keyName = "twitchChatBitsDonationMessage",
 			name = "Twitch Chat bits donation message",
 			description = "Enable sending a Twitch Chat message with details of the bits donation.",
-			position = 28,
+			position = 26,
 			section = notificationsSection
 	)
 	default String twitchChatBitsDonationMessage()
@@ -920,15 +920,15 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "twitchChatBitsDonationMessageEnabled",
-			name = "Enable Twitch Chat bits donation message",
-			description = "Enable sending a Twitch Chat message with details of the bits donation.",
-			position = 32,
+			keyName = "defaultFreeModeActivationMessage", // NOTE: keep old key for migration purposes
+			name = "Default free mode activation message",
+			description = "Default message when an event is activated when free mode is on. Use '{viewerName}' and {productName} to replace with values from the transaction.",
+			position = 28,
 			section = notificationsSection
 	)
-	default boolean twitchChatBitsDonationMessageEnabled()
+	default String defaultFreeModeActivationMessage()
 	{
-		return false;
+		return "Thank you {viewerName} for activating {productName}!";
 	}
 
 	@ConfigItem(

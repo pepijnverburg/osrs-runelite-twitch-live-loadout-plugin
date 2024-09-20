@@ -139,7 +139,8 @@ public class NotificationManager {
 		EbsNotification ebsNotification = notification.ebsNotification;
 		String messageType = ebsNotification.messageType;
 
-		// plugin.logSupport("Sending notification with message: "+ notification.ebsNotification.message);
+		plugin.logSupport("Sending notification with message: "+ notification.ebsNotification.message);
+		plugin.logSupport("Sending notification with type: "+ notification.ebsNotification.messageType);
 
 		try {
 			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
@@ -283,6 +284,7 @@ public class NotificationManager {
 
 		try {
 			String transactionId = notification.marketplaceProduct.getTransaction().id;
+			String streamerProductName = notification.marketplaceProduct.getStreamerProduct().name;
 
 			// guard: skip when message was already sent for this transaction
 			// NOTE: this means each transaction can only send ONE message to avoid spam
@@ -296,7 +298,7 @@ public class NotificationManager {
 			twitchChatNotifiedTransactionIds.add(transactionId);
 
 			// send the message to the twitch api
-			String message = getMessage(notification);
+			String message = "["+ streamerProductName +"] "+ getMessage(notification);
 			twitchApi.sendChatMessage(message);
 		} catch (Exception exception) {
 			// empty
