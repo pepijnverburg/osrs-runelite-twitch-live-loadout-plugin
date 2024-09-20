@@ -81,6 +81,7 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 		}
 
 		// register the new effect
+		// NOTE: perform add to list first!
 		MarketplaceEffect<FrameType> effect = new MarketplaceEffect<FrameType>(product, frame, spawnedObject, expiresAt);
 		effects.add(effect);
 		onAddEffect(effect);
@@ -114,6 +115,7 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 			{
 
 				// remove from the current effects
+				// NOTE: perform remove from list first!
 				effects.remove(effect);
 				onDeleteEffect(effect);
 
@@ -151,6 +153,11 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 			applyEffect(effect);
 			effect.setApplied(true);
 		}
+	}
+
+	public boolean hasAnyEffectsActive()
+	{
+		return !effects.isEmpty();
 	}
 
 	protected abstract void onAddEffect(MarketplaceEffect<FrameType> effect);

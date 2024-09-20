@@ -104,6 +104,7 @@ public class MarketplaceConstants {
 
 	public static final int MOVEMENT_EFFECT_MAX_SIZE = 100;
 	public static final int TRANSMOG_EFFECT_MAX_SIZE = 100;
+	public static final int DRAW_EFFECT_MAX_SIZE = 100;
 
 	public static final int CHAT_NOTIFICATION_LOCKED_MS = 1 * 1000;
 	public static final int OVERHEAD_NOTIFICATION_PAUSE_MS = 1 * 1000;

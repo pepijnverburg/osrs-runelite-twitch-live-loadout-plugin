@@ -8,6 +8,7 @@ import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.marketplace.animations.AnimationManager;
+import com.twitchliveloadout.marketplace.draws.DrawManager;
 import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.notifications.NotificationManager;
@@ -82,6 +83,9 @@ public class MarketplaceManager {
 
 	@Getter
 	private final MenuManager menuManager;
+
+	@Getter
+	private final DrawManager drawManager;
 
 	@Getter
 	private final NotificationManager notificationManager;
@@ -193,6 +197,7 @@ public class MarketplaceManager {
 		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client, twitchApi, this);
 		this.widgetManager = new WidgetManager(plugin, client);
 		this.menuManager = new MenuManager(config, client);
+		this.drawManager = new DrawManager(client);
 		this.soundManager = new SoundManager(client, config);
 	}
 
@@ -1033,6 +1038,11 @@ public class MarketplaceManager {
 			widgetManager.updateEffects();
 		}
 
+		if (passTimerOnce(MarketplaceTimer.DRAWS, now))
+		{
+			drawManager.updateEffects();
+		}
+
 		if (passTimerOnce(MarketplaceTimer.PRODUCT_BEHAVIOURS, now))
 		{
 			handleActiveProducts((marketplaceProduct) -> {
@@ -1076,6 +1086,9 @@ public class MarketplaceManager {
 		menuManager.onMenuOptionClicked(event);
 	}
 
+	/**
+	 * Add menu options based on which spawned object can be found with additional menu entries
+	 */
 	public void onMenuOpened(MenuOpened event)
 	{
 		Point mouseCanvasPoint = client.getMouseCanvasPosition();
@@ -1144,6 +1157,14 @@ public class MarketplaceManager {
 					.setDeprioritized(true);
 			}
 		});
+	}
+
+	/**
+	 * Handle on menu option clicks
+	 */
+	public boolean shouldDraw(Renderable renderable, boolean drawingUI)
+	{
+		return drawManager.shouldDraw(renderable, drawingUI);
 	}
 
 	private boolean passTimerOnce(MarketplaceTimer timer, Instant now)
@@ -1320,8 +1341,8 @@ public class MarketplaceManager {
 		isActive = true;
 		handleActiveProducts(MarketplaceProduct::play);
 
-		// re-apply them manually because they are event based and the active flag
-		// is not checked periodically TODO: consider doing this periodically for future side-effects
+		// re-apply them manually because they are event based and the active flag is not checked periodically
+		// TODO: consider doing this periodically for future side-effects
 		transmogManager.applyActiveEffects();
 		animationManager.applyActiveEffects();
 	}
@@ -1395,6 +1416,7 @@ public class MarketplaceManager {
 		forceStopActiveProducts();
 		animationManager.forceCleanAllEffects();
 		transmogManager.forceCleanAllEffects();
+		drawManager.forceCleanAllEffects();
 		menuManager.forceCleanAllEffects();
 		widgetManager.forceCleanAllEffects();
 		widgetManager.hideCoveringOverlays();

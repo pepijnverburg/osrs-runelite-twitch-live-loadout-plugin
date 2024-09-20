@@ -2,6 +2,7 @@ package com.twitchliveloadout.marketplace.products;
 
 import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
+import com.twitchliveloadout.marketplace.draws.DrawManager;
 import com.twitchliveloadout.marketplace.interfaces.MenuManager;
 import com.twitchliveloadout.marketplace.interfaces.WidgetManager;
 import com.twitchliveloadout.marketplace.spawns.SpawnOverheadManager;
@@ -886,6 +887,7 @@ public class MarketplaceProduct
 			triggerPlayerEquipment(effect.playerEquipment, innerDelayMs);
 			triggerPlayerMovement(effect.playerMovement, innerDelayMs);
 			triggerInterfaceWidgets(effect.interfaceWidgets, innerDelayMs);
+			triggerDrawEffect(effect.drawEffect, innerDelayMs);
 			triggerMenuOptions(effect.menuOptions, innerDelayMs);
 			triggerSoundEffect(effect.soundEffect, innerDelayMs);
 			triggerStateChange(spawnedObject, effect.stateChange, innerDelayMs);
@@ -1445,6 +1447,23 @@ public class MarketplaceProduct
 				menuManager.addEffect(this, menuOptionFrame, null);
 			}
 		}, delayMs);
+	}
+
+	private void triggerDrawEffect(EbsDrawFrame drawFrame, int baseDelayMs)
+	{
+		DrawManager drawManager = manager.getDrawManager();
+
+		// guard: make sure the sound is valid
+		if (drawFrame == null)
+		{
+			return;
+		}
+
+		int delayMs = (int) MarketplaceRandomizers.getValidRandomNumberByRange(drawFrame.delayMs, 0, 0);
+
+		manager.getPlugin().scheduleOnClientThread(() -> {
+			drawManager.addEffect(this, drawFrame, null);
+		}, baseDelayMs + delayMs);
 	}
 
 	private void triggerSoundEffect(EbsSoundEffectFrame soundEffect, int baseDelayMs)

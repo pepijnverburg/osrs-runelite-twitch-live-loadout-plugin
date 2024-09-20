@@ -20,6 +20,7 @@ public class EbsEffect {
 	public EbsEquipmentFrame playerEquipment;
 	public ArrayList<EbsMenuOptionFrame> menuOptions;
 	public ArrayList<EbsInterfaceWidgetFrame> interfaceWidgets;
+	public EbsDrawFrame drawEffect;
 	public EbsSoundEffectFrame soundEffect;
 	public EbsStateFrame stateChange;
 	public ArrayList<EbsNotification> notifications;

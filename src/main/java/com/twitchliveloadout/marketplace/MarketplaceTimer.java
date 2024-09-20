@@ -8,6 +8,7 @@ public enum MarketplaceTimer {
 	// if a timer is needed to be > 600ms in terms of timer then use a game tick
 	PRODUCT_SPAWN_ROTATIONS("product-spawn-rotations", 75),
 	WIDGETS("widgets", 100),
+	DRAWS("draws", 200),
 	RECORD_LOCATION("record-location", 200),
 	RESPAWNS("respawns", 200),
 	PRODUCT_BEHAVIOURS("product-behaviours", 300),

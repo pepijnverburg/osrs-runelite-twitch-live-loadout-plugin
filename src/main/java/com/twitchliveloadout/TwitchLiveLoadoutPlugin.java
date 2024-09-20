@@ -48,6 +48,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.callback.Hooks;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -104,6 +105,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private Hooks hooks;
 
 	@Inject
 	private ClientThread clientThread;
@@ -208,6 +212,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private SeasonalManager seasonalManager;
 
 	/**
+	 * Hook to handle
+	 */
+	private final Hooks.RenderableDrawListener drawListener = this::shouldDraw;
+
+	/**
 	 * Cache to check for account identifiers (hash + world type) changes as game state is not reliable for this
 	 */
 	private String lastAccountIdentifier = null;
@@ -250,6 +259,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		// when someone is already logged in and e.g. disabling and enabling the plugin
 		skillStateManager.updateSkills();
 		syncPlayerInfo();
+
+		// setup listeners, NOTE: do this last once all manager are initialized
+		hooks.registerRenderableDrawListener(drawListener);
+
 		log.info("Twitch Live Loadout has started!");
 	}
 
@@ -339,6 +352,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		super.shutDown();
+
+		// unregister all hooks, NOTE: first to make sure other manager can be shutdown as well
+		hooks.unregisterRenderableDrawListener(drawListener);
 
 		shutDownPanels();
 		shutDownManagers();
@@ -800,6 +816,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		} catch (Exception exception) {
 			log.warn("Could not handle menu option clicked event: ", exception);
 		}
+	}
+
+	private boolean shouldDraw(Renderable renderable, boolean drawingUI)
+	{
+		// guard: ensure the marketplace manager is initialized
+		// this should usually not be needed due to the hooks being initialized and shutdown
+		// correctly in the life cycle of the plugin
+		if (marketplaceManager == null)
+		{
+			return true;
+		}
+
+		return marketplaceManager.shouldDraw(renderable, drawingUI);
 	}
 
 	@Subscribe
