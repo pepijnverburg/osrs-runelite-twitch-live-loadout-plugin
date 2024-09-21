@@ -656,7 +656,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			name = "Transaction history amount",
 			description = "How many transactions are shown in the 'recent donations' panel.",
 			position = 16,
-			hidden = false,
+			hidden = true,
 			section = marketplaceSection
 	)
 	default int marketplaceTransactionHistoryAmount()
@@ -933,7 +933,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "followEventMessageEnabled",
-			name = "Enable follow message",
+			name = "1. Enable follow message",
 			description = "Enable follow event message",
 			position = 36,
 			section = notificationsSection
@@ -957,7 +957,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "channelPointsRedeemEventMessageEnabled",
-			name = "Enable channel point message",
+			name = "2. Enable channel point message",
 			description = "Enable message shown when there is a channel point redeem.",
 			position = 44,
 			section = notificationsSection
@@ -981,7 +981,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "subscribeEventMessageEnabled",
-			name = "Enable sub message",
+			name = "3a. Enable sub message",
 			description = "Enable message shown when there is a new sub.",
 			position = 52,
 			section = notificationsSection
@@ -993,7 +993,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "subscribeEventMessageOnGiftEnabled",
-			name = "Enable sub message when gifted",
+			name = "3b. Enable sub message when gifted",
 			description = "Enable message when the sub is gifted.",
 			position = 56,
 			section = notificationsSection
@@ -1017,7 +1017,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "resubscribeEventMessageEnabled",
-			name = "Enable resub message",
+			name = "4. Enable resub message",
 			description = "Enable message shown when there is a resub.",
 			position = 64,
 			section = notificationsSection
@@ -1041,7 +1041,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "giftSubscriptionEventMessageEnabled",
-			name = "Enable gift sub message",
+			name = "5. Enable gift sub message",
 			description = "Enable message shown when there is a gift subscription.",
 			position = 72,
 			section = notificationsSection
@@ -1065,7 +1065,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "raidEventMessageEnabled",
-			name = "Enable raid message",
+			name = "6. Enable raid message",
 			description = "Enable message shown when there is a raid.",
 			position = 80,
 			section = notificationsSection
@@ -1089,7 +1089,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "addedModMessageEnabled",
-			name = "Enable add mod message",
+			name = "7. Enable add mod message",
 			description = "Enable message shown a user is promoted to mod.",
 			position = 88,
 			section = notificationsSection
@@ -1113,7 +1113,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "removedModMessageEnabled",
-			name = "Enable remove mod message",
+			name = "8. Enable remove mod message",
 			description = "Enable message shown when a user is demoted from mod.",
 			position = 96,
 			section = notificationsSection
@@ -1137,7 +1137,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "beginHypeTrainMessageEnabled",
-			name = "Enable hype train begin message",
+			name = "9. Enable hype train begin message",
 			description = "Enable message when a hype train begins.",
 			position = 104,
 			section = notificationsSection
@@ -1161,7 +1161,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "progressHypeTrainMessageEnabled",
-			name = "Enable hype train progression message",
+			name = "10. Enable hype train progression message",
 			description = "Enable message when a hype train progresses in percentage or level.",
 			position = 112,
 			section = notificationsSection
@@ -1185,7 +1185,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "endHypeTrainMessageEnabled",
-			name = "Enable hype train end message",
+			name = "11. Enable hype train end message",
 			description = "Enable message when a hype train ends.",
 			position = 120,
 			section = notificationsSection
@@ -1209,7 +1209,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "donateCharityCampaignMessageEnabled",
-			name = "Enable charity donation message",
+			name = "12. Enable charity donation message",
 			description = "Enable message when a charity campaign receives a donation.",
 			position = 128,
 			section = notificationsSection
@@ -1233,7 +1233,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "startCharityCampaignMessageEnabled",
-			name = "Enable charity start message",
+			name = "13. Enable charity start message",
 			description = "Enable message when a charity campaign starts.",
 			position = 136,
 			section = notificationsSection
@@ -1257,7 +1257,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "progressCharityCampaignMessageEnabled",
-			name = "Enable charity progression message",
+			name = "14. Enable charity progression message",
 			description = "Enable message when a charity progresses in amount donated.",
 			position = 144,
 			section = notificationsSection
@@ -1281,7 +1281,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@ConfigItem(
 			keyName = "stopCharityCampaignMessageEnabled",
-			name = "Enable charity end message",
+			name = "15. Enable charity end message",
 			description = "Enable message when a charity campaign ends.",
 			position = 152,
 			section = notificationsSection
