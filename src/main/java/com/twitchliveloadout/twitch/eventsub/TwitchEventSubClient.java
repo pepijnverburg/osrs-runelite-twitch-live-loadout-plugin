@@ -73,7 +73,7 @@ public class TwitchEventSubClient {
         @Override
         public void onOpen(WebSocket webSocket, Response response)
         {
-            log.info("Successfully opened Twitch websocket...");
+            plugin.logSupport("Successfully opened Twitch websocket...");
             listener.clearActiveSubscriptionTypes();
             socketOpen = true;
         }
