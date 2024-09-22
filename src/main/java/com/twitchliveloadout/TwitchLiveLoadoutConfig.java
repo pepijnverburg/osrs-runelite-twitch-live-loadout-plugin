@@ -57,6 +57,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String QUESTS_CONFIG_KEY = "quests";
 	public final static String SEASONAL_RELICS_CONFIG_KEY = "seasonal-relics";
 	public final static String SEASONAL_AREAS_CONFIG_KEY = "seasonal-areas";
+	public final static String EVENT_SUB_HANDLED_FOLLOWER_IDS = "event-sub-handled-follower-ids";
 	public final static String[] PERSISTENT_STATE_CONFIG_KEYS = new String[]{
 		COLLECTION_LOG_CONFIG_KEY,
 		COLLECTION_LOG_OBTAINED_AMOUNT_CONFIG_KEY,

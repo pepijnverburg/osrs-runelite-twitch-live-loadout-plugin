@@ -1225,7 +1225,7 @@ public class MarketplaceManager {
 		if (streamerProduct == null && isEventSubTransaction)
 		{
 			TwitchEventSubType eventSubType = transaction.eventSubType;
-			boolean isEventSubMessageEnabled = eventSubType.getMessageEnabledGetter().execute(config, eventSubMessage);
+			boolean isEventSubMessageEnabled = eventSubType.getDefaultMessageEnabledGetter().execute(plugin, config, eventSubMessage);
 
 			// guard: skip when the event sub message is not enabled
 			if (!isEventSubMessageEnabled)

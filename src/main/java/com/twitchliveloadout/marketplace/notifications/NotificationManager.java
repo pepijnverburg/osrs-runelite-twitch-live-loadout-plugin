@@ -8,7 +8,6 @@ import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.MarketplaceMessages;
 import com.twitchliveloadout.marketplace.products.EbsNotification;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
-import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
@@ -353,13 +352,12 @@ public class NotificationManager {
 			// get the message from the channel event sub type
 			// or use the default bits donation message when this is an EBS bits transaction
 			if (isEventSubTransaction) {
-				Boolean isEventSubMessageEnabled = eventSubType.getMessageEnabledGetter().execute(config, eventSubMessage);
 
-				// only override the message when the override is enabled
-				if (isEventSubMessageEnabled)
-				{
-					message = eventSubType.getMessageGetter().execute(config);
-				}
+				// NOTE: don't check whether the default message is enabled or not via the RuneLite settings
+				// this is because you could disable the event in RuneLite, but have it configured in the Twitch Extension.
+				// in this scenario we would still like to show the correct message!
+				// This avoids confusion when configuring a random event to the event, while disabling the default.
+				message = eventSubType.getMessageGetter().execute(config);
 			} else if (isCurrencyTransaction) {
 
 				// override the default bits message when its the Twitch chat notification
@@ -375,7 +373,7 @@ public class NotificationManager {
 			}
 
 			// when default chat messages are sent prefix them with the name of the event
-			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(notification.ebsNotification.messageType))
+			if (message != null && CHAT_NOTIFICATION_MESSAGE_TYPE.equals(notification.ebsNotification.messageType))
 			{
 				String name = marketplaceProduct.getStreamerProduct().name;
 				message = "["+ name +"] "+ message;

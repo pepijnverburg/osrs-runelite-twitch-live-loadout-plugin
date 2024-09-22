@@ -2,9 +2,9 @@ package com.twitchliveloadout.twitch.eventsub;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
-import com.twitchliveloadout.marketplace.products.StreamerProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProductCost;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -14,23 +14,32 @@ import com.twitchliveloadout.twitch.eventsub.messages.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.EVENT_SUB_HANDLED_FOLLOWER_IDS;
 
 @Slf4j
 public class TwitchEventSubListener {
     private final TwitchLiveLoadoutPlugin plugin;
+    private final TwitchLiveLoadoutConfig config;
     private final TwitchApi twitchApi;
     private final Gson gson;
 
     /**
+     * List of all handled follow events this session, identified by follower ID as it's very easy to duplicate the event.
+     * This is the dedup mechanism, which can only be done client-side.
+     */
+    private final CopyOnWriteArrayList<String> handledFollowerIds = new CopyOnWriteArrayList<>();
+
+    /**
      * List of all the active Twitch EventSub types
      */
-    private CopyOnWriteArrayList<TwitchEventSubType> activeSubscriptionTypes = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<TwitchEventSubType> activeSubscriptionTypes = new CopyOnWriteArrayList<>();
 
-    public TwitchEventSubListener(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, Gson gson)
+    public TwitchEventSubListener(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, TwitchApi twitchApi, Gson gson)
     {
         this.plugin = plugin;
+        this.config = config;
         this.twitchApi = twitchApi;
         this.gson = gson;
     }
@@ -65,6 +74,13 @@ public class TwitchEventSubListener {
     {
         BaseMessage message = gson.fromJson(payload, type.getMessageClass());
         TwitchTransaction twitchTransaction = createTransactionFromEventMessage(messageId, type, message);
+
+        // guard: check whether this event in particular should be handled
+        if (!type.getShouldHandleEventGetter().execute(plugin, config, message))
+        {
+            log.info("Skipped an EventSub event because it is not active: "+ message.toString());
+            return;
+        }
 
         // handle types that need to extend the twitch transaction in any way
         switch (type) {
@@ -164,5 +180,19 @@ public class TwitchEventSubListener {
     public void clearActiveSubscriptionTypes()
     {
         activeSubscriptionTypes.clear();
+    }
+
+    public void handleFollowerId(String followerId)
+    {
+        handledFollowerIds.add(followerId);
+
+        // TODO: consider making this persistent to prevent people unfollowing + following upon each RL session.
+        // currently viewers can trigger a valid follow event each fresh RL session.
+        // plugin.setConfiguration(EVENT_SUB_HANDLED_FOLLOWER_IDS);
+    }
+
+    public boolean hasHandledFollowerId(String followerId)
+    {
+        return handledFollowerIds.contains(followerId);
     }
 }

@@ -159,6 +159,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Twitch EventSub client
 	 */
+	@Getter
 	private TwitchEventSubListener twitchEventSubListener;
 	/**
 	 * Twitch EventSub client
@@ -290,7 +291,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			twitchApi = new TwitchApi(this, client, config, chatMessageManager, httpClient, configManager);
-			twitchEventSubListener = new TwitchEventSubListener(this, twitchApi, gson);
+			twitchEventSubListener = new TwitchEventSubListener(this, config, twitchApi, gson);
 			twitchEventSubClient = new TwitchEventSubClient(this, config, twitchApi, gson, httpClient, twitchEventSubListener);
 			twitchState = new TwitchState(this, config, twitchEventSubClient, canvasListener, gson);
 		} catch (Exception exception) {
@@ -595,7 +596,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Polling mechanism to update the channel point rewards configured in Twitch.
 	 */
-	@Schedule(period = (IN_DEVELOPMENT ? 5 : 30), unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = (IN_DEVELOPMENT ? 5 : 20), unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void updateChannelPointRewards()
 	{
 		try {
