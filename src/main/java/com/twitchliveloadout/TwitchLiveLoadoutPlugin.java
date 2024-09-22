@@ -96,9 +96,9 @@ import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN
 public class TwitchLiveLoadoutPlugin extends Plugin
 {
 	/**
-	 * Debugging flags
+	 * Environment flags
 	 */
-	public static final boolean IN_DEVELOPMENT = true;
+	public static final boolean IN_DEVELOPMENT = false;
 
 	@Inject
 	private TwitchLiveLoadoutConfig config;
