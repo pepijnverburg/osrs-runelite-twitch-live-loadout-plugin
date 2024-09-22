@@ -63,7 +63,6 @@ public class CollectionLogManager {
 	{
 		if (scriptPostFired.getScriptId() == COLLECTION_LOG_DRAW_LIST_SCRIPT_ID)
 		{
-			log.info("ON SCRIPT!!!");
 			scheduleUpdateCurrentCategory();
 		}
 	}
@@ -76,7 +75,6 @@ public class CollectionLogManager {
 		{
 			if (candidateVarbitId == varbitId)
 			{
-				log.info("ON VARBIT!!!");
 				scheduleUpdateCurrentCategory();
 				return;
 			}
