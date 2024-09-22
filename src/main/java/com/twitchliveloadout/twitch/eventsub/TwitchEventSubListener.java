@@ -75,10 +75,17 @@ public class TwitchEventSubListener {
         BaseMessage message = gson.fromJson(payload, type.getMessageClass());
         TwitchTransaction twitchTransaction = createTransactionFromEventMessage(messageId, type, message);
 
+        // guard: check whether the settings for handling events are disabled
+        if (!config.marketplaceChannelEventsEnabled())
+        {
+            log.info("Skipped an EventSub event because it is disabled globally, type: "+ type.getName());
+            return;
+        }
+
         // guard: check whether this event in particular should be handled
         if (!type.getShouldHandleEventGetter().execute(plugin, config, message))
         {
-            log.info("Skipped an EventSub event because it is not active: "+ message.toString());
+            log.info("Skipped an EventSub event through a specific message check, type: "+ type.getName());
             return;
         }
 
