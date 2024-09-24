@@ -622,7 +622,6 @@ public class MarketplaceManager {
 	 */
 	public void testEbsProduct(EbsProduct ebsProduct)
 	{
-
 		TwitchTransaction twitchTransaction = new TwitchTransaction();
 		TwitchProduct twitchProduct = new TwitchProduct();
 		TwitchProductCost twitchProductCost = new TwitchProductCost();
@@ -751,12 +750,13 @@ public class MarketplaceManager {
 			// there has been unusual cases in very specific areas where this has been the case reported by streamers
 			// for reference: https://github.com/pepijnverburg/osrs-runelite-twitch-live-loadout-plugin/issues/143
 			// when this happens we will rerun the event.
-			if (spawnAmount == 0 && hasRequiredModelPlacement)
-			{
-				log.error("Rerunning an expired marketplace product due to not having spawned enough effects (EBS ID: "+ ebsProductId +", spawn amount: "+ spawnAmount +") for transaction: "+ transactionId);
-				rerunTransaction(transaction);
-				return;
-			}
+			// NOTE: disabled because we'll be testing this more first.
+//			if (spawnAmount == 0 && hasRequiredModelPlacement)
+//			{
+//				log.error("Rerunning an expired marketplace product due to not having spawned enough effects (EBS ID: "+ ebsProductId +", spawn amount: "+ spawnAmount +") for transaction: "+ transactionId);
+//				rerunTransaction(transaction);
+//				return;
+//			}
 
 			log.info("Cleaned an expired marketplace product (EBS ID: "+ ebsProductId +", spawn amount: "+ spawnAmount +") for transaction: "+ transactionId);
 		});
