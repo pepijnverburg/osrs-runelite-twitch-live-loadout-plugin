@@ -208,11 +208,11 @@ public class MarketplacePanel extends JPanel
 					throw new Exception("Some of the properties were filled in correctly.");
 				}
 
-				// customProductInputField.setBackground(new Color(50, 200, 50));
+				customProductInputField.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 				marketplaceManager.addCustomEbsProduct(ebsProduct);
 				rebuildCustomProductPanels();
 			} catch (Exception exception) {
-				log.error("An invalid custom Random Event was passed through the input field. Could not parse it correctly:", exception);
+				log.warn("An invalid custom Random Event was passed through the input field. Could not parse it correctly:", exception);
 				customProductInputField.setBackground(new Color(200, 50, 50));
 			}
 
