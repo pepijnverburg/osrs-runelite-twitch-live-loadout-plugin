@@ -23,6 +23,7 @@ public abstract class EntityActionPanel<EntityType> extends JPanel {
 	protected static final ImageIcon RERUN_ICON;
 	protected static final ImageIcon RERUN_HOVER_ICON;
 
+	@Getter
 	private EntityType entity;
 	protected final JPanel parentPanel;
 	protected final String invalidText;
@@ -111,11 +112,6 @@ public abstract class EntityActionPanel<EntityType> extends JPanel {
 	public void setEntity(EntityType entity)
 	{
 		this.entity = entity;
-	}
-
-	public EntityType getEntity()
-	{
-		return entity;
 	}
 
 	public void rebuild()

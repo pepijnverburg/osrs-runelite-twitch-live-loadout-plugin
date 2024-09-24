@@ -1,10 +1,12 @@
 package com.twitchliveloadout.ui;
 
+import com.google.gson.Gson;
 import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.MarketplaceProductSorter;
 import com.twitchliveloadout.marketplace.products.ChannelPointReward;
+import com.twitchliveloadout.marketplace.products.EbsProduct;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.StreamerProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -14,13 +16,15 @@ import net.runelite.client.ui.ColorScheme;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
+/**
+ * NOTE: this is very ugly code due to how ugly and cumbersome Swing is. LOL.
+ */
 @Slf4j
 public class MarketplacePanel extends JPanel
 {
@@ -31,6 +35,7 @@ public class MarketplacePanel extends JPanel
 
 	private final GridBagConstraints constraints = new GridBagConstraints();
 	private final GridBagConstraints productListConstraints = new GridBagConstraints();
+	private final GridBagConstraints customProductListConstraints = new GridBagConstraints();
 	private final GridBagConstraints transactionListConstraints = new GridBagConstraints();
 	private final CardLayout cardLayout = new CardLayout();
 	private final JPanel wrapper = new JPanel(cardLayout);
@@ -57,19 +62,27 @@ public class MarketplacePanel extends JPanel
 	private final JPanel productListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<MarketplaceProductPanel> productPanels = new CopyOnWriteArrayList<>();
 
+	private final TextField customProductInputField = new TextField();
+	private final JPanel customProductListPanel = new JPanel(new GridBagLayout());
+	private final TextPanel customProductListTitlePanel = new TextPanel("<html><h2>Manual Random Events:</h2></html>", "<html>Enter the script configuration of the Random Event below:</html>");
+	private final JPanel customProductListWrapper = new JPanel(new BorderLayout());
+	private final CopyOnWriteArrayList<EbsProductPanel> customProductPanels = new CopyOnWriteArrayList<>();
+
 	private final JPanel transactionListPanel = new JPanel(new GridBagLayout());
 	private final TextPanel transactionListTitlePanel = new TextPanel("<html><h2>Recent Random Events:</h2></html>", "<html>List of all recent Random Events.</html>");
 	private final JPanel transactionListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<TwitchTransactionPanel> transactionPanels = new CopyOnWriteArrayList<>();
 
 	private final MarketplaceManager marketplaceManager;
+	private final Gson gson;
 	private boolean rebuildRequested = false;
 
-	public MarketplacePanel(MarketplaceManager marketplaceManager)
+	public MarketplacePanel(MarketplaceManager marketplaceManager, Gson gson)
 	{
 		super(new GridBagLayout());
 
 		this.marketplaceManager = marketplaceManager;
+		this.gson = gson;
 
 		initializeLayout();
 	}
@@ -119,6 +132,11 @@ public class MarketplacePanel extends JPanel
 		transactionListConstraints.gridx = 0;
 		transactionListConstraints.gridy = 0;
 
+		customProductListConstraints.fill = GridBagConstraints.HORIZONTAL;
+		customProductListConstraints.weightx = 1;
+		customProductListConstraints.gridx = 0;
+		customProductListConstraints.gridy = 0;
+
 		playbackWrapper.setLayout(new GridBagLayout());
 		playbackWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
 		playbackWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -161,6 +179,10 @@ public class MarketplacePanel extends JPanel
 		playbackConstraints.gridy++;
 		playbackWrapper.add(transactionListWrapper, playbackConstraints);
 		playbackConstraints.gridy++;
+		playbackWrapper.add(customProductListTitlePanel, playbackConstraints);
+		playbackConstraints.gridy++;
+		playbackWrapper.add(customProductListWrapper, playbackConstraints);
+		playbackConstraints.gridy++;
 
 		productListWrapper.setLayout(new GridBagLayout());
 		productListWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
@@ -169,6 +191,44 @@ public class MarketplacePanel extends JPanel
 		productListPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		productListWrapper.add(productListPanel, productListConstraints);
 		productListConstraints.gridy++;
+
+		customProductInputField.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		customProductInputField.addActionListener(event -> {
+			String rawEbsProduct = event.getActionCommand();
+
+			try {
+				EbsProduct ebsProduct = gson.fromJson(rawEbsProduct, EbsProduct.class);
+
+				// force this EBS product to be dangerous always so that some accounts will not be at risk
+				ebsProduct.dangerous = true;
+
+				// guard: make sure the ebsProduct is valid
+				if (ebsProduct.id == null || ebsProduct.behaviour == null || ebsProduct.name == null)
+				{
+					throw new Exception("Some of the properties were filled in correctly.");
+				}
+
+				// customProductInputField.setBackground(new Color(50, 200, 50));
+				marketplaceManager.addCustomEbsProduct(ebsProduct);
+				rebuildCustomProductPanels();
+			} catch (Exception exception) {
+				log.error("An invalid custom Random Event was passed through the input field. Could not parse it correctly:", exception);
+				customProductInputField.setBackground(new Color(200, 50, 50));
+			}
+
+			// always clear on copy
+			customProductInputField.setText("");
+		});
+
+		customProductListWrapper.setLayout(new GridBagLayout());
+		customProductListWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
+		customProductListWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		customProductListPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
+		customProductListPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		customProductListWrapper.add(customProductInputField, customProductListConstraints);
+		customProductListConstraints.gridy++;
+		customProductListWrapper.add(customProductListPanel, customProductListConstraints);
+		customProductListConstraints.gridy++;
 
 		transactionListWrapper.setLayout(new GridBagLayout());
 		transactionListWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
@@ -249,7 +309,7 @@ public class MarketplacePanel extends JPanel
 			marketplaceProductPanel.rebuild();
 		}
 
-		// initialize all the panel slots
+		// initialize all the transaction panel slots
 		for (int i = 0; i < MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY; i++)
 		{
 			TwitchTransactionPanel twitchTransactionPanel = new TwitchTransactionPanel(this, marketplaceManager);
@@ -257,6 +317,16 @@ public class MarketplacePanel extends JPanel
 			transactionListPanel.add(twitchTransactionPanel, transactionListConstraints);
 			transactionListConstraints.gridy++;
 			twitchTransactionPanel.rebuild();
+		}
+
+		// initialize all the custom products panel slots
+		for (int i = 0; i < MarketplaceConstants.MAX_CUSTOM_RANDOM_PRODUCTS; i++)
+		{
+			EbsProductPanel ebsProductPanel = new EbsProductPanel(this, marketplaceManager);
+			customProductPanels.add(ebsProductPanel);
+			customProductListPanel.add(ebsProductPanel, transactionListConstraints);
+			transactionListConstraints.gridy++;
+			ebsProductPanel.rebuild();
 		}
 
 		repaint();
@@ -327,15 +397,32 @@ public class MarketplacePanel extends JPanel
 
 	public void rebuildProductPanels()
 	{
-		LambdaIterator.handleAll(productPanels, (panel) -> {
-			panel.rebuild();
-		});
+		LambdaIterator.handleAll(productPanels, EntityActionPanel::rebuild);
 	}
 
 	public void rebuildTransactionPanels()
 	{
-		LambdaIterator.handleAll(transactionPanels, (panel) -> {
-			panel.rebuild();
+		LambdaIterator.handleAll(transactionPanels, EntityActionPanel::rebuild);
+	}
+
+	public void rebuildCustomProductPanels()
+	{
+		AtomicInteger atomicIndex = new AtomicInteger();
+		CopyOnWriteArrayList<EbsProduct> customEbsProducts = marketplaceManager.getCustomEbsProducts();
+
+		LambdaIterator.handleAll(customProductPanels, (customProductPanel) -> {
+			int index = atomicIndex.get();
+
+			// guard: make sure we don't exceed the amount of custom products we have
+			if (index >= customEbsProducts.size())
+			{
+				return;
+			}
+
+			EbsProduct customEbsProduct = customEbsProducts.get(index);
+			customProductPanel.setEntity(customEbsProduct);
+			customProductPanel.rebuild();
+			atomicIndex.getAndIncrement();
 		});
 	}
 

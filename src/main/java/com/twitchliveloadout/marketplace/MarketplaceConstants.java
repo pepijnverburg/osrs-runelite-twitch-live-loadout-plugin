@@ -8,6 +8,7 @@ public class MarketplaceConstants {
 
 	public static final int MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY = 50;
 	public static final int MAX_TRANSACTION_AMOUNT_IN_MEMORY = 50;
+	public static final int MAX_CUSTOM_RANDOM_PRODUCTS = 20;
 	public static final int TRANSACTION_DELAY_CORRECTION_MS = 1000;
 	public static final int TRANSACTION_EXPIRY_CLOCK_TOLERANCE_MS = 45 * 1000;
 	public static final int TICK_DURATION_MS = 600;
@@ -17,6 +18,7 @@ public class MarketplaceConstants {
 	public static final String PREVIOUS_TILE_LOCATION_TYPE = "previous-tile";
 	public static final String MODEL_TILE_LOCATION_TYPE = "model-tile";
 	public static final String INTERACTING_TILE_LOCATION_TYPE = "interacting-tile";
+	public static final String ABSOLUTE_TILE_LOCATION_TYPE = "absolute-tile";
 
 	public static final String NONE_FOLLOW_TYPE = "none";
 	public static final String IN_RADIUS_FOLLOW_TYPE = "in-radius";

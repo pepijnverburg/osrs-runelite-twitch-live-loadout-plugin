@@ -115,6 +115,12 @@ public class MarketplaceManager {
 	private CopyOnWriteArrayList<EbsProduct> ebsProducts = new CopyOnWriteArrayList<>();
 
 	/**
+	 * List of all custom EBS products loaded within RL
+	 */
+	@Getter
+	private CopyOnWriteArrayList<EbsProduct> customEbsProducts = new CopyOnWriteArrayList<>();
+
+	/**
 	 * List of all EBS products from Twitch
 	 */
 	private CopyOnWriteArrayList<ChannelPointReward> channelPointRewards = new CopyOnWriteArrayList<>();
@@ -614,7 +620,7 @@ public class MarketplaceManager {
 	/**
 	 * Test an EBS product by manually creating a fake Twitch donation and queueing it.
 	 */
-	private void testEbsProduct(EbsProduct ebsProduct)
+	public void testEbsProduct(EbsProduct ebsProduct)
 	{
 
 		TwitchTransaction twitchTransaction = new TwitchTransaction();
@@ -1280,7 +1286,16 @@ public class MarketplaceManager {
 
 	private EbsProduct getEbsProductById(String ebsProductId)
 	{
-		Iterator<EbsProduct> iterator = ebsProducts.iterator();
+		EbsProduct ebsProduct = getEbsProductById(ebsProductId, ebsProducts);
+		EbsProduct customEbsProduct = getEbsProductById(ebsProductId, customEbsProducts);
+
+		// NOTE: prioritize the custom EBS product to allow overriding!
+		return customEbsProduct != null ? customEbsProduct : ebsProduct;
+	}
+
+	private EbsProduct getEbsProductById(String ebsProductId, CopyOnWriteArrayList<EbsProduct> ebsProductCandidates)
+	{
+		Iterator<EbsProduct> iterator = ebsProductCandidates.iterator();
 
 		while (iterator.hasNext())
 		{
@@ -1294,6 +1309,20 @@ public class MarketplaceManager {
 		}
 
 		return null;
+	}
+
+	public void addCustomEbsProduct(EbsProduct ebsProduct)
+	{
+		String newEbsProductId = ebsProduct.id;
+		EbsProduct existingCustomEbsProduct = getEbsProductById(newEbsProductId, customEbsProducts);
+
+		// remove the custom EBS product when the ID was already added
+		if (existingCustomEbsProduct != null)
+		{
+			customEbsProducts.remove(existingCustomEbsProduct);
+		}
+
+		customEbsProducts.add(ebsProduct);
 	}
 
 	private ChannelPointReward getChannelPointRewardById(String channelPointRewardId)

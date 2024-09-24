@@ -6,6 +6,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
+import com.google.gson.Gson;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.fights.FightStateManager;
@@ -30,14 +31,14 @@ public class TwitchLiveLoadoutPanel extends PluginPanel
 	private final CombatPanel combatPanel;
 	private final MarketplacePanel marketplacePanel;
 
-	public TwitchLiveLoadoutPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchEventSubClient twitchEventSubClient, TwitchState twitchState, FightStateManager fightStateManager, MarketplaceManager marketplaceManager, CanvasListener canvasListener, TwitchLiveLoadoutConfig config)
+	public TwitchLiveLoadoutPanel(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchEventSubClient twitchEventSubClient, TwitchState twitchState, FightStateManager fightStateManager, MarketplaceManager marketplaceManager, CanvasListener canvasListener, TwitchLiveLoadoutConfig config, Gson gson)
 	{
 		super(true);
 		setLayout(new BorderLayout());
 
 		combatPanel = new CombatPanel(fightStateManager);
 		connectivityPanel = new ConnectivityPanel(plugin, twitchApi, twitchEventSubClient, twitchState, canvasListener, config);
-		marketplacePanel = new MarketplacePanel(marketplaceManager);
+		marketplacePanel = new MarketplacePanel(marketplaceManager, gson);
 
 		connectivityTab = new MaterialTab("Status", tabGroup, connectivityPanel);
 		marketplaceTab = new MaterialTab("Events", tabGroup, marketplacePanel);

@@ -319,7 +319,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void initializePanel()
 	{
 		try {
-			pluginPanel = new TwitchLiveLoadoutPanel(this, twitchApi, twitchEventSubClient, twitchState, fightStateManager, marketplaceManager, canvasListener, config);
+			pluginPanel = new TwitchLiveLoadoutPanel(this, twitchApi, twitchEventSubClient, twitchState, fightStateManager, marketplaceManager, canvasListener, config, gson);
 			pluginPanel.rebuild();
 
 			final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
