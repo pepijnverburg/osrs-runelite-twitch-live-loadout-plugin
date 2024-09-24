@@ -5,6 +5,8 @@ import java.util.ArrayList;
 public class EbsProjectileFrame extends EbsEffectFrame {
 	public String startLocationType;
 	public String endLocationType;
+	public EbsProjectileFrameLocation startLocation;
+	public EbsProjectileFrameLocation endLocation;
 	public Boolean followEndLocation = true;
 	public EbsRandomRange startLocationRadiusRange;
 	public EbsRandomRange endLocationRadiusRange;

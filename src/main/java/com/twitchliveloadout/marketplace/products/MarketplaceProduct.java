@@ -14,10 +14,7 @@ import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
-import com.twitchliveloadout.twitch.TwitchState;
-import com.twitchliveloadout.twitch.TwitchStateEntry;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -1619,15 +1616,16 @@ public class MarketplaceProduct
 				Integer projectileId = projectileFrame.id;
 				String startLocationType = projectileFrame.startLocationType;
 				String endLocationType = projectileFrame.endLocationType;
+				EbsProjectileFrameLocation startAbsoluteLocation = projectileFrame.startLocation;
+				EbsProjectileFrameLocation endAbsoluteLocation = projectileFrame.endLocation;
 				Boolean followEndLocation = projectileFrame.followEndLocation;
 				Boolean inLineOfSight = projectileFrame.inLineOfSight;
 				Boolean avoidExistingSpawns = projectileFrame.avoidExistingSpawns;
 				Boolean avoidPlayerLocation = projectileFrame.avoidPlayerLocation;
 				Boolean avoidInvalidOverlay = projectileFrame.avoidInvalidOverlay;
 				Actor endActor = followEndLocation ? getActorByLocationType(endLocationType) : null;
-				LocalPoint startReferenceLocation = getLocalPointByLocationType(startLocationType, spawnedObject);
-				LocalPoint endReferenceLocation = getLocalPointByLocationType(endLocationType, spawnedObject);
-
+				LocalPoint startReferenceLocation = getProjectileLocalPointByLocationType(startLocationType, startAbsoluteLocation, spawnedObject);
+				LocalPoint endReferenceLocation = getProjectileLocalPointByLocationType(endLocationType, endAbsoluteLocation, spawnedObject);
 
 				// offset the locations with possible radiuses
 				LocalPoint startLocation = offsetLocalPointByRadius(startReferenceLocation, inLineOfSight, avoidExistingSpawns, avoidPlayerLocation, avoidInvalidOverlay, projectileFrame.startLocationRadiusRange);
@@ -1707,38 +1705,83 @@ public class MarketplaceProduct
 	}
 
 	@Nullable
-	private LocalPoint getLocalPointByLocationType(String locationType, SpawnedObject spawnedObject)
+	private LocalPoint getProjectileLocalPointByLocationType(String locationType, EbsProjectileFrameLocation location, SpawnedObject spawnedObject)
 	{
 		Client client = manager.getClient();
 		WorldView worldView = client.getTopLevelWorldView();
 		Actor actor = getActorByLocationType(locationType);
-		LocalPoint actorLocation = null;
+		WorldPoint actorLocation = null;
+		WorldPoint referenceWorldPoint = null;
+		Integer worldPointX = null;
+		Integer worldPointY = null;
+		Integer worldPointPlane = null;
+		Integer deltaPointX = null;
+		Integer deltaPointY = null;
+
+		if (location != null)
+		{
+			worldPointX = location.worldPointX;
+			worldPointY = location.worldPointY;
+			worldPointPlane = location.worldPointPlane;
+			deltaPointX = location.deltaPointX;
+			deltaPointY = location.deltaPointY;
+		}
 
 		if (actor != null)
 		{
-			actorLocation = actor.getLocalLocation();
+			actorLocation = actor.getWorldLocation();
+		}
+
+		if (worldPointPlane == null)
+		{
+			worldPointPlane = worldView.getPlane();
 		}
 
 		switch (locationType)
 		{
 			case CURRENT_TILE_LOCATION_TYPE:
 			case INTERACTING_TILE_LOCATION_TYPE:
-				return actorLocation;
+				referenceWorldPoint = actorLocation;
+				break;
 			case PREVIOUS_TILE_LOCATION_TYPE:
 				WorldPoint previousLocation =  manager.getSpawnManager().getPreviousPlayerLocation();
 
 				// guard: fallback to the current location
 				if (previousLocation == null)
 				{
-					return actorLocation;
+					referenceWorldPoint = actorLocation;
+					break;
 				}
 
-				return LocalPoint.fromWorld(worldView, previousLocation);
+				referenceWorldPoint = previousLocation;
+				break;
 			case MODEL_TILE_LOCATION_TYPE:
-				return spawnedObject.getSpawnPoint().getLocalPoint(client);
+				referenceWorldPoint = spawnedObject.getSpawnPoint().getWorldPoint();
+				break;
+			case ABSOLUTE_TILE_LOCATION_TYPE:
+				if (worldPointX != null && worldPointY != null)
+				{
+					referenceWorldPoint = new WorldPoint(worldPointX, worldPointY, worldPointPlane);
+				}
+				break;
 		}
 
-		return null;
+		if (referenceWorldPoint == null)
+		{
+			return null;
+		}
+
+		if (deltaPointX != null)
+		{
+			referenceWorldPoint = referenceWorldPoint.dx(deltaPointX);
+		}
+
+		if (deltaPointY != null)
+		{
+			referenceWorldPoint = referenceWorldPoint.dy(deltaPointY);
+		}
+
+		return LocalPoint.fromWorld(worldView, referenceWorldPoint);
 	}
 
 	private LocalPoint offsetLocalPointByRadius(LocalPoint localPoint, boolean inLineOfSight, boolean avoidExistingSpawns, boolean avoidPlayerLocation, boolean avoidInvalidOverlay, EbsRandomRange radiusRange)

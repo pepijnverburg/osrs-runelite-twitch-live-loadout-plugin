@@ -258,6 +258,11 @@ public class SpawnManager {
 		Boolean avoidExistingSpawns = placement.avoidExistingSpawns;
 		Boolean avoidPlayerLocation = placement.avoidPlayerLocation;
 		Boolean avoidInvalidOverlay = placement.avoidInvalidOverlay;
+		Integer worldPointX = placement.worldPointX;
+		Integer worldPointY = placement.worldPointY;
+		Integer deltaPointX = placement.deltaPointX;
+		Integer deltaPointY = placement.deltaPointY;
+		Integer worldPointPlane = placement.worldPointPlane;
 		WorldPoint referenceWorldPoint = client.getLocalPlayer().getWorldLocation();
 
 		if (manager.isChaosModeActive())
@@ -281,6 +286,26 @@ public class SpawnManager {
 		if (MODEL_TILE_LOCATION_TYPE.equals(locationType) && modelWorldPoint != null)
 		{
 			referenceWorldPoint = modelWorldPoint;
+		}
+
+		if (ABSOLUTE_TILE_LOCATION_TYPE.equals(locationType)  && worldPointX != null && worldPointY != null)
+		{
+			if (worldPointPlane == null)
+			{
+				worldPointPlane = client.getTopLevelWorldView().getPlane();
+			}
+
+			referenceWorldPoint = new WorldPoint(worldPointX, worldPointY, worldPointPlane);
+		}
+
+		if (deltaPointX != null)
+		{
+			referenceWorldPoint = referenceWorldPoint.dx(deltaPointX);
+		}
+
+		if (deltaPointY != null)
+		{
+			referenceWorldPoint = referenceWorldPoint.dy(deltaPointY);
 		}
 
 		if (NO_RADIUS_TYPE.equals(radiusType))

@@ -9,6 +9,11 @@ public class EbsModelPlacement {
 	public String followType = NONE_FOLLOW_TYPE;
 	public ArrayList<EbsCondition> followConditions;
 	public String radiusType = OUTWARD_RADIUS_TYPE;
+	public Integer worldPointX;
+	public Integer worldPointY;
+	public Integer worldPointPlane;
+	public Integer deltaPointX;
+	public Integer deltaPointY;
 	public Boolean inLineOfSight = false;
 	public Boolean avoidExistingSpawns = true;
 	public Boolean avoidPlayerLocation = true;
