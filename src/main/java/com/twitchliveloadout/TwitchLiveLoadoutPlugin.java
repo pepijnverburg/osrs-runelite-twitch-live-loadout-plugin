@@ -81,8 +81,8 @@ import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN
 /**
  * Manages polling and event listening mechanisms to synchronize the state
  * to the Twitch Configuration Service. All client data is fetched in this main entry point
- * and passed along to dedicated managers. Also you will see that this class is fairly 'polluted'
- * with try-catch statements. This helps making sure that any breaking changes to Oldschool Runescape and/or
+ * and passed along to dedicated managers. Also, you will see that this class is fairly 'polluted'
+ * with try-catch statements. This helps to make sure that any breaking changes to Oldschool Runescape and/or
  * RuneLite will less likely cause issues.
  *
  * Find events via: net.runelite.api.events
@@ -1083,6 +1083,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					{
 						marketplaceManager.disable();
 					}
+					break;
+				case "manualMarketplaceProductsEnabled":
+					pluginPanel.getMarketplacePanel().updateLayout();
 					break;
 				case "twitchOAuthAccessToken":
 				case "twitchOAuthRefreshToken":
