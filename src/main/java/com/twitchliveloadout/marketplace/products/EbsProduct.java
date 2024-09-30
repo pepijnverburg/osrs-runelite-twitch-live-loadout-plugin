@@ -9,6 +9,7 @@ public class EbsProduct {
 	public String name;
 	public String description;
 	public EbsBehaviour behaviour;
+	public final String loaded_at = Instant.now().toString();
 }
 
 
