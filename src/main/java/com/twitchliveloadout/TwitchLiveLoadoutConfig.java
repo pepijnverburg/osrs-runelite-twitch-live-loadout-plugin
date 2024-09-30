@@ -1325,6 +1325,19 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "manualMarketplaceProductsEnabled",
+			name = "Enable manual Random Events",
+			description = "Allow custom JSON configurations for Random Events for testing purposes (see Event tab in the plugin panel).",
+			position = 1,
+			section = advancedSection,
+			warning = "Make sure you know what Random Event configuration you entering manually before executing it. Are you sure you want to enable this feature?"
+	)
+	default boolean manualMarketplaceProductsEnabled()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 			keyName = "twitchReviewModeEnabled",
 			name = "Twitch review mode",
 			description = "Force syncing of data while being logged out, meant for the Twitch review process.",

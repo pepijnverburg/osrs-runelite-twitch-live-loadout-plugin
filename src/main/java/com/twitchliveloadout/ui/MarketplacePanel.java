@@ -1,6 +1,7 @@
 package com.twitchliveloadout.ui;
 
 import com.google.gson.Gson;
+import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.marketplace.LambdaIterator;
 import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
@@ -75,20 +76,24 @@ public class MarketplacePanel extends JPanel
 
 	private final MarketplaceManager marketplaceManager;
 	private final Gson gson;
+	private final TwitchLiveLoadoutConfig config;
 	private boolean rebuildRequested = false;
 
-	public MarketplacePanel(MarketplaceManager marketplaceManager, Gson gson)
+	public MarketplacePanel(MarketplaceManager marketplaceManager, Gson gson, TwitchLiveLoadoutConfig config)
 	{
 		super(new GridBagLayout());
 
 		this.marketplaceManager = marketplaceManager;
 		this.gson = gson;
+		this.config = config;
 
 		initializeLayout();
 	}
 
 	public void onGameTick()
 	{
+
+		// sync the rebuild with the main thread
 		if (rebuildRequested)
 		{
 			rebuild();
@@ -104,6 +109,7 @@ public class MarketplacePanel extends JPanel
 	{
 		rebuildRequested = false;
 		repopulatePanels();
+		updateLayout();
 		updateTexts();
 	}
 
@@ -179,10 +185,14 @@ public class MarketplacePanel extends JPanel
 		playbackConstraints.gridy++;
 		playbackWrapper.add(transactionListWrapper, playbackConstraints);
 		playbackConstraints.gridy++;
-		playbackWrapper.add(customProductListTitlePanel, playbackConstraints);
-		playbackConstraints.gridy++;
-		playbackWrapper.add(customProductListWrapper, playbackConstraints);
-		playbackConstraints.gridy++;
+
+		if (MANUAL_PRODUCTS_AVAILABLE)
+		{
+			playbackWrapper.add(customProductListTitlePanel, playbackConstraints);
+			playbackConstraints.gridy++;
+			playbackWrapper.add(customProductListWrapper, playbackConstraints);
+			playbackConstraints.gridy++;
+		}
 
 		productListWrapper.setLayout(new GridBagLayout());
 		productListWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
@@ -331,6 +341,12 @@ public class MarketplacePanel extends JPanel
 
 		repaint();
 		revalidate();
+	}
+
+	public void updateLayout()
+	{
+		customProductListTitlePanel.setVisible(config.manualMarketplaceProductsEnabled());
+		customProductListWrapper.setVisible(config.manualMarketplaceProductsEnabled());
 	}
 
 	private void repopulatePanels()

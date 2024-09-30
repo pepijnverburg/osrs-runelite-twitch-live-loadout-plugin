@@ -4,6 +4,8 @@ public class MarketplaceConstants {
 	public static final boolean TEST_MODE_AVAILABLE = true;
 	public static final boolean CHAOS_MODE_AVAILABLE = false;
 	public static final boolean FREE_MODE_AVAILABLE = true;
+	public static final boolean MANUAL_PRODUCTS_AVAILABLE = true;
+
 	public static final int EBS_REQUIRED_PRODUCT_VERSION = 1;
 
 	public static final int MAX_MARKETPLACE_PRODUCT_AMOUNT_IN_MEMORY = 50;
