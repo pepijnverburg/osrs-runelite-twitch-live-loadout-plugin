@@ -271,11 +271,6 @@ public class TwitchApi
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"/api/marketplace-products";
 		final JsonObject data = new JsonObject();
 
-		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
-		{
-			url = "http://localhost:8000/api/marketplace-products";
-		}
-
 		performPostRequest(url, data, ebsProductsHttpClient, responseHandler, errorHandler);
 	}
 
@@ -283,11 +278,6 @@ public class TwitchApi
 	{
 		String url = DEFAULT_TWITCH_EBS_BASE_URL +"/api/marketplace-transactions";
 		final JsonObject data = new JsonObject();
-
-		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT)
-		{
-			url = "http://localhost:8000/api/marketplace-transactions";
-		}
 
 		// only add last checked at when it is valid
 		if (lastTransactionId != null)
@@ -521,10 +511,6 @@ public class TwitchApi
 	{
 		final String refreshToken = config.twitchOAuthRefreshToken();
 		String url = DEFAULT_TWITCH_EBS_BASE_URL + "/api/refresh-oauth-token";
-
-		if (TwitchLiveLoadoutPlugin.IN_DEVELOPMENT) {
-			url = "http://localhost:8000/api/refresh-oauth-token";
-		}
 
 		// guard: check if the refresh token is valid
 		if (refreshToken.isEmpty())
