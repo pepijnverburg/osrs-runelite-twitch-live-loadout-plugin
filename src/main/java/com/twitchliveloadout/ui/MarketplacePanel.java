@@ -56,6 +56,8 @@ public class MarketplacePanel extends JPanel
 	private final JLabel chaosModeLabel = new JLabel();
 	private final JPanel freeModePanel = new JPanel(new BorderLayout());
 	private final JLabel freeModeLabel = new JLabel();
+	private final JPanel stateReloadPanel = new JPanel(new BorderLayout());
+	private final JLabel stateReloadLabel = new JLabel();
 	private final TextPanel queuedTransactionsPanel = new TextPanel("<html><h2>Queued Random Events:</h2></html>", "<html>No Random Events are queued.</html>");
 
 	private final JPanel productListPanel = new JPanel(new GridBagLayout());
@@ -174,6 +176,8 @@ public class MarketplacePanel extends JPanel
 		playbackWrapper.add(availableRandomEventsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(availableChannelPointRewardsPanel, playbackConstraints);
+		playbackConstraints.gridy++;
+		playbackWrapper.add(stateReloadPanel, playbackConstraints);
 		playbackConstraints.gridy++;
 		playbackWrapper.add(queuedTransactionsPanel, playbackConstraints);
 		playbackConstraints.gridy++;
@@ -338,6 +342,12 @@ public class MarketplacePanel extends JPanel
 			transactionListConstraints.gridy++;
 			ebsProductPanel.rebuild();
 		}
+
+		TwitchLiveLoadoutPanel.initializePanelButton(stateReloadPanel, stateReloadLabel, "Reload configurations", () -> {
+			marketplaceManager.updateAsyncChannelPointRewards();
+			marketplaceManager.updateStreamerProducts();
+			marketplaceManager.updateAsyncEbsProducts();
+		});
 
 		repaint();
 		revalidate();
