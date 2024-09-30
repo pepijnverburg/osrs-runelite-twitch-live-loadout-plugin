@@ -375,6 +375,7 @@ public class MarketplaceManager {
 				boolean isSharedCoolingDown = sharedCooldownUntil != null && now.isBefore(sharedCooldownUntil);
 				boolean isTestTransaction = productType.equals(TwitchTransactionProductType.TEST.getType());
 				boolean isFreeTransaction = productType.equals(TwitchTransactionProductType.FREE.getType());
+				boolean isManualTransaction = productType.equals(TwitchTransactionProductType.MANUAL.getType());
 				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled && ebsProduct.behaviour != null;
 
 				// guard: make sure this product is not cooling down
@@ -446,6 +447,12 @@ public class MarketplaceManager {
 				if (isFreeTransaction && !isFreeModeActive())
 				{
 					log.warn("Skipping transaction because it is a free transaction while free mode is not active: "+ transactionId);
+					continue;
+				}
+
+				if (isManualTransaction && !config.manualMarketplaceProductsEnabled())
+				{
+					log.warn("Skipping transaction because it is a manual transaction while manual mode is not active: "+ transactionId);
 					continue;
 				}
 
@@ -610,7 +617,7 @@ public class MarketplaceManager {
 		}
 
 		// test this single product
-		testEbsProduct(ebsProduct);
+		testEbsProduct(ebsProduct, TwitchTransactionProductType.TEST, TwitchTransactionOrigin.TEST);
 
 		// move to the next products and delay
 		currentTestEbsProductIndex += 1;
@@ -620,7 +627,7 @@ public class MarketplaceManager {
 	/**
 	 * Test an EBS product by manually creating a fake Twitch donation and queueing it.
 	 */
-	public void testEbsProduct(EbsProduct ebsProduct)
+	public void testEbsProduct(EbsProduct ebsProduct, TwitchTransactionProductType productType, TwitchTransactionOrigin origin)
 	{
 		TwitchTransaction twitchTransaction = new TwitchTransaction();
 		TwitchProduct twitchProduct = new TwitchProduct();
@@ -649,11 +656,11 @@ public class MarketplaceManager {
 		twitchTransaction.user_id = "0";
 		twitchTransaction.user_login = "test-viewer";
 		twitchTransaction.user_name = "Test Viewer";
-		twitchTransaction.product_type = TwitchTransactionProductType.TEST.getType();
+		twitchTransaction.product_type = productType.getType();
 		twitchTransaction.product_data = twitchProduct;
 		twitchTransaction.ebs_product_id = ebsProduct.id;
 		twitchTransaction.handled_at = Instant.now().toString();
-		twitchTransaction.origin = TwitchTransactionOrigin.TEST;
+		twitchTransaction.origin = origin;
 
 		queuedTransactions.add(twitchTransaction);
 	}
@@ -1199,9 +1206,12 @@ public class MarketplaceManager {
 	public StreamerProduct getStreamerProductByTransaction(TwitchTransaction transaction)
 	{
 		TwitchProduct twitchProduct = getTwitchProductByTransaction(transaction);
-		boolean isTestTransaction = transaction.product_type.equals(TwitchTransactionProductType.TEST.getType());
+		boolean isTestTransaction = transaction.isTestTransaction();
+		boolean isManualTransaction = transaction.isManualTransaction();
 		boolean isEventSubTransaction = transaction.isEventSubTransaction();
 		BaseMessage eventSubMessage = transaction.eventSubMessage;
+		String ebsProductId = transaction.ebs_product_id;
+		EbsProduct ebsProduct = getEbsProductById(ebsProductId);
 
 		// guard: make sure the twitch product is valid
 		if (twitchProduct == null)
@@ -1216,11 +1226,28 @@ public class MarketplaceManager {
 			testStreamerProduct.id = generateRandomTestId();
 			testStreamerProduct.ebsProductId = transaction.ebs_product_id;
 			testStreamerProduct.twitchProductSku = generateRandomTestId();
-			testStreamerProduct.name = "[PREVIEW] "+ transaction.ebs_product_id;
+			testStreamerProduct.name = "[PREVIEW] "+ ebsProduct.name;
 			testStreamerProduct.duration = config.testRandomEventsDuration();
 			testStreamerProduct.cooldown = 0;
 
 			return testStreamerProduct;
+		}
+
+		// if this is a manual transaction force the EBS product ID based on what is passed in the transaction
+		if (isManualTransaction)
+		{
+			Integer ebsProductFixedDurationMs = ebsProduct.fixedDurationMs;
+			int duration = (ebsProductFixedDurationMs != null ? (ebsProductFixedDurationMs / 1000) : config.testRandomEventsDuration());
+			StreamerProduct manualStreamerProduct = new StreamerProduct();
+
+			manualStreamerProduct.id = generateRandomTestId();
+			manualStreamerProduct.ebsProductId = transaction.ebs_product_id;
+			manualStreamerProduct.twitchProductSku = generateRandomTestId();
+			manualStreamerProduct.name = "[MANUAL] "+ ebsProduct.name;
+			manualStreamerProduct.duration = duration;
+			manualStreamerProduct.cooldown = 0;
+
+			return manualStreamerProduct;
 		}
 
 		String twitchProductSku = twitchProduct.sku;

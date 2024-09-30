@@ -40,4 +40,14 @@ public class TwitchTransaction {
 	{
 		return TwitchTransactionProductType.FREE.getType().equals(product_type);
 	}
+
+	public boolean isTestTransaction()
+	{
+		return product_type.equals(TwitchTransactionProductType.TEST.getType());
+	}
+
+	public boolean isManualTransaction()
+	{
+		return product_type.equals(TwitchTransactionProductType.MANUAL.getType());
+	}
 }
