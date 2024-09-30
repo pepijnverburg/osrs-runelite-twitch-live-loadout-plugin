@@ -48,7 +48,6 @@ public class TwitchApi
 	public final static int MAX_SCHEDULED_STATE_AMOUNT = 50;
 
 	public final static String DEFAULT_EXTENSION_CLIENT_ID = "cuhr4y87yiqd92qebs1mlrj3z5xfp6";
-	public final static String DEFAULT_EXTENSION_VERSION = "2.2.0";
 	public final static String DEFAULT_TWITCH_EBS_BASE_URL = "https://liveloadout.com";
 	public final static String DEFAULT_TWITCH_BASE_URL = "https://api.twitch.tv/helix/extensions";
 	private final static String RATE_LIMIT_REMAINING_HEADER = "Ratelimit-Remaining";
@@ -76,6 +75,7 @@ public class TwitchApi
 	public final static String TWITCH_VALIDATE_TOKEN_URL = "https://id.twitch.tv/oauth2/validate";
 	public final static String TWITCH_GET_CHANNEL_POINT_REWARDS_URL = "https://api.twitch.tv/helix/channel_points/custom_rewards";
 	public final static String DEFAULT_APP_CLIENT_ID = "qaljqu9cfow8biixuat6rbr303ocp2";
+	public final static String DEFAULT_EXTENSION_VERSION = "2.2.0";
 
 	/**
 	 * Dedicated scheduler for sending the new state with a stream delay
