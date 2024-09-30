@@ -1330,7 +1330,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			description = "Allow custom JSON configurations for Random Events for testing purposes (see Event tab in the plugin panel).",
 			position = 1,
 			section = advancedSection,
-			warning = "Make sure you know what Random Event configuration you entering manually before executing it. Are you sure you want to enable this feature?"
+			warning = "Make sure you know what Random Event configuration you're entering manually before executing it. Are you sure you want to enable this feature?"
 	)
 	default boolean manualMarketplaceProductsEnabled()
 	{
