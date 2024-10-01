@@ -11,29 +11,6 @@ git tag -a v2.1.0 17a2e18c5729f3286f95f9e7eedab7053f0272d5 -m "Tag" && git push 
 ```
 
 #### v2.2.0
-
-## Summary
-### 1. Twitch Integration Enhancements
-- Added support for handling Twitch events such as channel points, bits, and channel events (e.g., follow, subscriptions).
-- Implemented Twitch Chat message triggers for better viewer engagement and random event activations.
-- Introduced free and chaos mode support for transactions, including sending these modes to the Twitch extension.
-
-### 2. UI and Notification System
-- Added support for popup notifications and customized chat notifications for donations and channel events.
-- Enhanced the marketplace panel visibility and its conditional rendering based on settings.
-- Implemented clearer titles and color feedback in panels and chat logs for random event triggers.
-- Added menu entries support for RuneLite Objects when spawning them via Random Events.
-- Added UI to manually trigger random events via JSON configuration.
-
-### 3. General Performance and Functionality
-- Added support for region checks to handle random events based on player location.
-- Improved support for absolute tile positions for spawns and projectiles.
-- Expanded configurations for random events, entity hiding, and click-based restrictions.
-
-### 4. Seasonal and Game Mode Support
-- Added initial support for seasonal game modes (e.g., Leagues 4: Trailblazer Reloaded) including relic syncing and region visibility.
-
-## Detailed features and bugfixes
 feat: added reload configurations button to force reload the EBS products, configured channel points and configured streamer products from Twitch.
 feat: made a distinction between manual and test transactions to allow specific behavior (such as how the duration is determined).
 feat: added conditional rendering of the manual marketplace panel based on settings.
