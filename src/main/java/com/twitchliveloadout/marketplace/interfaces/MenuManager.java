@@ -310,9 +310,11 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 	private Tile getSceneTile(int x, int y)
 	{
 		try {
+			x += (Constants.EXTENDED_SCENE_SIZE - Constants.SCENE_SIZE) / 2;
+			y += (Constants.EXTENDED_SCENE_SIZE - Constants.SCENE_SIZE) / 2;
 			WorldView worldView = client.getTopLevelWorldView();
 			Scene scene = client.getTopLevelWorldView().getScene();
-			Tile[][][] tiles = scene.getTiles();
+			Tile[][][] tiles = scene.getExtendedTiles();
 			Tile tile = tiles[worldView.getPlane()][x][y];
 
 			return tile;
