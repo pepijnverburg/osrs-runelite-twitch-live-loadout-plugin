@@ -36,7 +36,7 @@ import net.runelite.api.events.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -1126,16 +1126,20 @@ public class FightStateManager
 	public CopyOnWriteArrayList<String> getOtherActorNames()
 	{
 		final CopyOnWriteArrayList<String> actorNames = new CopyOnWriteArrayList<>();
-		final CopyOnWriteArrayList<Actor> actors = new CopyOnWriteArrayList<>();
 		WorldView worldView = client.getTopLevelWorldView();
+		Iterator<? extends NPC> npcIterator = worldView.npcs().iterator();
+		Iterator<? extends Player> playerIterator = worldView.players().iterator();
 
-		actors.addAll(worldView.npcs().stream().toList());
-		actors.addAll(worldView.players().stream().toList());
-
-		for (Actor actor : actors)
+		while (npcIterator.hasNext())
 		{
-			String actorName = getFormattedActorName(actor);
-			actorNames.add(actorName);
+			NPC npc = npcIterator.next();
+			actorNames.add(npc.getName());
+		}
+
+		while (playerIterator.hasNext())
+		{
+			Player player = playerIterator.next();
+			actorNames.add(player.getName());
 		}
 
 		return actorNames;
