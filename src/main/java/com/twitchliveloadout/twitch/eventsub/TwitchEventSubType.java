@@ -19,7 +19,8 @@ public enum TwitchEventSubType {
             boolean isMessageEnabled = config.subscribeEventMessageEnabled();
 
             // guard: also check whether the sub should be shown when it was gifted
-            if (message instanceof ChannelStartSubscription channelStartSubscription) {
+            if (message instanceof ChannelStartSubscription) {
+                ChannelStartSubscription channelStartSubscription = (ChannelStartSubscription) message;
                 boolean isGifted = channelStartSubscription.is_gift;
                 boolean shouldShowMessageOnGifted = config.subscribeEventMessageOnGiftEnabled();
 

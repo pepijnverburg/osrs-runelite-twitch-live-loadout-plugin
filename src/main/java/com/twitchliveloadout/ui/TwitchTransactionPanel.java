@@ -81,8 +81,9 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 			BaseMessage eventSubMessage = twitchTransaction.eventSubMessage;
 			String viewerName = null;
 
-			if (eventSubMessage instanceof BaseUserInfo baseUserInfo)
+			if (eventSubMessage instanceof BaseUserInfo)
 			{
+				BaseUserInfo baseUserInfo = (BaseUserInfo) eventSubMessage;
 				viewerName = baseUserInfo.user_name;
 			}
 

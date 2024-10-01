@@ -93,39 +93,39 @@ public class TwitchEventSubClient {
                 switch (messageType) {
 
                     // acknowledge that this client works and store the session ID for future subscriptions
-                    case "session_welcome" -> {
-                        JsonObject session = payload.getAsJsonObject("session");
-                        sessionId = session.get("id").getAsString();
-                        keepAliveTimeoutS = session.get("keepalive_timeout_seconds").getAsInt();
+                    case "session_welcome":
+                        JsonObject welcomeSession = payload.getAsJsonObject("session");
+                        sessionId = welcomeSession.get("id").getAsString();
+                        keepAliveTimeoutS = welcomeSession.get("keepalive_timeout_seconds").getAsInt();
 
                         // the socket is ready when a session ID has been received
                         listener.onReady(sessionId);
-                    }
+                        break;
 
                     // keepalive message from the server to show it is still a valid connection
-                    case "session_keepalive" -> {
+                    case "session_keepalive":
                         lastKeepAliveAt = Instant.now();
-                    }
+                        break;
 
                     // force the session to reconnect to a new URL
-                    case "session_reconnect" -> {
-                        JsonObject session = payload.getAsJsonObject("session");
-                        String reconnectUrl = session.get("reconnect_url").getAsString();
+                    case "session_reconnect":
+                        JsonObject reconnectSession = payload.getAsJsonObject("session");
+                        String reconnectUrl = reconnectSession.get("reconnect_url").getAsString();
 
                         // override to the new URL and reconnect
                         reconnect(reconnectUrl);
-                    }
+                        break;
 
                     // message when a subscription was revoked for whatever reason
-                    case "revocation" -> {
+                    case "revocation":
                         String rawSubscriptionType = metadata.get("subscription_type").getAsString();
                         TwitchEventSubType subscriptionType = TwitchEventSubType.getByType(rawSubscriptionType);
                         log.info("A subscription was revoked from the Twitch websocket: "+ rawSubscriptionType);
                         listener.revokeActiveSubscriptionType(subscriptionType);
-                    }
+                        break;
 
                     // message for an event we've been subscribed to
-                    case "notification" -> {
+                    case "notification":
                         String rawEventType = metadata.get("subscription_type").getAsString();
                         TwitchEventSubType eventType = TwitchEventSubType.getByType(rawEventType);
                         JsonObject eventPayload = payload.getAsJsonObject("event");
@@ -137,7 +137,7 @@ public class TwitchEventSubClient {
                         }
 
                         listener.onEvent(messageId, eventType, eventPayload);
-                    }
+                        break;
                 }
             } catch (Exception exception) {
                 log.warn("Could not handle Twitch websocket message due to error: ", exception);

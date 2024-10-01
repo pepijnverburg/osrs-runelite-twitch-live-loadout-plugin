@@ -91,12 +91,12 @@ public class TwitchEventSubListener {
 
         // handle types that need to extend the twitch transaction in any way
         switch (type) {
-            case CHANNEL_POINTS_REDEEM -> {
+            case CHANNEL_POINTS_REDEEM:
                 expandTransactionForChannelPointsRedeem(twitchTransaction, (ChannelPointsRedeem) message);
-            }
-            case CHARITY_CAMPAIGN_DONATE -> {
+                break;
+            case CHARITY_CAMPAIGN_DONATE:
                 expandTransactionForCharityCampaignDonation(twitchTransaction, (CharityCampaignDonate) message);
-            }
+                break;
         }
 
         addTwitchTransaction(twitchTransaction);
@@ -166,8 +166,9 @@ public class TwitchEventSubListener {
         twitchTransaction.eventSubMessage = message;
 
         // add user info when available
-        if (message instanceof BaseUserInfo baseUserInfo)
+        if (message instanceof BaseUserInfo)
         {
+            BaseUserInfo baseUserInfo = (BaseUserInfo) message;
             twitchTransaction.broadcaster_id = baseUserInfo.broadcaster_user_id;
             twitchTransaction.broadcaster_login = baseUserInfo.broadcaster_user_login;
             twitchTransaction.broadcaster_name = baseUserInfo.broadcaster_user_name;

@@ -63,45 +63,53 @@ public class MarketplaceMessages {
 			templateLookup.put(MarketplaceMessageTemplate.PRODUCT_DURATION_LEFT, MarketplaceDuration.humanizeDurationRounded(marketplaceProduct.getDurationLeft()));
 		}
 
-		if (eventSubMessage instanceof BaseUserInfo baseUserInfo) {
+		if (eventSubMessage instanceof BaseUserInfo) {
+			BaseUserInfo baseUserInfo = (BaseUserInfo) eventSubMessage;
 			templateLookup.put(MarketplaceMessageTemplate.VIEWER_NAME, baseUserInfo.user_name);
 			templateLookup.put(MarketplaceMessageTemplate.CHANNEL_NAME, baseUserInfo.broadcaster_user_name);
 		}
 
-		if (eventSubMessage instanceof ChannelContinueSubscription channelContinueSubscription) {
+		if (eventSubMessage instanceof ChannelContinueSubscription) {
+			ChannelContinueSubscription channelContinueSubscription = (ChannelContinueSubscription) eventSubMessage;
 			templateLookup.put(MarketplaceMessageTemplate.SUB_MONTHS, channelContinueSubscription.duration_months.toString());
 			templateLookup.put(MarketplaceMessageTemplate.SUB_TOTAL_MONTHS, channelContinueSubscription.cumulative_months.toString());
 		}
 
-		if (eventSubMessage instanceof ChannelGiftSubscription channelGiftSubscription) {
+		if (eventSubMessage instanceof ChannelGiftSubscription) {
+			ChannelGiftSubscription channelGiftSubscription = (ChannelGiftSubscription) eventSubMessage;
 			templateLookup.put(MarketplaceMessageTemplate.GIFTED_AMOUNT, channelGiftSubscription.total.toString());
 			templateLookup.put(MarketplaceMessageTemplate.GIFTED_TOTAL_AMOUNT, channelGiftSubscription.cumulative_total.toString());
 		}
 
-		if (eventSubMessage instanceof ChannelRaid channelRaid) {
+		if (eventSubMessage instanceof ChannelRaid) {
+			ChannelRaid channelRaid = (ChannelRaid) eventSubMessage;
 			templateLookup.put(MarketplaceMessageTemplate.VIEWER_NAME, channelRaid.from_broadcaster_user_name);
 			templateLookup.put(MarketplaceMessageTemplate.RAID_VIEWER_AMOUNT, channelRaid.viewers.toString());
 			templateLookup.put(MarketplaceMessageTemplate.RAIDER_CHANNEL_NAME, channelRaid.from_broadcaster_user_name);
 			templateLookup.put(MarketplaceMessageTemplate.RAIDED_CHANNEL_NAME, channelRaid.to_broadcaster_user_name);
 		}
 
-		if (eventSubMessage instanceof BaseCharityCampaignInfo baseCharityCampaignInfo) {
+		if (eventSubMessage instanceof BaseCharityCampaignInfo) {
+			BaseCharityCampaignInfo baseCharityCampaignInfo = (BaseCharityCampaignInfo) eventSubMessage;
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_NAME, baseCharityCampaignInfo.charity_name);
 		}
 
-		if (eventSubMessage instanceof CharityCampaignAmountInfo charityCampaignAmountInfo) {
+		if (eventSubMessage instanceof CharityCampaignAmountInfo) {
+			CharityCampaignAmountInfo charityCampaignAmountInfo = (CharityCampaignAmountInfo) eventSubMessage;
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_CURRENT_AMOUNT, charityCampaignAmountInfo.current_amount.getCurrencyAmount().toString());
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_TARGET_AMOUNT, charityCampaignAmountInfo.target_amount.getCurrencyAmount().toString());
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_CURRENT_CURRENCY, charityCampaignAmountInfo.current_amount.currency);
 			templateLookup.put(MarketplaceMessageTemplate.CHARITY_TARGET_CURRENCY, charityCampaignAmountInfo.target_amount.currency);
 		}
 
-		if (eventSubMessage instanceof BaseHypeTrain baseHypeTrain) {
+		if (eventSubMessage instanceof BaseHypeTrain) {
+			BaseHypeTrain baseHypeTrain = (BaseHypeTrain) eventSubMessage;
 			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_TOTAL, baseHypeTrain.total.toString());
 			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_LEVEL, baseHypeTrain.level.toString());
 		}
 
-		if (eventSubMessage instanceof BaseHypeTrainWithGoal baseHypeTrainWithGoal) {
+		if (eventSubMessage instanceof BaseHypeTrainWithGoal) {
+			BaseHypeTrainWithGoal baseHypeTrainWithGoal = (BaseHypeTrainWithGoal) eventSubMessage;
 			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_GOAL, baseHypeTrainWithGoal.goal.toString());
 			templateLookup.put(MarketplaceMessageTemplate.HYPE_TRAIN_PROGRESS, baseHypeTrainWithGoal.progress.toString());
 		}
