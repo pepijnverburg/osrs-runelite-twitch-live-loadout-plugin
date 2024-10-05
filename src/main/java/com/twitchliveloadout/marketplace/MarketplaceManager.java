@@ -1210,8 +1210,6 @@ public class MarketplaceManager {
 		boolean isManualTransaction = transaction.isManualTransaction();
 		boolean isEventSubTransaction = transaction.isEventSubTransaction();
 		BaseMessage eventSubMessage = transaction.eventSubMessage;
-		String ebsProductId = transaction.ebs_product_id;
-		EbsProduct ebsProduct = getEbsProductById(ebsProductId);
 
 		// guard: make sure the twitch product is valid
 		if (twitchProduct == null)
@@ -1222,6 +1220,8 @@ public class MarketplaceManager {
 		// if this is a test transaction force the EBS product ID based on what is passed in the transaction
 		if (isTestTransaction)
 		{
+			String ebsProductId = transaction.ebs_product_id;
+			EbsProduct ebsProduct = getEbsProductById(ebsProductId);
 			StreamerProduct testStreamerProduct = new StreamerProduct();
 			testStreamerProduct.id = generateRandomTestId();
 			testStreamerProduct.ebsProductId = transaction.ebs_product_id;
@@ -1236,6 +1236,8 @@ public class MarketplaceManager {
 		// if this is a manual transaction force the EBS product ID based on what is passed in the transaction
 		if (isManualTransaction)
 		{
+			String ebsProductId = transaction.ebs_product_id;
+			EbsProduct ebsProduct = getEbsProductById(ebsProductId);
 			Integer ebsProductFixedDurationMs = ebsProduct.fixedDurationMs;
 			int duration = (ebsProductFixedDurationMs != null ? (ebsProductFixedDurationMs / 1000) : config.testRandomEventsDuration());
 			StreamerProduct manualStreamerProduct = new StreamerProduct();
