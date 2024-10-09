@@ -42,6 +42,8 @@ public enum TwitchStateEntry {
 	CURRENT_SHARED_COOLDOWN("currentSharedCooldown"),
 	SHARED_COOLDOWN("sharedCooldown"),
 	QUESTS("quests", true),
+	COMBAT_ACHIEVEMENTS("combatAchievements", true),
+	COMBAT_ACHIEVEMENT_PROGRESS("combatAchievementsProgress", true),
 	SEASONAL_ITEMS("seasonalItems", true),
 	STREAMER_PRODUCTS("streamerProducts"),
 	CHANNEL_POINT_REWARDS("channelPointRewards"),

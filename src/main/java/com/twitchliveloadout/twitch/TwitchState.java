@@ -71,6 +71,7 @@ public class TwitchState {
 	 */
 	private final static int MAX_BANK_ITEMS_PER_SLICE = 250;
 	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 250;
+	private final static int MAX_COMBAT_ACHIEVEMENTS_PER_SLICE = 175; // 250 is too much
 	private final static String COLLECTION_LOG_FILTER_SEPARATOR = ",";
 	private JsonObject cyclicState = new JsonObject();
 	@Getter
@@ -121,10 +122,13 @@ public class TwitchState {
 	public void setAccountType(AccountType accountType)
 	{
 
-		// guard: skip when account type is not valid
-		// this happens mainly when the client is booting up
+		// guard: reset account type when none is passed
+		// this might happen while logging in or when switching account
+		// this is important when switching from a main to a HC account to not have any events spawn
+		// due to retrieving the account type taking some time
 		if (accountType == null)
 		{
+			currentState.remove(TwitchStateEntry.ACCOUNT_TYPE.getKey());
 			return;
 		}
 
@@ -330,6 +334,18 @@ public class TwitchState {
 		plugin.setConfiguration(QUESTS_CONFIG_KEY, quests);
 	}
 
+	public void setCombatAchievementsProgress(String progressTitle)
+	{
+		currentState.addProperty(TwitchStateEntry.COMBAT_ACHIEVEMENT_PROGRESS.getKey(), progressTitle);
+		plugin.setConfiguration(COMBAT_ACHIEVEMENTS_PROGRESS_CONFIG_KEY, progressTitle);
+	}
+
+	public void setCombatAchievements(JsonObject combatAchievements)
+	{
+		cyclicState.add(TwitchStateEntry.COMBAT_ACHIEVEMENTS.getKey(), combatAchievements);
+		plugin.setConfiguration(COMBAT_ACHIEVEMENTS_CONFIG_KEY, combatAchievements);
+	}
+
 	public void setSeasonalItems(JsonArray seasonalItems)
 	{
 		currentState.add(TwitchStateEntry.SEASONAL_ITEMS.getKey(), seasonalItems);
@@ -338,6 +354,10 @@ public class TwitchState {
 	public JsonObject getCollectionLog()
 	{
 		return cyclicState.getAsJsonObject(TwitchStateEntry.COLLECTION_LOG.getKey());
+	}
+	public JsonObject getCombatAchievements()
+	{
+		return cyclicState.getAsJsonObject(TwitchStateEntry.COMBAT_ACHIEVEMENTS.getKey());
 	}
 
 	public JsonArray getTabbedBankItems()
@@ -376,19 +396,6 @@ public class TwitchState {
 		filteredState = removeDisabledState(filteredState);
 
 		return filteredState;
-	}
-
-	public JsonObject addSeasonalState(JsonObject state)
-	{
-
-		// guard: skip when not seasonal world
-		if (!plugin.isSeasonal()) {
-			return state;
-		}
-
-
-
-		return state;
 	}
 
 	public JsonObject addCyclicState(JsonObject state)
@@ -562,6 +569,42 @@ public class TwitchState {
 			state.add(TwitchStateEntry.CHANNEL_POINT_REWARDS.getKey(), simpleChannelPointRewards);
 		}
 
+		if (currentCyclicEntry == TwitchStateEntry.COMBAT_ACHIEVEMENTS)
+		{
+			JsonObject combatAchievements = cyclicState.getAsJsonObject(TwitchStateEntry.COMBAT_ACHIEVEMENTS.getKey());
+			AtomicInteger skippedItemAmount = new AtomicInteger();
+			AtomicInteger includedItemAmount = new AtomicInteger();
+			JsonObject partialCombatAchievements = new JsonObject();
+
+			if (combatAchievements == null)
+			{
+				return state;
+			}
+
+			combatAchievements.keySet().forEach((achievementName) -> {
+				JsonArray combatAchievement = combatAchievements.getAsJsonArray(achievementName);
+
+				// guard: check if we already passed the amount of achievements that were included
+				// in the last slice that is synced to the viewers
+				if (skippedItemAmount.get() < currentCyclicSliceIndex)
+				{
+					skippedItemAmount.addAndGet(1);
+					return;
+				}
+
+				// guard: check if we exceeded the maximum amount of achievements
+				if (includedItemAmount.get() > MAX_COMBAT_ACHIEVEMENTS_PER_SLICE)
+				{
+					return;
+				}
+
+				partialCombatAchievements.add(achievementName, combatAchievement);
+				includedItemAmount.addAndGet(1);
+			});
+
+			state.add(TwitchStateEntry.COMBAT_ACHIEVEMENTS.getKey(), partialCombatAchievements);
+		}
+
 		return state;
 	}
 
@@ -672,11 +715,27 @@ public class TwitchState {
 			currentCyclicSliceIndex = 0;
 		}
 
-		// after the channel point rewards go to the bank
+		// after the channel point rewards go to the combat achievements
 		else if (currentCyclicEntry == TwitchStateEntry.CHANNEL_POINT_REWARDS)
 		{
-			currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
+			currentCyclicEntry = TwitchStateEntry.COMBAT_ACHIEVEMENTS;
 			currentCyclicSliceIndex = 0;
+		}
+
+		// after the combat achievements go to the bank
+		else if (currentCyclicEntry == TwitchStateEntry.COMBAT_ACHIEVEMENTS)
+		{
+			final int combatAchievementAmount = getCombatAchievementAmount();
+			final int newSliceIndex = currentCyclicSliceIndex + MAX_COMBAT_ACHIEVEMENTS_PER_SLICE;
+			currentCyclicSliceIndex = newSliceIndex;
+
+			// if the current slices were already exceeding the current items
+			// we can move to syncing the bank once again
+			if (!config.combatAchievementsEnabled() || currentCyclicSliceIndex >= combatAchievementAmount)
+			{
+				currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
+				currentCyclicSliceIndex = 0;
+			}
 		}
 	}
 
@@ -856,6 +915,12 @@ public class TwitchState {
 			state.add(TwitchStateEntry.QUESTS.getKey(), null);
 		}
 
+		if (!config.combatAchievementsEnabled())
+		{
+			state.add(TwitchStateEntry.COMBAT_ACHIEVEMENT_PROGRESS.getKey(), null);
+			state.add(TwitchStateEntry.COMBAT_ACHIEVEMENTS.getKey(), null);
+		}
+
 		if (!config.seasonalsEnabled() || !plugin.isSeasonal())
 		{
 			state.add(TwitchStateEntry.SEASONAL_ITEMS.getKey(), null);
@@ -982,6 +1047,19 @@ public class TwitchState {
 		return amount;
 	}
 
+	private int getCombatAchievementAmount()
+	{
+		JsonObject combatAchievements = getCombatAchievements();
+
+		if (combatAchievements == null)
+		{
+			return 0;
+		}
+
+		int achievementAmount = combatAchievements.keySet().size();
+		return achievementAmount;
+	}
+
 	public void onAccountChanged()
 	{
 		reloadConfiguration();
@@ -1026,6 +1104,15 @@ public class TwitchState {
 		plugin.loadFromConfiguration(QUESTS_CONFIG_KEY, (String rawQuests) -> {
 			JsonArray parsedQuests = new JsonParser().parse(rawQuests).getAsJsonArray();
 			setQuests(parsedQuests);
+		});
+
+		plugin.loadFromConfiguration(COMBAT_ACHIEVEMENTS_CONFIG_KEY, (String rawCombatAchievements) -> {
+			JsonObject parsedCombatAchievements = new JsonParser().parse(rawCombatAchievements).getAsJsonObject();
+			setCombatAchievements(parsedCombatAchievements);
+		});
+
+		plugin.loadFromConfiguration(COMBAT_ACHIEVEMENTS_PROGRESS_CONFIG_KEY, (String progressTitle) -> {
+			setCombatAchievementsProgress(progressTitle);
 		});
 
 		plugin.loadFromConfiguration(LOOTING_BAG_ITEMS_CONFIG_KEY, (String rawItems) -> {

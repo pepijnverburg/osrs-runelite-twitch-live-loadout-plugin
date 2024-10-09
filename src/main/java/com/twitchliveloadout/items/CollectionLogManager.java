@@ -1,13 +1,10 @@
 package com.twitchliveloadout.items;
 
-import com.google.common.collect.ImmutableList;
 import com.google.gson.*;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.EnumComposition;
-import net.runelite.api.StructComposition;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;

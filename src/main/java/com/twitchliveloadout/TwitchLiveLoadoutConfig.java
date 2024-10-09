@@ -55,6 +55,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String INVOCATIONS_CONFIG_KEY = "invocations";
 	public final static String INVOCATIONS_RAID_LEVEL_CONFIG_KEY = "invocations-raid-level";
 	public final static String QUESTS_CONFIG_KEY = "quests";
+	public final static String COMBAT_ACHIEVEMENTS_CONFIG_KEY = "combat-achievements";
+	public final static String COMBAT_ACHIEVEMENTS_PROGRESS_CONFIG_KEY = "combat-achievements-progress";
 	public final static String SEASONAL_RELICS_CONFIG_KEY = "seasonal-relics";
 	public final static String SEASONAL_AREAS_CONFIG_KEY = "seasonal-areas";
 	public final static String EVENT_SUB_HANDLED_FOLLOWER_IDS = "event-sub-handled-follower-ids";
@@ -69,6 +71,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 		INVOCATIONS_CONFIG_KEY,
 		INVOCATIONS_RAID_LEVEL_CONFIG_KEY,
 		QUESTS_CONFIG_KEY,
+		COMBAT_ACHIEVEMENTS_CONFIG_KEY,
+		COMBAT_ACHIEVEMENTS_PROGRESS_CONFIG_KEY,
 		SEASONAL_RELICS_CONFIG_KEY,
 		SEASONAL_AREAS_CONFIG_KEY,
 	};
@@ -521,6 +525,26 @@ public interface TwitchLiveLoadoutConfig extends Config
 			section = seasonalsSection
 	)
 	default boolean seasonalsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigSection(
+			name = "Combat Achievements",
+			description = "Syncing of combat achievements",
+			position = 19,
+			closedByDefault = true
+	)
+	String combatAchievementsSection = "combat-achievements";
+
+	@ConfigItem(
+			keyName = "combatAchievementsEnabled",
+			name = "Sync combat achievements",
+			description = "Synchronize total points and completion of individual tasks per tier",
+			position = 2,
+			section = combatAchievementsSection
+	)
+	default boolean combatAchievementsEnabled()
 	{
 		return true;
 	}
