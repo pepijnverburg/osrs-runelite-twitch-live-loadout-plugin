@@ -321,7 +321,7 @@ public class ConnectivityPanel extends JPanel
 	{
 
 		if (config.twitchOAuthAccessToken().isEmpty() || config.twitchOAuthRefreshToken().isEmpty()) {
-			return Pair.of("Twitch Channel tokens are not setup. Will not connect. Follow our setup guide if you want to enable Twitch Channel Events, such as in-game effects upon channel point redeems, follow, subscriptions, etc.", DEFAULT_TEXT_COLOR);
+			return Pair.of("Twitch Channel tokens are not set. Will not connect. Follow our setup guide if you want to enable Twitch Channel Events, such as in-game effects upon channel point redeems, follow, subscriptions, etc.", DEFAULT_TEXT_COLOR);
 		}
 
 		if (twitchEventSubClient != null) {
@@ -331,7 +331,7 @@ public class ConnectivityPanel extends JPanel
 				return Pair.of("Connecting to Twitch Channel Events API...", WARNING_TEXT_COLOR);
 			}
 
-			return Pair.of("Disconnected from the Twitch Channel Events API.", ERROR_TEXT_COLOR);
+			return Pair.of("Not connected to the Twitch Channel Events API.", ERROR_TEXT_COLOR);
 		}
 
 		return Pair.of("Could not initialise the Twitch Channel Events API. Try to setup the channel events tokens again.", ERROR_TEXT_COLOR);

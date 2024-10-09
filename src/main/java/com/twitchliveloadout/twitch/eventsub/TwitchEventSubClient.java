@@ -165,12 +165,18 @@ public class TwitchEventSubClient {
 
     public boolean isConnected()
     {
-        return webSocket != null && socketOpen && !sessionId.isEmpty() && Instant.now().minusSeconds(keepAliveTimeoutS).isBefore(lastKeepAliveAt);
+        return webSocket != null
+            && socketOpen
+            && !sessionId.isEmpty()
+            && listener.hasActiveSubscriptions()
+            && Instant.now().minusSeconds(keepAliveTimeoutS).isBefore(lastKeepAliveAt);
     }
 
     public boolean isConnecting()
     {
-        return webSocket != null && socketOpen && sessionId.isEmpty();
+        return webSocket != null
+            && socketOpen
+            && (sessionId.isEmpty() || !listener.hasActiveSubscriptions());
     }
 
     private OkHttpClient createHttpClient(int timeoutMs)

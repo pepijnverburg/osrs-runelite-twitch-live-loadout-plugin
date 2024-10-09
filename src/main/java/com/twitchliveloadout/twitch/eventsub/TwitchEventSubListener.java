@@ -190,6 +190,11 @@ public class TwitchEventSubListener {
         activeSubscriptionTypes.clear();
     }
 
+    public boolean hasActiveSubscriptions()
+    {
+        return !activeSubscriptionTypes.isEmpty();
+    }
+
     public void handleFollowerId(String followerId)
     {
         handledFollowerIds.add(followerId);
