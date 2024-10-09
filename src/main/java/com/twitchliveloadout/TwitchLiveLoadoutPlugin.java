@@ -25,6 +25,7 @@
 package com.twitchliveloadout;
 
 import com.google.inject.Provides;
+import com.twitchliveloadout.achievements.CombatAchievementsManager;
 import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.items.CollectionLogManager;
 import com.twitchliveloadout.items.ItemStateManager;
@@ -68,6 +69,7 @@ import okhttp3.*;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
+import java.sql.Array;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -208,6 +210,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private QuestManager questManager;
 
 	/**
+	 * Dedicated manager for combat achievement information.
+	 */
+	private CombatAchievementsManager combatAchievementsManager;
+
+	/**
 	 * Dedicated manager for league information.
 	 */
 	private SeasonalManager seasonalManager;
@@ -310,6 +317,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			minimapManager = new MinimapManager(this, twitchState, client);
 			invocationsManager = new InvocationsManager(this, twitchState, client);
 			questManager = new QuestManager(this, twitchState, client);
+			combatAchievementsManager = new CombatAchievementsManager(this, twitchState, client);
 			seasonalManager = new SeasonalManager(this, twitchState, client, gson);
 		} catch (Exception exception) {
 			log.warn("An error occurred when initializing the managers: ", exception);
@@ -1013,6 +1021,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			{
 				invocationsManager.onScriptPostFired(scriptPostFired);
 			}
+
+			if (config.combatAchievementsEnabled())
+			{
+				combatAchievementsManager.onScriptPostFired(scriptPostFired);
+			}
 		} catch (Exception exception) {
 			logSupport("Could not handle script post fired event:", exception);
 		}
@@ -1374,9 +1387,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		JsonElement accountTypeRaw = twitchState.getState().get(TwitchStateEntry.ACCOUNT_TYPE.getKey());
 
 		// guard: check if account type can be found
+		// if not it can be due to logging in or switching accounts, to be sure we classify as dangerous
 		if (accountTypeRaw == null)
 		{
-			return false;
+			// TRUE to make sure when no account type is known to disable any dangerous effects
+			return true;
 		}
 
 		String accountType = accountTypeRaw.getAsString();
@@ -1426,6 +1441,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		try {
+			JsonElement accountTypeRaw = twitchState.getState().get(TwitchStateEntry.ACCOUNT_TYPE.getKey());
+
 			// guard: check game state
 			if (client.getGameState() != GameState.LOGGED_IN)
 			{
@@ -1434,6 +1451,14 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			// guard: check local player instance
 			if (client.getLocalPlayer() == null)
+			{
+				return false;
+			}
+
+			// guard: check if account type is known
+			// this ensures no marketplace things are handled until the account type is set
+			// making sure that any dangerous account types are handled properly
+			if (accountTypeRaw == null)
 			{
 				return false;
 			}
@@ -1448,6 +1473,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	/**
 	 * Get the account type enum from the varbit. Fallbacks to normal account.
+	 * NOTE: can only run on client thread.
 	 * @return AccountType
 	 */
 	public AccountType getAccountType()
@@ -1465,7 +1491,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			// empty
 		}
 
-		return AccountType.NORMAL;
+		// IMPORTANT: return null to make sure while logging in non-normal account won't get classified as such a normal one
+		return null;
 	}
 
 	public boolean isSeasonal()

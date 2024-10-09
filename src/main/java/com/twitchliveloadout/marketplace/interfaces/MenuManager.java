@@ -1,6 +1,7 @@
 package com.twitchliveloadout.marketplace.interfaces;
 
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
+import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.products.EbsMenuOptionFrame;
@@ -19,13 +20,15 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 @Slf4j
 public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
+	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
 	private final Client client;
 
-	public MenuManager(TwitchLiveLoadoutConfig config, Client client)
+	public MenuManager(TwitchLiveLoadoutPlugin plugin, TwitchLiveLoadoutConfig config, Client client)
 	{
 		super(MENU_EFFECT_MAX_SIZE);
 
+		this.plugin = plugin;
 		this.config = config;
 		this.client = client;
 	}
@@ -194,7 +197,8 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 			}
 
 			// handle disable effects
-			if (DISABLE_MENU_OPTION_TYPE.equals(menuOptionFrame.type))
+			// NOTE: only when allowed to perform dangerous effects
+			if (DISABLE_MENU_OPTION_TYPE.equals(menuOptionFrame.type) && plugin.canPerformDangerousEffects())
 			{
 				event.consume();
 			}

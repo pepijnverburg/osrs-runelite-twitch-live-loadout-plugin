@@ -202,7 +202,7 @@ public class MarketplaceManager {
 		this.transmogManager = new TransmogManager(plugin, client, itemManager);
 		this.notificationManager = new NotificationManager(plugin, config, chatMessageManager, client, twitchApi, this);
 		this.widgetManager = new WidgetManager(plugin, client);
-		this.menuManager = new MenuManager(config, client);
+		this.menuManager = new MenuManager(plugin, config, client);
 		this.drawManager = new DrawManager(client);
 		this.soundManager = new SoundManager(client, config);
 	}
@@ -377,6 +377,7 @@ public class MarketplaceManager {
 				boolean isFreeTransaction = productType.equals(TwitchTransactionProductType.FREE.getType());
 				boolean isManualTransaction = productType.equals(TwitchTransactionProductType.MANUAL.getType());
 				boolean isValidEbsProduct = ebsProduct != null && ebsProduct.enabled && ebsProduct.behaviour != null;
+				boolean hasValidAccountType = plugin.getAccountType() != null; // NOTE: can only run on client thread
 
 				// guard: make sure this product is not cooling down
 				// this can be the case when two transactions are done at the same time
@@ -388,6 +389,13 @@ public class MarketplaceManager {
 				// guard: make sure an EBS product is configured for this streamer product
 				// we will not remove from the queue because the EBS product might need to be loaded still
 				if (!isValidEbsProduct)
+				{
+					continue;
+				}
+
+				// guard: while there is no account type known at the moment skip handling any transactions
+				// the check for dangerous account types will come later to actually skip specific effects
+				if (!hasValidAccountType)
 				{
 					continue;
 				}

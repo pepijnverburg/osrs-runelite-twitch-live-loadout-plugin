@@ -139,6 +139,12 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 			return;
 		}
 
+		// guard: disable overlay widget effects when dangerous effects are not allowed
+		if (OVERLAY_INTERFACE_WIDGET_TYPE.equals(widgetFrame.effectType) && !plugin.canPerformDangerousEffects())
+		{
+			return;
+		}
+
 		LambdaIterator.handleAll(widgets, (widget) -> {
 
 			// always make sure a potential original is stored
@@ -158,7 +164,8 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 			Integer animationId = widgetFrame.animationId;
 
 			plugin.runOnClientThread(() -> {
-				if (DISABLE_INTERFACE_WIDGET_TYPE.equals(effectType))
+				// only disable widgets dangerous effects are allowed
+				if (DISABLE_INTERFACE_WIDGET_TYPE.equals(effectType) && plugin.canPerformDangerousEffects())
 				{
 					widget.setHidden(true);
 					return;
