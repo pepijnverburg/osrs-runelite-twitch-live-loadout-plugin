@@ -4,6 +4,7 @@ import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
+import com.twitchliveloadout.marketplace.products.EbsCondition;
 import com.twitchliveloadout.marketplace.products.EbsMenuOptionFrame;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import lombok.extern.slf4j.Slf4j;
@@ -144,6 +145,7 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 
 			MarketplaceProduct marketplaceProduct = effect.getMarketplaceProduct();
 			EbsMenuOptionFrame menuOptionFrame = effect.getFrame();
+			ArrayList<EbsCondition> generalConditions = menuOptionFrame.conditions;
 			boolean satisfiesOptions = verifyPropertyMatch(clickedOption, menuOptionFrame.matchedOptions);
 			boolean satisfiesTargets = verifyPropertyMatch(clickedTarget, menuOptionFrame.matchedTargets);
 			boolean satisfiesEntityTypes = verifyPropertyMatch(clickedEntityType, menuOptionFrame.matchedEntityTypes);
@@ -151,6 +153,13 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 			Integer maxClickRange = menuOptionFrame.maxClickRange;
 			boolean hasClickRange = minClickRange != null || maxClickRange != null;
 			boolean satisfiesClickRange = true;
+			boolean satisfiesGeneralConditions = marketplaceProduct.verifyConditions(generalConditions);
+
+			// guard: make sure the general marketplace product conditions are satisfied to handle this menu click option frame
+			if (!satisfiesGeneralConditions)
+			{
+				continue;
+			}
 
 			if (hasLocalPlayer && hasClickedEntityLocation && hasClickRange)
 			{

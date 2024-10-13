@@ -949,12 +949,12 @@ public class MarketplaceProduct
 		return true;
 	}
 
-	private boolean verifyConditions(ArrayList<EbsCondition> conditions)
+	public boolean verifyConditions(ArrayList<EbsCondition> conditions)
 	{
 		return verifyConditions(conditions, null);
 	}
 
-	private boolean verifyConditions(ArrayList<EbsCondition> conditions, SpawnedObject spawnedObject)
+	public boolean verifyConditions(ArrayList<EbsCondition> conditions, SpawnedObject spawnedObject)
 	{
 
 		// guard: check if collection is valid
@@ -981,7 +981,7 @@ public class MarketplaceProduct
 		return true;
 	}
 
-	private boolean verifyCondition(EbsCondition condition, SpawnedObject spawnedObject)
+	public boolean verifyCondition(EbsCondition condition, SpawnedObject spawnedObject)
 	{
 
 		// guard: check if collection is valid
