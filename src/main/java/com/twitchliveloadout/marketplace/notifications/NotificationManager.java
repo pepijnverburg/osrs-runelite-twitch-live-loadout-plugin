@@ -287,7 +287,7 @@ public class NotificationManager {
 				client.runScript(3343, hasCustomTitle ? notification.ebsNotification.popupTitle : POPUP_NOTIFICATION_TITLE, message, -1);
 
 				plugin.runOnClientThread(() -> {
-					Widget w = client.getWidget(660, 1);
+					Widget w = client.getWidget(POPUP_INTERFACE_ID, 1);
 					if (w.getWidth() > 0) {
 						return;
 					}
