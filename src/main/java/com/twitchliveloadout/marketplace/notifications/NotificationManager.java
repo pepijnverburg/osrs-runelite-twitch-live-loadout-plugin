@@ -34,6 +34,11 @@ import static com.twitchliveloadout.marketplace.MarketplaceConstants.*;
 
 @Slf4j
 public class NotificationManager {
+	public static final int POPUP_RESIZEABLE_CLASSIC_COMPONENT_ID = (161 << 16) | 13;
+	public static final int POPUP_RESIZEABLE_MODERN_COMPONENT_ID = (164 << 16) | 13;
+	public static final int POPUP_FIXED_COMPONENT_ID = (548 << 16) | 43;
+	public static final int POPUP_INTERFACE_ID = 660;
+
 	private final TwitchLiveLoadoutPlugin plugin;
 	private final TwitchLiveLoadoutConfig config;
 	private final ChatMessageManager chatMessageManager;
@@ -138,8 +143,7 @@ public class NotificationManager {
 		EbsNotification ebsNotification = notification.ebsNotification;
 		String messageType = ebsNotification.messageType;
 
-		plugin.logSupport("Sending notification with message: "+ notification.ebsNotification.message);
-		plugin.logSupport("Sending notification with type: "+ notification.ebsNotification.messageType);
+		plugin.logSupport("Sending notification with message (type: "+ notification.ebsNotification.messageType +"): "+ notification.ebsNotification.message);
 
 		try {
 			if (CHAT_NOTIFICATION_MESSAGE_TYPE.equals(messageType))
@@ -255,7 +259,31 @@ public class NotificationManager {
 					return;
 				}
 
-				WidgetNode widgetNode = client.openInterface((161 << 16) | 13, 660, WidgetModalMode.MODAL_CLICKTHROUGH);
+				// check which widget can be found depending on which window mode is active
+				Widget fixedPopupWidget = client.getWidget(POPUP_FIXED_COMPONENT_ID);
+				Widget modernPopupWidget = client.getWidget(POPUP_RESIZEABLE_MODERN_COMPONENT_ID);
+				Widget classicPopupWidget = client.getWidget(POPUP_RESIZEABLE_CLASSIC_COMPONENT_ID);
+				Integer targetComponentId = null;
+
+				// switch the target component ID based on which valid widget is found
+				if (fixedPopupWidget != null) {
+					targetComponentId = POPUP_FIXED_COMPONENT_ID;
+				} else if (modernPopupWidget != null) {
+					targetComponentId = POPUP_RESIZEABLE_MODERN_COMPONENT_ID;
+				} else if (classicPopupWidget != null) {
+					targetComponentId = POPUP_RESIZEABLE_CLASSIC_COMPONENT_ID;
+				}
+
+				// guard: ensure we can detect the layout mode
+				if (targetComponentId == null) {
+					log.error("Could not detect the correct layout mode when showing a pop-up message with text: "+ message);
+					return;
+				}
+
+				// original: client.openInterface((161 << 16) | 13, 660, WidgetModalMode.MODAL_CLICKTHROUGH);
+				// NOTE: there is a bug where after the pop-up has been shown once and you switch layout mode you cannot show it again.
+				// how often will it happen that someone switches layout mode? A client restart fixes it.
+				WidgetNode widgetNode = client.openInterface(targetComponentId, POPUP_INTERFACE_ID, WidgetModalMode.MODAL_CLICKTHROUGH);
 				client.runScript(3343, hasCustomTitle ? notification.ebsNotification.popupTitle : POPUP_NOTIFICATION_TITLE, message, -1);
 
 				plugin.runOnClientThread(() -> {
@@ -267,7 +295,7 @@ public class NotificationManager {
 					client.closeInterface(widgetNode, true);
 				});
 			} catch (Exception exception) {
-				// empty
+				plugin.logSupport("Could not show pop up message: "+ exception.getMessage());
 			}
 		});
 	}
