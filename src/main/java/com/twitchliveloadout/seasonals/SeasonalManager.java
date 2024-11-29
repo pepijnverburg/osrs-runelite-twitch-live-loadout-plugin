@@ -12,6 +12,7 @@ import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.widgets.Widget;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -24,15 +25,24 @@ public class SeasonalManager {
 
     private final CopyOnWriteArrayList<SeasonalItem> activeRelics = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<SeasonalItem> activeAreas = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<SeasonalItem> activeMasteries = new CopyOnWriteArrayList<>();
     private final HashMap<Integer, SeasonalItem> areaHighlightLookup = new HashMap<>();
     private final static int INACTIVE_RELIC_TEXT_COLOR = 0xaaaaaa;
+    private final static int INACTIVE_MASTERY_OPACITY = 255;
     private final static int RELIC_SCRIPT_ID = 3189;
     private final static int AREA_SCRIPT_ID = 3658;
+    private final static int MASTERY_SCRIPT_ID = 3186; // FIND
     private final static int AREA_HIGHLIGHT_GROUP_ID = 512;
-    private final static int AREA_HIGHLIGHT_CHILD_ID = 19;
+    private final static int AREA_HIGHLIGHT_CHILD_ID = 18;
     private final static int RELIC_GROUP_ID = 655;
     private final static int RELIC_TEXT_CHILD_ID = 21;
     private final static int RELIC_ICON_CHILD_ID = 19;
+    private final static int MASTERY_GROUP_ID = 311;
+    private final static int MASTERY_OPACITY_CHILD_ID = 32;
+    private final static int MASTERY_ICON_CHILD_ID = 33;
+    private final static int TOTALS_GROUP_ID = 656;
+    private final static int TOTAL_POINTS_CHILD_ID = 28;
+    private final static int TOTAL_TASKS_CHILD_ID = 26;
 
     public SeasonalManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, Gson gson)
     {
@@ -52,61 +62,110 @@ public class SeasonalManager {
      */
     public void initializeAreaHighlightLookup()
     {
-        areaHighlightLookup.put(5453, new SeasonalItem("Kandarin", 5485));
-        areaHighlightLookup.put(5449, new SeasonalItem("Misthalin", 5479));
-        areaHighlightLookup.put(5450, new SeasonalItem("Karamja", 5480));
-        areaHighlightLookup.put(5454, new SeasonalItem("Desert", 5482));
-        areaHighlightLookup.put(5458, new SeasonalItem("Kourend", 5488));
-        areaHighlightLookup.put(5451, new SeasonalItem("Wilderness", 5484));
-        areaHighlightLookup.put(5452, new SeasonalItem("Asgarnia", 5481));
-        areaHighlightLookup.put(5455, new SeasonalItem("Fremennik", 5486));
-        areaHighlightLookup.put(5456, new SeasonalItem("Tirannwn", 5487));
-        areaHighlightLookup.put(5457, new SeasonalItem("Morytania", 5483));
+        areaHighlightLookup.put(5870, new SeasonalItem("Kandarin", 5907));
+        areaHighlightLookup.put(5866, new SeasonalItem("Misthalin", 5901));
+        areaHighlightLookup.put(5867, new SeasonalItem("Karamja", 5902));
+        areaHighlightLookup.put(5871, new SeasonalItem("Desert", 5904));
+        areaHighlightLookup.put(5875, new SeasonalItem("Kourend", 5910));
+        areaHighlightLookup.put(5868, new SeasonalItem("Wilderness", 5906));
+        areaHighlightLookup.put(5869, new SeasonalItem("Asgarnia", 5903));
+        areaHighlightLookup.put(5872, new SeasonalItem("Fremennik", 5908));
+        areaHighlightLookup.put(5873, new SeasonalItem("Tirannwn", 5909));
+        areaHighlightLookup.put(5874, new SeasonalItem("Morytania", 5905));
+        areaHighlightLookup.put(5876, new SeasonalItem("Varlamore", 5911));
     }
 
     public void onAccountChanged()
     {
         activeRelics.clear();
         activeAreas.clear();
+        activeMasteries.clear();
 
         loadRelics();
         loadAreas();
+        loadMasteries();
     }
+
+//    ArrayList<Integer> seenScriptIds = new ArrayList<>();
 
     public void onScriptPostFired(ScriptPostFired scriptPostFired)
     {
+        int scriptId = scriptPostFired.getScriptId();
 
-        // fixed
-//        scriptPostFired.getScriptId(): 2282
-//        scriptPostFired.getScriptId(): 6156
-//        scriptPostFired.getScriptId(): 6163
-//        scriptPostFired.getScriptId(): 6157
-//        scriptPostFired.getScriptId(): 3189
-//        scriptPostFired.getScriptId(): 733
-//
+//        if (!seenScriptIds.contains(scriptId))
+//        {
+//            seenScriptIds.add(scriptId);
+//            System.out.println("NEW SCRIPT ID FOUND: "+ scriptId);
+//        }
 
-        // resized
-//        scriptPostFired.getScriptId(): 1343
-//        scriptPostFired.getScriptId(): 3188
-//        scriptPostFired.getScriptId(): 2282
-//        scriptPostFired.getScriptId(): 3189
-//        scriptPostFired.getScriptId(): 733
-        if (scriptPostFired.getScriptId() == RELIC_SCRIPT_ID)
+        switch (scriptId) {
+            case RELIC_SCRIPT_ID:
+                plugin.runOnClientThread(this::gatherRelics);
+                break;
+            case AREA_SCRIPT_ID:
+                plugin.runOnClientThread(this::gatherAreas);
+                break;
+            case MASTERY_SCRIPT_ID:
+                plugin.scheduleOnClientThread(this::gatherMasteries, 1000);
+                break;
+        }
+    }
+
+    private void gatherMasteries()
+    {
+        Widget masteryOpacityContainerWidget = client.getWidget(MASTERY_GROUP_ID, MASTERY_OPACITY_CHILD_ID);
+        Widget masteryIconContainerWidget = client.getWidget(MASTERY_GROUP_ID, MASTERY_ICON_CHILD_ID);
+
+        if (masteryOpacityContainerWidget == null || masteryIconContainerWidget == null)
         {
-            plugin.runOnClientThread(this::gatherRelics);
+            return;
         }
 
-        // fixed
-//        scriptPostFired.getScriptId(): 726
-//        scriptPostFired.getScriptId(): 3684
-//        scriptPostFired.getScriptId(): 3659
-//        scriptPostFired.getScriptId(): 3660
-//        scriptPostFired.getScriptId(): 3658
-//        scriptPostFired.getScriptId(): 725
-        if (scriptPostFired.getScriptId() == AREA_SCRIPT_ID)
+        Widget[] opacityWidgets = masteryOpacityContainerWidget.getDynamicChildren();
+        Widget[] iconWidgets = masteryIconContainerWidget.getDynamicChildren();
+
+        // keep track of which style is in which tier, because we cannot extract the combat style names or any other titles
+        HashMap<Integer, Integer> styleCounters = new HashMap<>();
+
+        // keep track of only the last tiers as seasonal items for each style
+        HashMap<Integer, SeasonalItem> lastTiersPerStyle = new HashMap<>();
+
+        for (int masteryIndex = 0; masteryIndex < opacityWidgets.length; masteryIndex++)
         {
-            plugin.runOnClientThread(this::gatherAreas);
+            Widget opacityWidget = opacityWidgets[masteryIndex];
+            Widget iconWidget = iconWidgets[masteryIndex];
+            int opacity = opacityWidget.getOpacity();
+            int spriteId = iconWidget.getSpriteId();
+            int stylePositionY = iconWidget.getOriginalY();
+            boolean isActive = opacity != INACTIVE_MASTERY_OPACITY;
+
+            // initialize the counter if needed
+            // NOTE: set to 0 to make sure we start with 1 in the titles
+            if (!styleCounters.containsKey(stylePositionY)) {
+                styleCounters.put(stylePositionY, 0);
+            }
+
+            int currentStyleCounter = styleCounters.get(stylePositionY);
+            int newStyleCounter = currentStyleCounter + 1;
+
+            // always increase the style counter regardless of whether its active
+            styleCounters.put(stylePositionY, newStyleCounter);
+
+            if (!isActive)
+            {
+                continue;
+            }
+
+            SeasonalItem activeMastery = new SeasonalItem("Tier #"+ newStyleCounter, spriteId);
+            lastTiersPerStyle.put(stylePositionY, activeMastery);
         }
+
+        Collection<SeasonalItem> newActiveMasteries = lastTiersPerStyle.values();
+        activeMasteries.clear();
+        activeMasteries.addAll(newActiveMasteries);
+
+        saveMasteries();
+        updateSeasonalItems();
     }
 
     private void gatherAreas()
@@ -162,7 +221,38 @@ public class SeasonalManager {
             String relicName = textWidget.getText();
             int spriteId = spriteWidget.getSpriteId();
             int textColor = textWidget.getTextColor();
+            int tierPositionX = textWidget.getOriginalX();
+            boolean foundInactiveInTier = false;
             boolean isActive = textColor != INACTIVE_RELIC_TEXT_COLOR;
+
+            // check for the edge case where all relics in a specified tier have the 'active' text colour
+            // this happens when artistically the text colours are set to the active one when the tier is not unlocked
+            // in this case we'll force this whole tier to not have active relics
+            // we detect the tier based on the x position of the text box
+            for (Widget similarRelicTextWidget : textWidgets)
+            {
+                int similarRelicPositionX = similarRelicTextWidget.getOriginalX();
+                int similarRelicTextColor = similarRelicTextWidget.getTextColor();
+                boolean isSimilarTier = tierPositionX == similarRelicPositionX;
+                boolean isSimilarRelicActive = similarRelicTextColor != INACTIVE_RELIC_TEXT_COLOR;
+
+                // guard: skip when not in same tier
+                if (!isSimilarTier)
+                {
+                    continue;
+                }
+
+                if (!isSimilarRelicActive)
+                {
+                    foundInactiveInTier = true;
+                }
+            }
+
+            // guard: when there is no inactive relic in this tier then the tier is not unlocked!
+            if (!foundInactiveInTier)
+            {
+                continue;
+            }
 
             // guard: skip this relic when inactive
             if (!isActive)
@@ -198,6 +288,12 @@ public class SeasonalManager {
             seasonalItems.addAll(activeAreas);
         }
 
+        if (!activeMasteries.isEmpty())
+        {
+            seasonalItems.add(new SeasonalItem("Masteries"));
+            seasonalItems.addAll(activeMasteries);
+        }
+
         JsonElement seasonalItemsElement = convertItemsToJson(seasonalItems);
 
         if (!seasonalItemsElement.isJsonArray())
@@ -229,6 +325,16 @@ public class SeasonalManager {
         });
     }
 
+    private void loadMasteries()
+    {
+        plugin.loadFromConfiguration(SEASONAL_MASTERIES_CONFIG_KEY, (data) -> {
+            ArrayList<SeasonalItem> newActiveMasteries = gson.fromJson(data, new TypeToken<ArrayList<SeasonalItem>>(){}.getType());
+            activeMasteries.clear();
+            activeMasteries.addAll(newActiveMasteries);
+            updateSeasonalItems();
+        });
+    }
+
     private void saveRelics()
     {
         plugin.setConfiguration(SEASONAL_RELICS_CONFIG_KEY, convertItemsToJson(activeRelics));
@@ -237,6 +343,11 @@ public class SeasonalManager {
     private void saveAreas()
     {
         plugin.setConfiguration(SEASONAL_AREAS_CONFIG_KEY, convertItemsToJson(activeAreas));
+    }
+    
+    private void saveMasteries()
+    {
+        plugin.setConfiguration(SEASONAL_MASTERIES_CONFIG_KEY, convertItemsToJson(activeMasteries));
     }
 
     private JsonElement convertItemsToJson(List<SeasonalItem> seasonalItems)
