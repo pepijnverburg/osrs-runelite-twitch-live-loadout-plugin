@@ -959,7 +959,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "followEventMessageEnabled",
+			keyName = "followEventMessageEnabled-v2",
 			name = "1. Enable follow message",
 			description = "Enable follow event message",
 			position = 36,
@@ -967,7 +967,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default boolean followEventMessageEnabled()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
@@ -983,7 +983,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "channelPointsRedeemEventMessageEnabled",
+			keyName = "channelPointsRedeemEventMessageEnabled-v2",
 			name = "2. Enable channel point message",
 			description = "Enable message shown when there is a channel point redeem.",
 			position = 44,
@@ -991,7 +991,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default boolean channelPointsRedeemEventMessageEnabled()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
@@ -1187,7 +1187,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "progressHypeTrainMessageEnabled",
+			keyName = "progressHypeTrainMessageEnabled-v2",
 			name = "10. Enable hype train progression message",
 			description = "Enable message when a hype train progresses in percentage or level.",
 			position = 112,
@@ -1195,7 +1195,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	)
 	default boolean progressHypeTrainMessageEnabled()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
