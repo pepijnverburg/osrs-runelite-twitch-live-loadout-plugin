@@ -24,6 +24,7 @@
  */
 package com.twitchliveloadout.fights;
 
+import com.google.common.collect.Iterables;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
@@ -1114,13 +1115,14 @@ public class FightStateManager
 	{
 		// one is to account for the local player themselves
 		int allowedPlayerAmount = 1;
+		int playerAmount = Iterables.size(client.getTopLevelWorldView().players());
 
 		// one for when the currently interacted actor is a player
 		if (allowedActor instanceof Player) {
 			allowedPlayerAmount += 1;
 		}
 
-		return client.getTopLevelWorldView().players().getSize() > allowedPlayerAmount;
+		return playerAmount > allowedPlayerAmount;
 	}
 
 	public CopyOnWriteArrayList<String> getOtherActorNames()
