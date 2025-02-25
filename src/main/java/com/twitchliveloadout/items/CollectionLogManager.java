@@ -5,8 +5,10 @@ import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.twitch.TwitchState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.ScriptID;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.events.NpcLootReceived;
 
@@ -20,11 +22,7 @@ public class CollectionLogManager {
 	private final TwitchState twitchState;
 	private final Client client;
 
-	private final HashMap<String, Integer> killCounts = new HashMap<>();
-
 	private static final int COLLECTION_LOG_ID = 621;
-	private static final int COLLECTION_LOG_ITEM_CONTAINER_ID = 36;
-	private static final int COLLECTION_LOG_CATEGORY_ID = 19;
 	private static final int COLLECTION_LOG_CONTAINER_ID = 1;
 	private static final int COLLECTION_LOG_TITLE_INDEX = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
@@ -35,8 +33,6 @@ public class CollectionLogManager {
 	private static final int COLLECTION_LOG_TAB_INACTIVE_COLOR = 16750623;
 	private static final int COLLECTION_LOG_TAB_ACTIVE_COLOR = 16754735;
 	private static final int COLLECTION_LOG_OTHER_TAB = 8;
-	private static final int COLLECTION_LOG_CATEGORY_LIST = 12;
-	private static final int COLLECTION_LOG_DRAW_LIST_SCRIPT_ID = 2730;
 	private static final int[] COLLECTION_LOG_CATEGORY_VARBIT_IDS = {6905, 6906};
 	private static final int[] COLLECTION_LOG_TABS = {
 		COLLECTION_LOG_BOSSES_TAB,
@@ -58,7 +54,7 @@ public class CollectionLogManager {
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
 	{
-		if (scriptPostFired.getScriptId() == COLLECTION_LOG_DRAW_LIST_SCRIPT_ID)
+		if (scriptPostFired.getScriptId() == ScriptID.COLLECTION_DRAW_LIST)
 		{
 			scheduleUpdateCurrentCategory();
 		}
@@ -86,7 +82,7 @@ public class CollectionLogManager {
 
 	private Widget getCategoryHead()
 	{
-		Widget categoryHead = client.getWidget(COLLECTION_LOG_ID, COLLECTION_LOG_CATEGORY_ID);
+		Widget categoryHead = client.getWidget(ComponentID.COLLECTION_LOG_ENTRY_HEADER);
 
 		return categoryHead;
 	}
@@ -111,7 +107,7 @@ public class CollectionLogManager {
 	}
 
 	/**
-	 * Get the tab the current collection log seletion in (bosses / raids / clues / minigames / other)
+	 * Get the tab the current collection log selection in (bosses / raids / clues / minigames / other)
 	 */
 	private String getTabTitle()
 	{
@@ -261,7 +257,7 @@ public class CollectionLogManager {
 
 	private CopyOnWriteArrayList<CollectionLogItem> getCurrentItems()
 	{
-		final Widget itemsContainer = client.getWidget(COLLECTION_LOG_ID, COLLECTION_LOG_ITEM_CONTAINER_ID);
+		final Widget itemsContainer = client.getWidget(ComponentID.COLLECTION_LOG_ENTRY_ITEMS);
 
 		if (itemsContainer == null)
 		{
