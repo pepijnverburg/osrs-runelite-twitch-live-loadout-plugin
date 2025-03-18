@@ -50,10 +50,11 @@ public class ItemStateManager {
 		final boolean isInventory = isItemContainer(event, InventoryID.INVENTORY);
 		final boolean isEquipment = isItemContainer(event, InventoryID.EQUIPMENT);
 		final boolean isBank = isItemContainer(event, InventoryID.BANK);
+		final boolean isGroupStorage = isItemContainer(event, InventoryID.GROUP_STORAGE);
 		final boolean isLootingBag = isItemContainer(event, LOOTING_BAG_CONTAINER_ID);
 
 		// guard: block item containers that are not applicable for the state
-		if (!isInventory && !isEquipment && !isBank && !isLootingBag)
+		if (!isInventory && !isEquipment && !isBank && !isLootingBag && !isGroupStorage)
 		{
 			return;
 		}
@@ -76,6 +77,11 @@ public class ItemStateManager {
 		else if (config.lootingBagEnabled() && isLootingBag)
 		{
 			twitchState.setLootingBagItems(items, totalPrice);
+		}
+		else if (config.groupStorageEnabled() && isGroupStorage)
+		{
+			twitchState.setGroupStorageItems(items);
+			twitchState.setGroupStoragePrice(totalPrice);
 		}
 
 		// update the weight for specific container changes
