@@ -23,7 +23,7 @@ public class CollectionLogManager {
 	private final Client client;
 
 	private static final int COLLECTION_LOG_ID = 621;
-	private static final int COLLECTION_LOG_CONTAINER_ID = 1;
+	private static final int COLLECTION_LOG_CONTAINER_ID = 0;
 	private static final int COLLECTION_LOG_TITLE_INDEX = 1;
 	private static final int COLLECTION_LOG_BOSSES_TAB = 4;
 	private static final int COLLECTION_LOG_RAIDS_TAB = 5;
