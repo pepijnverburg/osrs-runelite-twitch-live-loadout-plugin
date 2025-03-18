@@ -52,6 +52,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String LOOTING_BAG_PRICE_CONFIG_KEY = "looting-bag-price";
 	public final static String BANK_TABBED_ITEMS_CONFIG_KEY = "bank-items";
 	public final static String BANK_PRICE_CONFIG_KEY = "bank-price";
+	public final static String GROUP_STORAGE_ITEMS_CONFIG_KEY = "group-storage-items";
+	public final static String GROUP_STORAGE_PRICE_CONFIG_KEY = "groups-storage-price";
 	public final static String INVOCATIONS_CONFIG_KEY = "invocations";
 	public final static String INVOCATIONS_RAID_LEVEL_CONFIG_KEY = "invocations-raid-level";
 	public final static String QUESTS_CONFIG_KEY = "quests";
@@ -266,10 +268,34 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "groupStorageEnabled",
+			name = "Sync group storage items",
+			description = "Synchronize group ironman storage.",
+			position = 12,
+			section = itemsSection
+	)
+	default boolean groupStorageEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "groupStoragePriceEnabled",
+			name = "Sync group storage value",
+			description = "Synchronize group storage value of all items.",
+			position = 13,
+			section = itemsSection
+	)
+	default boolean groupStoragePriceEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "collectionLogEnabled",
 			name = "Sync collection log",
 			description = "Synchronize the collection log quantities and kill counts.",
-			position = 12,
+			position = 14,
 			section = itemsSection
 	)
 	default boolean collectionLogEnabled()
@@ -281,7 +307,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "collectionLogFilter",
 			name = "Collection log filter (comma separated)",
 			description = "Only include entry titles that include one of the keywords separated with a comma (e.g. 'abyssal, raids')",
-			position = 14,
+			position = 15,
 			section = itemsSection
 	)
 	default String collectionLogFilter()

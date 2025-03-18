@@ -15,6 +15,8 @@ public enum TwitchStateEntry {
 	EQUIPMENT_PRICE("equipmentPrice", true),
 	LOOTING_BAG_ITEMS("lootingBag", true),
 	LOOTING_BAG_PRICE("lootingBagPrice", true),
+	GROUP_STORAGE_ITEMS("groupStorage", true),
+	GROUP_STORAGE_PRICE("groupStoragePrice", true),
 	FIGHT_STATISTICS("fightStatistics", true),
 	SKILL_EXPERIENCES("skillExperiences", true),
 	BOOSTED_SKILL_LEVELS("boostedSkillLevels", true),

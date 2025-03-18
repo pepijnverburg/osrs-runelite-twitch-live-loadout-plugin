@@ -195,6 +195,23 @@ public class TwitchState {
 		setItemsPrice(TwitchStateEntry.INVENTORY_PRICE.getKey(), totalPrice);
 	}
 
+	public void setGroupStorageItems(Item[] items)
+	{
+		setGroupStorageItems(convertToJson(items));
+	}
+
+	public void setGroupStorageItems(JsonArray items)
+	{
+		cyclicState.add(TwitchStateEntry.GROUP_STORAGE_ITEMS.getKey(), items);
+		plugin.setConfiguration(GROUP_STORAGE_ITEMS_CONFIG_KEY, items);
+	}
+
+	public void setGroupStoragePrice(long totalPrice)
+	{
+		cyclicState.addProperty(TwitchStateEntry.GROUP_STORAGE_PRICE.getKey(), totalPrice);
+		plugin.setConfiguration(GROUP_STORAGE_PRICE_CONFIG_KEY, totalPrice);
+	}
+
 	public void setEquipmentItems(Item[] items, long totalPrice)
 	{
 		setItems(TwitchStateEntry.EQUIPMENT_ITEMS.getKey(), items);
@@ -605,6 +622,20 @@ public class TwitchState {
 			state.add(TwitchStateEntry.COMBAT_ACHIEVEMENTS.getKey(), partialCombatAchievements);
 		}
 
+		if (currentCyclicEntry == TwitchStateEntry.GROUP_STORAGE_ITEMS)
+		{
+			final String groupStorageItemsKey = TwitchStateEntry.GROUP_STORAGE_ITEMS.getKey();
+			final String groupStoragePriceKey = TwitchStateEntry.GROUP_STORAGE_PRICE.getKey();
+
+			if (!cyclicState.has(groupStorageItemsKey) || !cyclicState.has(groupStoragePriceKey))
+			{
+				return state;
+			}
+
+			state.add(groupStorageItemsKey, cyclicState.get(groupStorageItemsKey));
+			state.addProperty(groupStoragePriceKey, cyclicState.get(groupStoragePriceKey).getAsLong());
+		}
+
 		return state;
 	}
 
@@ -708,7 +739,7 @@ public class TwitchState {
 			currentCyclicSliceIndex = 0;
 		}
 
-		// after invocations we go back to the channel point rewards
+		// after invocations we go to the channel point rewards
 		else if (currentCyclicEntry == TwitchStateEntry.INVOCATIONS)
 		{
 			currentCyclicEntry = TwitchStateEntry.CHANNEL_POINT_REWARDS;
@@ -722,7 +753,7 @@ public class TwitchState {
 			currentCyclicSliceIndex = 0;
 		}
 
-		// after the combat achievements go to the bank
+		// after the combat achievements go to the group storage
 		else if (currentCyclicEntry == TwitchStateEntry.COMBAT_ACHIEVEMENTS)
 		{
 			final int combatAchievementAmount = getCombatAchievementAmount();
@@ -733,9 +764,16 @@ public class TwitchState {
 			// we can move to syncing the bank once again
 			if (!config.combatAchievementsEnabled() || currentCyclicSliceIndex >= combatAchievementAmount)
 			{
-				currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
+				currentCyclicEntry = TwitchStateEntry.GROUP_STORAGE_ITEMS;
 				currentCyclicSliceIndex = 0;
 			}
+		}
+
+		// after group storage go to the bank
+		else if (currentCyclicEntry == TwitchStateEntry.GROUP_STORAGE_ITEMS)
+		{
+			currentCyclicEntry = TwitchStateEntry.BANK_TABBED_ITEMS;
+			currentCyclicSliceIndex = 0;
 		}
 	}
 
@@ -866,6 +904,17 @@ public class TwitchState {
 		if (!config.bankPriceEnabled())
 		{
 			state.add(TwitchStateEntry.BANK_PRICE.getKey(), null);
+		}
+
+		if (!config.groupStorageEnabled())
+		{
+			state.add(TwitchStateEntry.GROUP_STORAGE_ITEMS.getKey(), null);
+			state.add(TwitchStateEntry.GROUP_STORAGE_PRICE.getKey(), null);
+		}
+
+		if (!config.groupStoragePriceEnabled())
+		{
+			state.add(TwitchStateEntry.GROUP_STORAGE_PRICE.getKey(), null);
 		}
 
 		if (!config.collectionLogEnabled())
@@ -1075,6 +1124,8 @@ public class TwitchState {
 		cyclicState.remove(TwitchStateEntry.QUESTS.getKey());
 		cyclicState.remove(TwitchStateEntry.INVOCATIONS.getKey());
 		cyclicState.remove(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey());
+		cyclicState.remove(TwitchStateEntry.GROUP_STORAGE_ITEMS.getKey());
+		cyclicState.remove(TwitchStateEntry.GROUP_STORAGE_PRICE.getKey());
 
 		currentState.add(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), null);
 		currentState.addProperty(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), 0);
@@ -1122,6 +1173,15 @@ public class TwitchState {
 
 		plugin.loadFromConfiguration(LOOTING_BAG_PRICE_CONFIG_KEY, (String price) -> {
 			setItemsPrice(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), price);
+		});
+
+		plugin.loadFromConfiguration(GROUP_STORAGE_ITEMS_CONFIG_KEY, (String rawItems) -> {
+			JsonArray parsedItems = new JsonParser().parse(rawItems).getAsJsonArray();
+			setGroupStorageItems(parsedItems);
+		});
+
+		plugin.loadFromConfiguration(GROUP_STORAGE_PRICE_CONFIG_KEY, (String price) -> {
+			setGroupStoragePrice(Long.parseLong(price));
 		});
 
 		plugin.loadFromConfiguration(INVOCATIONS_CONFIG_KEY, (String rawInvocations) -> {
