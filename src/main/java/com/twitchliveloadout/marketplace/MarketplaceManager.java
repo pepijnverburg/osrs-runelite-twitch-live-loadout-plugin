@@ -32,10 +32,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.MenuOpened;
-import net.runelite.api.events.MenuOptionClicked;
-import net.runelite.api.events.PlayerChanged;
+import net.runelite.api.events.*;
 import net.runelite.api.geometry.SimplePolygon;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.game.ItemManager;
@@ -1097,6 +1094,14 @@ public class MarketplaceManager {
 		transmogManager.onGameTick();
 		animationManager.onGameTick();
 		spawnOverheadManager.onGameTick();
+	}
+
+	/**
+	 * Handle animation changes
+	 */
+	public void onAnimationChanged(AnimationChanged event)
+	{
+		animationManager.onAnimationChanged(event);
 	}
 
 	/**

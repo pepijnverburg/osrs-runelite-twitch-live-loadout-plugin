@@ -848,6 +848,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			{
 				fightStateManager.onAnimationChanged(event);
 			}
+
+			if (config.marketplaceEnabled()) {
+				marketplaceManager.onAnimationChanged(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle animation change event: ", exception);
 		}

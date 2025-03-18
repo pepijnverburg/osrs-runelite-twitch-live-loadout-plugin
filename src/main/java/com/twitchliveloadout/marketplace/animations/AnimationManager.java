@@ -4,16 +4,16 @@ import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.marketplace.MarketplaceEffect;
 import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.marketplace.MarketplaceRandomizers;
 import com.twitchliveloadout.marketplace.products.EbsMovementFrame;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ActorSpotAnim;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.Player;
+import net.runelite.api.*;
+import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PlayerChanged;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.MOVEMENT_EFFECT_MAX_SIZE;
@@ -54,6 +54,53 @@ public class AnimationManager extends MarketplaceEffectManager<EbsMovementFrame>
 
 		recordOriginalMovementAnimations();
 		applyActiveEffects();
+	}
+
+	public void onAnimationChanged(AnimationChanged event)
+	{
+		Player localPlayer = client.getLocalPlayer();
+		Actor actor = event.getActor();
+
+		// guard: skip when not a player
+		if (!(actor instanceof Player))
+		{
+			return;
+		}
+
+		Player player = (Player) actor;
+
+		// guard: skip any other players than the local one
+		if (player != localPlayer)
+		{
+			return;
+		}
+
+		MarketplaceEffect<EbsMovementFrame> newestEffect = getNewestActiveEffect();
+
+		// guard: skip when there is no newest effect
+		if (newestEffect == null)
+		{
+			return;
+		}
+
+		ArrayList<Integer> othersAnimationIds = newestEffect.getFrame().others;
+
+		if (othersAnimationIds == null || othersAnimationIds.isEmpty())
+		{
+			return;
+		}
+
+		int playerAnimation = player.getAnimation();
+
+		// guard: skip animation resets
+		if (playerAnimation == -1)
+		{
+			return;
+		}
+
+		// on every other animation replace it with the fallback (called 'others')
+		int pickedAnimationId = MarketplaceRandomizers.getRandomEntryFromList(othersAnimationIds);
+		player.setAnimation(pickedAnimationId);
 	}
 
 	@Override

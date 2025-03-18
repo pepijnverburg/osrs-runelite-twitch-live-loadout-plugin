@@ -160,6 +160,19 @@ public abstract class MarketplaceEffectManager<FrameType extends EbsEffectFrame>
 		return !effects.isEmpty();
 	}
 
+	public MarketplaceEffect<FrameType> getNewestActiveEffect()
+	{
+		int lastIndex = effects.size() - 1;
+
+		// guard: ensure there are effects
+		if (!hasAnyEffectsActive())
+		{
+			return null;
+		}
+
+		return effects.get(lastIndex);
+	}
+
 	protected abstract void onAddEffect(MarketplaceEffect<FrameType> effect);
 	protected abstract void onDeleteEffect(MarketplaceEffect<FrameType> effect);
 	protected abstract void restoreEffect(MarketplaceEffect<FrameType> effect);
