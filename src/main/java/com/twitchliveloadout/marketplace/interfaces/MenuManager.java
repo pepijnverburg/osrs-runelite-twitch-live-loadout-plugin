@@ -55,7 +55,7 @@ public class MenuManager extends MarketplaceEffectManager<EbsMenuOptionFrame> {
 
 			// an item is also considered a widget, so for this reason
 			// we need to check for a valid item ID first
-			if (menuEntry.getItemId() >= 0) {
+			if (menuEntry.getItemId() > 0) {
 				clickedEntityType = ITEM_MENU_ENTITY_TYPE;
 			} else if (menuEntry.getWidget() != null) {
 				clickedEntityType = WIDGET_MENU_ENTITY_TYPE;
