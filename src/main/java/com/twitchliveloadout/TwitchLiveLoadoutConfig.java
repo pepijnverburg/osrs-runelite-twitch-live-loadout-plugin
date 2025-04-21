@@ -186,7 +186,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Items",
 			description = "Syncing of items in inventory, equipment and bank.",
-			position = 15,
+			position = 14,
 			closedByDefault = true
 	)
 	String itemsSection = "items";
@@ -330,7 +330,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	@ConfigSection(
 			name = "Combat",
 			description = "Syncing of weapon damage, smite drains, poison damage, etc. per enemy.",
-			position = 14,
+			position = 15,
 			closedByDefault = true
 	)
 	String combatSection = "combat";
