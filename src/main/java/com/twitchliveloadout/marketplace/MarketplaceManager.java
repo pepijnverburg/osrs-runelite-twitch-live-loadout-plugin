@@ -222,7 +222,8 @@ public class MarketplaceManager {
 		// guard: skip updating new transactions when no products are enabled
 		// fetching of new transactions in this case is useless anyways because
 		// the configurations for them are not available without products
-		if (streamerProducts.size() <= 0 || ebsProducts.size() <= 0)
+		// NOTE: exception when test mode is active, which allows testing without any active
+		if ((streamerProducts.size() <= 0 || ebsProducts.size() <= 0) && !isTestModeActive())
 		{
 			return;
 		}
@@ -854,7 +855,8 @@ public class MarketplaceManager {
 		// this prevents requests to be made by streamers who have not configured the marketplace
 		// NOTE: we do allow an initial fetch to get an initial set of EBS products in case the
 		// streamer products are still being fetched
-		if (streamerProducts.size() <= 0 && ebsProducts.size() > 0)
+		// NOTE: we also allow when test mode is active when streamers want to preview events
+		if ((streamerProducts.size() <= 0 && ebsProducts.size() > 0) && !isTestModeActive())
 		{
 			return;
 		}
