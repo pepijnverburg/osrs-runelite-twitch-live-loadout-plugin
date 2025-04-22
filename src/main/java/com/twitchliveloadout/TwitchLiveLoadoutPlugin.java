@@ -43,6 +43,7 @@ import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubListener;
 import com.twitchliveloadout.ui.CanvasListener;
 import com.twitchliveloadout.utilities.AccountType;
+import com.twitchliveloadout.utilities.GameEventType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -959,6 +960,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
 		try {
+			boolean isNowLoggedIn = gameStateChanged.getGameState() == GameState.LOGGED_IN;
+
 			if (config.marketplaceEnabled())
 			{
 				marketplaceManager.onGameStateChanged(gameStateChanged);
@@ -968,9 +971,10 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			twitchState.setAccountHash(client.getAccountHash());
 			twitchState.setAccountType(getAccountType());
 
-			// update quests when logged in
-			if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
+			if (isNowLoggedIn)
 			{
+
+				// update quests when logged in
 				updateQuests();
 			}
 		} catch (Exception exception) {

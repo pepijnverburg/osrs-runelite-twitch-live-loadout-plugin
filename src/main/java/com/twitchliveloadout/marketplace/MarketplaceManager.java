@@ -28,6 +28,7 @@ import com.twitchliveloadout.twitch.TwitchState;
 import com.twitchliveloadout.twitch.TwitchStateEntry;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
+import com.twitchliveloadout.utilities.GameEventType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutPlugin.IN_DEVELOPMENT;
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.EVENT_SUB_DEFAULT_EBS_PRODUCT_ID;
@@ -456,6 +458,7 @@ public class MarketplaceManager {
 					continue;
 				}
 
+				// guard: skip manual transactions when not enabled
 				if (isManualTransaction && !config.manualMarketplaceProductsEnabled())
 				{
 					log.warn("Skipping transaction because it is a manual transaction while manual mode is not active: "+ transactionId);
@@ -585,6 +588,60 @@ public class MarketplaceManager {
 		handledTransactionIds.add(transactionId);
 		archivedTransactions.add(0, transaction);
 		updateMarketplacePanel();
+	}
+
+	public void handleGameEvent(GameEventType gameEventType)
+	{
+		String eventId = gameEventType.getId();
+		StreamerProduct streamerProduct = getStreamerProductBySku(eventId);
+		int activeAndQueuedAmount = countActiveAndQueuedTransactionsByGameEventType(gameEventType);
+
+		// handle the game event for all active products as well
+		handleActiveProducts((product) -> {
+			product.handleGameEvent(gameEventType);
+		});
+
+		// guard: ensure the streamer product is valid
+		if (streamerProduct == null)
+		{
+			return;
+		}
+
+		// guard: skip when the maximum transactions are reached for a specific game event
+		if (activeAndQueuedAmount >= config.marketplaceMaxActiveProductsPerGameEvent())
+		{
+			plugin.logSupport("Skipping game event because too many of the same are active. Game event ID: "+ gameEventType.getId());
+			return;
+		}
+
+		TwitchTransaction transaction = createTransactionFromGameEvent(gameEventType);
+		handleCustomTransaction(transaction);
+	}
+
+	public TwitchTransaction createTransactionFromGameEvent(GameEventType gameEventType)
+	{
+		String nowString = Instant.now().toString();
+		TwitchTransaction twitchTransaction = new TwitchTransaction();
+		TwitchProduct twitchProduct = new TwitchProduct();
+		TwitchProductCost twitchProductCost = new TwitchProductCost();
+
+		twitchTransaction.id = generateRandomTestId();
+		twitchTransaction.timestamp = nowString;
+
+		twitchProduct.sku = gameEventType.getId();
+		twitchProduct.cost = twitchProductCost;
+		twitchTransaction.product_data = twitchProduct;
+		twitchTransaction.product_type = gameEventType.getId();
+
+		twitchTransaction.handled_at = Instant.now().toString();
+		twitchTransaction.origin = TwitchTransactionOrigin.EVENT_SUB;
+		twitchTransaction.gameEventType = gameEventType;
+
+		// TODO: consider what should be used here
+		twitchTransaction.broadcaster_name = plugin.getPlayerName();
+		twitchTransaction.user_name = plugin.getPlayerName();
+
+		return twitchTransaction;
 	}
 
 	/**
@@ -798,6 +855,7 @@ public class MarketplaceManager {
 	public void updateStreamerProducts()
 	{
 		JsonObject segmentContent = twitchApi.getConfigurationSegmentContent(TwitchSegmentType.BROADCASTER);
+		boolean isFirstLoad = streamerProducts.isEmpty();
 
 		// guard: skip when invalid configuration service content
 		if (segmentContent == null)
@@ -831,6 +889,16 @@ public class MarketplaceManager {
 			});
 
 			streamerProducts = newStreamerProducts;
+
+			// trigger the several initial game events on the first load of the streamer products that might've been missed
+			// due to the game performing the events too fast before the initial load of the products
+			if (isFirstLoad) {
+
+				// send 'fake' login event
+				if (plugin.isLoggedIn()) {
+					handleGameEvent(GameEventType.LOGIN);
+				}
+			}
 		} catch (Exception exception) {
 			plugin.logSupport("Could not parse the raw streamer products to a valid set of products:", exception);
 		}
@@ -1018,9 +1086,17 @@ public class MarketplaceManager {
 	 */
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
+		boolean isNowLoggedIn = gameStateChanged.getGameState() == GameState.LOGGED_IN;
+
 		spawnManager.onGameStateChanged(gameStateChanged);
 		animationManager.onGameStateChanged(gameStateChanged);
 		transmogManager.onGameStateChanged(gameStateChanged);
+
+		// trigger any products tied to the login game event
+		if (isNowLoggedIn)
+		{
+			handleGameEvent(GameEventType.LOGIN);
+		}
 	}
 
 	/**
@@ -1216,6 +1292,27 @@ public class MarketplaceManager {
 		}
 
 		return isPassed;
+	}
+
+	public int countActiveAndQueuedTransactionsByGameEventType(GameEventType gameEventType)
+	{
+		AtomicInteger amount = new AtomicInteger();
+
+		handleActiveProducts((product) -> {
+			TwitchTransaction transaction = product.getTransaction();
+
+			if (transaction.gameEventType == gameEventType) {
+				amount.getAndIncrement();
+			}
+		});
+
+		LambdaIterator.handleAll(queuedTransactions, (transaction) -> {
+			if (transaction.gameEventType == gameEventType) {
+				amount.getAndIncrement();
+			}
+		});
+
+		return amount.get();
 	}
 
 	public StreamerProduct getStreamerProductByTransaction(TwitchTransaction transaction)

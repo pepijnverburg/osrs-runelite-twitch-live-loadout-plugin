@@ -3,6 +3,7 @@ package com.twitchliveloadout.marketplace.transactions;
 import com.twitchliveloadout.marketplace.products.TwitchProduct;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
+import com.twitchliveloadout.utilities.GameEventType;
 
 import java.time.Instant;
 
@@ -25,10 +26,16 @@ public class TwitchTransaction {
 	public TwitchTransactionOrigin origin = TwitchTransactionOrigin.EBS;
 	public TwitchEventSubType eventSubType = null;
 	public BaseMessage eventSubMessage = null;
+	public GameEventType gameEventType = null;
 
 	public boolean isEventSubTransaction()
 	{
 		return eventSubType != null && eventSubMessage != null;
+	}
+
+	public boolean isGameEventTransaction()
+	{
+		return gameEventType != null;
 	}
 
 	public boolean isCurrencyTransaction()

@@ -702,6 +702,23 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@Range(
 			min = 1,
+			max = 50
+	)
+	@ConfigItem(
+			keyName = "marketplaceMaxActiveProductsPerGameEvent",
+			name = "Max active per game event",
+			description = "How many random events from a game event (e.g. when logging in, or clicking a specific menu entry) can be active at the same time. When exceeded new are ignored.",
+			position = 14,
+			hidden = false,
+			section = marketplaceSection
+	)
+	default int marketplaceMaxActiveProductsPerGameEvent()
+	{
+		return 1;
+	}
+
+	@Range(
+			min = 1,
 			max = MarketplaceConstants.MAX_TRANSACTION_AMOUNT_IN_MEMORY
 	)
 	@ConfigItem(

@@ -6,6 +6,7 @@ import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.TwitchProductCost;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
+import com.twitchliveloadout.utilities.GameEventType;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -75,6 +76,18 @@ public class MarketplaceProductPanel extends EntityActionPanel<MarketplaceProduc
 				"<b>"+ eventSubType.getName() +"</b>",
 				"<b color='yellow'>" + streamerProductName + "</b>",
 				viewerLine,
+				expiresInLine
+			};
+		}
+
+		if (transaction.isGameEventTransaction())
+		{
+			GameEventType gameEventType = transaction.gameEventType;
+
+			lines = new String[]{
+				statusLine,
+				"<b>Activated by: "+ gameEventType.getName() +"</b>",
+				"<b color='yellow'>" + streamerProductName + "</b>",
 				expiresInLine
 			};
 		}

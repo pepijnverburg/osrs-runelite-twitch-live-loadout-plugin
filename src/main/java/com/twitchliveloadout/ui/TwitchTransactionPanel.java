@@ -10,6 +10,7 @@ import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
 import com.twitchliveloadout.twitch.eventsub.messages.BaseUserInfo;
+import com.twitchliveloadout.utilities.GameEventType;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.ImageUtil;
@@ -96,6 +97,17 @@ public class TwitchTransactionPanel extends EntityActionPanel<TwitchTransaction>
 				"<b>"+ eventSubType.getName() +"</b>",
 				"<b color='yellow'>" + streamerProductName + "</b>",
 				"By <b color='yellow'>"+ viewerName + "</b>",
+				"At "+ transactionAtString,
+			};
+		}
+
+		if (twitchTransaction.isGameEventTransaction())
+		{
+			GameEventType gameEventType = twitchTransaction.gameEventType;
+
+			lines = new String[]{
+				"<b>Activated by: "+ gameEventType.getName() +"</b>",
+				"<b color='yellow'>" + streamerProductName + "</b>",
 				"At "+ transactionAtString,
 			};
 		}

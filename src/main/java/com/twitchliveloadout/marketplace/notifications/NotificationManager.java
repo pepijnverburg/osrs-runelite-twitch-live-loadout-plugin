@@ -12,6 +12,7 @@ import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
 import com.twitchliveloadout.twitch.TwitchApi;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubType;
 import com.twitchliveloadout.twitch.eventsub.messages.BaseMessage;
+import com.twitchliveloadout.utilities.GameEventType;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -369,17 +370,21 @@ public class NotificationManager {
 
 		final TwitchTransaction twitchTransaction = marketplaceProduct.getTransaction();
 		final TwitchEventSubType eventSubType = twitchTransaction.eventSubType;
-		final BaseMessage eventSubMessage = twitchTransaction.eventSubMessage;
+		final GameEventType gameEventType = twitchTransaction.gameEventType;
 		final boolean isEventSubTransaction = twitchTransaction.isEventSubTransaction();
 		final boolean isCurrencyTransaction = twitchTransaction.isCurrencyTransaction();
+		final boolean isGameEventTransaction = twitchTransaction.isGameEventTransaction();
 
 		// ensure there is a message when it is not set
-		if (message == null)
-		{
+		if (message == null) {
+
+			// get the message when game event
+			if (isGameEventTransaction) {
+				message = gameEventType.getMessage();
 
 			// get the message from the channel event sub type
 			// or use the default bits donation message when this is an EBS bits transaction
-			if (isEventSubTransaction) {
+			} else if (isEventSubTransaction) {
 
 				// NOTE: don't check whether the default message is enabled or not via the RuneLite settings
 				// this is because you could disable the event in RuneLite, but have it configured in the Twitch Extension.
