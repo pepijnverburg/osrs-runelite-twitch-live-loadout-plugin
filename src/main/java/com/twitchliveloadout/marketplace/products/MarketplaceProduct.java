@@ -14,6 +14,7 @@ import com.twitchliveloadout.marketplace.spawns.SpawnPoint;
 import com.twitchliveloadout.marketplace.spawns.SpawnedObject;
 import com.twitchliveloadout.marketplace.spawns.SpawnManager;
 import com.twitchliveloadout.marketplace.transmogs.TransmogManager;
+import com.twitchliveloadout.utilities.GameEventType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -83,13 +84,13 @@ public class MarketplaceProduct
 	 * Expiration trackers
 	 */
 	@Getter
-	private final Instant startedAt;
+	private Instant startedAt;
 	@Getter
 	private Instant expiredAt;
 	@Getter
-	private final Instant loadedAt;
+	private Instant loadedAt;
 	@Getter
-	private final Instant transactionAt;
+	private Instant transactionAt;
 
 	/**
 	 * A list of all the spawned objects for this product
@@ -114,26 +115,7 @@ public class MarketplaceProduct
 		this.streamerProduct = streamerProduct;
 		this.twitchProduct = twitchProduct;
 
-		// determine when this product should expire which is
-		// based on the moment the transaction is executed with a correction
-		// added along with the actual duration. A correction is added because
-		// it takes a few seconds before the transaction is added.
-		int duration = streamerProduct.duration;
-		this.loadedAt = Instant.now();
-		this.transactionAt = Instant.parse(transaction.timestamp);
-
-		// Check when the transaction was loaded in and if it was loaded too late
-		// compared to when the transaction was made. With this mechanism we still allow
-		// queued transactions to be handled while a streamer is logged out for 30 seconds while keeping RL open.
-		// but we will not handle transactions that RL will load when booting up without any in the queue.
-		// Finally, this allows transactions that might've been missed to be handled properly (e.g. after an EBS crash)
-		int transactionExpiryToleranceS = 5 * 60;
-		Instant transactionExpiredAt = transactionAt.plusSeconds(duration + transactionExpiryToleranceS);
-		Instant transactionLoadedAt = Instant.parse(transaction.loaded_at);
-		boolean loadedTooLate = transactionLoadedAt.isAfter(transactionExpiredAt);
-
-		this.startedAt = (!loadedTooLate && manager.getConfig().marketplaceStartOnLoadedAt() ? loadedAt : transactionAt);
-		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
+		initializeTiming(Instant.parse(transaction.timestamp));
 	}
 
 	public void handleBehaviour()
@@ -263,6 +245,30 @@ public class MarketplaceProduct
 	public boolean isExpired()
 	{
 		return isExpired(0);
+	}
+
+	private void initializeTiming(Instant transactionAt)
+	{
+		// determine when this product should expire which is
+		// based on the moment the transaction is executed with a correction
+		// added along with the actual duration. A correction is added because
+		// it takes a few seconds before the transaction is added.
+		int duration = streamerProduct.duration;
+		this.transactionAt = transactionAt;
+		this.loadedAt = Instant.now();
+
+		// Check when the transaction was loaded in and if it was loaded too late
+		// compared to when the transaction was made. With this mechanism we still allow
+		// queued transactions to be handled while a streamer is logged out for 30 seconds while keeping RL open.
+		// but we will not handle transactions that RL will load when booting up without any in the queue.
+		// Finally, this allows transactions that might've been missed to be handled properly (e.g. after an EBS crash)
+		int transactionExpiryToleranceS = 5 * 60;
+		Instant transactionExpiredAt = transactionAt.plusSeconds(duration + transactionExpiryToleranceS);
+		Instant transactionLoadedAt = Instant.parse(transaction.loaded_at);
+		boolean loadedTooLate = transactionLoadedAt.isAfter(transactionExpiredAt);
+
+		this.startedAt = (!loadedTooLate && manager.getConfig().marketplaceStartOnLoadedAt() ? loadedAt : transactionAt);
+		this.expiredAt = startedAt.plusSeconds(duration).plusMillis(TRANSACTION_DELAY_CORRECTION_MS);
 	}
 
 	public long getExpiresInMs()
@@ -643,6 +649,21 @@ public class MarketplaceProduct
 		spawnBehaviourCounter += 1;
 
 		triggerSpawnOptions(null, spawnOptions);
+	}
+
+	public void handleGameEvent(GameEventType gameEventType)
+	{
+		boolean isGameEventTransaction = transaction.isGameEventTransaction();
+
+		if (isGameEventTransaction)
+		{
+			boolean wasActivatedByGameEvent = (transaction.gameEventType == gameEventType);
+
+			if (wasActivatedByGameEvent)
+			{
+				initializeTiming(Instant.now());
+			}
+		}
 	}
 
 	private void triggerSpawnOptions(SpawnedObject spawnedObject, ArrayList<EbsSpawnOption> spawnOptions)
