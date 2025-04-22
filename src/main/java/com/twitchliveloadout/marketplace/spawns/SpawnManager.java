@@ -121,7 +121,16 @@ public class SpawnManager {
 
 	public WorldPoint getPreviousPlayerLocation()
 	{
-		return getPlayerLocationByHistoryOffset(1);
+		WorldPoint previousLocation = getPlayerLocationByHistoryOffset(1);
+
+		// guard: when none is found in the history find a random tile around the player
+		if (previousLocation == null)
+		{
+			SpawnPoint spawnPoint = getSpawnPoint(1, 1, true, false, false, true, null);
+			return spawnPoint.getWorldPoint();
+		}
+
+		return previousLocation;
 	}
 
 	private WorldPoint getPlayerLocationByHistoryOffset(int offset)
