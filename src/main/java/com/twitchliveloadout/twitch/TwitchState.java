@@ -71,7 +71,7 @@ public class TwitchState {
 	 */
 	private final static int MAX_BANK_ITEMS_PER_SLICE = 250;
 	private final static int MAX_COLLECTION_LOG_ITEMS_PER_SLICE = 250;
-	private final static int MAX_COMBAT_ACHIEVEMENTS_PER_SLICE = 175; // 250 is too much
+	private final static int MAX_COMBAT_ACHIEVEMENTS_PER_SLICE = 150; // 250 is too much
 	private final static String COLLECTION_LOG_FILTER_SEPARATOR = ",";
 	private JsonObject cyclicState = new JsonObject();
 	@Getter
