@@ -1659,7 +1659,7 @@ public class MarketplaceProduct
 				// trigger start spawns
 				triggerSpawnOptionsAtWorldPoint(startWorldLocation, projectileFrame.startSpawnOptions);
 
-				Projectile projectile = worldView.createProjectile(
+				Projectile projectile = client.createProjectile(
 					projectileId,
 					plane,
 					startLocation.getX(),
@@ -1674,7 +1674,7 @@ public class MarketplaceProduct
 					endLocation.getX(),
 					endLocation.getY()
 				);
-				worldView.getProjectiles().addLast(projectile);
+				client.getProjectiles().addLast(projectile);
 
 				// trigger end spawns
 				manager.getPlugin().scheduleOnClientThread(() -> {
