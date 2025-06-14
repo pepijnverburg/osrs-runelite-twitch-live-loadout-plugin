@@ -34,6 +34,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.VarPlayerID;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -134,7 +136,7 @@ public class FightStateManager
 			return;
 		}
 
-		final ArrayList<Integer> graphicIds = new ArrayList();
+		final ArrayList<Integer> graphicIds = new ArrayList<>();
 
 		// convert all the current graphic IDs to a fixed list
 		// because the spot anims will mutate over time after the delayed action
@@ -163,13 +165,13 @@ public class FightStateManager
 
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		if (event.getVarpId() == VarPlayer.ATTACK_STYLE
-				|| event.getVarbitId() == Varbits.EQUIPPED_WEAPON_TYPE
-				|| event.getVarbitId() == Varbits.DEFENSIVE_CASTING_MODE)
+		if (event.getVarpId() == VarPlayerID.COM_MODE
+				|| event.getVarbitId() == VarbitID.COMBAT_WEAPON_CATEGORY
+				|| event.getVarbitId() == VarbitID.AUTOCAST_DEFMODE)
 		{
-			final int currentAttackStyleVarbit = client.getVarpValue(VarPlayer.ATTACK_STYLE);
-			final int currentEquippedWeaponTypeVarbit = client.getVarbitValue(Varbits.EQUIPPED_WEAPON_TYPE);
-			final int currentCastingModeVarbit = client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE);
+			final int currentAttackStyleVarbit = client.getVarpValue(VarPlayerID.COM_MODE);
+			final int currentEquippedWeaponTypeVarbit = client.getVarbitValue(VarbitID.COMBAT_WEAPON_CATEGORY);
+			final int currentCastingModeVarbit = client.getVarbitValue(VarbitID.AUTOCAST_DEFMODE);
 
 			equippedWeaponTypeVarbit = currentEquippedWeaponTypeVarbit;
 
@@ -1106,7 +1108,7 @@ public class FightStateManager
 
 	public boolean isInMultiCombatArea()
 	{
-		int multiCombatVarBit = client.getVarbitValue(Varbits.MULTICOMBAT_AREA);
+		int multiCombatVarBit = client.getVarbitValue(VarbitID.MULTIWAY_INDICATOR);
 
 		return multiCombatVarBit == 1;
 	}

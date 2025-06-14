@@ -43,10 +43,11 @@ import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubListener;
 import com.twitchliveloadout.ui.CanvasListener;
 import com.twitchliveloadout.utilities.AccountType;
-import com.twitchliveloadout.utilities.GameEventType;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
@@ -1488,7 +1489,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	{
 		try {
 			// not using primitive, because it can be null while booting
-			Integer accountTypeId = client.getVarbitValue(Varbits.ACCOUNT_TYPE);
+			Integer accountTypeId = client.getVarbitValue(VarbitID.IRONMAN);
 
 			for (AccountType accountType : AccountType.values()) {
 				if (accountTypeId == accountType.getId()) {
