@@ -8,11 +8,10 @@ import net.runelite.api.Client;
 import net.runelite.api.ScriptID;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
-import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.events.NpcLootReceived;
+import net.runelite.api.gameval.InterfaceID;
 
-import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 
@@ -34,6 +33,8 @@ public class CollectionLogManager {
 	private static final int COLLECTION_LOG_TAB_ACTIVE_COLOR = 16754735;
 	private static final int COLLECTION_LOG_OTHER_TAB = 8;
 	private static final int[] COLLECTION_LOG_CATEGORY_VARBIT_IDS = {6905, 6906};
+	public static final int COLLECTION_LOG_ENTRY_HEADER = 40697876;
+	public static final int COLLECTION_LOG_ENTRY_ITEMS = 40697893;
 	private static final int[] COLLECTION_LOG_TABS = {
 		COLLECTION_LOG_BOSSES_TAB,
 		COLLECTION_LOG_RAIDS_TAB,
@@ -82,7 +83,7 @@ public class CollectionLogManager {
 
 	private Widget getCategoryHead()
 	{
-		Widget categoryHead = client.getWidget(ComponentID.COLLECTION_LOG_ENTRY_HEADER);
+		Widget categoryHead = client.getWidget(COLLECTION_LOG_ENTRY_HEADER);
 
 		return categoryHead;
 	}
@@ -257,7 +258,7 @@ public class CollectionLogManager {
 
 	private CopyOnWriteArrayList<CollectionLogItem> getCurrentItems()
 	{
-		final Widget itemsContainer = client.getWidget(ComponentID.COLLECTION_LOG_ENTRY_ITEMS);
+		final Widget itemsContainer = client.getWidget(COLLECTION_LOG_ENTRY_ITEMS);
 
 		if (itemsContainer == null)
 		{

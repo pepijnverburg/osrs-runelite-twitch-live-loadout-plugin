@@ -6,9 +6,10 @@ import com.twitchliveloadout.twitch.TwitchState;
 import net.runelite.api.*;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.game.ItemManager;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarbitID;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -24,15 +25,15 @@ public class ItemStateManager {
 	private final TwitchLiveLoadoutConfig config;
 
 	private static final List<Integer> BANK_TAB_VARBITS = Arrays.asList(
-			Varbits.BANK_TAB_ONE_COUNT,
-			Varbits.BANK_TAB_TWO_COUNT,
-			Varbits.BANK_TAB_THREE_COUNT,
-			Varbits.BANK_TAB_FOUR_COUNT,
-			Varbits.BANK_TAB_FIVE_COUNT,
-			Varbits.BANK_TAB_SIX_COUNT,
-			Varbits.BANK_TAB_SEVEN_COUNT,
-			Varbits.BANK_TAB_EIGHT_COUNT,
-			Varbits.BANK_TAB_NINE_COUNT
+			VarbitID.BANK_TAB_1,
+			VarbitID.BANK_TAB_2,
+			VarbitID.BANK_TAB_3,
+			VarbitID.BANK_TAB_4,
+			VarbitID.BANK_TAB_5,
+			VarbitID.BANK_TAB_6,
+			VarbitID.BANK_TAB_7,
+			VarbitID.BANK_TAB_8,
+			VarbitID.BANK_TAB_9
 	);
 
 	public ItemStateManager(TwitchLiveLoadoutPlugin plugin, TwitchState twitchState, Client client, ItemManager itemManager, TwitchLiveLoadoutConfig config)
@@ -47,8 +48,8 @@ public class ItemStateManager {
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
 		final ItemContainer container = event.getItemContainer();
-		final boolean isInventory = isItemContainer(event, InventoryID.INVENTORY);
-		final boolean isEquipment = isItemContainer(event, InventoryID.EQUIPMENT);
+		final boolean isInventory = isItemContainer(event, InventoryID.INV);
+		final boolean isEquipment = isItemContainer(event, InventoryID.WORN);
 		final boolean isBank = isItemContainer(event, InventoryID.BANK);
 		final boolean isLootingBag = isItemContainer(event, LOOTING_BAG_CONTAINER_ID);
 
@@ -99,11 +100,6 @@ public class ItemStateManager {
 		}
 
 		return amounts;
-	}
-
-	public boolean isItemContainer(ItemContainerChanged event, InventoryID container)
-	{
-		return isItemContainer(event, container.getId());
 	}
 
 	public boolean isItemContainer(ItemContainerChanged event, int containerId)
