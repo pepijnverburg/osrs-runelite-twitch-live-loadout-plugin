@@ -408,7 +408,7 @@ public class SpawnedObject {
 	{
 		Animation animation = null;
 
-		// guard: skip when the current animation
+		// guard: skip when the current animation is the same
 		if  (animationId == currentAnimationId)
 		{
 			return;
@@ -419,8 +419,13 @@ public class SpawnedObject {
 			animation = client.loadAnimation(animationId);
 		}
 
-		object.setShouldLoop(shouldLoop);
 		object.setAnimation(animation);
+		AnimationController animationController = object.getAnimationController();
+
+		if (animationController != null && shouldLoop) {
+			animationController.setOnFinished(AnimationController::loop);
+		}
+
 		currentAnimationId = animationId;
 	}
 
