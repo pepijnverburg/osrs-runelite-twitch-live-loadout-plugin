@@ -24,7 +24,7 @@ def runeLiteVersion = 'latest.release'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
-	// implementation files('client-1.10.32-SNAPSHOT-shaded-test.jar')
+// 	implementation files('client-1.11.11-SNAPSHOT-shaded.jar')
 	compileOnly 'org.projectlombok:lombok:1.18.20'
 	annotationProcessor 'org.projectlombok:lombok:1.18.20'
 
@@ -34,7 +34,7 @@ dependencies {
 }
 
 group = 'com.twitchliveloadout'
-version = '2.2.3'
+version = '2.3.0'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
