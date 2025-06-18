@@ -1644,6 +1644,7 @@ public class MarketplaceProduct
 				Boolean avoidExistingSpawns = projectileFrame.avoidExistingSpawns;
 				Boolean avoidPlayerLocation = projectileFrame.avoidPlayerLocation;
 				Boolean avoidInvalidOverlay = projectileFrame.avoidInvalidOverlay;
+				Actor startActor = getActorByLocationType(startLocationType);
 				Actor endActor = followEndLocation ? getActorByLocationType(endLocationType) : null;
 				LocalPoint startReferenceLocation = getProjectileLocalPointByLocationType(startLocationType, startAbsoluteLocation, spawnedObject);
 				LocalPoint endReferenceLocation = getProjectileLocalPointByLocationType(endLocationType, endAbsoluteLocation, spawnedObject);
@@ -1668,24 +1669,36 @@ public class MarketplaceProduct
 
 				WorldPoint startWorldLocation = WorldPoint.fromLocal(client, startLocation);
 				WorldPoint endWorldLocation = WorldPoint.fromLocal(client, endLocation);
-
-				int plane = worldView.getPlane();
-				int sceneX = startLocation.getSceneX();
-				int sceneY = startLocation.getSceneY();
-				int tileHeight = worldView.getTileHeights()[plane][sceneX][sceneY];
-				int correctedStartZ = tileHeight + startZ; // correct for the starting tile height
 				int startCycle = client.getGameCycle();
 				int endCycle = startCycle + durationCycles;
 
 				// trigger start spawns
 				triggerSpawnOptionsAtWorldPoint(startWorldLocation, projectileFrame.startSpawnOptions);
 
+				// This is the new API, no tile height corrections required
+//				Projectile projectile = client.createProjectile(
+//					projectileId,
+//					startWorldLocation,
+//					startZ,
+//					startActor,
+//					endWorldLocation,
+//					startZ,
+//					endActor,
+//					startCycle,
+//					endCycle,
+//					slope,
+//					0
+//				);
+
+
+				// temporary old API
+				int plane = worldView.getPlane();
 				Projectile projectile = client.createProjectile(
 					projectileId,
 					plane,
 					startLocation.getX(),
 					startLocation.getY(),
-			    	correctedStartZ,
+					startZ,
 					startCycle,
 					endCycle,
 					slope,

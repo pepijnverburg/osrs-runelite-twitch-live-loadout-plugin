@@ -18,7 +18,7 @@ public class EbsProjectileFrame extends EbsEffectFrame {
 	public Boolean avoidInvalidOverlay = true;
 
 	// defaults are based on cannonballs
-	public Integer startZ = -170;
+	public Integer startZ = 170;
 	public Integer slope = 2;
 	public Integer startHeight = 11;
 	public Integer endHeight = 140;
