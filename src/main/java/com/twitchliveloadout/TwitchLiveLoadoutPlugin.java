@@ -867,6 +867,11 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			{
 				fightStateManager.onGraphicChanged(event);
 			}
+
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.onGraphicChanged(event);
+			}
 		} catch (Exception exception) {
 			log.warn("Could not handle graphic change event: ", exception);
 		}
@@ -1056,6 +1061,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			}
 		} catch (Exception exception) {
 			logSupport("Could not handle varbit change event: ", exception);
+		}
+	}
+
+	@Subscribe
+	public void onChatMessage(ChatMessage event)
+	{
+		try {
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.onChatMessage(event);
+			}
+		} catch (Exception exception) {
+			logSupport("Could not handle chat message event: ", exception);
 		}
 	}
 
