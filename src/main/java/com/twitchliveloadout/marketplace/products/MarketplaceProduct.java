@@ -1690,7 +1690,6 @@ public class MarketplaceProduct
 //					0
 //				);
 
-
 				// temporary old API
 				int plane = worldView.getPlane();
 				Projectile projectile = client.createProjectile(

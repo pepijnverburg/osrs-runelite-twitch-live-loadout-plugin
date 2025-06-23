@@ -1,5 +1,6 @@
 package com.twitchliveloadout.marketplace;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -38,6 +39,7 @@ import net.runelite.api.geometry.SimplePolygon;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.Text;
 import okhttp3.Response;
 
 import java.time.Instant;
@@ -46,6 +48,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutPlugin.IN_DEVELOPMENT;
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.EVENT_SUB_DEFAULT_EBS_PRODUCT_ID;
@@ -185,6 +189,17 @@ public class MarketplaceManager {
 	@Getter
 	@Setter
 	private int currentRegionId = 0;
+
+	/**
+	 * Patterns within chat messages to trigger random events for
+	 */
+	private static final Pattern NUMBER_PATTERN = Pattern.compile("([0-9]+)");
+	private static final Pattern BOSSKILL_MESSAGE_PATTERN = Pattern.compile("Your (.+) kill count is: <col=ff0000>(\\d+)</col>.");
+	private static final ImmutableList<String> PET_MESSAGES = ImmutableList.of(
+			"You have a funny feeling like you're being followed",
+			"You feel something weird sneaking into your backpack",
+			"You have a funny feeling like you would have been followed"
+	);
 
 	public MarketplaceManager(TwitchLiveLoadoutPlugin plugin, TwitchApi twitchApi, TwitchState twitchState, Client client, TwitchLiveLoadoutConfig config, ChatMessageManager chatMessageManager, ItemManager itemManager, OverlayManager overlayManager, Gson gson, FightStateManager fightStateManager)
 	{
@@ -1096,6 +1111,68 @@ public class MarketplaceManager {
 		if (isNowLoggedIn)
 		{
 			handleGameEvent(GameEventType.LOGIN);
+		}
+	}
+
+	/**
+	 * Handle chat messages to identify game events on to trigger random event with
+	 */
+	public void onChatMessage(ChatMessage event)
+	{
+		if (event.getType() != ChatMessageType.GAMEMESSAGE && event.getType() != ChatMessageType.SPAM
+				&& event.getType() != ChatMessageType.TRADE && event.getType() != ChatMessageType.FRIENDSCHATNOTIFICATION)
+		{
+			return;
+		}
+
+		String chatMessage = event.getMessage();
+		Matcher bossKillMatcher = BOSSKILL_MESSAGE_PATTERN.matcher(chatMessage);
+		Matcher numberMatcher = NUMBER_PATTERN.matcher(Text.removeTags(chatMessage));
+		boolean hasPetAcquired = PET_MESSAGES.stream().anyMatch(chatMessage::contains);
+		boolean hasNumber = numberMatcher.find();
+		boolean hasBarrowsCompletion = hasNumber && chatMessage.startsWith("Your Barrows chest count is");
+		boolean hasCoxCompletion = chatMessage.startsWith("Your completed Chambers of Xeric");
+		boolean hasTobCompletion = chatMessage.startsWith("Your completed Theatre of Blood");
+		boolean hasToaCompletion = chatMessage.startsWith("Your completed Tombs of Amascut");
+		boolean hasRaidCompletion = hasNumber && (hasCoxCompletion || hasTobCompletion || hasToaCompletion);
+		boolean hasBossKill = bossKillMatcher.matches();
+
+		if (hasBarrowsCompletion || hasRaidCompletion)
+		{
+			handleGameEvent(GameEventType.RAID_COMPLETION);
+		}
+
+		if (hasBossKill)
+		{
+			handleGameEvent(GameEventType.BOSS_KILL);
+		}
+
+		if (hasPetAcquired)
+		{
+			handleGameEvent(GameEventType.PET_DROP);
+		}
+	}
+
+	/**
+	 * Listen to graphic changes to identify game events, such as level up
+	 */
+	public void onGraphicChanged(GraphicChanged event)
+	{
+		Actor actor = event.getActor();
+		Player localPlayer = client.getLocalPlayer();
+
+		// guard: only handle for the local player
+		if (actor != localPlayer)
+		{
+			return;
+		}
+
+		// level up Fireworks
+		if (actor.hasSpotAnim(199)
+			|| actor.hasSpotAnim(1388)
+			|| actor.hasSpotAnim((1389)))
+		{
+			handleGameEvent(GameEventType.LEVEL_UP);
 		}
 	}
 
