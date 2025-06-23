@@ -48,6 +48,13 @@ public class WidgetManager extends MarketplaceEffectManager<EbsInterfaceWidgetFr
 		ensureCoveringOverlays();
 	}
 
+	public void onPostClientTick()
+	{
+		// widgets need to be updated post client tick to prevent flickering when
+		// the widgets are updates by scripts or other external sources
+		updateEffects();
+	}
+
 	public void hideCoveringOverlays()
 	{
 		LambdaIterator.handleAllValues(coveringOverlays, (coveringOverlay) -> {

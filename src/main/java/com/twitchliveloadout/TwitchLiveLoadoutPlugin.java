@@ -963,6 +963,19 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onPostClientTick(PostClientTick postClientTick)
+	{
+		try {
+			if (config.marketplaceEnabled())
+			{
+				marketplaceManager.onPostClientTick();
+			}
+		} catch (Exception exception) {
+			logSupport("Could not handle post client tick event: ", exception);
+		}
+	}
+
+	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
 		try {

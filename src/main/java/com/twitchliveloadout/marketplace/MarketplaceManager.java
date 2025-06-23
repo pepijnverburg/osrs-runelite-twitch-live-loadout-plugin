@@ -1206,11 +1206,6 @@ public class MarketplaceManager {
 			spawnManager.recordPlayerLocation();
 		}
 
-		if (passTimerOnce(MarketplaceTimer.WIDGETS, now))
-		{
-			widgetManager.updateEffects();
-		}
-
 		if (passTimerOnce(MarketplaceTimer.DRAWS, now))
 		{
 			drawManager.updateEffects();
@@ -1236,6 +1231,14 @@ public class MarketplaceManager {
 				marketplaceProduct.handleSpawnRotations();
 			});
 		}
+	}
+
+	public void onPostClientTick()
+	{
+
+		// widgets need to be updated post client tick to prevent flickering when
+		// the widgets are updates by scripts or other external sources
+		widgetManager.onPostClientTick();
 	}
 
 	/**
