@@ -750,7 +750,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 
 	@Range(
 			min = 5,
-			max = 60 * 5
+			max = 60 * 60 * 6 // 6 hour log
 	)
 	@ConfigItem(
 			keyName = "testRandomEventsDuration_v2", // NOTE: different key to force update to new default
