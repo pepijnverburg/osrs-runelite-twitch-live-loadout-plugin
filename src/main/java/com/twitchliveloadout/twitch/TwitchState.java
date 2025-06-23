@@ -226,6 +226,14 @@ public class TwitchState {
 		plugin.setConfiguration(LOOTING_BAG_PRICE_CONFIG_KEY, totalPrice);
 	}
 
+	public void setDmmDepositBox(Item[] items, long totalPrice)
+	{
+		setItems(TwitchStateEntry.DMM_DEPOSIT_BOX_ITEMS.getKey(), items);
+		setItemsPrice(TwitchStateEntry.DMM_DEPOSIT_BOX_PRICE.getKey(), totalPrice);
+		plugin.setConfiguration(DMM_DEPOSIT_BOX_CONFIG_KEY, convertToJson(items));
+		plugin.setConfiguration(DMM_DEPOSIT_BOX_PRICE_CONFIG_KEY, totalPrice);
+	}
+
 	private void setItems(String itemsKey, Item[] items)
 	{
 		setItems(itemsKey, convertToJson(items));
@@ -917,6 +925,12 @@ public class TwitchState {
 			state.add(TwitchStateEntry.GROUP_STORAGE_PRICE.getKey(), null);
 		}
 
+		if (!config.dmmDepositBoxEnabled())
+		{
+			state.add(TwitchStateEntry.DMM_DEPOSIT_BOX_ITEMS.getKey(), null);
+			state.add(TwitchStateEntry.DMM_DEPOSIT_BOX_PRICE.getKey(), null);
+		}
+
 		if (!config.collectionLogEnabled())
 		{
 			state.add(TwitchStateEntry.COLLECTION_LOG.getKey(), null);
@@ -1129,6 +1143,8 @@ public class TwitchState {
 
 		currentState.add(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), null);
 		currentState.addProperty(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), 0);
+		currentState.add(TwitchStateEntry.DMM_DEPOSIT_BOX_ITEMS.getKey(), null);
+		currentState.addProperty(TwitchStateEntry.DMM_DEPOSIT_BOX_PRICE.getKey(), 0);
 
 		plugin.loadFromConfiguration(COLLECTION_LOG_CONFIG_KEY, (String rawCollectionLog) -> {
 			JsonObject parsedCollectionLog = new JsonParser().parse(rawCollectionLog).getAsJsonObject();
@@ -1182,6 +1198,15 @@ public class TwitchState {
 
 		plugin.loadFromConfiguration(GROUP_STORAGE_PRICE_CONFIG_KEY, (String price) -> {
 			setGroupStoragePrice(Long.parseLong(price));
+		});
+
+		plugin.loadFromConfiguration(DMM_DEPOSIT_BOX_CONFIG_KEY, (String rawItems) -> {
+			JsonArray parsedItems = new JsonParser().parse(rawItems).getAsJsonArray();
+			setItems(TwitchStateEntry.DMM_DEPOSIT_BOX_ITEMS.getKey(), parsedItems);
+		});
+
+		plugin.loadFromConfiguration(DMM_DEPOSIT_BOX_PRICE_CONFIG_KEY, (String price) -> {
+			setItemsPrice(TwitchStateEntry.DMM_DEPOSIT_BOX_PRICE.getKey(), price);
 		});
 
 		plugin.loadFromConfiguration(INVOCATIONS_CONFIG_KEY, (String rawInvocations) -> {

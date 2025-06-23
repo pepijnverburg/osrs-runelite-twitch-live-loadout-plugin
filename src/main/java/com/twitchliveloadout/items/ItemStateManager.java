@@ -53,9 +53,10 @@ public class ItemStateManager {
 		final boolean isBank = isItemContainer(event, InventoryID.BANK);
 		final boolean isGroupStorage = isItemContainer(event, InventoryID.INV_GROUP_TEMP);
 		final boolean isLootingBag = isItemContainer(event, LOOTING_BAG_CONTAINER_ID);
+		final boolean isDmmDepositBox = isItemContainer(event, InventoryID.DEADMAN_SAFEBOX);
 
 		// guard: block item containers that are not applicable for the state
-		if (!isInventory && !isEquipment && !isBank && !isLootingBag && !isGroupStorage)
+		if (!isInventory && !isEquipment && !isBank && !isLootingBag && !isGroupStorage && !isDmmDepositBox)
 		{
 			return;
 		}
@@ -83,6 +84,10 @@ public class ItemStateManager {
 		{
 			twitchState.setGroupStorageItems(items);
 			twitchState.setGroupStoragePrice(totalPrice);
+		}
+		else if (config.dmmDepositBoxEnabled() && isDmmDepositBox)
+		{
+			twitchState.setDmmDepositBox(items, totalPrice);
 		}
 
 		// update the weight for specific container changes

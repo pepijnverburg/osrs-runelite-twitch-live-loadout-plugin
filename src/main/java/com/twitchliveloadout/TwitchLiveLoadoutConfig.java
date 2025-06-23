@@ -54,6 +54,8 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String BANK_PRICE_CONFIG_KEY = "bank-price";
 	public final static String GROUP_STORAGE_ITEMS_CONFIG_KEY = "group-storage-items";
 	public final static String GROUP_STORAGE_PRICE_CONFIG_KEY = "groups-storage-price";
+	public final static String DMM_DEPOSIT_BOX_CONFIG_KEY = "dmm-deposit-box-items";
+	public final static String DMM_DEPOSIT_BOX_PRICE_CONFIG_KEY = "dmm-deposit-box-price";
 	public final static String INVOCATIONS_CONFIG_KEY = "invocations";
 	public final static String INVOCATIONS_RAID_LEVEL_CONFIG_KEY = "invocations-raid-level";
 	public final static String QUESTS_CONFIG_KEY = "quests";
@@ -219,7 +221,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "lootingBagEnabled",
 			name = "Sync looting bag items",
 			description = "Synchronize all looting bag items.",
-			position = 5,
+			position = 6,
 			section = itemsSection
 	)
 	default boolean lootingBagEnabled()
@@ -231,7 +233,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "bankEnabled",
 			name = "Sync bank items",
 			description = "Synchronize bank value and top items based on GE value and configured maximum amount.",
-			position = 6,
+			position = 8,
 			section = itemsSection
 	)
 	default boolean bankEnabled()
@@ -259,7 +261,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "bankPriceEnabled",
 			name = "Sync bank value",
 			description = "Synchronize bank value of all items.",
-			position = 11,
+			position = 12,
 			section = itemsSection
 	)
 	default boolean bankPriceEnabled()
@@ -271,7 +273,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "groupStorageEnabled",
 			name = "Sync group storage items",
 			description = "Synchronize group ironman storage.",
-			position = 12,
+			position = 14,
 			section = itemsSection
 	)
 	default boolean groupStorageEnabled()
@@ -283,7 +285,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "groupStoragePriceEnabled",
 			name = "Sync group storage value",
 			description = "Synchronize group storage value of all items.",
-			position = 13,
+			position = 16,
 			section = itemsSection
 	)
 	default boolean groupStoragePriceEnabled()
@@ -292,10 +294,22 @@ public interface TwitchLiveLoadoutConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "dmmDepositBoxEnabled",
+			name = "Sync DMM deposit box",
+			description = "Synchronize DMM deposit box items and value.",
+			position = 18,
+			section = itemsSection
+	)
+	default boolean dmmDepositBoxEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 			keyName = "collectionLogEnabled",
 			name = "Sync collection log",
 			description = "Synchronize the collection log quantities and kill counts.",
-			position = 14,
+			position = 18,
 			section = itemsSection
 	)
 	default boolean collectionLogEnabled()
@@ -307,7 +321,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "collectionLogFilter",
 			name = "Collection log filter (comma separated)",
 			description = "Only include entry titles that include one of the keywords separated with a comma (e.g. 'abyssal, raids')",
-			position = 15,
+			position = 20,
 			section = itemsSection
 	)
 	default String collectionLogFilter()
@@ -319,7 +333,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 			keyName = "collectionLogSkipEmpty",
 			name = "Skip empty collection logs",
 			description = "Skip collection log pages where no items are logged yet.",
-			position = 16,
+			position = 22,
 			section = itemsSection
 	)
 	default boolean collectionLogSkipEmpty()
