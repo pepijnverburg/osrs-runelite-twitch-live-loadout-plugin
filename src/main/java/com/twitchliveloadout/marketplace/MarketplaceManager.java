@@ -611,6 +611,8 @@ public class MarketplaceManager {
 		StreamerProduct streamerProduct = getStreamerProductBySku(eventId);
 		int activeAndQueuedAmount = countActiveAndQueuedTransactionsByGameEventType(gameEventType);
 
+		plugin.logSupport("Handling game event with the following type: "+ gameEventType.getName());
+
 		// handle the game event for all active products as well
 		handleActiveProducts((product) -> {
 			product.handleGameEvent(gameEventType);
@@ -631,6 +633,8 @@ public class MarketplaceManager {
 
 		TwitchTransaction transaction = createTransactionFromGameEvent(gameEventType);
 		handleCustomTransaction(transaction);
+		plugin.logSupport("Handling custom transaction based on game event, EBS product ID: "+ transaction.ebs_product_id);
+
 	}
 
 	public TwitchTransaction createTransactionFromGameEvent(GameEventType gameEventType)
