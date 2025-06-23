@@ -583,7 +583,7 @@ public class TwitchApi
 		final int version = subscriptionType.getVersion();
 
 		// guard: check if the auth parameters are valid
-		if (channelId == null || token == null) {
+		if (channelId == null || token == null || channelId.isEmpty() || token.isEmpty()) {
 			return;
 		}
 
