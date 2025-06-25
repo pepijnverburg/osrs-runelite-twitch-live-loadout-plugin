@@ -169,6 +169,7 @@ public class MarketplaceManager {
 	private boolean isFetchingChannelPointRewards = false;
 	@Getter
 	private boolean fetchingEbsTransactionsErrored = false;
+	private boolean hasFetchedStreamerProductsOnce = false;
 
 	/**
 	 * Lookup to see until when a certain product is cooled down and should stay in the queue if there are any
@@ -189,6 +190,7 @@ public class MarketplaceManager {
 	@Getter
 	@Setter
 	private int currentRegionId = 0;
+	private boolean isLoggedIn = false;
 
 	/**
 	 * Patterns within chat messages to trigger random events for
@@ -874,7 +876,6 @@ public class MarketplaceManager {
 	public void updateStreamerProducts()
 	{
 		JsonObject segmentContent = twitchApi.getConfigurationSegmentContent(TwitchSegmentType.BROADCASTER);
-		boolean isFirstLoad = streamerProducts.isEmpty();
 
 		// guard: skip when invalid configuration service content
 		if (segmentContent == null)
@@ -911,13 +912,16 @@ public class MarketplaceManager {
 
 			// trigger the several initial game events on the first load of the streamer products that might've been missed
 			// due to the game performing the events too fast before the initial load of the products
-			if (isFirstLoad) {
+			if (!hasFetchedStreamerProductsOnce) {
 
 				// send 'fake' login event
 				if (plugin.isLoggedIn()) {
 					handleGameEvent(GameEventType.LOGIN);
 				}
+
+				hasFetchedStreamerProductsOnce = true;
 			}
+
 		} catch (Exception exception) {
 			plugin.logSupport("Could not parse the raw streamer products to a valid set of products:", exception);
 		}
@@ -1105,16 +1109,25 @@ public class MarketplaceManager {
 	 */
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		boolean isNowLoggedIn = gameStateChanged.getGameState() == GameState.LOGGED_IN;
+		GameState gameState = gameStateChanged.getGameState();
+		boolean isNowLoggedIn = gameState == GameState.LOGGED_IN;
+		boolean isNowInLobby = gameState == GameState.LOGIN_SCREEN;
 
 		spawnManager.onGameStateChanged(gameStateChanged);
 		animationManager.onGameStateChanged(gameStateChanged);
 		transmogManager.onGameStateChanged(gameStateChanged);
 
 		// trigger any products tied to the login game event
-		if (isNowLoggedIn)
+		if (!isLoggedIn && isNowLoggedIn)
 		{
+			isLoggedIn = true;
 			handleGameEvent(GameEventType.LOGIN);
+		}
+
+		// reset the login state when in the lobby
+		if (isNowInLobby)
+		{
+			isLoggedIn = false;
 		}
 	}
 
