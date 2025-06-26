@@ -75,7 +75,7 @@ public class TwitchApi
 	public final static String TWITCH_VALIDATE_TOKEN_URL = "https://id.twitch.tv/oauth2/validate";
 	public final static String TWITCH_GET_CHANNEL_POINT_REWARDS_URL = "https://api.twitch.tv/helix/channel_points/custom_rewards";
 	public final static String DEFAULT_APP_CLIENT_ID = "qaljqu9cfow8biixuat6rbr303ocp2";
-	public final static String DEFAULT_EXTENSION_VERSION = "2.2.0";
+	public final static String DEFAULT_EXTENSION_VERSION = "2.3.0";
 
 	/**
 	 * Dedicated scheduler for sending the new state with a stream delay
@@ -365,6 +365,7 @@ public class TwitchApi
 		data.addProperty("extension_id", DEFAULT_EXTENSION_CLIENT_ID);
 		data.addProperty("extension_version", DEFAULT_EXTENSION_VERSION);
 
+		plugin.logSupport("Attempting to send a notification to the Twitch chat: "+ message);
 		performPostRequest(
 			url,
 			data,

@@ -3,6 +3,7 @@ package com.twitchliveloadout.twitch;
 import lombok.Getter;
 
 public enum TwitchStateEntry {
+	GAME_CLIENT_TYPE("gameClientType"),
 	CONTENT_ID("contentId"),
 	CONNECTION_STATUS("connectionStatus"),
 	ACCOUNT_HASH("accountHash"),

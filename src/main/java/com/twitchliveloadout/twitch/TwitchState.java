@@ -48,6 +48,11 @@ public class TwitchState {
 	private final Gson gson;
 
 	/**
+	 * Client types
+	 */
+	private final String RUNELITE_GAME_CLIENT_TYPE = "runelite";
+
+	/**
 	 * Enable this if you want to test the state with all its limits
 	 * where we will fill the combat stats, item quantities, etc. with maxed out integers.
 	 * This will help us gain insights in how many bank items and combat fights we can allow.
@@ -397,6 +402,9 @@ public class TwitchState {
 		// add the state that is too big to sync at once
 		filteredState = addCyclicState(filteredState);
 
+		// make sure the extension can identify the client
+		filteredState = addGameClientType(filteredState);
+
 		// add a unique content ID so the front-end knows
 		// this is a message containing information for the tabs.
 		// if it is only a connection status all of this is filtered
@@ -643,6 +651,13 @@ public class TwitchState {
 			state.add(groupStorageItemsKey, cyclicState.get(groupStorageItemsKey));
 			state.addProperty(groupStoragePriceKey, cyclicState.get(groupStoragePriceKey).getAsLong());
 		}
+
+		return state;
+	}
+
+	public JsonObject addGameClientType(JsonObject state)
+	{
+		state.addProperty(TwitchStateEntry.GAME_CLIENT_TYPE.getKey(), RUNELITE_GAME_CLIENT_TYPE);
 
 		return state;
 	}
