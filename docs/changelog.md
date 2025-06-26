@@ -1,5 +1,30 @@
 ## Changelog
 
+#### v2.3.0
+- feat: Added gameClient property to each payload sent to Twitch. This allows the extension to identify the game client and adjust behavior based on the client type.
+- fix: Resolved two state management issues related to tracking login state and whether streamer products have been fetched. This ensures the login game event triggers properly.
+- chore: Added debug messages for handling game events to aid troubleshooting.
+- feat: Increased the preview duration for manual event testing, allowing longer test periods.
+- fix: Fixed widget flickering when updating or altering properties due to incorrect timing between widget and marketplace product sync. Now using onPostClientTick event for WidgetManager synchronization.
+- fix: Fixed issue where empty tokens would still trigger Twitch EventSub WebSocket creation.
+- feat: Added DMM safe deposit box support for secure item handling.
+- feat: Implemented game event listeners for graphic changes and chat messages.
+- feat: Introduced support for additional game events (level up, raid completion, boss kill, pet drop) to trigger random events.
+- chore: Updated version number to reflect latest changes.
+- fix: Resolved projectile handling issues with random events due to the change in startZ parameter. Also added placeholder for future API changes.
+- refactor: Updated how the shouldLoop property works following the deprecation of the shouldLoop function.
+- fix: Fixed deprecated custom projectile API issue in WorldView instance.
+- fix: Fixed issue where data payload to Twitch exceeded the 5KB limit, particularly with combat achievements. Syncing combat achievements now takes longer.
+- fix: Resolved issues related to new game values and various deprecations.
+- fix: Fixed issue where the previous player location wasn't known on login if the player hadn’t moved yet. Now, the system selects the first nearby tile as the ‘fake’ previous location, ensuring immediate product functionality.
+- feat: Introduced support for resetting the expiry timer of a marketplace product when game events trigger. This ensures events can stack by resetting active product timers.
+- feat: Added support for new game event triggers to activate marketplace products, including on login, specific menu entries, or game ticks.
+- fix: Fixed issue preventing preview transactions from being fetched when no products were added to slots.
+- fix: Resolved minor issue when checking for valid items in menu entries.
+- chore: Rearranged settings for better logical structure.
+- feat: Added new cyclic state for group storage handling with options to disable syncing of group storage items and/or price.
+- feat: Added animation override for all animations, useful for NPC transmogs to prevent weird animation glitches.
+
 #### v2.2.0
 - feat: added reload configurations button to force reload the EBS products, configured channel points and configured streamer products from Twitch.
 - feat: made a distinction between manual and test transactions to allow specific behavior (such as how the duration is determined).
