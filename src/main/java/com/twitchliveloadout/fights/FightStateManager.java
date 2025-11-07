@@ -155,7 +155,9 @@ public class FightStateManager
 			public void run()
 			{
 				try {
-					onGraphicChangedDelayed(eventActor, graphicIds, isInMultiCombatArea, otherPlayersPresent);
+					plugin.runOnClientThread(() -> {
+						onGraphicChangedDelayed(eventActor, graphicIds, isInMultiCombatArea, otherPlayersPresent);
+					});
 				} catch (Exception exception) {
 					log.warn("Could not handle an delayed graphic on changed due to the following error: ", exception);
 				}
