@@ -1,4 +1,4 @@
-# OSRS Twitch Live Loadout Plugin ![Plugin Installs](https://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/installs/plugin/twitch-live-loadout) ![Plugin Rank](https://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/rank/plugin/twitch-live-loadout)
+# OSRS Live Loadout Plugin ![Plugin Installs](https://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/installs/plugin/twitch-live-loadout) ![Plugin Rank](https://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/rank/plugin/twitch-live-loadout)
 [![OSRS Live Loadout](./docs/banner.png?raw=true "OSRS Live Loadout")](https://liveloadout.com/)
 
 Join the Discord server for questions or feature requests:<br/>
@@ -7,8 +7,11 @@ Join the Discord server for questions or feature requests:<br/>
 Visit the landing page for more information:<br/>
 <a href="http://liveloadout.com/" target="_blank">http://liveloadout.com/</a>
 
+Watch the trailer:
+[![Live Loadout](https://img.youtube.com/vi/o6NKQ83YPEU/0.jpg)](https://www.youtube.com/watch?v=o6NKQ83YPEU)
+
 ## Introduction
-Immerse your Twitch viewers with interactive and real-time information about `Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Quests`, `Looting Bag`, `Tombs of Amascut Invocations` and more!
+Immerse your Twitch viewers with interactive and real-time information about `Equipment`, `Collection Log`, `Combat Statistics`, `Skills`, `Inventory`, `Bank`, `Quests`, `Looting Bag`, `Tombs of Amascut Invocations` and more! Used by over 6000 streamers and millions of Twitch viewers every month!
 
 Optionally engage with gameplay by letting viewers activate custom `Random Events` triggered by Bit donations, channel point redeems, channel follows, subscriptions, gifts and more. There's a wide range of default `Random Events` to choose from, and if you'd like additional ones, feel free to make requests in our [Discord](https://discord.gg/3Fjm5HTFGM) community.
 
