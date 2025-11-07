@@ -1676,37 +1676,37 @@ public class MarketplaceProduct
 				triggerSpawnOptionsAtWorldPoint(startWorldLocation, projectileFrame.startSpawnOptions);
 
 				// This is the new API, no tile height corrections required
-//				Projectile projectile = client.createProjectile(
-//					projectileId,
-//					startWorldLocation,
-//					startZ,
-//					startActor,
-//					endWorldLocation,
-//					startZ,
-//					endActor,
-//					startCycle,
-//					endCycle,
-//					slope,
-//					0
-//				);
-
-				// temporary old API
-				int plane = worldView.getPlane();
 				Projectile projectile = client.createProjectile(
 					projectileId,
-					plane,
-					startLocation.getX(),
-					startLocation.getY(),
+					startWorldLocation,
 					startZ,
+					startActor,
+					endWorldLocation,
+					startZ,
+					endActor,
 					startCycle,
 					endCycle,
 					slope,
-					startHeight,
-					endHeight,
-					endActor,
-					endLocation.getX(),
-					endLocation.getY()
+					0
 				);
+
+				// temporary old API
+//				int plane = worldView.getPlane();
+//				Projectile projectile = client.createProjectile(
+//					projectileId,
+//					plane,
+//					startLocation.getX(),
+//					startLocation.getY(),
+//					startZ,
+//					startCycle,
+//					endCycle,
+//					slope,
+//					startHeight,
+//					endHeight,
+//					endActor,
+//					endLocation.getX(),
+//					endLocation.getY()
+//				);
 				client.getProjectiles().addLast(projectile);
 
 				// trigger end spawns
