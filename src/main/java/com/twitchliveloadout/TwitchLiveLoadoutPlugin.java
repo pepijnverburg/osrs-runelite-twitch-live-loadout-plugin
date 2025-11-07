@@ -24,6 +24,9 @@
  */
 package com.twitchliveloadout;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.inject.Provides;
 import com.twitchliveloadout.achievements.CombatAchievementsManager;
 import com.twitchliveloadout.fights.FightStateManager;
@@ -42,36 +45,38 @@ import com.twitchliveloadout.twitch.TwitchStateEntry;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubClient;
 import com.twitchliveloadout.twitch.eventsub.TwitchEventSubListener;
 import com.twitchliveloadout.ui.CanvasListener;
+import com.twitchliveloadout.ui.TwitchLiveLoadoutPanel;
 import com.twitchliveloadout.utilities.AccountType;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
-import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.Renderable;
+import net.runelite.api.WorldType;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.callback.Hooks;
+import net.runelite.client.callback.RenderCallback;
+import net.runelite.client.callback.RenderCallbackManager;
+import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.NpcLootReceived;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import com.twitchliveloadout.ui.TwitchLiveLoadoutPanel;
 import net.runelite.client.task.Schedule;
-import com.google.gson.*;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
-import okhttp3.*;
+import okhttp3.OkHttpClient;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
-import java.sql.Array;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -79,7 +84,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PERSISTENT_STATE_CONFIG_KEYS;
+import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_PROFILE_GROUP;
 import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S;
 
 /**
@@ -127,6 +133,9 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	@Inject
 	private OverlayManager overlayManager;
+
+	@Inject
+	private RenderCallbackManager renderCallbackManager;
 
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -222,11 +231,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private SeasonalManager seasonalManager;
 
 	/**
-	 * Hook to handle
-	 */
-	private final Hooks.RenderableDrawListener drawListener = this::shouldDraw;
-
-	/**
 	 * Cache to check for account identifiers (hash + world type) changes as game state is not reliable for this
 	 */
 	private String lastAccountIdentifier = null;
@@ -271,7 +275,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		syncPlayerInfo();
 
 		// setup listeners, NOTE: do this last once all manager are initialized
-		hooks.registerRenderableDrawListener(drawListener);
+		renderCallbackManager.register(marketplaceManager.getDrawManager());
 
 		log.info("Twitch Live Loadout has started!");
 	}
@@ -365,7 +369,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		super.shutDown();
 
 		// unregister all hooks, NOTE: first to make sure other manager can be shutdown as well
-		hooks.unregisterRenderableDrawListener(drawListener);
+		renderCallbackManager.unregister(marketplaceManager.getDrawManager());
 
 		shutDownPanels();
 		shutDownManagers();
@@ -512,14 +516,16 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				AccountType accountType = getAccountType();
 				String playerName = getPlayerName();
 
+				// handle separately from the account identifier change notifier,
+				// because the player name update will happen AFTER the account identifier change
+				if (playerName != null && config.playerInfoEnabled())
+				{
+					twitchState.setPlayerName(playerName);
+				}
+
 				// only handle on account change
 				if (!accountIdentifier.isEmpty() && !accountIdentifier.equals(lastAccountIdentifier))
 				{
-					if (config.playerInfoEnabled())
-					{
-						twitchState.setPlayerName(playerName);
-					}
-
 					twitchState.onAccountChanged();
 					seasonalManager.onAccountChanged();
 					lastAccountIdentifier = accountIdentifier;
@@ -827,19 +833,6 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		} catch (Exception exception) {
 			log.warn("Could not handle menu option clicked event: ", exception);
 		}
-	}
-
-	private boolean shouldDraw(Renderable renderable, boolean drawingUI)
-	{
-		// guard: ensure the marketplace manager is initialized
-		// this should usually not be needed due to the hooks being initialized and shutdown
-		// correctly in the life cycle of the plugin
-		if (marketplaceManager == null)
-		{
-			return true;
-		}
-
-		return marketplaceManager.shouldDraw(renderable, drawingUI);
 	}
 
 	@Subscribe

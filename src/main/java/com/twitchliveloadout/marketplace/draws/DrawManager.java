@@ -5,13 +5,14 @@ import com.twitchliveloadout.marketplace.MarketplaceEffectManager;
 import com.twitchliveloadout.marketplace.products.EbsDrawFrame;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.client.callback.RenderCallback;
 
 import java.util.Iterator;
 
 import static com.twitchliveloadout.marketplace.MarketplaceConstants.DRAW_EFFECT_MAX_SIZE;
 
 @Slf4j
-public class DrawManager extends MarketplaceEffectManager<EbsDrawFrame> {
+public class DrawManager extends MarketplaceEffectManager<EbsDrawFrame> implements RenderCallback {
     private final Client client;
 
     /**
@@ -33,7 +34,8 @@ public class DrawManager extends MarketplaceEffectManager<EbsDrawFrame> {
         this.client = client;
     }
 
-    public boolean shouldDraw(Renderable renderable, boolean drawingUI)
+    @Override
+    public boolean addEntity(Renderable renderable, boolean drawingUI)
     {
         if (!anyEffectsActive)
         {

@@ -1360,14 +1360,6 @@ public class MarketplaceManager {
 		});
 	}
 
-	/**
-	 * Handle on menu option clicks
-	 */
-	public boolean shouldDraw(Renderable renderable, boolean drawingUI)
-	{
-		return drawManager.shouldDraw(renderable, drawingUI);
-	}
-
 	private boolean passTimerOnce(MarketplaceTimer timer, Instant now)
 	{
 
