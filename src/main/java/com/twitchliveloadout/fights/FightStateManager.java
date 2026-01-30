@@ -628,40 +628,43 @@ public class FightStateManager
 
 	private void registerInteractingGameTick()
 	{
-		Player localPlayer = client.getLocalPlayer();
+		// getInteracting needs to be run on the client thread
+		plugin.runOnClientThread(() -> {
+			Player localPlayer = client.getLocalPlayer();
 
-		if (localPlayer == null)
-		{
-			return;
-		}
+			if (localPlayer == null)
+			{
+				return;
+			}
 
-		Actor interactingActor = localPlayer.getInteracting();
+			Actor interactingActor = localPlayer.getInteracting();
 
-		if (interactingActor == null)
-		{
-			return;
-		}
+			if (interactingActor == null)
+			{
+				return;
+			}
 
-		// Always update the current interacting actor to make sure it doesn't expire
-		// while the local player is still interacting with them
-		lastInteractingActors.put(interactingActor, Instant.now());
+			// Always update the current interacting actor to make sure it doesn't expire
+			// while the local player is still interacting with them
+			lastInteractingActors.put(interactingActor, Instant.now());
 
-		// Guard: only handle game tick when a fight is initiated (which means one hitsplat was dealt).
-		// This is to prevent non-attackable NPC's to also count interacting game ticks.
-		if (!hasFight(interactingActor))
-		{
-			return;
-		}
+			// Guard: only handle game tick when a fight is initiated (which means one hitsplat was dealt).
+			// This is to prevent non-attackable NPC's to also count interacting game ticks.
+			if (!hasFight(interactingActor))
+			{
+				return;
+			}
 
-		Fight fight = getFight(interactingActor);
+			Fight fight = getFight(interactingActor);
 
-		if (!fight.hasSession(interactingActor))
-		{
-			return;
-		}
+			if (!fight.hasSession(interactingActor))
+			{
+				return;
+			}
 
-		FightSession session = fight.getSession(interactingActor);
-		session.addInteractingTicks(1);
+			FightSession session = fight.getSession(interactingActor);
+			session.addInteractingTicks(1);
+		});
 	}
 
 	private void registerExistingFightHitsplat(Actor actor, FightStatisticEntry statisticEntry, Hitsplat hitsplat)
