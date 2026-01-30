@@ -24,16 +24,17 @@ import okhttp3.*;
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.*;
 import static net.runelite.http.api.RuneLiteAPI.JSON;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 @Slf4j
@@ -316,12 +317,12 @@ public class TwitchApi
 					.getAsJsonObject()
 					.get("content")
 					.getAsString();
-				JsonObject segmentContent = parseJson(rawSegmentContent);
+				JsonObject segmentContent = parseCompressedJson(rawSegmentContent);
 
 				// cache the response if valid
 				configurationSegmentContents.put(segmentType, segmentContent);
 			} catch (Exception exception) {
-				// empty
+				plugin.logSupport("Could not parse the configuration segment fetched from: "+ url);
 			}
 		}, (exception) -> {
 			// empty
@@ -639,14 +640,14 @@ public class TwitchApi
 				int responseCode = response.code();
 
 				if (responseCode == 202) {
-					plugin.logSupport("Successfully created Twitch websocket subscription for type: "+ type);
+					plugin.logSupport("Successfully created Twitch websocket subscription for: "+ type +", v"+ version);
 					try {
 						onSuccess.execute(response);
 					} catch (Exception exception) {
 						onError.execute(exception);
 					}
 				} else {
-					plugin.logSupport("Could not create Twitch websocket subscription (type: "+ type +") due to error code: "+ responseCode);
+					plugin.logSupport("Could not create Twitch websocket subscription (type: "+ type +", v"+ version +") due to error code: "+ responseCode);
 					plugin.logSupport("And response body: "+ response.body().string());
 					onError.execute(new Exception("Could not create Twitch websocket subscription due to error code: "+ responseCode));
 				}
@@ -733,6 +734,20 @@ public class TwitchApi
 		return obj.toByteArray();
 	}
 
+	public static String decompress(byte[] bytes) throws Exception {
+
+		// Source: https://stackoverflow.com/questions/16351668/compression-and-decompression-of-string-data-in-java
+		GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(bytes));
+		BufferedReader bf = new BufferedReader(new InputStreamReader(gis, "UTF-8"));
+		String outStr = "";
+		String line;
+		while ((line=bf.readLine())!=null) {
+			outStr += line;
+		}
+
+		return outStr;
+	}
+
 	public boolean isAuthErrorResponseCode(int responseCode)
 	{
 		// it seems that 401 is also sometimes randomly triggered, 403 is most reliable
@@ -752,6 +767,26 @@ public class TwitchApi
 	private JsonObject parseJson(String rawJson)
 	{
 		return (new JsonParser()).parse(rawJson).getAsJsonObject();
+	}
+
+	/**
+	 * Parse a Base64 encoded GZIPPED JSON string
+	 * @param compressedJson
+	 * @return
+	 */
+	private JsonObject parseCompressedJson(String compressedJson) throws Exception {
+
+		// initially just try to parse it directly as it might be valid uncompressed JSON
+		try {
+			return parseJson(compressedJson);
+		} catch (Exception e) {
+			// empty
+		}
+
+		// attempt to decompress
+		byte[] decodedCompressedJson = Base64.getDecoder().decode(compressedJson);
+		String rawJson = decompress(decodedCompressedJson);
+		return parseJson(rawJson);
 	}
 
 	/**
