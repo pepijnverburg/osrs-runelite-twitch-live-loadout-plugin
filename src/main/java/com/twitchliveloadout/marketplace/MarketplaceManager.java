@@ -42,6 +42,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 import okhttp3.Response;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -383,6 +385,7 @@ public class MarketplaceManager {
 				}
 
 				String streamerProductId = streamerProduct.id;
+				String streamerProductName = streamerProduct.name;
 				String ebsProductId = streamerProduct.ebsProductId;
 				Instant now = Instant.now();
 				Instant cooldownUntil = streamerProductCooldownUntil.get(streamerProductId);
@@ -949,7 +952,7 @@ public class MarketplaceManager {
 		// NOTE: we do allow an initial fetch to get an initial set of EBS products in case the
 		// streamer products are still being fetched
 		// NOTE: we also allow when test mode is active when streamers want to preview events
-		if ((streamerProducts.size() <= 0 && ebsProducts.size() > 0) && !isTestModeActive())
+		if ((streamerProducts.isEmpty() && !ebsProducts.isEmpty()) && !isTestModeActive())
 		{
 			return;
 		}
@@ -1066,6 +1069,33 @@ public class MarketplaceManager {
 	public CopyOnWriteArrayList<StreamerProduct> getStreamerProducts()
 	{
 		return new CopyOnWriteArrayList<>(streamerProducts);
+	}
+
+	/**
+	 * Hash to actively broadcast all the streamer products that are fetched by RL
+	 * to let the Twitch extension know whether all is synced up properly
+	 * NOTE: keep this hashing method in sync with the extension!
+	 */
+	public String getStreamerProductsHash()
+	{
+		// use a JSON format for easy JS hashing compatibility ["id-1", "id-2", ...]
+		JsonArray knownStreamerProductIds = new JsonArray();
+		LambdaIterator.handleAll(streamerProducts, (streamerProduct) -> {
+			knownStreamerProductIds.add(streamerProduct.id);
+		});
+		String knownStreamerProductIdsString = knownStreamerProductIds.toString();
+
+		// hash using SHA-256
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			byte[] hashBytes = digest.digest(knownStreamerProductIdsString.getBytes(StandardCharsets.UTF_8));
+			return HexFormat.of().formatHex(hashBytes);
+		} catch (Exception e) {
+			plugin.logSupport("Could not create a valid streamer product hash for known IDs: "+ knownStreamerProductIdsString);
+		}
+
+		// empty string as fallback will let the extension know the hash is not valid
+		return "";
 	}
 
 	/**

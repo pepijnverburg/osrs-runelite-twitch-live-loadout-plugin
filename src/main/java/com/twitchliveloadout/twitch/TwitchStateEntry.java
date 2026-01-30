@@ -38,6 +38,7 @@ public enum TwitchStateEntry {
 	INVOCATIONS_RAID_LEVEL("invocationsRaidLevel", true),
 	MARKETPLACE_ENABLED("marketplaceEnabled", true),
 	MARKETPLACE_ACTIVE("marketplaceActive"),
+	MARKETPLACE_STREAMER_PRODUCTS_HASH("marketplaceStreamerProductsHash"),
 	MARKETPLACE_CHANNEL_EVENTS_ACTIVE("marketplaceChannelEventsActive"),
 	MARKETPLACE_TEST_MODE_ACTIVE("marketplaceTestModeActive"),
 	MARKETPLACE_FREE_MODE_ACTIVE("marketplaceFreeModeActive"),

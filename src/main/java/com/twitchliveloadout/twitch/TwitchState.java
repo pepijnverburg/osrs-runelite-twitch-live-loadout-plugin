@@ -851,6 +851,7 @@ public class TwitchState {
 		boolean isEnabled = config.marketplaceEnabled();
 		boolean channelEventsActive = config.marketplaceChannelEventsEnabled() && twitchEventSubClient.isConnected() && !config.twitchOAuthAccessToken().isEmpty() && !config.twitchOAuthRefreshToken().isEmpty();
 		boolean isActive = false;
+		String streamerProductsHash = "";
 		boolean isTestModeActive = false;
 		boolean isFreeModeActive = false;
 		boolean isChaosModeActive = false;
@@ -863,10 +864,12 @@ public class TwitchState {
 			isFreeModeActive = marketplaceManager.isFreeModeActive();
 			isChaosModeActive = marketplaceManager.isChaosModeActive();
 			sharedCooldownS = marketplaceManager.getSharedCooldownS();
+			streamerProductsHash = marketplaceManager.getStreamerProductsHash();
 		}
 
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ENABLED.getKey(), isEnabled);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_ACTIVE.getKey(), isActive);
+		state.addProperty(TwitchStateEntry.MARKETPLACE_STREAMER_PRODUCTS_HASH.getKey(), streamerProductsHash);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_CHANNEL_EVENTS_ACTIVE.getKey(), channelEventsActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_TEST_MODE_ACTIVE.getKey(), isTestModeActive);
 		state.addProperty(TwitchStateEntry.MARKETPLACE_FREE_MODE_ACTIVE.getKey(), isFreeModeActive);
