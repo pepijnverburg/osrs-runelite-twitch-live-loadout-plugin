@@ -1561,6 +1561,27 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 	}
 
+	public void logChat(String message)
+	{
+
+		// guard: check if the message is valid
+		if (message.isEmpty())
+		{
+			return;
+		}
+
+		final Color chatColor = config.chatMessageColor();
+		final ChatMessageBuilder chatMessage = new ChatMessageBuilder()
+			.append(ChatColorType.HIGHLIGHT)
+			.append(chatColor, "[Live Loadout] "+ message)
+			.append(ChatColorType.NORMAL);
+
+		chatMessageManager.queue(QueuedMessage.builder()
+			.type(ChatMessageType.GAMEMESSAGE)
+			.runeLiteFormattedMessage(chatMessage.build())
+			.build());
+	}
+
 	@Provides
 	TwitchLiveLoadoutConfig provideConfig(ConfigManager configManager)
 	{

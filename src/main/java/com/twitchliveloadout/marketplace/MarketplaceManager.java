@@ -458,6 +458,8 @@ public class MarketplaceManager {
 				if (ebsProduct.dangerous && !plugin.canPerformDangerousEffects())
 				{
 					log.error("Skipping transaction because it is deemed dangerous and protection is on, please notify the maintainer: "+ transactionId);
+					plugin.logChat("Could not activate "+ streamerProductName +", because it is deemed dangerous and protection is on.");
+
 					continue;
 				}
 
@@ -465,6 +467,7 @@ public class MarketplaceManager {
 				if (isTestTransaction && !isTestModeActive())
 				{
 					log.warn("Skipping transaction because it is a test transaction while testing is not active: "+ transactionId);
+					plugin.logChat("Could not activate "+ streamerProductName +", because preview mode is disabled.");
 					continue;
 				}
 
@@ -472,6 +475,7 @@ public class MarketplaceManager {
 				if (isFreeTransaction && !isFreeModeActive())
 				{
 					log.warn("Skipping transaction because it is a free transaction while free mode is not active: "+ transactionId);
+					plugin.logChat("Could not activate "+ streamerProductName +", because it was a 'free' transaction and free mode is off.");
 					continue;
 				}
 
@@ -479,6 +483,7 @@ public class MarketplaceManager {
 				if (isManualTransaction && !config.manualMarketplaceProductsEnabled())
 				{
 					log.warn("Skipping transaction because it is a manual transaction while manual mode is not active: "+ transactionId);
+					plugin.logChat("Could not activate "+ streamerProductName +", because it was a 'manual' event and manual events are disabled.");
 					continue;
 				}
 
