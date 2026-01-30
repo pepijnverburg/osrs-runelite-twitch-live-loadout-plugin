@@ -33,6 +33,7 @@ import com.twitchliveloadout.fights.FightStateManager;
 import com.twitchliveloadout.items.CollectionLogManager;
 import com.twitchliveloadout.items.ItemStateManager;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
+import com.twitchliveloadout.marketplace.notifications.Notification;
 import com.twitchliveloadout.minimap.MinimapManager;
 import com.twitchliveloadout.quests.QuestManager;
 import com.twitchliveloadout.raids.InvocationsManager;
@@ -49,10 +50,7 @@ import com.twitchliveloadout.ui.TwitchLiveLoadoutPanel;
 import com.twitchliveloadout.utilities.AccountType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.Renderable;
-import net.runelite.api.WorldType;
+import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.VarbitID;
@@ -60,7 +58,10 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.callback.Hooks;
 import net.runelite.client.callback.RenderCallback;
 import net.runelite.client.callback.RenderCallbackManager;
+import net.runelite.client.chat.ChatColorType;
+import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
+import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -76,6 +77,7 @@ import net.runelite.client.util.ImageUtil;
 import okhttp3.OkHttpClient;
 
 import javax.inject.Inject;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -86,6 +88,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PERSISTENT_STATE_CONFIG_KEYS;
 import static com.twitchliveloadout.TwitchLiveLoadoutConfig.PLUGIN_CONFIG_PROFILE_GROUP;
+import static com.twitchliveloadout.marketplace.MarketplaceConstants.CHAT_NOTIFICATION_LOCKED_MS;
 import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN_TIME_S;
 
 /**
@@ -113,7 +116,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	@Inject
 	private TwitchLiveLoadoutConfig config;
 
-	@Inject
+	@Inject 
 	private Client client;
 
 	@Inject
@@ -717,7 +720,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Periodically check whether we are still connected to the Twitch EventSub API.
 	 */
-	@Schedule(period = 30, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 45, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void checkTwitchEventSubConnection()
 	{
 		try {
