@@ -67,6 +67,10 @@ public class TwitchEventSubClient {
         if (socketOpen) {
             webSocket.close(1000, null);
         }
+
+        sessionId = null;
+        socketOpen = false;
+        listener.clearActiveSubscriptionTypes();
     }
 
     private final WebSocketListener webSocketListener = new WebSocketListener() {
@@ -110,7 +114,9 @@ public class TwitchEventSubClient {
                     // force the session to reconnect to a new URL
                     case "session_reconnect":
                         JsonObject reconnectSession = payload.getAsJsonObject("session");
+                        sessionId = reconnectSession.get("id").getAsString();
                         String reconnectUrl = reconnectSession.get("reconnect_url").getAsString();
+                        log.info("Reconnecting with an existing session: "+ sessionId);
 
                         // override to the new URL and reconnect
                         reconnect(reconnectUrl);
