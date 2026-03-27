@@ -394,8 +394,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	private void shutDownTwitch()
 	{
 		try {
-			// only the API requires dedicated shutdown
 			twitchApi.shutDown();
+			twitchEventSubClient.disconnect();
 		} catch (Exception exception) {
 			log.warn("An error occurred when shutting down Twitch: ", exception);
 		}
@@ -721,7 +721,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	/**
 	 * Periodically check whether we are still connected to the Twitch EventSub API.
 	 */
-	@Schedule(period = 45, unit = ChronoUnit.SECONDS, asynchronous = true)
+	@Schedule(period = 30, unit = ChronoUnit.SECONDS, asynchronous = true)
 	public void checkTwitchEventSubConnection()
 	{
 		try {
