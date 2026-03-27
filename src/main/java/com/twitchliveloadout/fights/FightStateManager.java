@@ -904,6 +904,11 @@ public class FightStateManager
 		updateCombatPanel();
 	}
 
+	public void onAccountChanged()
+	{
+		deleteAllFights();
+	}
+
 	private void updateCombatPanel()
 	{
 		plugin.getPluginPanel().getCombatPanel().rebuild();

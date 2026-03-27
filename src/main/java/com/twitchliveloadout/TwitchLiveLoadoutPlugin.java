@@ -531,6 +531,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				{
 					twitchState.onAccountChanged();
 					seasonalManager.onAccountChanged();
+					fightStateManager.onAccountChanged();
 					lastAccountIdentifier = accountIdentifier;
 				}
 
