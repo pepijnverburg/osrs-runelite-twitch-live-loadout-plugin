@@ -1158,6 +1158,8 @@ public class TwitchState {
 		cyclicState.remove(TwitchStateEntry.INVOCATIONS_RAID_LEVEL.getKey());
 		cyclicState.remove(TwitchStateEntry.GROUP_STORAGE_ITEMS.getKey());
 		cyclicState.remove(TwitchStateEntry.GROUP_STORAGE_PRICE.getKey());
+		cyclicState.remove(TwitchStateEntry.COMBAT_ACHIEVEMENTS.getKey());
+		cyclicState.remove(TwitchStateEntry.COMBAT_ACHIEVEMENT_PROGRESS.getKey());
 
 		currentState.add(TwitchStateEntry.LOOTING_BAG_ITEMS.getKey(), null);
 		currentState.addProperty(TwitchStateEntry.LOOTING_BAG_PRICE.getKey(), 0);
