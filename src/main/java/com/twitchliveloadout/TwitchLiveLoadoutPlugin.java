@@ -588,7 +588,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			if (config.marketplaceEnabled())
 			{
 				// streamer products are based on the broadcaster configuration segment
-				// making it dependant on the updating of the configuration segments
+				// making it dependent on the updating of the configuration segments
 				marketplaceManager.updateStreamerProducts();
 			}
 		} catch (Exception exception) {

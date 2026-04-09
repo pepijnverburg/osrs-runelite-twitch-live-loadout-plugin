@@ -221,9 +221,10 @@ public class CollectionLogManager {
 			categoryLog.add(ITEMS_KEY_NAME, serializedItems);
 			tabLog.add(categoryTitle, categoryLog);
 
-//			log.info("-------------------");
-//			log.info("CATEGORY TITLE: "+ categoryTitle);
-//			log.info("COUNTERS: "+ counters.toString());
+			plugin.logSupport("-------------------");
+			plugin.logSupport("Collection log category: "+ categoryTitle);
+			plugin.logSupport("Category counters: "+ counters.toString());
+			plugin.logSupport("Category items: "+ serializedItems.toString());
 
 			// update the twitch state
 			twitchState.setCollectionLog(collectionLog);
