@@ -7,6 +7,7 @@ public class SeasonalItem {
     public String spriteName;
     public Boolean spriteContain = true;
     public Integer progress;
+    public String url;
 
     public SeasonalItem(String title)
     {
