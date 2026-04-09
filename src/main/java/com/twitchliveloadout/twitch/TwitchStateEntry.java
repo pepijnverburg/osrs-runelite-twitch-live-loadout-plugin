@@ -51,6 +51,7 @@ public enum TwitchStateEntry {
 	COMBAT_ACHIEVEMENTS("combatAchievements", true),
 	COMBAT_ACHIEVEMENT_PROGRESS("combatAchievementsProgress", true),
 	SEASONAL_ITEMS("seasonalItems", true),
+	SEASONAL_INFO_QUERY_PARAMETERS("seasonalInfoQueryParameters", true),
 	STREAMER_PRODUCTS("streamerProducts"),
 	CHANNEL_POINT_REWARDS("channelPointRewards"),
 	;

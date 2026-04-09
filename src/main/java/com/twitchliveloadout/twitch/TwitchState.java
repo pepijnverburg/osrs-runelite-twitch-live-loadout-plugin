@@ -381,6 +381,24 @@ public class TwitchState {
 		currentState.add(TwitchStateEntry.SEASONAL_ITEMS.getKey(), seasonalItems);
 	}
 
+	public void setSeasonalInfoQueryParameter(String key, String value)
+	{
+		if (key == null || value == null)
+		{
+			return;
+		}
+
+		JsonObject seasonalInfoQueryParameters = currentState.getAsJsonObject(TwitchStateEntry.SEASONAL_INFO_QUERY_PARAMETERS.getKey());
+
+		if (seasonalInfoQueryParameters == null)
+		{
+			seasonalInfoQueryParameters = new JsonObject();
+			currentState.add(TwitchStateEntry.SEASONAL_INFO_QUERY_PARAMETERS.getKey(), seasonalInfoQueryParameters);
+		}
+
+		seasonalInfoQueryParameters.addProperty(key, value);
+	}
+
 	public JsonObject getCollectionLog()
 	{
 		return cyclicState.getAsJsonObject(TwitchStateEntry.COLLECTION_LOG.getKey());
@@ -1005,6 +1023,7 @@ public class TwitchState {
 		if (!config.seasonalsEnabled() || !plugin.isSeasonal())
 		{
 			state.add(TwitchStateEntry.SEASONAL_ITEMS.getKey(), null);
+			state.add(TwitchStateEntry.SEASONAL_INFO_QUERY_PARAMETERS.getKey(), null);
 		}
 
 		// reset the invocations for the current viewers when we are not in ToA anymore
