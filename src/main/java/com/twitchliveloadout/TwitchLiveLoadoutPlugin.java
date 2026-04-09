@@ -109,9 +109,6 @@ import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN
 @Slf4j
 public class TwitchLiveLoadoutPlugin extends Plugin
 {
-	private static final long WARNING_LOG_INITIAL_BACKOFF_MS = TimeUnit.SECONDS.toMillis(5);
-	private static final long WARNING_LOG_MAX_BACKOFF_MS = TimeUnit.MINUTES.toMillis(5);
-
 	/**
 	 * Environment flags
 	 */
@@ -258,6 +255,12 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 	 * List of world types that should result in a unique profile of persistent data
 	 */
 	private final ArrayList<WorldType> distinctiveWorldTypes = new ArrayList<>();
+
+	/**
+	 * Timing for warning logs
+	 */
+	private static final long WARNING_LOG_INITIAL_BACKOFF_MS = TimeUnit.SECONDS.toMillis(5);
+	private static final long WARNING_LOG_MAX_BACKOFF_MS = TimeUnit.MINUTES.toMillis(5);
 
 	/**
 	 * Initialize this plugin
