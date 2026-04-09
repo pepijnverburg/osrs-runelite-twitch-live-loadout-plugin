@@ -1,5 +1,14 @@
 ## Changelog
 
+### v2.3.2
+- feat: added support for seasonal info such as demonic pacts to used to populate URL parameters.
+- feat: heavily improved the reliability of syncing the configured random events through hashing the configuration and letting the Twitch extension compare what is known by the game client.
+- fix: improved Twitch EventSub connection handling by making reconnects more reliable.
+- fix: resolved issues where combat achievements and fight state data could remain persisted when switching between accounts.
+- refactor: added throttled warning logging to reduce repeated warning spam.
+- fix: corrected minor spelling/comments and improved logging around collection log handling.
+- fix: fixed an issue causing the tracking of graphics not to be handled correctly anymore due to a breaking change in the client.
+
 #### v2.3.0
 - feat: Added gameClient property to each payload sent to Twitch. This allows the extension to identify the game client and adjust behavior based on the client type.
 - fix: Resolved two state management issues related to tracking login state and whether streamer products have been fetched. This ensures the login game event triggers properly.
