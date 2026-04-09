@@ -82,6 +82,7 @@ import java.awt.image.BufferedImage;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -108,6 +109,9 @@ import static com.twitchliveloadout.twitch.TwitchApi.TRIGGER_OAUTH_REFRESH_TOKEN
 @Slf4j
 public class TwitchLiveLoadoutPlugin extends Plugin
 {
+	private static final long WARNING_LOG_INITIAL_BACKOFF_MS = TimeUnit.SECONDS.toMillis(5);
+	private static final long WARNING_LOG_MAX_BACKOFF_MS = TimeUnit.MINUTES.toMillis(5);
+
 	/**
 	 * Environment flags
 	 */
@@ -148,6 +152,8 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 	@Inject
 	private Gson gson;
+
+	private final ConcurrentHashMap<String, WarningThrottleState> warningThrottleStates = new ConcurrentHashMap<>();
 
 	/**
 	 * Scheduled executor that does not run on the client thread.
@@ -299,7 +305,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			scheduledExecutor = new ScheduledThreadPoolExecutor(1);
 		} catch (Exception exception) {
-			log.warn("An error occurred when initializing the executors: ", exception);
+			logWarning("initialize-executors", "An error occurred when initializing the executors: ", exception);
 		}
 	}
 
@@ -311,7 +317,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			twitchEventSubClient = new TwitchEventSubClient(this, config, twitchApi, gson, httpClient, twitchEventSubListener);
 			twitchState = new TwitchState(this, config, twitchEventSubClient, canvasListener, gson);
 		} catch (Exception exception) {
-			log.warn("An error occurred when initializing Twitch: ", exception);
+			logWarning("initialize-twitch", "An error occurred when initializing Twitch: ", exception);
 		}
 	}
 
@@ -329,7 +335,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			combatAchievementsManager = new CombatAchievementsManager(this, twitchState, client);
 			seasonalManager = new SeasonalManager(this, twitchState, client, gson);
 		} catch (Exception exception) {
-			log.warn("An error occurred when initializing the managers: ", exception);
+			logWarning("initialize-managers", "An error occurred when initializing the managers: ", exception);
 		}
 	}
 
@@ -350,7 +356,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			clientToolbar.addNavigation(navigationButton);
 		} catch (Exception exception) {
-			log.warn("An error occurred when initializing the UI panels: ", exception);
+			logWarning("initialize-panel", "An error occurred when initializing the UI panels: ", exception);
 		}
 	}
 
@@ -359,7 +365,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			canvasListener = new CanvasListener(config);
 		} catch (Exception exception) {
-			log.warn("An error occurred when initializing the canvas listeners: ", exception);
+			logWarning("initialize-canvas-listeners", "An error occurred when initializing the canvas listeners: ", exception);
 		}
 	}
 
@@ -387,7 +393,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			client.getCanvas().removeFocusListener(canvasListener);
 		} catch (Exception exception) {
-			log.warn("An error occurred when removing the canvas listeners: ", exception);
+			logWarning("shutdown-canvas-listeners", "An error occurred when removing the canvas listeners: ", exception);
 		}
 	}
 
@@ -397,7 +403,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			twitchApi.shutDown();
 			twitchEventSubClient.disconnect();
 		} catch (Exception exception) {
-			log.warn("An error occurred when shutting down Twitch: ", exception);
+			logWarning("shutdown-twitch", "An error occurred when shutting down Twitch: ", exception);
 		}
 	}
 
@@ -408,7 +414,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			fightStateManager.shutDown();
 			marketplaceManager.shutDown();
 		} catch (Exception exception) {
-			log.warn("An error occurred when shutting down the managers: ", exception);
+			logWarning("shutdown-managers", "An error occurred when shutting down the managers: ", exception);
 		}
 	}
 
@@ -417,7 +423,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			clientToolbar.removeNavigation(navigationButton);
 		} catch (Exception exception) {
-			log.warn("An error occurred when shutting down the UI panels: ", exception);
+			logWarning("shutdown-panels", "An error occurred when shutting down the UI panels: ", exception);
 		}
 	}
 
@@ -733,7 +739,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				twitchEventSubClient.reconnect(TwitchEventSubClient.DEFAULT_TWITCH_WEBSOCKET_URL);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not check the Twitch Event Sub client connection: ", exception);
+			logWarning("check-twitch-eventsub-connection", "Could not check the Twitch Event Sub client connection: ", exception);
 		}
 	}
 
@@ -746,7 +752,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			twitchApi.ensureValidOAuthToken();
 		} catch (Exception exception) {
-			log.warn("Could not ensure we have a valid Twitch OAUth token: ", exception);
+			logWarning("ensure-valid-twitch-oauth-token", "Could not ensure we have a valid Twitch OAUth token: ", exception);
 		}
 	}
 
@@ -756,7 +762,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			itemStateManager.onItemContainerChanged(event);
 		} catch (Exception exception) {
-			log.warn("Could not handle item container change event: ", exception);
+			logWarning("on-item-container-changed", "Could not handle item container change event: ", exception);
 		}
 	}
 
@@ -774,7 +780,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				fightStateManager.onStatChanged(event);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle stat change event: ", exception);
+			logWarning("on-stat-changed", "Could not handle stat change event: ", exception);
 		}
 	}
 
@@ -787,7 +793,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				fightStateManager.onFakeXpDrop(event);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle fake XP drop event: ", exception);
+			logWarning("on-fake-xp-drop", "Could not handle fake XP drop event: ", exception);
 		}
 	}
 
@@ -800,7 +806,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				collectionLogManager.onNpcLootReceived(event);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle on NPC loot received event: ", exception);
+			logWarning("on-npc-loot-received", "Could not handle on NPC loot received event: ", exception);
 		}
 	}
 
@@ -818,7 +824,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				canvasListener.disableFocus();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle on focus change event: ", exception);
+			logWarning("on-focus-changed", "Could not handle on focus change event: ", exception);
 		}
 	}
 
@@ -835,7 +841,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.onMenuOptionClicked(event);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle menu option clicked event: ", exception);
+			logWarning("on-menu-option-clicked", "Could not handle menu option clicked event: ", exception);
 		}
 	}
 
@@ -852,7 +858,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.onAnimationChanged(event);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle animation change event: ", exception);
+			logWarning("on-animation-changed", "Could not handle animation change event: ", exception);
 		}
 	}
 
@@ -870,7 +876,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.onGraphicChanged(event);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle graphic change event: ", exception);
+			logWarning("on-graphic-changed", "Could not handle graphic change event: ", exception);
 		}
 	}
 
@@ -883,7 +889,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				fightStateManager.onHitsplatApplied(event);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle hitsplat event: ", exception);
+			logWarning("on-hitsplat-applied", "Could not handle hitsplat event: ", exception);
 		}
 	}
 
@@ -896,7 +902,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				fightStateManager.onNpcDespawned(npcDespawned);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle NPC despawned event: ", exception);
+			logWarning("on-npc-despawned", "Could not handle NPC despawned event: ", exception);
 		}
 	}
 
@@ -909,7 +915,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				fightStateManager.onPlayerDespawned(playerDespawned);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle player despawned event: ", exception);
+			logWarning("on-player-despawned", "Could not handle player despawned event: ", exception);
 		}
 	}
 
@@ -922,7 +928,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				fightStateManager.onInteractingChanged(interactingChanged);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle interacting change event: ", exception);
+			logWarning("on-interacting-changed", "Could not handle interacting change event: ", exception);
 		}
 	}
 
@@ -994,7 +1000,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				updateQuests();
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle game state event: ", exception);
+			logWarning("on-game-state-changed", "Could not handle game state event: ", exception);
 		}
 	}
 
@@ -1007,7 +1013,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			twitchState.setAccountHash(client.getAccountHash());
 		} catch (Exception exception) {
-			log.warn("Could not handle account hash event: ", exception);
+			logWarning("on-account-hash-changed", "Could not handle account hash event: ", exception);
 		}
 	}
 
@@ -1023,7 +1029,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 				marketplaceManager.onPlayerChanged(playerChanged);
 			}
 		} catch (Exception exception) {
-			log.warn("Could not handle player changed event: ", exception);
+			logWarning("on-player-changed", "Could not handle player changed event: ", exception);
 		}
 	}
 
@@ -1149,7 +1155,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			// changing configs the data is being synced anyways.
 			canvasListener.enableFocus();
 		} catch (Exception exception) {
-			log.warn("Could not handle config change event: ", exception);
+			logWarning("on-config-changed", "Could not handle config change event: ", exception);
 		}
 	}
 
@@ -1305,7 +1311,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			String scopedConfigKey = getScopedConfigKey(accountIdentifier, configKey);
 			configManager.setConfiguration(PLUGIN_CONFIG_PROFILE_GROUP, scopedConfigKey, payload);
 		} catch (Exception exception) {
-			log.warn("Could not set the configuration due to the following error: ", exception);
+			logWarning("set-configuration", "Could not set the configuration due to the following error: ", exception);
 		}
 	}
 
@@ -1326,7 +1332,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			return configuration;
 		} catch (Exception exception) {
-			log.warn("Could not get the configuration due to the following error: ", exception);
+			logWarning("get-configuration", "Could not get the configuration due to the following error: ", exception);
 		}
 
 		return null;
@@ -1345,7 +1351,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		try {
 			handler.execute(rawCacheData);
 		} catch (Exception exception) {
-			log.warn("Could not handle cache data with from cache key '"+ cacheKey +"': ", exception);
+			logWarning("load-from-configuration", "Could not handle cache data with from cache key '"+ cacheKey +"': ", exception);
 		}
 	}
 
@@ -1397,7 +1403,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			String scopedConfigKey = accountIdentifierPrefix +"-"+ configKey;
 			return scopedConfigKey;
 		} catch (Exception exception) {
-			log.warn("Could not get the scoped config key due to the following error: ", exception);
+			logWarning("get-scoped-config-key", "Could not get the scoped config key due to the following error: ", exception);
 		}
 
 		return null;
@@ -1413,7 +1419,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			return client.getLocalPlayer().getName();
 		} catch (Exception exception) {
-			log.warn("Could not get the player name due to the following error: ", exception);
+			logWarning("get-player-name", "Could not get the player name due to the following error: ", exception);
 		}
 
 		return null;
@@ -1502,7 +1508,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 
 			return true;
 		} catch (Exception exception) {
-			log.warn("Could not get the whether the player is logged in due to the following error: ", exception);
+			logWarning("is-logged-in", "Could not get the whether the player is logged in due to the following error: ", exception);
 		}
 
 		return false;
@@ -1584,6 +1590,46 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 			.type(ChatMessageType.GAMEMESSAGE)
 			.runeLiteFormattedMessage(chatMessage.build())
 			.build());
+	}
+
+	public void logWarning(String key, String message, Exception exception)
+	{
+		final WarningThrottleState throttleState = warningThrottleStates.computeIfAbsent(key, ignored -> new WarningThrottleState());
+		final long now = System.currentTimeMillis();
+		String throttledMessage = message;
+		boolean shouldLog = false;
+
+		synchronized (throttleState)
+		{
+			if (now >= throttleState.nextLogAt)
+			{
+				if (throttleState.suppressedCount > 0)
+				{
+					throttledMessage += " (suppressed " + throttleState.suppressedCount + " similar warnings while backing off)";
+				}
+
+				shouldLog = true;
+				throttleState.suppressedCount = 0;
+				throttleState.nextLogAt = now + throttleState.backoffMs;
+				throttleState.backoffMs = Math.min(throttleState.backoffMs * 2, WARNING_LOG_MAX_BACKOFF_MS);
+			}
+			else
+			{
+				throttleState.suppressedCount++;
+			}
+		}
+
+		if (shouldLog)
+		{
+			log.warn(throttledMessage, exception);
+		}
+	}
+
+	private static class WarningThrottleState
+	{
+		private long nextLogAt;
+		private long backoffMs = WARNING_LOG_INITIAL_BACKOFF_MS;
+		private int suppressedCount;
 	}
 
 	@Provides
