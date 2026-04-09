@@ -68,7 +68,7 @@ public class TwitchEventSubClient {
             webSocket.close(1000, null);
         }
 
-        sessionId = null;
+        sessionId = "";
         socketOpen = false;
         listener.clearActiveSubscriptionTypes();
     }
