@@ -1089,7 +1089,13 @@ public class MarketplaceManager {
 		try {
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			byte[] hashBytes = digest.digest(knownStreamerProductIdsString.getBytes(StandardCharsets.UTF_8));
-			return HexFormat.of().formatHex(hashBytes);
+
+			StringBuilder hex = new StringBuilder(hashBytes.length * 2);
+			for (byte b : hashBytes)
+			{
+				hex.append(String.format("%02x", b));
+			}
+			return hex.toString();
 		} catch (Exception e) {
 			plugin.logSupport("Could not create a valid streamer product hash for known IDs: "+ knownStreamerProductIdsString);
 		}
