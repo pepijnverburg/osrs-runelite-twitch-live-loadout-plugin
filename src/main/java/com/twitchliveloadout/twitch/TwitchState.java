@@ -393,10 +393,10 @@ public class TwitchState {
 		if (seasonalInfoQueryParameters == null)
 		{
 			seasonalInfoQueryParameters = new JsonObject();
-			currentState.add(TwitchStateEntry.SEASONAL_INFO_QUERY_PARAMETERS.getKey(), seasonalInfoQueryParameters);
 		}
 
 		seasonalInfoQueryParameters.addProperty(key, value);
+		currentState.add(TwitchStateEntry.SEASONAL_INFO_QUERY_PARAMETERS.getKey(), seasonalInfoQueryParameters);
 	}
 
 	public JsonObject getCollectionLog()

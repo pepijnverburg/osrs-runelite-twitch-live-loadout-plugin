@@ -63,7 +63,7 @@ public interface TwitchLiveLoadoutConfig extends Config
 	public final static String COMBAT_ACHIEVEMENTS_PROGRESS_CONFIG_KEY = "combat-achievements-progress";
 	public final static String SEASONAL_RELICS_CONFIG_KEY = "seasonal-relics";
 	public final static String SEASONAL_AREAS_CONFIG_KEY = "seasonal-areas";
-	public final static String SEASONAL_MASTERIES_CONFIG_KEY = "seasonal-masteries";
+	public final static String SEASONAL_TALENTS_CONFIG_KEY = "seasonal-talents";
 
 	public final static String EVENT_SUB_HANDLED_FOLLOWER_IDS = "event-sub-handled-follower-ids";
 	public final static String[] PERSISTENT_STATE_CONFIG_KEYS = new String[]{
