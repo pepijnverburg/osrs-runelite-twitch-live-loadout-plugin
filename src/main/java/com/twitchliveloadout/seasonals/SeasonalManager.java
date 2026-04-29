@@ -267,6 +267,9 @@ public class SeasonalManager {
 
         Widget[] talentWidgets = talentTreeWidget.getDynamicChildren();
 
+        // clear the current active talents before collecting the new ones
+        activeTalents.clear();
+
         for (int talentIndex = 0; talentIndex < talentWidgets.length; talentIndex++)
         {
             Widget talentWidget = talentWidgets[talentIndex];
@@ -413,12 +416,21 @@ public class SeasonalManager {
         }
 
         final HashMap<String, String> queryParameters = new HashMap<>();
+        final ArrayList<Integer> handledTalentNodeIds = new ArrayList<>();
 
         LambdaIterator.handleAll(activeTalents, (activeTalentNodeId) -> {
 
+            // guard: check the talent is known in the lookup
             if (!talentTreeNodeToQueryParamLookup.containsKey(activeTalentNodeId))
             {
                 plugin.logSupport("An unknown talent tree node ID was found, this should not happen. Node ID: "+ activeTalentNodeId);
+                return;
+            }
+
+            // guard: skip when the talent was already added to the query params
+            // NOTE: this should not happen, but can fix some issues with a previous version of the plugin
+            if (handledTalentNodeIds.contains(activeTalentNodeId))
+            {
                 return;
             }
 
@@ -432,6 +444,7 @@ public class SeasonalManager {
             }
 
             nQueryParameter += talentTreeNodeToQueryParamLookup.get(activeTalentNodeId);
+            handledTalentNodeIds.add(activeTalentNodeId);
             queryParameters.put("n", nQueryParameter);
         });
 
