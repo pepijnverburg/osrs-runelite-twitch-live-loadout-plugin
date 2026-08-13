@@ -9,6 +9,7 @@ public enum GameEventType {
     BOSS_KILL("boss-kill", "Boss Kill", null),
     RAID_COMPLETION("raid-completion", "Raid Completion", null),
     PET_DROP("pet-drop", "Pet Drop", "A pet drop along with a {productName}!"),
+    PLAYER_DEATH("player-death", "Death", "Died and got a {productName} in the process?"),
     ;
 
     private final String id;

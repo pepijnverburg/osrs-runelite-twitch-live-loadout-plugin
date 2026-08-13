@@ -1194,6 +1194,7 @@ public class MarketplaceManager {
 		boolean hasToaCompletion = chatMessage.startsWith("Your completed Tombs of Amascut");
 		boolean hasRaidCompletion = hasNumber && (hasCoxCompletion || hasTobCompletion || hasToaCompletion);
 		boolean hasBossKill = bossKillMatcher.matches();
+		boolean hasDied = chatMessage.startsWith("Oh dear, you are dead!");
 
 		if (hasBarrowsCompletion || hasRaidCompletion)
 		{
@@ -1208,6 +1209,11 @@ public class MarketplaceManager {
 		if (hasPetAcquired)
 		{
 			handleGameEvent(GameEventType.PET_DROP);
+		}
+
+		if (hasDied)
+		{
+			handleGameEvent(GameEventType.PLAYER_DEATH);
 		}
 	}
 
