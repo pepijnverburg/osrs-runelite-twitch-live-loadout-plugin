@@ -541,6 +541,7 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 					twitchState.onAccountChanged();
 					seasonalManager.onAccountChanged();
 					fightStateManager.onAccountChanged();
+					marketplaceManager.onAccountChanged();
 					lastAccountIdentifier = accountIdentifier;
 				}
 
@@ -1339,6 +1340,42 @@ public class TwitchLiveLoadoutPlugin extends Plugin
 		}
 
 		return null;
+	}
+
+	public void setGlobalConfiguration(String configKey, Object payload)
+	{
+		try {
+			configManager.setConfiguration(PLUGIN_CONFIG_PROFILE_GROUP, configKey, payload);
+		} catch (Exception exception) {
+			logWarning("set-global-configuration", "Could not set the global configuration due to the following error: ", exception);
+		}
+	}
+
+	public String getGlobalConfiguration(String configKey)
+	{
+		try {
+			return configManager.getConfiguration(PLUGIN_CONFIG_PROFILE_GROUP, configKey);
+		} catch (Exception exception) {
+			logWarning("get-global-configuration", "Could not get the global configuration due to the following error: ", exception);
+		}
+
+		return null;
+	}
+
+	public void loadFromGlobalConfiguration(String configKey, ConfigurationDataHandler handler)
+	{
+		String rawCacheData = getGlobalConfiguration(configKey);
+
+		if (rawCacheData == null || rawCacheData.trim().isEmpty())
+		{
+			return;
+		}
+
+		try {
+			handler.execute(rawCacheData);
+		} catch (Exception exception) {
+			logWarning("load-from-global-configuration", "Could not handle cache data from global cache key '"+ configKey +"': ", exception);
+		}
 	}
 
 	public void loadFromConfiguration(String cacheKey, ConfigurationDataHandler handler)

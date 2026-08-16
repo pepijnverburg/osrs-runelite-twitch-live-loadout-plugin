@@ -2,6 +2,8 @@ package com.twitchliveloadout.utilities;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+
 @Getter
 public enum GameEventType {
     LOGIN("login", "Login", "Just logged in and already getting a '{productName}'?"),
@@ -22,5 +24,13 @@ public enum GameEventType {
         this.id = id;
         this.name = name;
         this.message = message;
+    }
+
+    public static GameEventType fromId(String id)
+    {
+        return Arrays.stream(values())
+            .filter((gameEventType) -> gameEventType.getId().equals(id))
+            .findFirst()
+            .orElse(null);
     }
 }

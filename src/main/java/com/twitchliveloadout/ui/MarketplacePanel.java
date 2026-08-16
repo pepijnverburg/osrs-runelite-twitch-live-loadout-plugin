@@ -7,7 +7,7 @@ import com.twitchliveloadout.marketplace.MarketplaceConstants;
 import com.twitchliveloadout.marketplace.MarketplaceManager;
 import com.twitchliveloadout.marketplace.MarketplaceProductSorter;
 import com.twitchliveloadout.marketplace.products.ChannelPointReward;
-import com.twitchliveloadout.marketplace.products.EbsProduct;
+import com.twitchliveloadout.marketplace.products.ManualEbsProductEntry;
 import com.twitchliveloadout.marketplace.products.MarketplaceProduct;
 import com.twitchliveloadout.marketplace.products.StreamerProduct;
 import com.twitchliveloadout.marketplace.transactions.TwitchTransaction;
@@ -37,6 +37,7 @@ public class MarketplacePanel extends JPanel
 	private final GridBagConstraints constraints = new GridBagConstraints();
 	private final GridBagConstraints productListConstraints = new GridBagConstraints();
 	private final GridBagConstraints customProductListConstraints = new GridBagConstraints();
+	private final GridBagConstraints customProductPanelConstraints = new GridBagConstraints();
 	private final GridBagConstraints transactionListConstraints = new GridBagConstraints();
 	private final CardLayout cardLayout = new CardLayout();
 	private final JPanel wrapper = new JPanel(cardLayout);
@@ -65,9 +66,13 @@ public class MarketplacePanel extends JPanel
 	private final JPanel productListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<MarketplaceProductPanel> productPanels = new CopyOnWriteArrayList<>();
 
-	private final TextField customProductInputField = new TextField();
+	private final JPanel customProductControlsPanel = new JPanel(new GridLayout(1, 0, 8, 0));
+	private final JButton customProductSaveButton = new JButton("Save");
+	private final JButton customProductCancelButton = new JButton("Clear");
+	private final ManualEbsProductEditorPanel customProductEditorPanel;
 	private final JPanel customProductListPanel = new JPanel(new GridBagLayout());
-	private final TextPanel customProductListTitlePanel = new TextPanel("<html><h2>Manual Random Events:</h2></html>", "<html>Enter the script configuration of the Random Event below:</html>");
+	private final JPanel customProductHeaderPanel = new JPanel(new BorderLayout());
+	private final JLabel customProductHeaderLabel = new JLabel();
 	private final JPanel customProductListWrapper = new JPanel(new BorderLayout());
 	private final CopyOnWriteArrayList<EbsProductPanel> customProductPanels = new CopyOnWriteArrayList<>();
 
@@ -88,6 +93,7 @@ public class MarketplacePanel extends JPanel
 		this.marketplaceManager = marketplaceManager;
 		this.gson = gson;
 		this.config = config;
+		this.customProductEditorPanel = new ManualEbsProductEditorPanel(gson);
 
 		initializeLayout();
 	}
@@ -145,6 +151,11 @@ public class MarketplacePanel extends JPanel
 		customProductListConstraints.gridx = 0;
 		customProductListConstraints.gridy = 0;
 
+		customProductPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
+		customProductPanelConstraints.weightx = 1;
+		customProductPanelConstraints.gridx = 0;
+		customProductPanelConstraints.gridy = 0;
+
 		playbackWrapper.setLayout(new GridBagLayout());
 		playbackWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
 		playbackWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -192,7 +203,11 @@ public class MarketplacePanel extends JPanel
 
 		if (MANUAL_PRODUCTS_AVAILABLE)
 		{
-			playbackWrapper.add(customProductListTitlePanel, playbackConstraints);
+			Styles.styleBigLabel(customProductHeaderLabel, "Manual Random Events");
+			customProductHeaderPanel.setOpaque(false);
+			customProductHeaderPanel.setBorder(new EmptyBorder(10, 0, 5, 0));
+			customProductHeaderPanel.add(customProductHeaderLabel, BorderLayout.WEST);
+			playbackWrapper.add(customProductHeaderPanel, playbackConstraints);
 			playbackConstraints.gridy++;
 			playbackWrapper.add(customProductListWrapper, playbackConstraints);
 			playbackConstraints.gridy++;
@@ -206,43 +221,31 @@ public class MarketplacePanel extends JPanel
 		productListWrapper.add(productListPanel, productListConstraints);
 		productListConstraints.gridy++;
 
-		customProductInputField.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		customProductInputField.addActionListener(event -> {
-			String rawEbsProduct = event.getActionCommand();
+		styleManualActionButton(customProductSaveButton);
+		styleManualActionButton(customProductCancelButton);
 
-			try {
-				EbsProduct ebsProduct = gson.fromJson(rawEbsProduct, EbsProduct.class);
+		customProductSaveButton.addActionListener((event) -> saveManualEbsProduct());
+		customProductCancelButton.addActionListener((event) -> customProductEditorPanel.clearEditor());
 
-				// force this EBS product to be dangerous always so that some accounts will not be at risk
-				ebsProduct.dangerous = true;
+		customProductControlsPanel.setOpaque(false);
+		customProductControlsPanel.add(customProductSaveButton);
+		customProductControlsPanel.add(customProductCancelButton);
 
-				// guard: make sure the ebsProduct is valid
-				if (ebsProduct.id == null || ebsProduct.behaviour == null || ebsProduct.name == null)
-				{
-					throw new Exception("Some of the properties were filled in correctly.");
-				}
+		JPanel customProductContentPanel = new JPanel();
+		customProductContentPanel.setLayout(new BoxLayout(customProductContentPanel, BoxLayout.Y_AXIS));
+		customProductContentPanel.setOpaque(false);
 
-				customProductInputField.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-				marketplaceManager.addCustomEbsProduct(ebsProduct);
-				rebuildCustomProductPanels();
-			} catch (Exception exception) {
-				log.warn("An invalid custom Random Event was passed through the input field. Could not parse it correctly:", exception);
-				customProductInputField.setBackground(new Color(200, 50, 50));
-			}
-
-			// always clear on copy
-			customProductInputField.setText("");
-		});
-
-		customProductListWrapper.setLayout(new GridBagLayout());
+		customProductListWrapper.setLayout(new BorderLayout());
 		customProductListWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
 		customProductListWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		customProductListPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
 		customProductListPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		customProductListWrapper.add(customProductInputField, customProductListConstraints);
-		customProductListConstraints.gridy++;
-		customProductListWrapper.add(customProductListPanel, customProductListConstraints);
-		customProductListConstraints.gridy++;
+		customProductContentPanel.add(customProductControlsPanel);
+		customProductContentPanel.add(Box.createVerticalStrut(8));
+		customProductContentPanel.add(customProductEditorPanel);
+		customProductContentPanel.add(Box.createVerticalStrut(10));
+		customProductContentPanel.add(customProductListPanel);
+		customProductListWrapper.add(customProductContentPanel, BorderLayout.NORTH);
 
 		transactionListWrapper.setLayout(new GridBagLayout());
 		transactionListWrapper.setBorder(new EmptyBorder(10, 0, 10, 0));
@@ -338,8 +341,8 @@ public class MarketplacePanel extends JPanel
 		{
 			EbsProductPanel ebsProductPanel = new EbsProductPanel(this, marketplaceManager);
 			customProductPanels.add(ebsProductPanel);
-			customProductListPanel.add(ebsProductPanel, transactionListConstraints);
-			transactionListConstraints.gridy++;
+			customProductListPanel.add(ebsProductPanel, customProductPanelConstraints);
+			customProductPanelConstraints.gridy++;
 			ebsProductPanel.rebuild();
 		}
 
@@ -355,7 +358,7 @@ public class MarketplacePanel extends JPanel
 
 	public void updateLayout()
 	{
-		customProductListTitlePanel.setVisible(config.manualMarketplaceProductsEnabled());
+		customProductHeaderPanel.setVisible(config.manualMarketplaceProductsEnabled());
 		customProductListWrapper.setVisible(config.manualMarketplaceProductsEnabled());
 	}
 
@@ -419,6 +422,7 @@ public class MarketplacePanel extends JPanel
 		// finally update the panels
 		rebuildProductPanels();
 		rebuildTransactionPanels();
+		rebuildCustomProductPanels();
 	}
 
 	public void rebuildProductPanels()
@@ -434,19 +438,24 @@ public class MarketplacePanel extends JPanel
 	public void rebuildCustomProductPanels()
 	{
 		AtomicInteger atomicIndex = new AtomicInteger();
-		CopyOnWriteArrayList<EbsProduct> customEbsProducts = marketplaceManager.getCustomEbsProducts();
+		CopyOnWriteArrayList<ManualEbsProductEntry> manualEbsProductEntries = marketplaceManager.getManualEbsProductEntries();
+
+		LambdaIterator.handleAll(customProductPanels, (customProductPanel) -> {
+			customProductPanel.setEntity(null);
+			customProductPanel.rebuild();
+		});
 
 		LambdaIterator.handleAll(customProductPanels, (customProductPanel) -> {
 			int index = atomicIndex.get();
 
 			// guard: make sure we don't exceed the amount of custom products we have
-			if (index >= customEbsProducts.size())
+			if (index >= manualEbsProductEntries.size())
 			{
 				return;
 			}
 
-			EbsProduct customEbsProduct = customEbsProducts.get(index);
-			customProductPanel.setEntity(customEbsProduct);
+			ManualEbsProductEntry manualEbsProductEntry = manualEbsProductEntries.get(index);
+			customProductPanel.setEntity(manualEbsProductEntry);
 			customProductPanel.rebuild();
 			atomicIndex.getAndIncrement();
 		});
@@ -526,6 +535,60 @@ public class MarketplacePanel extends JPanel
 		queuedTransactionsPanel.setText("There are "+ queuedTransactionAmount +" Random Events queued.");
 		productListTitlePanel.setText("There are "+ activeProductAmount +" Random Events active.");
 		transactionListTitlePanel.setText("There are "+ archivedTransactionAmount +" recent Random Events.");
+	}
+
+	public void deleteManualEbsProduct(ManualEbsProductEntry manualEbsProductEntry)
+	{
+		if (manualEbsProductEntry == null)
+		{
+			return;
+		}
+
+		marketplaceManager.removeManualEbsProduct(manualEbsProductEntry.getEbsProductId());
+
+		rebuild();
+	}
+
+	private void saveManualEbsProduct()
+	{
+		try
+		{
+			ManualEbsProductEntry newEntry = customProductEditorPanel.buildEntry();
+			int savedManualProductAmount = marketplaceManager.getManualEbsProductEntries().size();
+			boolean isReplacingExistingId = false;
+
+			for (ManualEbsProductEntry manualEbsProductEntry : marketplaceManager.getManualEbsProductEntries())
+			{
+				if (newEntry.getEbsProductId().equals(manualEbsProductEntry.getEbsProductId()))
+				{
+					isReplacingExistingId = true;
+					break;
+				}
+			}
+
+			if (!isReplacingExistingId && savedManualProductAmount >= MarketplaceConstants.MAX_CUSTOM_RANDOM_PRODUCTS)
+			{
+				customProductEditorPanel.setFeedback("You already saved the maximum of " + MarketplaceConstants.MAX_CUSTOM_RANDOM_PRODUCTS + " manual Random Events.", new Color(200, 50, 50));
+				return;
+			}
+
+			marketplaceManager.upsertManualEbsProduct(newEntry);
+			customProductEditorPanel.clearEditor();
+			customProductEditorPanel.setFeedback("Saved manual Random Event '" + newEntry.ebsProduct.name + "'.", new Color(0, 200, 0));
+			rebuild();
+		}
+		catch (Exception exception)
+		{
+			log.warn("Could not save manual Random Event JSON.", exception);
+			customProductEditorPanel.setFeedback(exception.getMessage(), new Color(200, 50, 50));
+		}
+	}
+
+	private void styleManualActionButton(JButton button)
+	{
+		button.setFocusable(false);
+		button.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		button.setForeground(Color.WHITE);
 	}
 
 	private String getPlaybackButtonTitle()

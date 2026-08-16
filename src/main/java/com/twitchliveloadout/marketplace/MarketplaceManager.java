@@ -3,8 +3,10 @@ package com.twitchliveloadout.marketplace;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.twitchliveloadout.TwitchLiveLoadoutConfig;
 import com.twitchliveloadout.TwitchLiveLoadoutPlugin;
 import com.twitchliveloadout.fights.FightStateManager;
@@ -126,6 +128,12 @@ public class MarketplaceManager {
 	private CopyOnWriteArrayList<EbsProduct> customEbsProducts = new CopyOnWriteArrayList<>();
 
 	/**
+	 * List of all manual EBS products to trigger in-game
+	 */
+	@Getter
+	private final CopyOnWriteArrayList<ManualEbsProductEntry> manualEbsProductEntries = new CopyOnWriteArrayList<>();
+
+	/**
 	 * List of all EBS products from Twitch
 	 */
 	private CopyOnWriteArrayList<ChannelPointReward> channelPointRewards = new CopyOnWriteArrayList<>();
@@ -223,6 +231,7 @@ public class MarketplaceManager {
 		this.menuManager = new MenuManager(plugin, config, client);
 		this.drawManager = new DrawManager(client);
 		this.soundManager = new SoundManager(client, config);
+		loadManualEbsProductEntries(); 
 	}
 
 	/**
@@ -628,12 +637,6 @@ public class MarketplaceManager {
 			product.handleGameEvent(gameEventType);
 		});
 
-		// guard: ensure the streamer product is valid
-		if (streamerProduct == null)
-		{
-			return;
-		}
-
 		// guard: skip when the maximum transactions are reached for a specific game event
 		if (activeAndQueuedAmount >= config.marketplaceMaxActiveProductsPerGameEvent())
 		{
@@ -641,10 +644,32 @@ public class MarketplaceManager {
 			return;
 		}
 
+		activeAndQueuedAmount = queueManualEbsProductsForGameEvent(gameEventType, activeAndQueuedAmount);
+
+		// guard: ensure the streamer product is valid
+		if (streamerProduct == null)
+		{
+			return;
+		}
+
+		if (activeAndQueuedAmount >= config.marketplaceMaxActiveProductsPerGameEvent())
+		{
+			plugin.logSupport("Skipping streamer product game event because local manual mappings already used the limit. Game event ID: "+ gameEventType.getId());
+			return;
+		}
+
 		TwitchTransaction transaction = createTransactionFromGameEvent(gameEventType);
 		handleCustomTransaction(transaction);
 		plugin.logSupport("Handling custom transaction based on game event, EBS product ID: "+ transaction.ebs_product_id);
 
+	}
+
+	public void onAccountChanged()
+	{
+		manualEbsProductEntries.clear();
+		customEbsProducts.clear();
+		loadManualEbsProductEntries();
+		updateMarketplacePanel();
 	}
 
 	public TwitchTransaction createTransactionFromGameEvent(GameEventType gameEventType)
@@ -721,6 +746,11 @@ public class MarketplaceManager {
 	 */
 	public void testEbsProduct(EbsProduct ebsProduct, TwitchTransactionProductType productType, TwitchTransactionOrigin origin)
 	{
+		testEbsProduct(ebsProduct, productType, origin, null);
+	}
+
+	public void testEbsProduct(EbsProduct ebsProduct, TwitchTransactionProductType productType, TwitchTransactionOrigin origin, GameEventType gameEventType)
+	{
 		TwitchTransaction twitchTransaction = new TwitchTransaction();
 		TwitchProduct twitchProduct = new TwitchProduct();
 		TwitchProductCost twitchProductCost = new TwitchProductCost();
@@ -753,8 +783,10 @@ public class MarketplaceManager {
 		twitchTransaction.ebs_product_id = ebsProduct.id;
 		twitchTransaction.handled_at = Instant.now().toString();
 		twitchTransaction.origin = origin;
+		twitchTransaction.gameEventType = gameEventType;
 
 		queuedTransactions.add(twitchTransaction);
+		updateMarketplacePanel();
 	}
 
 	private String generateRandomTestId()
@@ -1052,6 +1084,11 @@ public class MarketplaceManager {
 	 */
 	private void updateMarketplacePanel()
 	{
+		if (!plugin.hasValidPanels())
+		{
+			return;
+		}
+
 		plugin.getPluginPanel().getMarketplacePanel().requestRebuild();
 	}
 
@@ -1590,16 +1627,161 @@ public class MarketplaceManager {
 
 	public void addCustomEbsProduct(EbsProduct ebsProduct)
 	{
-		String newEbsProductId = ebsProduct.id;
-		EbsProduct existingCustomEbsProduct = getEbsProductById(newEbsProductId, customEbsProducts);
+		upsertManualEbsProduct(new ManualEbsProductEntry(ebsProduct, new ArrayList<>()));
+	}
 
-		// remove the custom EBS product when the ID was already added
-		if (existingCustomEbsProduct != null)
+	public void upsertManualEbsProduct(ManualEbsProductEntry manualEbsProductEntry)
+	{
+		if (manualEbsProductEntry == null || !manualEbsProductEntry.isValid())
 		{
-			customEbsProducts.remove(existingCustomEbsProduct);
+			return;
 		}
 
-		customEbsProducts.add(ebsProduct);
+		manualEbsProductEntry.ebsProduct.dangerous = true;
+		removeManualEbsProduct(manualEbsProductEntry.getEbsProductId(), false);
+		manualEbsProductEntries.add(manualEbsProductEntry);
+		rebuildCustomEbsProducts();
+		saveManualEbsProductEntries();
+		updateMarketplacePanel();
+	}
+
+	public void removeManualEbsProduct(String ebsProductId)
+	{
+		removeManualEbsProduct(ebsProductId, true);
+	}
+
+	private void removeManualEbsProduct(String ebsProductId, boolean shouldPersist)
+	{
+		if (ebsProductId == null)
+		{
+			return;
+		}
+
+		ManualEbsProductEntry entryToRemove = null;
+
+		for (ManualEbsProductEntry manualEbsProductEntry : manualEbsProductEntries)
+		{
+			if (ebsProductId.equals(manualEbsProductEntry.getEbsProductId()))
+			{
+				entryToRemove = manualEbsProductEntry;
+				break;
+			}
+		}
+
+		if (entryToRemove == null)
+		{
+			return;
+		}
+
+		manualEbsProductEntries.remove(entryToRemove);
+		rebuildCustomEbsProducts();
+
+		if (shouldPersist)
+		{
+			saveManualEbsProductEntries();
+			updateMarketplacePanel();
+		}
+	}
+
+	private int queueManualEbsProductsForGameEvent(GameEventType gameEventType, int activeAndQueuedAmount)
+	{
+		for (ManualEbsProductEntry manualEbsProductEntry : manualEbsProductEntries)
+		{
+			if (!manualEbsProductEntry.isTriggeredBy(gameEventType))
+			{
+				continue;
+			}
+
+			if (activeAndQueuedAmount >= config.marketplaceMaxActiveProductsPerGameEvent())
+			{
+				break;
+			}
+
+			EbsProduct ebsProduct = manualEbsProductEntry.ebsProduct;
+
+			if (ebsProduct == null)
+			{
+				continue;
+			}
+
+			testEbsProduct(ebsProduct, TwitchTransactionProductType.MANUAL, TwitchTransactionOrigin.MANUAL, gameEventType);
+			activeAndQueuedAmount += 1;
+		}
+
+		return activeAndQueuedAmount;
+	}
+
+	private void rebuildCustomEbsProducts()
+	{
+		customEbsProducts.clear();
+
+		for (ManualEbsProductEntry manualEbsProductEntry : manualEbsProductEntries)
+		{
+			if (!manualEbsProductEntry.isValid())
+			{
+				continue;
+			}
+
+			manualEbsProductEntry.ebsProduct.dangerous = true;
+			customEbsProducts.add(manualEbsProductEntry.ebsProduct);
+		}
+	}
+
+	private void loadManualEbsProductEntries()
+	{
+		manualEbsProductEntries.clear();
+
+		final AtomicBoolean loadedFromGlobalConfig = new AtomicBoolean(false);
+
+		plugin.loadFromGlobalConfiguration(TwitchLiveLoadoutConfig.MANUAL_MARKETPLACE_PRODUCTS_CONFIG_KEY, (data) -> {
+			loadedFromGlobalConfig.set(loadManualEbsProductEntriesFromJson(data));
+		});
+
+		if (!loadedFromGlobalConfig.get())
+		{
+			plugin.loadFromConfiguration(TwitchLiveLoadoutConfig.MANUAL_MARKETPLACE_PRODUCTS_CONFIG_KEY, (data) -> {
+				boolean loadedFromScopedConfig = loadManualEbsProductEntriesFromJson(data);
+
+				if (loadedFromScopedConfig)
+				{
+					saveManualEbsProductEntries();
+				}
+			});
+		}
+
+		rebuildCustomEbsProducts();
+	}
+
+	private void saveManualEbsProductEntries()
+	{
+		JsonElement entriesJson = gson.toJsonTree(manualEbsProductEntries, new TypeToken<List<ManualEbsProductEntry>>() {}.getType());
+		plugin.setGlobalConfiguration(TwitchLiveLoadoutConfig.MANUAL_MARKETPLACE_PRODUCTS_CONFIG_KEY, entriesJson);
+	}
+
+	private boolean loadManualEbsProductEntriesFromJson(String data)
+	{
+		ArrayList<ManualEbsProductEntry> loadedEntries = gson.fromJson(data, new TypeToken<ArrayList<ManualEbsProductEntry>>() {}.getType());
+
+		if (loadedEntries == null || loadedEntries.isEmpty())
+		{
+			return false;
+		}
+
+		manualEbsProductEntries.clear();
+
+		for (ManualEbsProductEntry loadedEntry : loadedEntries)
+		{
+			if (loadedEntry == null || !loadedEntry.isValid())
+			{
+				continue;
+			}
+
+			loadedEntry.ebsProduct.dangerous = true;
+			removeManualEbsProduct(loadedEntry.getEbsProductId(), false);
+			manualEbsProductEntries.add(loadedEntry);
+		}
+
+		return !manualEbsProductEntries.isEmpty();
 	}
 
 	private ChannelPointReward getChannelPointRewardById(String channelPointRewardId)
